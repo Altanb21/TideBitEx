@@ -131,7 +131,7 @@ class ExchangeHub extends Bot {
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // await this._updateOrderDetail(formatOrder);
-            await this._syncTransactionDetail(formatOrder);
+            // await this._syncTransactionDetail(formatOrder);
           }
         }
         this.logger.log(
@@ -338,7 +338,67 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
-    this._syncTransactionDetail();
+    // this._syncTransactionDetail();
+    const t = await this.database.transaction();
+    try {
+      const ethAcc = await this.database.getAccountByMemberIdCurrency(2, 3, {
+        dbTransaction: t,
+      });
+      this.logger.log(`ethAcc`, ethAcc);
+      const usdtAcc = await this.database.getAccountByMemberIdCurrency(2, 34, {
+        dbTransaction: t,
+      });
+      this.logger.log(`usdtAcc`, usdtAcc);
+      const ethAccV = await this.database.getAccountVersionsByMemberIdCurrency(
+        2,
+        3,
+        { dbTransaction: t }
+      );
+      this.logger.log(`ethAccV`, ethAccV);
+      const usdtAccV = await this.database.getAccountVersionsByMemberIdCurrency(
+        2,
+        34,
+        { dbTransaction: t }
+      );
+      this.logger.log(`usdtAccV`, usdtAccV);
+      const order = await this.database.getOrder(332576077, {
+        dbTransaction: t,
+      });
+      this.logger.log(`order`, order);
+      const tradebyDBID = await this.database.getTradeByAskOrdId(332576077, {
+        dbTransaction: t,
+      });
+      this.logger.log(`tradebyDBID`, tradebyDBID);
+      const tradebyOKExID = await this.database.getTradeByAskOrdId(
+        `467755654093094921`,
+        { dbTransaction: t }
+      );
+      this.logger.log(`tradebyOKExID`, tradebyOKExID);
+      const trades = await this.database.getTrades(`usdt`, "eth", {
+        dbTransaction: t,
+      });
+      this.logger.log(`trades`, trades);
+      const voucherbyDBID = await this.database.getVouchersByOrderId(
+        332576077,
+        {
+          dbTransaction: t,
+        }
+      );
+      this.logger.log(`voucherbyDBID`, voucherbyDBID);
+      const voucherbyOKExID = await this.database.getVouchersByOrderId(
+        `467755654093094921`,
+        { dbTransaction: t }
+      );
+      this.logger.log(`voucherbyOKExID`, voucherbyOKExID);
+      const vouchers = await this.database.getVouchers(2, "eth", `usdt`, {
+        dbTransaction: t,
+      });
+      this.logger.log(`vouchers`, vouchers);
+      await t.commit();
+    } catch (error) {
+      this.logger.error(`get DB data error`, error);
+      await t.rollback();
+    }
     return this;
   }
 
