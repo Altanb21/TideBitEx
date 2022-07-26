@@ -817,130 +817,143 @@ class ExchangeHubService {
       memberId = tmp.memberId;
       orderId = tmp.orderId;
       member = await this.database.getMemberById(memberId);
-      memberTag = member.member_tag;
-      this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
-      if (memberTag) {
-        if (memberTag.toString() === "1") {
-          askFeeRate = market.ask.vip_fee;
-          bidFeeRate = market.bid.vip_fee;
+      if (member) {
+        memberTag = member.member_tag;
+        this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+        if (memberTag) {
+          if (memberTag.toString() === "1") {
+            askFeeRate = market.ask.vip_fee;
+            bidFeeRate = market.bid.vip_fee;
+          }
+          if (memberTag.toString() === "2") {
+            askFeeRate = market.ask.hero_fee;
+            bidFeeRate = market.bid.hero_fee;
+          }
+        } else {
+          askFeeRate = market.ask.fee;
+          bidFeeRate = market.bid.fee;
         }
-        if (memberTag.toString() === "2") {
-          askFeeRate = market.ask.hero_fee;
-          bidFeeRate = market.bid.hero_fee;
-        }
-      } else {
-        askFeeRate = market.ask.fee;
-        bidFeeRate = market.bid.fee;
-      }
-      /* !!! HIGH RISK (start) !!! */
-      // 1. _updateOrderbyTrade
-      // 2. _insertTrades & _insertVoucher
-      // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
-      // 5. _updateOuterTradeStatus
-      // ----------
-      this.logger.log(`outerTrade`, trade);
-      this.logger.log(`memberId`, memberId);
-      this.logger.log(`orderId`, orderId);
-      this.logger.log(`askFeeRate`, askFeeRate);
-      this.logger.log(`bidFeeRate`, bidFeeRate);
-      try {
+        /* !!! HIGH RISK (start) !!! */
         // 1. _updateOrderbyTrade
-        resultOnOrderUpdate = await this._updateOrderbyTrade({
+        // 2. _insertTrades & _insertVoucher
+        // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
+        // 5. _updateOuterTradeStatus
+        // ----------
+        this.logger.log(`outerTrade`, trade);
+        this.logger.log(`memberId`, memberId);
+        this.logger.log(`orderId`, orderId);
+        this.logger.log(`askFeeRate`, askFeeRate);
+        this.logger.log(`bidFeeRate`, bidFeeRate);
+        try {
+          // 1. _updateOrderbyTrade
+          resultOnOrderUpdate = await this._updateOrderbyTrade({
+            memberId,
+            orderId,
+            trade,
+            market,
+            dbTransaction: t,
+          });
+          order = resultOnOrderUpdate?.order;
+          updateOrder = resultOnOrderUpdate?.updateOrder;
+          // if this order is in this environment
+          if (order) {
+            // 2. _insertTrades & _insertVouchers
+            newTrade = await this._insertTradesRecord({
+              memberId,
+              askFeeRate,
+              bidFeeRate,
+              orderId,
+              market,
+              trade,
+              dbTransaction: t,
+            });
+            // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
+            // if this trade does need update
+            if (newTrade) {
+              if (trade.side === "buy")
+                resultOnAccUpdate = await this._updateAccByBidTrade({
+                  memberId,
+                  bidFeeRate,
+                  market,
+                  order: updateOrder,
+                  askCurr: order.ask,
+                  bidCurr: order.bid,
+                  trade: { ...trade, id: newTrade.id },
+                  dbTransaction: t,
+                });
+              else
+                resultOnAccUpdate = await this._updateAccByAskTrade({
+                  memberId,
+                  askFeeRate,
+                  market,
+                  askCurr: order.ask,
+                  bidCurr: order.bid,
+                  trade: { ...trade, id: newTrade.id },
+                  dbTransaction: t,
+                });
+              updateAskAccount = resultOnAccUpdate.updateAskAccount;
+              updateBidAccount = resultOnAccUpdate.updateBidAccount;
+            }
+            /**
+             * ++ TODO，要開票
+             * 1. 記錄 tidebit 要付給 okex 的 手續費 或是 tidebit 從 okex 收到的 手續費
+             * 2. 根據 member 的推薦人發送獎勵 （抽成比例由 DB 裡面記錄 member 的方案來確認 (
+             *     referral_commissions
+             *     commission_plans
+             *     commission_policies)
+             *    ）
+             */
+            // 4. _updateOuterTradeStatus
+            await this._updateOuterTradeStatus({
+              id: trade.tradeId,
+              status: this.database.OUTERTRADE_STATUS.DONE,
+              update_at: `"${new Date()
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}"`,
+              dbTransaction: t,
+            });
+            await t.commit();
+          } else {
+            await this._updateOuterTradeStatus({
+              id: trade.tradeId,
+              status: this.database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+              update_at: `"${new Date()
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}"`,
+              dbTransaction: t,
+            });
+            await t.commit();
+          }
+        } catch (error) {
+          this.logger.error(`_processOuterTrade`, error);
+          await t.rollback();
+        }
+        this.logger.log(
+          `------------- [${this.constructor.name}] _processOuterTrade [END] -------------`
+        );
+        result = {
           memberId,
-          orderId,
-          trade,
-          market,
+          instId: trade.instId,
+          market: market.id,
+          updateOrder,
+          newTrade,
+          updateAskAccount,
+          updateBidAccount,
+        };
+      } else {
+        await this._updateOuterTradeStatus({
+          id: trade.tradeId,
+          status: this.database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+          update_at: `"${new Date()
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}"`,
           dbTransaction: t,
         });
-        order = resultOnOrderUpdate?.order;
-        updateOrder = resultOnOrderUpdate?.updateOrder;
-        // if this order is in this environment
-        if (order) {
-          // 2. _insertTrades & _insertVouchers
-          newTrade = await this._insertTradesRecord({
-            memberId,
-            askFeeRate,
-            bidFeeRate,
-            orderId,
-            market,
-            trade,
-            dbTransaction: t,
-          });
-          // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
-          // if this trade does need update
-          if (newTrade) {
-            if (trade.side === "buy")
-              resultOnAccUpdate = await this._updateAccByBidTrade({
-                memberId,
-                bidFeeRate,
-                market,
-                order: updateOrder,
-                askCurr: order.ask,
-                bidCurr: order.bid,
-                trade: { ...trade, id: newTrade.id },
-                dbTransaction: t,
-              });
-            else
-              resultOnAccUpdate = await this._updateAccByAskTrade({
-                memberId,
-                askFeeRate,
-                market,
-                askCurr: order.ask,
-                bidCurr: order.bid,
-                trade: { ...trade, id: newTrade.id },
-                dbTransaction: t,
-              });
-            updateAskAccount = resultOnAccUpdate.updateAskAccount;
-            updateBidAccount = resultOnAccUpdate.updateBidAccount;
-          }
-          /**
-           * ++ TODO，要開票
-           * 1. 記錄 tidebit 要付給 okex 的 手續費 或是 tidebit 從 okex 收到的 手續費
-           * 2. 根據 member 的推薦人發送獎勵 （抽成比例由 DB 裡面記錄 member 的方案來確認 (
-           *     referral_commissions
-           *     commission_plans
-           *     commission_policies)
-           *    ）
-           */
-          // 4. _updateOuterTradeStatus
-          await this._updateOuterTradeStatus({
-            id: trade.tradeId,
-            status: this.database.OUTERTRADE_STATUS.DONE,
-            update_at: `"${new Date()
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}"`,
-            dbTransaction: t,
-          });
-          await t.commit();
-        } else {
-          await this._updateOuterTradeStatus({
-            id: trade.tradeId,
-            status: this.database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
-            update_at: `"${new Date()
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}"`,
-            dbTransaction: t,
-          });
-          await t.commit();
-        }
-      } catch (error) {
-        this.logger.error(`_processOuterTrade`, error);
-        await t.rollback();
+        await t.commit();
       }
-      this.logger.log(
-        `------------- [${this.constructor.name}] _processOuterTrade [END] -------------`
-      );
-      result = {
-        memberId,
-        instId: trade.instId,
-        market: market.id,
-        updateOrder,
-        newTrade,
-        updateAskAccount,
-        updateBidAccount,
-      };
     } else {
       await this._updateOuterTradeStatus({
         id: trade.tradeId,
