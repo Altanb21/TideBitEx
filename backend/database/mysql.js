@@ -219,6 +219,12 @@ class mysql {
   }
 
   async getOuterTradesByStatus(exchangeCode, status) {
+    try {
+      await this.createOuterTradesTable();
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
     const query =
       "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`status` = ?;";
     try {
@@ -239,6 +245,12 @@ class mysql {
   }
 
   async getOuterTradesByDayAfter(exchangeCode, day) {
+    try {
+      await this.createOuterTradesTable();
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
     const query =
       "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`update_at` > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);";
     try {
@@ -302,6 +314,12 @@ class mysql {
   }
 
   async getTradeByTradeFk(tradeFk) {
+    try {
+      await this.addTradeFk();
+    } catch (error) {
+      this.logger.error(error);
+      return null;
+    }
     const query = "SELECT * FROM `trades` WHERE `trade_fk` = ?;";
     try {
       this.logger.log("getTradeByTradeFk", query, tradeFk);
