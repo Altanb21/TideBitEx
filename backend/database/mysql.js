@@ -247,12 +247,6 @@ class mysql {
   }
 
   async getOuterTradesByStatus(exchangeCode, status) {
-    try {
-      await this.createOuterTradesTable();
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
     const query =
       "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`status` = ?;";
     try {
@@ -357,12 +351,6 @@ class mysql {
   }
 
   async getTradeByTradeFk(tradeFk) {
-    try {
-      await this.addTradeFk();
-    } catch (error) {
-      this.logger.error(error);
-      return null;
-    }
     const query = "SELECT * FROM `trades` WHERE `trade_fk` = ?;";
     try {
       this.logger.log("getTradeByTradeFk", query, tradeFk);
@@ -535,22 +523,7 @@ class mysql {
     }
   }
 
-  async createOuterTradesTable() {
-    this.logger.log(`------------- createOuterTradesTable -------------`);
-    let query =
-      "CREATE TABLE if not exists `outer_trades` (`id` int(11) NOT NULL DEFAULT '0', `exchange_code` int(11) DEFAULT NULL, `update_at` datetime DEFAULT NULL, `status` tinyint(4) DEFAULT NULL, `data` text, UNIQUE KEY `index_outer_trades_on_id_and_exchange_code` (`id`, `exchange_code`) USING BTREE ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
-    this.logger.log("[mysql] createOuterTradesTable", query);
-    await this.db.query({ query });
-    this.logger.log(`------------- createOuterTradesTable [END] -------------`);
-  }
-
   async insertOuterTrades(trades, { dbTransaction }) {
-    try {
-      await this.createOuterTradesTable();
-    } catch (error) {
-      this.logger.error(error);
-      if (dbTransaction) throw error;
-    }
     let query =
         "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`update_at`,`status`,`data`) VALUES",
       values = [],
@@ -584,27 +557,6 @@ class mysql {
       if (dbTransaction) throw error;
     }
   }
-  async checkIfExistTradeFk() {
-    this.logger.log(`------------- checkIfExistTradeFk -------------`);
-    const query =
-      "SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'trades' AND COLUMN_NAME = 'trade_fk';";
-    const result = await this.db.query({ query });
-    this.logger.log(`result[${result}](${typeof result})`, result > 0);
-    this.logger.log(`------------- checkIfExistTradeFk [END] -------------`);
-    return result > 0;
-  }
-
-  async addTradeFk() {
-    this.logger.log(`------------- addTradeFk -------------`);
-    const isExist = await this.checkIfExistTradeFk();
-    if (!isExist) {
-      this.logger.log(`------------- isExist: ${isExist} -------------`);
-      const query =
-        "ALTER TABLE `trades` ADD COLUMN `trade_fk` int(11) DEFAULT NULL;";
-      await this.db.query({ query });
-    }
-    this.logger.log(`------------- addTradeFk [END] -------------`);
-  }
 
   async insertTrades(
     price,
@@ -621,12 +573,6 @@ class mysql {
     trade_fk,
     { dbTransaction }
   ) {
-    try {
-      await this.addTradeFk();
-    } catch (error) {
-      this.logger.error(error);
-      if (dbTransaction) throw error;
-    }
     let result, tradeId;
     const query =
       "INSERT INTO `trades` (`id`,`price`,`volume`,`ask_id`,`bid_id`,`trend`,`currency`,`created_at`,`updated_at`,`ask_member_id`,`bid_member_id`,`funds`,`trade_fk`)" +

@@ -390,8 +390,8 @@ class ExchangeHub extends Bot {
         { dbTransaction: t }
       );
       this.logger.log(`voucherbyOKExID`, voucherbyOKExID);
-      const vouchers = await this.database.getVouchers(2, "eth", `usdt`, {
-        dbTransaction: t,
+      const vouchers = await this.database.getVouchers( {
+        memberId:2, ask:'eth', bid:'usdt'
       });
       this.logger.log(`vouchers`, vouchers);
       await t.commit();
