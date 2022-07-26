@@ -474,7 +474,20 @@ class mysql {
     }
   }
 
+  async createOuterTradesTable() {
+    let query =
+      "CREATE TABLE if not exists `outer_trades` (`id` int(11) NOT NULL DEFAULT '0', `exchange_code` int(11) DEFAULT NULL, `update_at` datetime DEFAULT NULL, `status` tinyint(4) DEFAULT NULL, `data` text, UNIQUE KEY `index_outer_trades_on_id_and_exchange_code` (`id`, `exchange_code`) USING BTREE ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+    this.logger.log("[mysql] createOuterTradesTable", query);
+    await this.db.query({ query });
+  }
+
   async insertOuterTrades(trades, { dbTransaction }) {
+    try {
+      await this.createOuterTradesTable();
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
     let query =
         "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`update_at`,`status`,`data`) VALUES",
       values = [],
