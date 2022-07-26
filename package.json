@@ -1,6 +1,6 @@
 {
   "name": "tidebitex",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "private": true,
   "dependencies": {
     "@koa/cors": "^3.1.0",
@@ -56,7 +56,8 @@
     "debug": "react-scripts start",
     "build": "react-scripts --max_old_space_size=4096 build && mv build/index.html build/market.html",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dbmigrate": "bin/dbmigrate.js"
   },
   "eslintConfig": {
     "extends": [

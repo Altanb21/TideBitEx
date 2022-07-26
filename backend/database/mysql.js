@@ -166,6 +166,7 @@ class mysql {
       return [];
     }
   }
+
   async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
     const query =
       "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ? AND `orders`.`ord_type` = ?;";
