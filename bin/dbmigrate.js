@@ -15,6 +15,7 @@ const cfg = path.resolve(__dirname, "../private/config.toml");
     config.database.password,
     {
       dialect: "mysql",
+      host: config.database.host,
       pool: {
         max: 20,
         min: 0,
