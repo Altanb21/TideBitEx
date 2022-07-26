@@ -167,33 +167,6 @@ class mysql {
     }
   }
 
-  async getAccountVersionsByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
-    const query =
-      "SELECT * FROM `account_versions` WHERE `account_versions`.`member_id` = ? AND `account_versions`.`currency` = ?;";
-    try {
-      this.logger.log(
-        "getAccountVersionsByMemberIdCurrency",
-        query,
-        `[${memberId}, ${currencyId}]`
-      );
-      const [[account]] = await this.db.query(
-        {
-          query,
-          values: [memberId, currencyId],
-        },
-        {
-          transaction: dbTransaction,
-          lock: dbTransaction.LOCK.UPDATE,
-        }
-      );
-      return account;
-    } catch (error) {
-      this.logger.log(error);
-      if (dbTransaction) throw error;
-      return [];
-    }
-  }
-
   async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
     const query =
       "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ? AND `orders`.`ord_type` = ?;";
@@ -267,12 +240,6 @@ class mysql {
   }
 
   async getOuterTradesByDayAfter(exchangeCode, day) {
-    try {
-      await this.createOuterTradesTable();
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
     const query =
       "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`update_at` > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);";
     try {
@@ -332,21 +299,6 @@ class mysql {
       this.logger.log(error);
       if (dbTransaction) throw error;
       return [];
-    }
-  }
-
-  async getTradeByAskOrdId(askId) {
-    const query = "SELECT * FROM `trades` WHERE `ask_id` = ?;";
-    try {
-      this.logger.log("getTradeByAskOrdId", query, askId);
-      const [[trade]] = await this.db.query({
-        query,
-        values: [askId],
-      });
-      return trade;
-    } catch (error) {
-      this.logger.log(error);
-      return null;
     }
   }
 

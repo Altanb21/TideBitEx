@@ -106,12 +106,6 @@ class DBOperator {
     });
   }
 
-  async getAccountVersionsByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
-    return this.database.getAccountVersionsByMemberIdCurrency(memberId, currencyId, {
-      dbTransaction,
-    });
-  }
-
   async getOrderList({ quoteCcy, baseCcy, state, memberId, orderType }) {
     return this.database.getOrderList({
       quoteCcy,
@@ -140,10 +134,6 @@ class DBOperator {
 
   async getTradeByTradeFk(tradeFk) {
     return this.database.getTradeByTradeFk(tradeFk);
-  }
-
-  async getTradeByAskOrdId(tradeFk) {
-    return this.database.getTradeByAskOrdId(tradeFk);
   }
 
   async getOuterTradesByStatus(exchangeCode, status) {
