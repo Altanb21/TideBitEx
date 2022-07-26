@@ -172,7 +172,7 @@ class mysql {
       "SELECT * FROM `account_versions` WHERE `account_versions`.`member_id` = ? AND `account_versions`.`currency` = ?;";
     try {
       this.logger.log(
-        "getAccountByMemberIdCurrency",
+        "getAccountVersionsByMemberIdCurrency",
         query,
         `[${memberId}, ${currencyId}]`
       );

@@ -9,4 +9,4 @@ UNIQUE KEY `index_outer_trades_on_id_and_exchange_code` (`id`, `exchange_code`)
 USING BTREE) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 
 -- add trade_fk column to trades table
-ALTER TABLE `trades` ADD `trade_fk` int(11) DEFAULT NULL '0';
+ALTER TABLE `trades` ADD `trade_fk` int(11) DEFAULT NULL;
