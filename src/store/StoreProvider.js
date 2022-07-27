@@ -4,6 +4,7 @@ import { useSnackbar } from "notistack";
 import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
+import { wait } from "../utils/Utils";
 
 let interval,
   accountInterval = 500,
@@ -281,9 +282,11 @@ const StoreProvider = (props) => {
   }, []);
 
   // ++ TODO1: verify function works properly
-  const sync = useCallback(() => {
-    // console.log(`sync`);
+  const sync = useCallback(async () => {
+    // const startTime = performance.now();
     const time = Date.now();
+    // console.log(`sync time`,time);
+    // console.time('UniquetLabelName')
 
     if (time - accountTs > accountInterval) {
       const accounts = middleman.getAccounts();
@@ -314,6 +317,11 @@ const StoreProvider = (props) => {
       setPendingOrders(orders.pendingOrders);
       setCloseOrders(orders.closedOrders);
     }
+    // const duration = performance.now() - startTime;
+    // console.log(`someMethodIThinkMightBeSlow took ${duration}ms`);
+    // console.timeEnd('UniqueLabelName')
+    await wait(500);
+    sync();
   }, [middleman]);
 
   const start = useCallback(async () => {
@@ -326,6 +334,7 @@ const StoreProvider = (props) => {
         pathname: `/markets/${market}`,
       });
       await middleman.start(market);
+      await middleman.sync();
     }
   }, [history, location.pathname, middleman]);
 

@@ -6,7 +6,6 @@ import Layout from "../components/Layout";
 import StoreContext from "../store/store-context";
 import { useLocation } from "react-router-dom";
 
-let interval;
 const Exchange = () => {
   const storeCtx = useContext(StoreContext);
   const location = useLocation();
@@ -19,8 +18,7 @@ const Exchange = () => {
       if (!isStart) {
         window.storeCtx = storeCtx;
         storeCtx.start();
-        clearInterval(interval);
-        interval = setInterval(storeCtx.sync, 300);
+        storeCtx.sync();
         setIsStart(true);
       }
     }

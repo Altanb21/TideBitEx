@@ -487,6 +487,7 @@ class ExchangeHubService {
     this.logger.log(
       `------------- [${this.constructor.name}] _insertVouchers -------------`
     );
+    this.logger.log(`insertVouchers trade`, trade);
     /* !!! HIGH RISK (start) !!! */
     // 1. insert Vouchers to DB
     let result,
@@ -519,7 +520,7 @@ class ExchangeHubService {
           ? SafeMath.mult(SafeMath.mult(trade.fillPx, trade.fillSz), askFeeRate)
           : "0", //ask_fee
         trade.side === "buy" ? SafeMath.mult(trade.fillSz, bidFeeRate) : "0", //bid_fee
-        trade.ts,
+        new Date(parseInt(trade.ts)).toISOString(),
         { dbTransaction }
       );
     } catch (error) {

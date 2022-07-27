@@ -5,7 +5,7 @@ import HTTPAgent from "../utils/HTTPAgent";
 
 // retry
 class Communicator {
-  constructor({userId}) {
+  constructor({ userId }) {
     this._userId = userId;
     this.httpAgent = new HTTPAgent({
       userId,
@@ -132,15 +132,18 @@ class Communicator {
   }
 
   // Market
-  async getDepthBooks(id, sz = 30) {
+  async getDepthBooks({ market, sz, lotSz }) {
+    if (!sz) sz = 50;
     try {
-      if (!id) return { message: "id cannot be null" };
+      if (!market) return { message: "market cannot be null" };
       // const res = await this._get(
       //   `/market/books?id=${id}${sz ? `&sz=${sz}` : ""}`
       // );
       const res = await this._request({
         method: "GET",
-        url: `/market/books?id=${id}${sz ? `&sz=${sz}` : ""}`,
+        url: `/market/books?market=${market}${sz ? `&sz=${sz}` : ""}${
+          lotSz ? `&lotSz=${lotSz}` : ""
+        }`,
       });
       if (res.success) {
         return res.data;
@@ -152,15 +155,18 @@ class Communicator {
   }
 
   // Market
-  async getTrades(id, limit) {
+  async getTrades({ market, limit, lotSz }) {
+    if (!limit) limit = 100;
     try {
-      if (!id) return { message: "id cannot be null" };
+      if (!market) return { message: "id cannot be null" };
       // const res = await this._get(
       //   `/market/trades?id=${id}${limit ? `&limit=${limit}` : ""}`
       // );
       const res = await this._request({
         method: "GET",
-        url: `/market/trades?id=${id}${limit ? `&limit=${limit}` : ""}`,
+        url: `/market/trades?market=${market}${limit ? `&limit=${limit}` : ""}${
+          lotSz ? `&lotSz=${lotSz}` : ""
+        }`,
       });
       if (res.success) {
         return res.data;

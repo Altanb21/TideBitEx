@@ -8,6 +8,7 @@ import TideBitWS from "../libs/TideBitWS";
 import Communicator from "./Communicator";
 import Pusher from "pusher-js";
 import { randomID } from "dvalue";
+import { wait } from "../utils/Utils";
 
 class Middleman {
   _userId;
@@ -142,10 +143,10 @@ class Middleman {
     return this.tradeBook.getSnapshot(market, lotSz);
   }
 
-  async _getTrades(id, limit) {
+  async _getTrades({ market, limit, lotSz }) {
     try {
-      const trades = await this.communicator.getTrades(id, limit);
-      this.tradeBook.updateAll(id, trades);
+      const trades = await this.communicator.getTrades({ market, limit, lotSz });
+      this.tradeBook.updateAll(market, trades);
     } catch (error) {
       console.error(`_getTrades error`, error);
       // throw error;
@@ -159,10 +160,10 @@ class Middleman {
     return this.depthBook.getSnapshot(market, lotSz);
   }
 
-  async _getDepthBooks(id, sz) {
+  async _getDepthBooks({ market, sz, lotSz }) {
     try {
-      const depthBook = await this.communicator.getDepthBooks(id, sz);
-      this.depthBook.updateAll(id, depthBook);
+      const depthBook = await this.communicator.getDepthBooks({ market, sz, lotSz });
+      this.depthBook.updateAll(market, depthBook);
     } catch (error) {
       console.error(`_getDepthBooks error`, error);
       // throw error;
@@ -223,12 +224,14 @@ class Middleman {
   }
 
   async selectMarket(market) {
-    this.tbWebSocket.setCurrentMarket(market);
+    let lotSz;
     this.tickerBook.setCurrentMarket(market);
     if (!this.tickerBook.getCurrentTicker()) await this._getTicker(market);
-    this.depthBook.lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
-    await this._getDepthBooks(market);
-    await this._getTrades(market);
+    lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
+    this.depthBook.lotSz = lotSz;
+    this.tbWebSocket.setCurrentMarket(market, lotSz);
+    await this._getDepthBooks({ market, lotSz });
+    await this._getTrades({ market, lotSz });
     // if (this.isLogin) {
     // TODO to verify if user is not login would be a problem
     await this._getOrderList(market);
@@ -320,6 +323,16 @@ class Middleman {
     this._getAccounts(market);
     this._getTickers();
     this.selectMarket(market);
+  }
+
+  async sync() {
+    // --- WORKAROUND---
+    // console.log(`--- WORKAROUND--- sync [START]`);
+    await wait(1 * 60 * 1000);
+    await this.selectMarket(this.tickerBook.getCurrentMarket());
+    // console.log(`--- WORKAROUND--- sync [END]`);
+    this.sync();
+    // --- WORKAROUND---
   }
 
   stop() {

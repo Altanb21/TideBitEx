@@ -37,9 +37,11 @@ class TradeBook extends BookBase {
 
   // ++ TODO: verify function works properly
   _trim(instId, data) {
+    let lotSz = this._markets[instId]["lotSz"] || 0;
     const trimed = data
+      .filter((trade) => trade.volume >= lotSz)
       .sort((a, b) => +b.at - +a.at)
-      .slice(0, 100)
+      .slice(0, 50)
       .map((trade, i) =>
         !trade.side
           ? {
@@ -65,7 +67,8 @@ class TradeBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Difference} difference
    */
-  updateByDifference(instId, difference) {
+  updateByDifference(instId, lotSz, difference) {
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     // this.logger.debug(
     //   `[${this.constructor.name}]updateByDifference`,
     //   instId,
@@ -77,26 +80,14 @@ class TradeBook extends BookBase {
     return super.updateByDifference(instId, difference);
   }
 
-  /**
-   * @param {String} instId BTC-USDT
-   * @param {Array<Order>} data
-   */
-  // updateAll(instId, data) {
-  //   try {
-  //     this.logger.log(`[${this.constructor.name}] updateAll[${instId}]`);
-  //     super.updateAll(instId, data);
-
-  //     this._snapshot[instId] = this._trim(instId, this._snapshot[instId]);
-  //     // this._difference[instId] = difference;
-  //     this.logger.log(
-  //       `[${this.constructor.name}] updateAll[${instId}]`,
-  //       this._snapshot[instId]
-  //     );
-  //     return true;
-  //   } catch (error) {
-  //     return false;
-  //   }
-  // }
+  // /**
+  //  * @param {String} instId BTC-USDT
+  //  * @param {Array<Order>} data
+  //  */
+  updateAll(instId, lotSz, data) {
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
+    return super.updateAll(instId, data)
+  }
 }
 
 module.exports = TradeBook;

@@ -9,7 +9,7 @@ import { ThemeConsumer } from "../context/ThemeContext";
 
 const DesktopExchange = (props) => {
   return (
-    <main className="main" data-version="20220708">
+    <main className="main">
       <SelectedTicker />
       <section className="section">
         <div className="section__container">
