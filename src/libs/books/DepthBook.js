@@ -17,75 +17,27 @@ class DepthBook extends BookBase {
 
   getSnapshot(market, lotSz) {
     try {
-      let sumAskAmount = "0",
-        sumBidAmount = "0",
-        length,
-        asks = [],
+      let asks = [],
         bids = [];
       if (!this._snapshot[market]) this._snapshot[market] = [];
-      this._snapshot[market]?.forEach((data) => {
-        // ++ WORKAROUND TODO: enhance performance
-        // if (
-        //   this._difference[market].update.some((d) =>
-        //     this._compareFunction(d, data)
-        //   )
-        // )
-        // data = { ...data, update: true };
+      for (let data of this._snapshot[market]) {
         if (data.side === "asks") {
           asks.push(data);
         }
         if (data.side === "bids") {
           bids.push(data);
         }
-      });
-      length =
-      asks.length > 40 && bids.length > 40
-        ? Math.min(asks.length, bids.length, 50)
-        : 50;
+      }
       return {
         market,
-        asks: asks
-          .filter((book) => book.amount >= lotSz)
-          .sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
-          .slice(0, length)
-          .map((ask) => {
-            sumAskAmount = SafeMath.plus(ask.amount, sumAskAmount);
-            return { ...ask, total: sumAskAmount };
-          }),
-        bids: bids
-          .filter((book) => book.amount >= lotSz)
-          .sort((a, b) => parseFloat(b.price) - parseFloat(a.price))
-          .slice(0, length)
-          .map((bid) => {
-            sumBidAmount = SafeMath.plus(bid.amount, sumBidAmount);
-            return { ...bid, total: sumBidAmount };
-          }),
-        total: SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0"),
+        asks,
+        bids,
       };
     } catch (error) {
       console.error(`[DepthBook getSnapshot]`, error);
       return false;
     }
   }
-
-  // _trim(data) {
-  //   let asks = [],
-  //     bids = [];
-  //   data.forEach((d) => {
-  //     asks.push(d);
-  //     bids.push(d);
-  //   });
-  //   asks = asks
-  //     .filter((book) => (this._lotSz ? book.amount > this._lotSz : true))
-  //     .sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
-  //   bids = bids
-  //     .filter((book) => (this._lotSz ? book.amount > this._lotSz : true))
-  //     .sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
-  //   let length = Math.min(asks.length, bids.length, 50);
-  //   asks = asks.slice(0, length);
-  //   bids = bids.slice(0, length);
-  //   return bids.concat(asks);
-  // }
 
   // ++ TODO: verify function works properly
   _calculateDifference(arrayA, arrayB) {
@@ -126,6 +78,7 @@ class DepthBook extends BookBase {
         price: ask[0],
         amount: ask[1],
         side: "asks",
+        total: ask[2],
       });
     });
     bookObj.bids?.forEach((bid) => {
@@ -133,6 +86,7 @@ class DepthBook extends BookBase {
         price: bid[0],
         amount: bid[1],
         side: "bids",
+        total: bid[2],
       });
     });
     return bookArr;

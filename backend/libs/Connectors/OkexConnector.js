@@ -532,7 +532,7 @@ class OkexConnector extends ConnectorBase {
   async getDepthBooks({ query }) {
     const method = "GET";
     const path = "/api/v5/market/books";
-    const { instId, sz } = query;
+    const { instId, sz, lotSz } = query;
 
     const arr = [];
     if (instId) arr.push(`instId=${instId}`);
@@ -567,7 +567,7 @@ class OkexConnector extends ConnectorBase {
         // this.logger.log(
         //   `----------- [API][RES](${instId}) [END] ----------------`
         // );
-        this.depthBook.updateAll(instId, data);
+        this.depthBook.updateAll(instId, lotSz, data);
       } catch (error) {
         this.logger.error(error);
         let message = error.message;
@@ -772,7 +772,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   async getTrades({ query }) {
-    const { instId, limit } = query;
+    const { instId, limit ,lotSz} = query;
     // this.logger.log(
     //   `[${this.constructor.name}] getTrades this.fetchedTrades[${instId}]`,
     //   this.fetchedTrades[instId]
@@ -807,7 +807,7 @@ class OkexConnector extends ConnectorBase {
         //   `[${this.constructor.name}] getTrades trades[${instId}]`,
         //   trades
         // );
-        this.tradeBook.updateAll(instId, trades);
+        this.tradeBook.updateAll(instId, lotSz, trades);
         this.fetchedTrades[instId] = true;
       } catch (error) {
         this.logger.error(error);
@@ -1397,23 +1397,21 @@ class OkexConnector extends ConnectorBase {
   // okex ws
   _okexWsEventListener() {
     this.websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      let instId, arg, channel, values, data;
+      data = JSON.parse(event.data);
       if (data.event) {
         // subscribe return
-        const arg = { ...data.arg };
-        const channel = arg.channel;
+        arg = { ...data.arg };
+        channel = arg.channel;
         delete arg.channel;
-        const values = Object.values(arg);
+        values = Object.values(arg);
         if (data.event === "subscribe") {
           this.okexWsChannels[channel] = this.okexWsChannels[channel] || {};
-          // this.logger.log(
-          //   `_okexWsEventListener this.okexWsChannels[${channel}]`,
-          //   this.okexWsChannels[channel]
-          // );
-          this.okexWsChannels[channel][values[0]] =
-            this.okexWsChannels[channel][values[0]] || {};
+          instId = values[0];
+          this.okexWsChannels[channel][instId] =
+            this.okexWsChannels[channel][instId] || {};
         } else if (data.event === "unsubscribe") {
-          delete this.okexWsChannels[channel][values[0]];
+          delete this.okexWsChannels[channel][instId];
           // ++ TODO ws onClose clean channel
           if (!Object.keys(this.okexWsChannels[channel]).length) {
             delete this.okexWsChannels[channel];
@@ -1423,25 +1421,25 @@ class OkexConnector extends ConnectorBase {
         }
       } else if (data.data) {
         // okex server push data
-        const arg = { ...data.arg };
-        const channel = arg.channel;
+        arg = { ...data.arg };
+        channel = arg.channel;
         delete arg.channel;
-        const values = Object.values(arg);
+        values = Object.values(arg);
         switch (channel) {
           case "instruments":
-            this._updateInstruments(values[0], data.data);
+            // this._updateInstruments(instId, data.data);
             break;
           case "trades":
-            this._updateTrades(values[0], data.data);
+            this._updateTrades(instId, data.data);
             break;
           case "books":
             if (data.action === "update") {
               // there has 2 action, snapshot: full data; update: incremental data.
-              this._updateBooks(values[0], data.data);
+              this._updateBooks(instId, data.data);
             }
             break;
           case this.candleChannel:
-            this._updateCandle(data.arg.instId, data.arg.channel, data.data);
+            // this._updateCandle(data.arg.instId, data.arg.channel, data.data);
             break;
           case "tickers":
             this._updateTickers(data.data);
@@ -1452,7 +1450,8 @@ class OkexConnector extends ConnectorBase {
       this.websocket.heartbeat();
     };
     this.websocketPrivate.onmessage = (event) => {
-      const data = JSON.parse(event.data);
+      let instId, arg, channel, values, data;
+      data = JSON.parse(event.data);
       if (data.event) {
         // subscribe return
         if (data.event === "login") {
@@ -1469,13 +1468,14 @@ class OkexConnector extends ConnectorBase {
         }
       } else if (data.data) {
         // okex server push data
-        const arg = { ...data.arg };
-        const channel = arg.channel;
+        arg = { ...data.arg };
+        channel = arg.channel;
         delete arg.channel;
-        const values = Object.values(arg);
+        values = Object.values(arg);
+        instId = values[0];
         switch (channel) {
           case "orders":
-            this._updateOrderDetails(values[0], data.data);
+            this._updateOrderDetails(instId, data.data);
             break;
           default:
         }
@@ -1508,10 +1508,10 @@ class OkexConnector extends ConnectorBase {
   }
 
   /**
- * _updateOrderDetails
- * @param {*} instType 
- * @param {*} orderData 
- */
+   * _updateOrderDetails
+   * @param {*} instType
+   * @param {*} orderData
+   */
   _updateOrderDetails(instType, orderData) {
     const formatOrders = [];
     this.logger.log(`-------------- _updateOrderDetails ---------------`);
@@ -1557,10 +1557,11 @@ class OkexConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   async _updateTrades(instId, trades) {
     try {
+      const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
       const market = instId.replace("-", "").toLowerCase();
       const newTrades = this._formateTrades(market, trades);
       // this.logger.debug(`[${this.constructor.name}]_updateTrades`, newTrades);
-      this.tradeBook.updateByDifference(instId, {
+      this.tradeBook.updateByDifference(instId, lotSz, {
         add: newTrades,
       });
       EventBus.emit(Events.trades, market, {
@@ -1574,6 +1575,7 @@ class OkexConnector extends ConnectorBase {
   _updateBooks(instId, data) {
     const [updateBooks] = data;
     const market = instId.replace("-", "").toLowerCase();
+    const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
     // this.logger.log(
     //   `[FROM][OKEx][WS] _updateBooks data`,
     //   updateBooks
@@ -1583,7 +1585,7 @@ class OkexConnector extends ConnectorBase {
     //   updateBooks.bids
     // );
     try {
-      this.depthBook.updateByDifference(instId, updateBooks);
+      this.depthBook.updateByDifference(instId,lotSz, updateBooks);
     } catch (error) {
       // ++
       this.logger.error(`_updateBooks`, error);
@@ -1604,7 +1606,11 @@ class OkexConnector extends ConnectorBase {
     //   this.depthBook.getSnapshot(instId)
     // );
 
-    EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
+    EventBus.emit(
+      Events.update,
+      market,
+      this.depthBook.getSnapshot(instId)
+    );
   }
 
   _updateCandle(instId, channel, candleData) {
@@ -1764,10 +1770,16 @@ class OkexConnector extends ConnectorBase {
   }
 
   _subscribeTickers(instIds) {
-    const args = instIds.map((instId) => ({
-      channel: "tickers",
-      instId,
-    }));
+    const channel = "tickers";
+    const args = instIds.map((instId) => {
+      if (!this.okexWsChannels[channel]) this.okexWsChannels[channel] = {};
+      if (!this.okexWsChannels[channel][instId])
+        this.okexWsChannels[channel][instId] = {};
+      return {
+        channel,
+        instId,
+      };
+    });
     this.logger.debug(`[${this.constructor.name}]_subscribeTickers`, args);
     this.websocket.ws.send(
       JSON.stringify({
@@ -1866,17 +1878,19 @@ class OkexConnector extends ConnectorBase {
   // okex ws end
 
   // TideBitEx ws
-  _subscribeMarket(market, wsId) {
+  _subscribeMarket(market, wsId, lotSz) {
     const instId = this._findInstId(market);
     if (this._findSource(instId) === SupportedExchange.OKEX) {
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [START] ++++++`
       );
-      this.logger.log(`_subscribeMarket instId`, instId);
-      this.logger.log(`_subscribeMarket market`, market);
+      this.logger.log(`instId`, instId);
+      this.logger.log(`market`, market);
+      this.logger.log(`lotSz`, lotSz);
       this._subscribeTrades(instId);
       this._subscribeBook(instId);
-      this._subscribeCandle1m(instId);
+      this.okexWsChannels["tickers"][instId]["lotSz"] = lotSz;
+      // this._subscribeCandle1m(instId);
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [END] ++++++`
       );
@@ -1893,7 +1907,7 @@ class OkexConnector extends ConnectorBase {
       this.logger.log(`_unsubscribeMarket instId`, instId);
       this._unsubscribeTrades(instId);
       this._unsubscribeBook(instId);
-      this._unsubscribeCandle1m(instId);
+      // this._unsubscribeCandle1m(instId);
       this.logger.log(
         `---------- [${this.constructor.name}]  _unsubscribeMarket [END] ----------`
       );

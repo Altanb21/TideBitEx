@@ -36,21 +36,48 @@ class DepthBook extends BookBase {
   //   return super._calculateDiffence(arrayA, arrayB);
   // }
 
+  _trim(instId, data) {
+    let lotSz = this._markets[instId],
+      asks = [],
+      bids = [];
+    data.forEach((d) => {
+      if (d.side === "asks") {
+        asks.push([d.price, d.amount]);
+      }
+      if (d.side === "bids") {
+        bids.push([d.price, d.amount]);
+      }
+    });
+    asks = asks
+      .filter((book) => book.amount >= lotSz)
+      .sort((a, b) => +a.price - +b.price)
+      .slice(0, 50);
+    bids = bids
+      .filter((book) => book.amount >= lotSz)
+      .sort((a, b) => +b.price - +a.price)
+      .slice(0, 50);
+    return asks.concat(bids);
+  }
+
   // !!!! IMPORTANT 要遵守 tideLegacy 的資料格式
   getSnapshot(instId) {
     let market = instId.replace("-", "").toLowerCase(),
+      sumAskAmount = "0",
+      sumBidAmount = "0",
       asks = [],
       bids = [];
-    this._snapshot[instId].forEach((data) => {
+    for (let data of this._snapshot[instId]) {
       if (data.side === "asks") {
-        asks.push([data.price, data.amount]);
+        sumAskAmount = SafeMath.plus(data.amount, sumAskAmount);
+        asks.push([data.price, data.amount, sumAskAmount]);
       }
       if (data.side === "bids") {
-        bids.push([data.price, data.amount]);
+        sumBidAmount = SafeMath.plus(data.amount, sumBidAmount);
+        asks.push([data.price, data.amount, sumBidAmount]);
       }
-    });
-    asks = asks.sort((a, b) => +a.price - +b.price).slice(0, 100);
-    bids = bids.sort((a, b) => +b.price - +a.price).slice(0, 100);
+    }
+    this.logger.log(`asks.length`, asks.length);
+    this.logger.log(`bids.length`, bids.length);
     return {
       market,
       asks,
@@ -141,7 +168,8 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Difference} difference
    */
-  updateByDifference(instId, data) {
+  updateByDifference(instId, lotSz, data) {
+    if (!this._markets[instId]) this._markets[instId] = lotSz;
     try {
       const result = this._getDifference(
         [...this._snapshot[instId]],
@@ -160,7 +188,8 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Array<Depth>} data
    */
-  updateAll(instId, data) {
+  updateAll(instId, lotSz, data) {
+    if (!this._markets[instId]) this._markets[instId] = lotSz;
     return super.updateAll(instId, this._formateBooks(data));
   }
 }

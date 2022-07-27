@@ -393,7 +393,7 @@ class TibeBitConnector extends ConnectorBase {
 
   // ++ TODO: verify function works properly
   async getDepthBooks({ query }) {
-    const { instId, id: market } = query;
+    const { instId, market, lotSz } = query;
     if (!this.fetchedBook[instId]) {
       try {
         const tbBooksRes = await axios.get(
@@ -455,7 +455,7 @@ class TibeBitConnector extends ConnectorBase {
         // this.logger.log(
         //   `---------- [${this.constructor.name}]  DepthBook market: ${market} [END] ----------`
         // );
-        this.depthBook.updateAll(instId, books);
+        this.depthBook.updateAll(instId, lotSz, books);
       } catch (error) {
         this.logger.error(error);
         const message = error.message;
@@ -473,6 +473,7 @@ class TibeBitConnector extends ConnectorBase {
 
   // ++ TODO: verify function works properly
   _updateBooks(market, updateBooks) {
+    const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
     // this.logger.log(
     //   `---------- [${this.constructor.name}]  received books update data ----------`
     // );
@@ -499,7 +500,7 @@ class TibeBitConnector extends ConnectorBase {
     }
     */
     const instId = this._findInstId(market);
-    this.depthBook.updateAll(instId, updateBooks);
+    this.depthBook.updateAll(instId, lotSz, updateBooks);
     // this.logger.log(
     //   `[TO FRONTEND] market[${market}] new books`,
     //   this.depthBook.getSnapshot(instId)
@@ -526,7 +527,7 @@ class TibeBitConnector extends ConnectorBase {
     */
   async getTrades({ query }) {
     this.logger.log(`getTrades query`, query);
-    const { instId, id: market } = query;
+    const { instId, market, lotSz } = query;
     if (!this.fetchedTrades[instId]) {
       try {
         const tbTradesRes = await axios.get(
@@ -540,6 +541,7 @@ class TibeBitConnector extends ConnectorBase {
         }
         this.tradeBook.updateAll(
           instId,
+          lotSz,
           tbTradesRes.data.map((d) => ({
             ...d,
             ts: parseInt(SafeMath.mult(d.at, "1000")),
@@ -568,15 +570,17 @@ class TibeBitConnector extends ConnectorBase {
     );
     this.logger.log(`[FROM TideBit: ${memberId}] newTrade`, newTrade);
     /**  {
-    at: 1649675739
-    id: 6
-    kind: "ask"
-    market: "ethhkd"
-    price: "105.0"
-    volume: "0.1"
-    }*/
+       at: 1649675739
+       id: 6
+       kind: "ask"
+       market: "ethhkd"
+       price: "105.0"
+       volume: "0.1"
+      }*/
+    const lotSz =
+      this.market_channel[`market-${newTrade.market}-global`]["lotSz"];
     const instId = this._findInstId(newTrade.market);
-    this.tradeBook.updateByDifference(instId, {
+    this.tradeBook.updateByDifference(instId, lotSz, {
       add: [{ ...newTrade, ts: parseInt(SafeMath.mult(newTrade.at, "1000")) }],
     });
     EventBus.emit(Events.trade, memberId, newTrade.market, {
@@ -602,6 +606,7 @@ class TibeBitConnector extends ConnectorBase {
 
   // ++ TODO: verify function works properly
   _updateTrades(market, data) {
+    const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
     this.logger.log(
       `---------- [${this.constructor.name}]  _updateTrades [START] ----------`
     );
@@ -620,7 +625,7 @@ class TibeBitConnector extends ConnectorBase {
     }
     */
     const instId = this._findInstId(market);
-    this.tradeBook.updateByDifference(instId, {
+    this.tradeBook.updateByDifference(instId, lotSz, {
       add: data.trades.map((trade) => this._formateTrade(market, trade)),
     });
 
@@ -1219,7 +1224,7 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
-  _registerMarketChannel(market, wsId) {
+  _registerMarketChannel(market, wsId, lotSz) {
     if (!this.market_channel[`market-${market}-global`]) {
       try {
         this.market_channel[`market-${market}-global`] = {};
@@ -1245,6 +1250,7 @@ class TibeBitConnector extends ConnectorBase {
           })
         );
         this.market_channel[`market-${market}-global`]["listener"] = [wsId];
+        this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
       } catch (error) {
         this.logger.error(`_registerMarketChannel error`, error);
         throw error;
@@ -1509,7 +1515,7 @@ class TibeBitConnector extends ConnectorBase {
     );
   }
 
-  _subscribeMarket(market, wsId) {
+  _subscribeMarket(market, wsId, lotSz) {
     if (
       this._findSource(this._findInstId(market)) === SupportedExchange.TIDEBIT
     ) {
@@ -1520,9 +1526,14 @@ class TibeBitConnector extends ConnectorBase {
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [START] ++++++`
       );
-      this.logger.log(`_subscribeMarket market, wsId`, market, wsId);
+      this.logger.log(
+        `_subscribeMarket market, wsId, lotSz`,
+        market,
+        wsId,
+        lotSz
+      );
       if (!this.isStart) this._startPusher();
-      this._registerMarketChannel(market, wsId);
+      this._registerMarketChannel(market, wsId, lotSz);
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [END] ++++++`
       );

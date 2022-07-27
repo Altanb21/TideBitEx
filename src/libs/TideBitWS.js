@@ -23,13 +23,14 @@ class TideBitWS {
     );
   }
 
-  setCurrentMarket(market) {
+  setCurrentMarket(market, lotSz) {
     this.currentMarket = market;
     this.send(
       JSON.stringify({
         op: "switchMarket",
         args: {
           market,
+          lotSz
         },
       })
     );
