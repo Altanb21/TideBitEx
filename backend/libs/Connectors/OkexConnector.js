@@ -1405,9 +1405,9 @@ class OkexConnector extends ConnectorBase {
         channel = arg.channel;
         delete arg.channel;
         values = Object.values(arg);
+        instId = values[0];
         if (data.event === "subscribe") {
           this.okexWsChannels[channel] = this.okexWsChannels[channel] || {};
-          instId = values[0];
           this.okexWsChannels[channel][instId] =
             this.okexWsChannels[channel][instId] || {};
         } else if (data.event === "unsubscribe") {
@@ -1425,6 +1425,7 @@ class OkexConnector extends ConnectorBase {
         channel = arg.channel;
         delete arg.channel;
         values = Object.values(arg);
+        instId = values[0];
         switch (channel) {
           case "instruments":
             // this._updateInstruments(instId, data.data);

@@ -589,7 +589,7 @@ class ExchangeHub extends Bot {
 
   async getDepthBooks({ query }) {
     this.logger.log(`[${this.constructor.name}] getDepthBooks`, query);
-    const instId = this._findInstId(query.id);
+    const instId = this._findInstId(query.market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getDepthBooks", {
@@ -666,7 +666,7 @@ class ExchangeHub extends Bot {
   }
 
   async getTrades({ query }) {
-    const instId = this._findInstId(query.id);
+    const instId = this._findInstId(query.market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTrades", {
