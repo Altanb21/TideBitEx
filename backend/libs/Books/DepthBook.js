@@ -65,7 +65,8 @@ class DepthBook extends BookBase {
       sumAskAmount = "0",
       sumBidAmount = "0",
       asks = [],
-      bids = [];
+      bids = [],
+      total;
     for (let data of this._snapshot[instId]) {
       if (data.side === "asks") {
         sumAskAmount = SafeMath.plus(data.amount, sumAskAmount);
@@ -76,12 +77,17 @@ class DepthBook extends BookBase {
         bids.push([data.price, data.amount, sumBidAmount]);
       }
     }
+    total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
+    asks.map((ask) => [...ask, SafeMath.div(ask[2], total)]);
+    bids.map((bid) => [...bid, SafeMath.div(bid[2], total)]);
+
     this.logger.log(`asks.length`, asks.length);
     this.logger.log(`bids.length`, bids.length);
     return {
       market,
       asks,
       bids,
+      total,
     };
   }
 
