@@ -37,7 +37,7 @@ class TradeBook extends BookBase {
 
   // ++ TODO: verify function works properly
   _trim(instId, data) {
-    let lotSz = this._markets[instId];
+    let lotSz = this._markets[instId]["lotSz"] || 0;
     const trimed = data
       .filter((trade) => trade.volume >= lotSz)
       .sort((a, b) => +b.at - +a.at)

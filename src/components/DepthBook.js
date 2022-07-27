@@ -171,7 +171,7 @@ const DepthBook = (props) => {
                 type="bids"
                 book={book}
                 key={`bids-${storeCtx.selectedTicker.instId}-${book.price}`}
-                dataWidth={`${parseFloat(book.depth).toFixed(2)}%`}
+                dataWidth={`${(parseFloat(book.depth) * 100).toFixed(2)}%`}
               />
             ))}
         </ul>
@@ -186,7 +186,7 @@ const DepthBook = (props) => {
                 }}
                 book={book}
                 key={`asks-${storeCtx.selectedTicker.instId}-${book.price}`}
-                dataWidth={`${parseFloat(book.depth).toFixed(2)}%`}
+                dataWidth={`${(parseFloat(book.depth) * 100).toFixed(2)}%`}
               />
             ))}
         </ul>

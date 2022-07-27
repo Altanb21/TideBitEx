@@ -37,7 +37,7 @@ class DepthBook extends BookBase {
   // }
 
   _trim(instId, data) {
-    let lotSz = this._markets[instId]["lotSz"],
+    let lotSz = this._markets[instId]["lotSz"] || 0,
       asks = [],
       bids = [];
     data.forEach((d) => {
@@ -78,11 +78,11 @@ class DepthBook extends BookBase {
       }
     }
     total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
-    asks.map((ask) => [...ask, SafeMath.div(ask[2], total)]);
-    bids.map((bid) => [...bid, SafeMath.div(bid[2], total)]);
+    asks = asks.map((ask) => [...ask, SafeMath.div(ask[2], total)]);
+    bids = bids.map((bid) => [...bid, SafeMath.div(bid[2], total)]);
+    this.logger.log(`getSnapshot asks`, asks);
+    this.logger.log(`getSnapshot bids`, bids);
 
-    this.logger.log(`asks.length`, asks.length);
-    this.logger.log(`bids.length`, bids.length);
     return {
       market,
       asks,
