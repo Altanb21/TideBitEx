@@ -325,10 +325,10 @@ class Middleman {
 
   async sync() {
     // --- WORKAROUND---
-    console.log(`--- WORKAROUND--- sync [START]`);
+    // console.log(`--- WORKAROUND--- sync [START]`);
     await wait(1 * 60 * 1000);
     await this.selectMarket(this.tickerBook.getCurrentMarket());
-    console.log(`--- WORKAROUND--- sync [END]`);
+    // console.log(`--- WORKAROUND--- sync [END]`);
     this.sync();
     // --- WORKAROUND---
   }
