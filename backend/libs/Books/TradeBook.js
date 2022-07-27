@@ -80,27 +80,27 @@ class TradeBook extends BookBase {
     return super.updateByDifference(instId, difference);
   }
 
-  /**
-   * @param {String} instId BTC-USDT
-   * @param {Array<Order>} data
-   */
-  updateAll(instId, lotSz, data) {
-    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
-    try {
-      this.logger.log(`[${this.constructor.name}] updateAll[${instId}]`);
-      super.updateAll(instId, data);
+  // /**
+  //  * @param {String} instId BTC-USDT
+  //  * @param {Array<Order>} data
+  //  */
+  // updateAll(instId, lotSz, data) {
+  //   if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
+  //   try {
+  //     this.logger.log(`[${this.constructor.name}] updateAll[${instId}]`);
+  //     super.updateAll(instId, data);
 
-      this._snapshot[instId] = this._trim(instId, this._snapshot[instId]);
-      // this._difference[instId] = difference;
-      this.logger.log(
-        `[${this.constructor.name}] updateAll[${instId}]`,
-        this._snapshot[instId]
-      );
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
+  //     this._snapshot[instId] = this._trim(instId, this._snapshot[instId]);
+  //     // this._difference[instId] = difference;
+  //     this.logger.log(
+  //       `[${this.constructor.name}] updateAll[${instId}]`,
+  //       this._snapshot[instId]
+  //     );
+  //     return true;
+  //   } catch (error) {
+  //     return false;
+  //   }
+  // }
 }
 
 module.exports = TradeBook;

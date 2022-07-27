@@ -163,7 +163,7 @@ class ExchangeHub extends Bot {
     );
   }
   _emitNewTrade({ memberId, instId, market, trade }) {
-    this.tradeBook.updateByDifference(instId, {
+    this.tradeBook.updateByDifference(instId, 0, {
       add: [
         {
           ...trade,

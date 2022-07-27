@@ -80,9 +80,6 @@ class DepthBook extends BookBase {
     total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
     asks = asks.map((ask) => [...ask, SafeMath.div(ask[2], total)]);
     bids = bids.map((bid) => [...bid, SafeMath.div(bid[2], total)]);
-    this.logger.log(`getSnapshot asks`, asks);
-    this.logger.log(`getSnapshot bids`, bids);
-
     return {
       market,
       asks,
