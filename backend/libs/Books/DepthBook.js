@@ -37,15 +37,15 @@ class DepthBook extends BookBase {
   // }
 
   _trim(instId, data) {
-    let lotSz = this._markets[instId],
+    let lotSz = this._markets[instId]["lotSz"],
       asks = [],
       bids = [];
     data.forEach((d) => {
       if (d.side === "asks") {
-        asks.push([d.price, d.amount]);
+        asks.push({ ...d });
       }
       if (d.side === "bids") {
-        bids.push([d.price, d.amount]);
+        bids.push({ ...d });
       }
     });
     asks = asks
@@ -169,7 +169,7 @@ class DepthBook extends BookBase {
    * @param {Difference} difference
    */
   updateByDifference(instId, lotSz, data) {
-    if (!this._markets[instId]) this._markets[instId] = lotSz;
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       const result = this._getDifference(
         [...this._snapshot[instId]],
@@ -189,7 +189,7 @@ class DepthBook extends BookBase {
    * @param {Array<Depth>} data
    */
   updateAll(instId, lotSz, data) {
-    if (!this._markets[instId]) this._markets[instId] = lotSz;
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     return super.updateAll(instId, this._formateBooks(data));
   }
 }

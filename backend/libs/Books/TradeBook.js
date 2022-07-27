@@ -68,7 +68,7 @@ class TradeBook extends BookBase {
    * @param {Difference} difference
    */
   updateByDifference(instId, lotSz, difference) {
-    if (!this._markets[instId]) this._markets[instId] = lotSz;
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     // this.logger.debug(
     //   `[${this.constructor.name}]updateByDifference`,
     //   instId,
@@ -85,7 +85,7 @@ class TradeBook extends BookBase {
    * @param {Array<Order>} data
    */
   updateAll(instId, lotSz, data) {
-    if (!this._markets[instId]) this._markets[instId] = lotSz;
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       this.logger.log(`[${this.constructor.name}] updateAll[${instId}]`);
       super.updateAll(instId, data);
