@@ -73,7 +73,7 @@ class DepthBook extends BookBase {
       }
       if (data.side === "bids") {
         sumBidAmount = SafeMath.plus(data.amount, sumBidAmount);
-        asks.push([data.price, data.amount, sumBidAmount]);
+        bids.push([data.price, data.amount, sumBidAmount]);
       }
     }
     this.logger.log(`asks.length`, asks.length);
