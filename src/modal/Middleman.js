@@ -8,6 +8,7 @@ import TideBitWS from "../libs/TideBitWS";
 import Communicator from "./Communicator";
 import Pusher from "pusher-js";
 import { randomID } from "dvalue";
+import { wait } from "../utils/Utils";
 
 class Middleman {
   _userId;
@@ -320,6 +321,16 @@ class Middleman {
     this._getAccounts(market);
     this._getTickers();
     this.selectMarket(market);
+  }
+
+  async sync() {
+    // --- WORKAROUND---
+    // console.log(`--- WORKAROUND--- sync [START]`);
+    await wait(1 * 60 * 1000);
+    await this.selectMarket(this.tickerBook.getCurrentMarket());
+    // console.log(`--- WORKAROUND--- sync [END]`);
+    this.sync();
+    // --- WORKAROUND---
   }
 
   stop() {
