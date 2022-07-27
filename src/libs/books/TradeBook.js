@@ -50,9 +50,7 @@ class TradeBook extends BookBase {
     try {
       let trades;
       if (this._snapshot[market]) {
-        trades = this._snapshot[market]
-          .filter((trade) => trade.volume >= lotSz)
-          .slice(0, 30);
+        trades = this._snapshot[market];
         // .map((trade) => {
         // ++ WORKAROUND TODO: enhance performance
         // if (
@@ -64,7 +62,7 @@ class TradeBook extends BookBase {
         // } else
         //   return trade;
         // });
-        this._prevSnapshot[market] = this._snapshot[market];
+        // this._prevSnapshot[market] = this._snapshot[market];
       } else trades = [];
       return trades;
     } catch (error) {
