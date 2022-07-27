@@ -1,5 +1,9 @@
 import SafeMath from "./SafeMath";
 
+export const wait = (ms) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export const randomDates = (startDate, endDate) => {
   const dates = [];
   let currentDate = startDate;
