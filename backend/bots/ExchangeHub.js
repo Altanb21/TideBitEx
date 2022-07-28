@@ -1772,6 +1772,7 @@ class ExchangeHub extends Bot {
       ordType: body.ordType === "market" ? "ioc" : body.ordType,
       locked,
       originLocked: locked,
+      fundsReceived: 0,
       tradesCount: 0,
       balance,
     };
