@@ -21,6 +21,7 @@ class ExchangeHub extends Bot {
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
   systemMemberId;
+  okexBrokerId;
   updateDatas = [];
   constructor() {
     super();
@@ -196,6 +197,7 @@ class ExchangeHub extends Bot {
   }
 
   init({ config, database, logger, i18n }) {
+    this.okexBrokerId = config.okex.brokerId;
     this.systemMemberId = config.peatio.systemMemberId;
     return super
       .init({ config, database, logger, i18n })
@@ -727,6 +729,7 @@ class ExchangeHub extends Bot {
         let orderData,
           order,
           orderId,
+          clOrdId,
           currencyId,
           account,
           result,
@@ -752,6 +755,7 @@ class ExchangeHub extends Bot {
             dbTransaction: t,
           });
           orderId = order[0];
+          clOrdId = `${this.okexBrokerId}${memberId}m${orderId}o`.slice(0, 32);
           // * ~2.~ 3. 根據 order 單內容更新 account locked 與 balance
           // * ~3.~ 4. 新增 account version
           currencyId = body.kind === "bid" ? orderData.bid : orderData.ask;
@@ -775,30 +779,31 @@ class ExchangeHub extends Bot {
           await t.commit();
           //   * 6. 建立 OKX order 單
           response = await this.okexConnector.router("postPlaceOrder", {
-            memberId,
-            orderId,
-            params,
-            query,
+            clOrdId,
             body,
           });
           this.logger.log("[RESPONSE]", response);
+          updateOrder = {
+            instId: body.instId,
+            ordType: body.ordType === "market" ? "ioc" : body.ordType,
+            id: orderId,
+            clOrdId,
+            at: parseInt(SafeMath.div(Date.now(), "1000")),
+            ts: Date.now(),
+            market: body.market,
+            kind: body.kind,
+            price: body.price,
+            origin_volume: body.volume,
+            state: "wait",
+            state_text: "Waiting",
+            volume: body.volume,
+          };
           if (response.success) {
             // * 6.1 掛單成功
             if (body.ordType !== "market") {
               updateOrder = {
-                instId: body.instId,
-                ordType: body.ordType === "market" ? "ioc" : body.ordType,
+                ...updateOrder,
                 id: response.payload.ordId,
-                clOrdId: response.payload.clOrdId,
-                at: parseInt(SafeMath.div(Date.now(), "1000")),
-                ts: Date.now(),
-                market: body.market,
-                kind: body.kind,
-                price: body.price,
-                origin_volume: body.volume,
-                state: "wait",
-                state_text: "Waiting",
-                volume: body.volume,
               };
               this._emitUpdateOrder({
                 memberId,
@@ -826,31 +831,22 @@ class ExchangeHub extends Bot {
             //  * 6.2 掛單失敗
             //  * 6.2.1 DB transaction
             t = await this.database.transaction();
-            try {
-              //    * 6.2.2 根據 order locked amount 減少 account locked amount 並增加 balance amount
-              //    * 6.2.3 新增 account_versions 記錄
-              //    * 6.2.4 更新 order 為 cancel 狀態
-              result = await this.updateOrderStatus({
-                transacion: t,
-                orderId,
-                memberId,
-                orderData: updateOrder,
-              });
-              if (result) {
-                //   * 6.2.5 commit transaction
-                await t.commit();
-              } else {
-                await t.rollback();
-                response = new ResponseFormat({
-                  message: "DB ERROR",
-                  code: Codes.CANCEL_ORDER_FAIL,
-                });
-              }
-            } catch (error) {
-              this.logger.error(error);
+            //    * 6.2.2 根據 order locked amount 減少 account locked amount 並增加 balance amount
+            //    * 6.2.3 新增 account_versions 記錄
+            //    * 6.2.4 更新 order 為 cancel 狀態
+            result = await this.updateOrderStatus({
+              transacion: t,
+              orderId,
+              memberId,
+              orderData: updateOrder,
+            });
+            if (result) {
+              //   * 6.2.5 commit transaction
+              await t.commit();
+            } else {
               await t.rollback();
               response = new ResponseFormat({
-                message: error.message,
+                message: "DB ERROR",
                 code: Codes.DB_OPERATION_ERROR,
               });
             }
@@ -859,8 +855,8 @@ class ExchangeHub extends Bot {
           this.logger.error(error);
           await t.rollback();
           response = new ResponseFormat({
-            message: error.message,
-            code: Codes.DB_OPERATION_ERROR,
+            message: error.message.sMsg,
+            code: Codes.POST_ORDER_FAIL,
           });
         }
         return response;
