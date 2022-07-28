@@ -59,7 +59,7 @@ class HTTPAgent {
       return {
         success: res.data.success,
         data: res.data.payload,
-        message: res.data.msg,
+        message: res.data.message,
         code: res.data.code,
       };
     });
