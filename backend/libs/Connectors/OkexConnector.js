@@ -1036,13 +1036,13 @@ class OkexConnector extends ConnectorBase {
 
   // market api end
   // trade api
-  async postPlaceOrder({ clOrdId, body }) {
+  async postPlaceOrder({ clOrdId, body, memberId, orderId }) {
     const method = "POST";
     const path = "/api/v5/trade/order";
 
     const timeString = new Date().toISOString();
-
-    // const clOrdId = `${this.brokerId}${memberId}m${orderId}o`.slice(0, 32);
+    if (!clOrdId)
+      clOrdId = `${this.brokerId}${memberId}m${orderId}o`.slice(0, 32);
     // clOrdId = 377bd372412fSCDE60977m247674466o
     // brokerId = 377bd372412fSCDE
     // memberId = 60976

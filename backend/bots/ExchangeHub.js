@@ -756,6 +756,7 @@ class ExchangeHub extends Bot {
           });
           orderId = order[0];
           clOrdId = `${this.okexBrokerId}${memberId}m${orderId}o`.slice(0, 32);
+          this.logger.error(`clOrdId`, clOrdId);
           // * ~2.~ 3. 根據 order 單內容更新 account locked 與 balance
           // * ~3.~ 4. 新增 account version
           currencyId = body.kind === "bid" ? orderData.bid : orderData.ask;
@@ -780,6 +781,8 @@ class ExchangeHub extends Bot {
           //   * 6. 建立 OKX order 單
           response = await this.okexConnector.router("postPlaceOrder", {
             clOrdId,
+            memberId,
+            orderId,
             body,
           });
           this.logger.log("[RESPONSE]", response);
@@ -804,6 +807,7 @@ class ExchangeHub extends Bot {
               updateOrder = {
                 ...updateOrder,
                 id: response.payload.ordId,
+                clOrdId: response.payload.clOrdId
               };
               this._emitUpdateOrder({
                 memberId,
