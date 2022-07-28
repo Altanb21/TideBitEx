@@ -1087,11 +1087,12 @@ class OkexConnector extends ConnectorBase {
       });
       const [payload] = res.data.data;
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        // const message = JSON.stringify(res.data);
+        const message = res.data.sMsg;
+        this.logger.trace(JSON.stringify(res.data));
         return new ResponseFormat({
           message,
-          code: Codes.THIRD_PARTY_API_ERROR,
+          code: Codes.POST_ORDER_FAIL,
         });
       }
       return new ResponseFormat({
@@ -1280,7 +1281,7 @@ class OkexConnector extends ConnectorBase {
         this.logger.trace(message);
         return new ResponseFormat({
           message,
-          code: Codes.THIRD_PARTY_API_ERROR,
+          code: Codes.CANCEL_ORDER_FAIL,
         });
       }
       return new ResponseFormat({

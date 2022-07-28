@@ -855,7 +855,7 @@ class ExchangeHub extends Bot {
           this.logger.error(error);
           await t.rollback();
           response = new ResponseFormat({
-            message: error.message.sMsg,
+            message: error.message,
             code: Codes.DB_OPERATION_ERROR,
           });
         }
