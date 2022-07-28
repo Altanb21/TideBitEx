@@ -50,7 +50,7 @@ class DBOperator {
     DONE: 1,
     SYSTEM_ERROR: 9,
     OTHER_SYSTEM_TRADE: 8,
-    ClORDId_ERROR:7
+    ClORDId_ERROR: 7,
   };
 
   constructor() {
@@ -145,48 +145,48 @@ class DBOperator {
   }
 
   /* !!! HIGH RISK (start) !!! */
-  async insertOrder(
+  async insertOrder({
     bid,
     ask,
     currency,
     price,
     volume,
-    origin_volume,
+    originVolume,
     state,
-    done_at,
+    doneAt,
     type,
-    member_id,
-    created_at,
-    updated_at,
+    memberId,
+    createdAt,
+    updatedAt,
     sn,
     source,
-    ord_type,
+    ordType,
     locked,
-    origin_locked,
-    funds_received,
-    trades_count,
-    { dbTransaction }
-  ) {
+    originLocked,
+    fundsReceived,
+    tradesCount,
+    dbTransaction,
+  }) {
     return this.database.insertOrder(
       bid,
       ask,
       currency,
       price,
       volume,
-      origin_volume,
+      originVolume,
       state,
-      done_at,
+      doneAt,
       type,
-      member_id,
-      created_at,
-      updated_at,
+      memberId,
+      createdAt,
+      updatedAt,
       sn,
       source,
-      ord_type,
+      ordType,
       locked,
-      origin_locked,
-      funds_received,
-      trades_count,
+      originLocked,
+      fundsReceived,
+      tradesCount,
       { dbTransaction }
     );
   }
