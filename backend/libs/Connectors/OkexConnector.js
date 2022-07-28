@@ -1105,7 +1105,7 @@ class OkexConnector extends ConnectorBase {
         message = error.response.data.msg;
       return new ResponseFormat({
         message,
-        code: Codes.API_UNKNOWN_ERROR,
+        code: Codes.POST_ORDER_FAIL,
       });
     }
   }

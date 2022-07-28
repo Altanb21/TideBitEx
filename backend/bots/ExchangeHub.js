@@ -856,7 +856,7 @@ class ExchangeHub extends Bot {
           await t.rollback();
           response = new ResponseFormat({
             message: error.message.sMsg,
-            code: Codes.POST_ORDER_FAIL,
+            code: Codes.DB_OPERATION_ERROR,
           });
         }
         return response;
