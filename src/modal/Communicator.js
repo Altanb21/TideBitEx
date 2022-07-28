@@ -499,7 +499,6 @@ class Communicator {
       // retryCodes = [408, 500, 502, 503, 504, 522, 524],
       retryCodes = [
         Codes.API_UNKNOWN_ERROR,
-        Codes.THIRD_PARTY_API_ERROR,
         Codes.UNKNOWN_ERROR,
       ],
       options = { method, url, data };
