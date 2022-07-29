@@ -649,6 +649,7 @@ class ExchangeHubService {
       volume,
       locked,
       updateAt,
+      doneAt,
       fundsReceived,
       tradesCount,
       value;
@@ -668,7 +669,11 @@ class ExchangeHubService {
           trade.side === "buy"
             ? SafeMath.minus(_order.locked, SafeMath.mult(_order.price, volume))
             : SafeMath.minus(_order.locked, volume);
-        updateAt = `"${new Date(parseInt(trade.ts))
+        doneAt = `"${new Date(parseInt(trade.ts))
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ")}"`;
+        updateAt = `"${new Date()
           .toISOString()
           .slice(0, 19)
           .replace("T", " ")}"`;
@@ -692,6 +697,7 @@ class ExchangeHubService {
           funds_received: fundsReceived,
           trades_count: tradesCount,
           updated_at: updateAt,
+          done_at: doneAt,
         };
         /* !!! HIGH RISK (start) !!! */
         // update orders table order data
