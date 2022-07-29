@@ -374,10 +374,10 @@ class OkexConnector extends ConnectorBase {
       });
 
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -438,10 +438,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(false),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -489,10 +489,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(false),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -548,10 +548,10 @@ class OkexConnector extends ConnectorBase {
           headers: this.getHeaders(false),
         });
         if (res.data && res.data.code !== "0") {
-          const message = JSON.stringify(res.data);
-          this.logger.trace(message);
+          const [message] = res.data.data;
+          this.logger.trace(res.data);
           return new ResponseFormat({
-            message,
+            message: message.sMsg,
             code: Codes.THIRD_PARTY_API_ERROR,
           });
         }
@@ -605,10 +605,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(false),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -706,10 +706,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(false),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -772,7 +772,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   async getTrades({ query }) {
-    const { instId, limit ,lotSz} = query;
+    const { instId, limit, lotSz } = query;
     // this.logger.log(
     //   `[${this.constructor.name}] getTrades this.fetchedTrades[${instId}]`,
     //   this.fetchedTrades[instId]
@@ -793,10 +793,10 @@ class OkexConnector extends ConnectorBase {
           headers: this.getHeaders(false),
         });
         if (res.data && res.data.code !== "0") {
-          const message = JSON.stringify(res.data);
-          this.logger.trace(message);
+          const [message] = res.data.data;
+          this.logger.trace(res.data);
           return new ResponseFormat({
-            message,
+            message: message.sMsg,
             code: Codes.THIRD_PARTY_API_ERROR,
           });
         }
@@ -946,10 +946,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -998,10 +998,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -1036,13 +1036,13 @@ class OkexConnector extends ConnectorBase {
 
   // market api end
   // trade api
-  async postPlaceOrder({ params, query, body, memberId, orderId }) {
+  async postPlaceOrder({ clOrdId, body, memberId, orderId }) {
     const method = "POST";
     const path = "/api/v5/trade/order";
 
     const timeString = new Date().toISOString();
-
-    const clOrdId = `${this.brokerId}${memberId}m${orderId}o`.slice(0, 32);
+    if (!clOrdId)
+      clOrdId = `${this.brokerId}${memberId}m${orderId}o`.slice(0, 32);
     // clOrdId = 377bd372412fSCDE60977m247674466o
     // brokerId = 377bd372412fSCDE
     // memberId = 60976
@@ -1087,11 +1087,11 @@ class OkexConnector extends ConnectorBase {
       });
       const [payload] = res.data.data;
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
-          code: Codes.THIRD_PARTY_API_ERROR,
+          message: message.sMsg,
+          code: Codes.POST_ORDER_FAIL,
         });
       }
       return new ResponseFormat({
@@ -1105,7 +1105,7 @@ class OkexConnector extends ConnectorBase {
         message = error.response.data.msg;
       return new ResponseFormat({
         message,
-        code: Codes.API_UNKNOWN_ERROR,
+        code: Codes.POST_ORDER_FAIL,
       });
     }
   }
@@ -1129,10 +1129,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -1184,10 +1184,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -1276,11 +1276,11 @@ class OkexConnector extends ConnectorBase {
       });
       this.logger.log(res.data.data);
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
-          code: Codes.THIRD_PARTY_API_ERROR,
+          message: message.sMsg,
+          code: Codes.CANCEL_ORDER_FAIL,
         });
       }
       return new ResponseFormat({
@@ -1322,10 +1322,10 @@ class OkexConnector extends ConnectorBase {
       });
       this.logger.log(res.data.data);
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -1363,10 +1363,10 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(false),
       });
       if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
         return new ResponseFormat({
-          message,
+          message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
@@ -1586,7 +1586,7 @@ class OkexConnector extends ConnectorBase {
     //   updateBooks.bids
     // );
     try {
-      this.depthBook.updateByDifference(instId,lotSz, updateBooks);
+      this.depthBook.updateByDifference(instId, lotSz, updateBooks);
     } catch (error) {
       // ++
       this.logger.error(`_updateBooks`, error);
@@ -1607,11 +1607,7 @@ class OkexConnector extends ConnectorBase {
     //   this.depthBook.getSnapshot(instId)
     // );
 
-    EventBus.emit(
-      Events.update,
-      market,
-      this.depthBook.getSnapshot(instId)
-    );
+    EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
   _updateCandle(instId, channel, candleData) {
