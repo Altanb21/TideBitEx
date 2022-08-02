@@ -53,7 +53,11 @@ class DepthBook extends BookBase {
       .sort((a, b) => +a.price - +b.price)
       .slice(0, 50);
     bids = bids
-      .filter((book) => book.amount >= lotSz)
+      .filter(
+        (book) =>
+          book.amount >= lotSz &&
+          (asks[0]?.price ? book.price < asks[0].price : true)
+      )
       .sort((a, b) => +b.price - +a.price)
       .slice(0, 50);
     return asks.concat(bids);
