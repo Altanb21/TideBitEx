@@ -143,7 +143,11 @@ sample:
 BTCUSD = 'BTC-USD'
 tbBTC-USD = 'TideBit'
 ```
-
+### db migrate
+```
+chmod a+x bin/dbmigrate.js 
+npm run dbmigrate
+```
 ### 啟動
 之後便可以使用pm2掛載
 ```sh
