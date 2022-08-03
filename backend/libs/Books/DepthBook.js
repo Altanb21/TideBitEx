@@ -110,6 +110,7 @@ class DepthBook extends BookBase {
     if (parseFloat(ask[0]) > parseFloat(bid[0])) {
       result = `ask: ${ask}, bid: ${bid}`;
     } else {
+      this.logger.error(new Date().toLocaleTimeString());
       result = `* ask: ${ask}, bid: ${bid}`;
     }
 
