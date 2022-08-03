@@ -36,7 +36,7 @@ class DepthBook extends BookBase {
   //   return super._calculateDiffence(arrayA, arrayB);
   // }
 
-  _trim(instId, data) {
+  _trim(instId, data, tickerPrice) {
     let lotSz = this._markets[instId]["lotSz"] || 0,
       asks = [],
       bids = [];
@@ -49,22 +49,39 @@ class DepthBook extends BookBase {
       }
     });
     asks = asks
-      .filter((book) => book.amount >= lotSz)
+      .filter((book) => {
+        if (tickerPrice && book.price < tickerPrice)
+          this.logger.error(
+            `askOrder price error`,
+            `askOrder`,
+            book,
+            `tickerPrice`,
+            tickerPrice
+          );
+        return book.amount >= lotSz && book.price > tickerPrice;
+      })
       .sort((a, b) => +a.price - +b.price)
       .slice(0, 50);
     bids = bids
       .filter((book) => {
-        if (asks[0]?.price && asks[0]?.price < book.price)
+        if (
+          (tickerPrice || asks[0]?.price) &&
+          book.price > (tickerPrice || asks[0].price)
+        )
           this.logger.error(
-            `book price error`,
-            `book`,
+            `bidOrder price error`,
+            `bidOrder`,
             book,
             `asks[0]`,
-            asks[0]
+            asks[0],
+            `tickerPrice`,
+            tickerPrice
           );
         return (
           book.amount >= lotSz &&
-          (asks[0]?.price ? book.price < asks[0].price : true)
+          (tickerPrice || asks[0]?.price
+            ? book.price < tickerPrice || asks[0].price
+            : true)
         );
       })
       .sort((a, b) => +b.price - +a.price)
@@ -115,7 +132,7 @@ class DepthBook extends BookBase {
    * @returns {Array<Depth>}
    */
   _formateBooks(bookObj) {
-    const bookArr = [];
+    let bookArr = [];
     bookObj.asks.forEach((ask) => {
       bookArr.push({
         price: ask[0],
@@ -130,6 +147,7 @@ class DepthBook extends BookBase {
         side: "bids",
       });
     });
+    bookArr.sort((a, b) => +b.price - +a.price);
     // console.log(`[DepthBook _formateBooks]`, bookArr);
     return bookArr;
   }
@@ -184,15 +202,16 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Difference} difference
    */
-  updateByDifference(instId, lotSz, data) {
-    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
+  updateByDifference(instId, ticker, data) {
+    if (!this._markets[instId]["lotSz"])
+      this._markets[instId]["lotSz"] = ticker.lotSz;
     try {
       const result = this._getDifference(
         [...this._snapshot[instId]],
         this._formateBooks(data)
       );
-      // this.logger.log(`_getDifference update`, result.update);
-      this._snapshot[instId] = this._trim(instId, result.update);
+      this.logger.log(`trim from updateByDifference`, result.difference);
+      this._snapshot[instId] = this._trim(instId, result.update, ticker.price);
       this._difference[instId] = this.result.difference;
       return true;
     } catch (error) {
@@ -204,9 +223,19 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Array<Depth>} data
    */
-  updateAll(instId, lotSz, data) {
-    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
-    return super.updateAll(instId, this._formateBooks(data));
+  updateAll(instId, ticker, data) {
+    this.logger.log(
+      `updateAll ticker`,
+      `ticker?.lotSz`,
+      ticker?.lotSz,
+      `ticker?.price`,
+      ticker?.price,
+      ticker
+    );
+    if (!this._markets[instId]["lotSz"])
+      this._markets[instId]["lotSz"] = ticker.lotSz;
+    this.logger.log(`trim from updateAll`);
+    return super.updateAll(instId, this._formateBooks(data), ticker.price);
   }
 }
 

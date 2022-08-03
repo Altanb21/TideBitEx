@@ -4,24 +4,28 @@ const HEART_BEAT_TIME = 25000;
 
 class WebSocket {
   wsReConnectTimeout;
+  url;
+  ws;
+  options;
+  heartBeatTime;
   constructor({ logger }) {
     this.logger = logger;
     return this;
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
-    if (!url) throw new Error("Invalid input");
-    this.url = url;
+    if (!url || !this.url) throw new Error("Invalid input");
+    if (url) this.url = url;
+    if (options) this.options = { ...options };
     this.heartBeatTime = heartBeat;
-    this.logger.log("custom WebSocket this.url", this.url);
-    if (!!options) {
-      this.options = { ...options };
+    this.logger.log("[WebSocket] connect url", this.url);
+    if (!!this.options) {
       this.ws = new ws(this.url, this.options);
     } else this.ws = new ws(this.url);
 
     return new Promise((resolve) => {
       this.ws.onopen = (r) => {
-        this.logger.log("custom WebSocket", `onopen`);
+        this.logger.log("[WebSocket] status", `onopen`);
         this.heartbeat();
         this.eventListener();
         return resolve(r);
@@ -36,7 +40,7 @@ class WebSocket {
       this.logger.error("custom WebSocket", err);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
-        await this.init({ url: this.url });
+        await this.init();
       }, 1000);
     });
   }
@@ -53,13 +57,13 @@ class WebSocket {
     clearTimeout(this.wsReConnectTimeout);
     if (event.wasClean) {
       this.logger.debug(
-        `[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
+        `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
       );
       clearTimeout(this.pingTimeout);
     } else {
       // e.g. server process killed or network down
       // event.code is usually 1006 in this case
-      this.logger.error("[close] Connection died");
+      this.logger.error("[WebSocket][close] Connection died");
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init({ url: this.url });
       }, 1000);
