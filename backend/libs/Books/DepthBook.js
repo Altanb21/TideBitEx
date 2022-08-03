@@ -229,9 +229,9 @@ class DepthBook extends BookBase {
     const ask = asks[0];
     const bid = bids[0];
     if (ask <= bid) {
-      this.logger.error("* askOrderPrice *", ask, bid);
+      this.logger.error("* askOrderPriceError *", `ask: ${ask}`, `bid: ${bid}`);
     } else {
-      this.logger.log(ask, bid);
+      this.logger.log("* askOrderPrice normal *", `ask: ${ask}`, `bid: ${bid}`);
     }
 
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
