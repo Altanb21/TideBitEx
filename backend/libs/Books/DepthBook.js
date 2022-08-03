@@ -93,8 +93,7 @@ class DepthBook extends BookBase {
         .map((v) => {
           sumAskAmount = parseFloat(v[1]) + sumAskAmount;
           return [v[0], v[1], sumAskAmount];
-        })
-        .sort(),
+        }),
       bids = this._snapshot[instId].bids
         .filter((v) => v[1] >= lotSz)
         .sort((a, b) => +a[0] - +b[0])
