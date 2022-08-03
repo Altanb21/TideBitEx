@@ -568,11 +568,7 @@ class OkexConnector extends ConnectorBase {
         //   `----------- [API][RES](${instId}) [END] ----------------`
         // );
         const ticker = this.tickerBook.getSnapshot(instId);
-        this.logger.log(
-          `[FROM][OKEx][API] getDepthBooks [tickerBook] ticker`,
-          ticker
-        );
-        this.depthBook.updateAll(instId, ticker, data);
+        this.depthBook.updateAll(instId, lotSz, ticker.last, data);
       } catch (error) {
         this.logger.error(error);
         let message = error.message;
@@ -1583,16 +1579,17 @@ class OkexConnector extends ConnectorBase {
     const market = instId.replace("-", "").toLowerCase();
     const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
     const ticker = this.tickerBook.getSnapshot(instId);
-    this.logger.log(
-      `[FROM][OKEx][WS] _updateBooks [tickerBook] ticker`,
-      ticker
-    );
     // this.logger.log(
     //   `[FROM][OKEx][WS] _updateBooks updateBooks.bids`,
     //   updateBooks.bids
     // );
     try {
-      this.depthBook.updateByDifference(instId, ticker, updateBooks);
+      this.depthBook.updateByDifference(
+        instId,
+        lotSz,
+        ticker.last,
+        updateBooks
+      );
     } catch (error) {
       // ++
       this.logger.error(`_updateBooks`, error);

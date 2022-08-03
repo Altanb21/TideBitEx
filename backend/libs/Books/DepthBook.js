@@ -202,16 +202,16 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Difference} difference
    */
-  updateByDifference(instId, ticker, data) {
-    if (!this._markets[instId]["lotSz"])
-      this._markets[instId]["lotSz"] = ticker.lotSz;
+  updateByDifference(instId, lotSz, tickerPrice, data) {
+    this.logger.log(`updateByDifference`, `lotSz`, lotSz, `tickerPrice`, tickerPrice);
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       const result = this._getDifference(
         [...this._snapshot[instId]],
         this._formateBooks(data)
       );
       this.logger.log(`trim from updateByDifference`, result.difference);
-      this._snapshot[instId] = this._trim(instId, result.update, ticker.price);
+      this._snapshot[instId] = this._trim(instId, result.update, tickerPrice);
       this._difference[instId] = this.result.difference;
       return true;
     } catch (error) {
@@ -223,19 +223,11 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Array<Depth>} data
    */
-  updateAll(instId, ticker, data) {
-    this.logger.log(
-      `updateAll ticker`,
-      `ticker?.lotSz`,
-      ticker?.lotSz,
-      `ticker?.price`,
-      ticker?.price,
-      ticker
-    );
-    if (!this._markets[instId]["lotSz"])
-      this._markets[instId]["lotSz"] = ticker.lotSz;
+  updateAll(instId, lotSz, tickerPrice, data) {
+    this.logger.log(`updateAll`, `lotSz`, lotSz, `tickerPrice`, tickerPrice);
+    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     this.logger.log(`trim from updateAll`);
-    return super.updateAll(instId, this._formateBooks(data), ticker.price);
+    return super.updateAll(instId, this._formateBooks(data), tickerPrice);
   }
 }
 
