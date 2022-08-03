@@ -87,19 +87,19 @@ class DepthBook extends BookBase {
       sumBidAmount = "0",
       lotSz = this._markets[instId]["lotSz"] || 0,
       asks = this._snapshot[instId].asks
-        .filter((v) => v[1] >= lotSz)
+        .filter((v) => SafeMath.gte(v[1], lotSz))
         .sort((a, b) => +a[0] - +b[0])
         .slice(0, 50)
         .map((v) => {
-          sumAskAmount = parseFloat(v[1]) + sumAskAmount;
+          sumAskAmount = SafeMath.plus(v[1], sumAskAmount);
           return [v[0], v[1], sumAskAmount];
         }),
       bids = this._snapshot[instId].bids
-        .filter((v) => v[1] >= lotSz)
+        .filter((v) => SafeMath.gte(v[1], lotSz))
         .sort((a, b) => +a[0] - +b[0])
         .slice(0, 50)
         .map((v) => {
-          sumBidAmount = parseFloat(v[1]) + sumBidAmount;
+          sumBidAmount = SafeMath.plus(v[1], sumBidAmount);
           return [v[0], v[1], sumBidAmount];
         });
     total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
@@ -114,7 +114,7 @@ class DepthBook extends BookBase {
     }
 
     if (this.endPriceResult && this.endPriceResult !== result) {
-      if (result.includes("*")) this.logger.error(`cross Price error`,result);
+      if (result.includes("*")) this.logger.error(`cross Price error`, result);
       else this.logger.log(result);
     }
     this.endPriceResult = result;
@@ -173,7 +173,6 @@ class DepthBook extends BookBase {
    * @returns {Difference} difference
    */
   _getDifference(instId, data) {
-    this.logger.log(`[${this.constructor.name}] _getDifference data`, data);
     const asks = data.asks;
     const bids = data.bids;
     const myBooks = {
@@ -193,10 +192,10 @@ class DepthBook extends BookBase {
     };
     asks.forEach((v) => {
       const index = myBooks.asks.findIndex((a) => {
-        return v[0] === a[0];
+        return SafeMath.eq(v[0], a[0]);
       });
       if (index > -1) {
-        if (v[1] > 0) {
+        if (SafeMath.gt((v[1], 0))) {
           myBooks.asks[index] = v;
           asksDifference.update.push(v);
         } else {
@@ -210,10 +209,10 @@ class DepthBook extends BookBase {
     });
     bids.forEach((v) => {
       const index = myBooks.bids.findIndex((a) => {
-        return v[0] === a[0];
+        return SafeMath.eq(v[0], a[0]);
       });
       if (index > -1) {
-        if (v[1] > 0) {
+        if (SafeMath.gt((v[1], 0))) {
           myBooks.bids[index] = v;
           bidsDifference.update.push(v);
         } else {
