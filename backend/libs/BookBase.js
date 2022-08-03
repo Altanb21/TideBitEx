@@ -140,13 +140,13 @@ class BookBase {
    * @param {String} instId
    * @returns {Boolean}
    */
-  updateAll(instId, data, tickerPrice) {
+  updateAll(instId, data) {
     try {
       this._difference[instId] = this._calculateDifference(
         this._snapshot[instId],
         data
       );
-      this._snapshot[instId] = this._trim(instId, data, tickerPrice);
+      this._snapshot[instId] = this._trim(instId, data);
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] updateAll error`, error);
       return false;

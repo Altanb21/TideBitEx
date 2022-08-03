@@ -36,7 +36,7 @@ class DepthBook extends BookBase {
   //   return super._calculateDiffence(arrayA, arrayB);
   // }
 
-  _trim(instId, data, tickerPrice) {
+  _trim(instId, data) {
     let lotSz = this._markets[instId]["lotSz"] || 0,
       asks = [],
       bids = [];
@@ -50,27 +50,12 @@ class DepthBook extends BookBase {
     });
     asks = asks
       .filter((book) => {
-        if (tickerPrice && book.price <= tickerPrice)
-          this.logger.error(
-            `askOrderPrice smaller then tickerPrice`,
-            `askOrder`,
-            book,
-            `tickerPrice`,
-            tickerPrice
-          );
-        return book.amount >= lotSz && book.price >= tickerPrice;
+        return book.amount >= lotSz;
       })
       .sort((a, b) => +a.price - +b.price)
       .slice(0, 50);
     bids = bids
       .filter((book) => {
-        if (tickerPrice && book.price > tickerPrice)
-          this.logger.error(
-            `bidOrderPrice bigger then tickerPrice`,
-            book,
-            `tickerPrice`,
-            tickerPrice
-          );
         if (asks[0]?.price && book.price > asks[0]?.price)
           this.logger.error(
             `bidOrderPrice bigger then ask[0]Price`,
@@ -80,13 +65,7 @@ class DepthBook extends BookBase {
           );
         return (
           book.amount >= lotSz &&
-          (tickerPrice && asks[0]?.price
-            ? book.price <= tickerPrice && book.price < asks[0].price
-            : tickerPrice
-            ? book.price <= tickerPrice
-            : asks[0]?.price
-            ? book.price < asks[0].price
-            : true)
+          (asks[0]?.price ? book.price < asks[0].price : true)
         );
       })
       .sort((a, b) => +b.price - +a.price)
@@ -169,13 +148,46 @@ class DepthBook extends BookBase {
    * @param {Array<Depth>} newArr
    * @returns {Difference} difference
    */
-  _getDifference(preArr, newArr) {
+  _getDifference(preArr, newData) {
+    const asks = newData.asks
+      .filter((v) => parseFloat(v[1]) > 0)
+      .map((v) => parseFloat(v[0]))
+      .sort();
+    const bids = newData.bids
+      .filter((v) => parseFloat(v[1]) > 0)
+      .map((v) => parseFloat(v[0]))
+      .sort()
+      .reverse();
+    const bestAskPrice = asks[0];
+    const bestBidPrice = bids[0];
+    const newArr = this._formateBooks(newData);
     const difference = {
       add: [],
       update: [],
       remove: [],
     };
-    const update = preArr;
+    /**
+     * Our price won't be better than okex
+     */
+    const update = preArr.filter((data) => {
+      if (data.side === "asks") {
+        if (bestAskPrice && data.price < bestAskPrice)
+          this.logger.error(
+            `Our price won't be better than okex[bestAskPrice:${bestAskPrice}]`,
+            data
+          );
+        return bestAskPrice ? data.price >= bestAskPrice : true;
+      } else if (data.side === "bids") {
+        if (bestBidPrice && data.price > bestBidPrice)
+          this.logger.error(
+            `Our price won't be better than okex[bestBidPrice:${bestBidPrice}]`,
+            data
+          );
+        return bestBidPrice ? data.price <= bestBidPrice : true;
+      } else {
+        return false;
+      }
+    });
     newArr.forEach((data) => {
       const index = preArr.findIndex(
         (_data) =>
@@ -208,40 +220,16 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Difference} difference
    */
-  updateByDifference(instId, lotSz, tickerPrice, data) {
-    this.logger.log(
-      `updateByDifference`,
-      `lotSz`,
-      lotSz,
-      `tickerPrice`,
-      tickerPrice,
-      data
-    );
-    const asks = data.asks
-      .filter((v) => parseFloat(v[1]) > 0)
-      .map((v) => parseFloat(v[0]))
-      .sort();
-    const bids = data.bids
-      .filter((v) => parseFloat(v[1]) > 0)
-      .map((v) => parseFloat(v[0]))
-      .sort()
-      .reverse();
-    const ask = asks[0];
-    const bid = bids[0];
-    if (ask <= bid) {
-      this.logger.error("* askOrderPriceError *", `ask: ${ask}`, `bid: ${bid}`);
-    } else {
-      this.logger.log("* askOrderPrice normal *", `ask: ${ask}`, `bid: ${bid}`);
-    }
-
+  updateByDifference(instId, lotSz, data) {
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       const result = this._getDifference(
         [...this._snapshot[instId]],
-        this._formateBooks(data)
+        // this._formateBooks(data)
+        data
       );
       this.logger.log(`trim from updateByDifference`, result.difference);
-      this._snapshot[instId] = this._trim(instId, result.update, tickerPrice);
+      this._snapshot[instId] = this._trim(instId, result.update);
       this._difference[instId] = this.result.difference;
       return true;
     } catch (error) {
@@ -253,11 +241,10 @@ class DepthBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Array<Depth>} data
    */
-  updateAll(instId, lotSz, tickerPrice, data) {
-    this.logger.log(`updateAll`, `lotSz`, lotSz, `tickerPrice`, tickerPrice);
+  updateAll(instId, lotSz, data) {
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     this.logger.log(`trim from updateAll`);
-    return super.updateAll(instId, this._formateBooks(data), tickerPrice);
+    return super.updateAll(instId, this._formateBooks(data));
   }
 }
 
