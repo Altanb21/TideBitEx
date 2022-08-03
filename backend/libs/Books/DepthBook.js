@@ -235,7 +235,6 @@ class DepthBook extends BookBase {
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       const result = this._getDifference(instId, data);
-      this.logger.log(`trim from updateByDifference`, result.difference);
       this._snapshot[instId] = this._trim(instId, result.update);
       this._difference[instId] = this.result.difference;
       return true;
