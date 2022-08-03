@@ -96,7 +96,7 @@ class DepthBook extends BookBase {
         }),
       bids = this._snapshot[instId].bids
         .filter((v) => SafeMath.gte(v[1], lotSz))
-        .sort((a, b) => +a[0] - +b[0])
+        .sort((a, b) => +b[0] - +a[0])
         .slice(0, 50)
         .map((v) => {
           sumBidAmount = SafeMath.plus(v[1], sumBidAmount);
