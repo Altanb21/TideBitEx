@@ -14,7 +14,7 @@ class WebSocket {
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
-    if (!url || !this.url) throw new Error("Invalid input");
+    if (!url && !this.url) throw new Error("Invalid input");
     if (url) this.url = url;
     if (options) this.options = { ...options };
     this.heartBeatTime = heartBeat;
