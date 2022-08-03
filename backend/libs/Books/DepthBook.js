@@ -50,7 +50,7 @@ class DepthBook extends BookBase {
     });
     asks = asks
       .filter((book) => {
-        if (tickerPrice && book.price < tickerPrice)
+        if (tickerPrice && book.price <= tickerPrice)
           this.logger.error(
             `askOrder price error`,
             `askOrder`,
@@ -58,29 +58,34 @@ class DepthBook extends BookBase {
             `tickerPrice`,
             tickerPrice
           );
-        return book.amount >= lotSz && book.price > tickerPrice;
+        return book.amount >= lotSz && book.price >= tickerPrice;
       })
       .sort((a, b) => +a.price - +b.price)
       .slice(0, 50);
     bids = bids
       .filter((book) => {
-        if (
-          (tickerPrice || asks[0]?.price) &&
-          book.price > (tickerPrice || asks[0].price)
-        )
+        if (tickerPrice && book.price > tickerPrice)
           this.logger.error(
-            `bidOrder price error`,
-            `bidOrder`,
+            `bidOrderPrice bigger then tickerPrice`,
             book,
-            `asks[0]`,
-            asks[0],
             `tickerPrice`,
             tickerPrice
           );
+        if (asks[0]?.price && book.price > asks[0]?.price)
+          this.logger.error(
+            `bidOrderPrice bigger then ask[0]Price`,
+            book,
+            `asks[0]`,
+            asks[0]
+          );
         return (
           book.amount >= lotSz &&
-          (tickerPrice || asks[0]?.price
-            ? book.price < tickerPrice || asks[0].price
+          (tickerPrice && asks[0]?.price
+            ? book.price <= tickerPrice && book.price < asks[0].price
+            : tickerPrice
+            ? book.price <= tickerPrice
+            : asks[0]?.price
+            ? book.price < asks[0].price
             : true)
         );
       })
@@ -147,7 +152,7 @@ class DepthBook extends BookBase {
         side: "bids",
       });
     });
-    bookArr.sort((a, b) => +b.price - +a.price);
+    // bookArr.sort((a, b) => +b.price - +a.price);
     // console.log(`[DepthBook _formateBooks]`, bookArr);
     return bookArr;
   }
@@ -190,6 +195,7 @@ class DepthBook extends BookBase {
         }
       }
     });
+    // update.sort((a, b) => +b.price - +a.price);
     return { difference, update };
   }
 
@@ -203,7 +209,30 @@ class DepthBook extends BookBase {
    * @param {Difference} difference
    */
   updateByDifference(instId, lotSz, tickerPrice, data) {
-    this.logger.log(`updateByDifference`, `lotSz`, lotSz, `tickerPrice`, tickerPrice);
+    this.logger.log(
+      `updateByDifference`,
+      `lotSz`,
+      lotSz,
+      `tickerPrice`,
+      tickerPrice
+    );
+    const asks = data.asks
+      .filter((v) => parseFloat(v[1]) > 0)
+      .map((v) => parseFloat(v[0]))
+      .sort();
+    const bids = data.bids
+      .filter((v) => parseFloat(v[1]) > 0)
+      .map((v) => parseFloat(v[0]))
+      .sort()
+      .reverse();
+    const ask = asks[0];
+    const bid = bids[0];
+    if (ask <= bid) {
+      this.logger.error("*", ask, bid);
+    } else {
+      this.logger.log(ask, bid);
+    }
+
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       const result = this._getDifference(
