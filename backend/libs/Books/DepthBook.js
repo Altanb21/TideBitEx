@@ -52,7 +52,7 @@ class DepthBook extends BookBase {
       .filter((book) => {
         if (tickerPrice && book.price <= tickerPrice)
           this.logger.error(
-            `askOrder price error`,
+            `askOrderPrice smaller then tickerPrice`,
             `askOrder`,
             book,
             `tickerPrice`,
@@ -214,7 +214,8 @@ class DepthBook extends BookBase {
       `lotSz`,
       lotSz,
       `tickerPrice`,
-      tickerPrice
+      tickerPrice,
+      data
     );
     const asks = data.asks
       .filter((v) => parseFloat(v[1]) > 0)
@@ -228,7 +229,7 @@ class DepthBook extends BookBase {
     const ask = asks[0];
     const bid = bids[0];
     if (ask <= bid) {
-      this.logger.error("*", ask, bid);
+      this.logger.error("* askOrderPrice *", ask, bid);
     } else {
       this.logger.log(ask, bid);
     }
