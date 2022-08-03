@@ -192,10 +192,10 @@ class DepthBook extends BookBase {
     };
     asks.forEach((v) => {
       const index = myBooks.asks.findIndex((a) => {
-        return SafeMath.eq(v[0], a[0]);
+        return v[0] === a[0];
       });
       if (index > -1) {
-        if (SafeMath.gt((v[1], 0))) {
+        if (v[1] > 0) {
           myBooks.asks[index] = v;
           asksDifference.update.push(v);
         } else {
@@ -209,10 +209,10 @@ class DepthBook extends BookBase {
     });
     bids.forEach((v) => {
       const index = myBooks.bids.findIndex((a) => {
-        return SafeMath.eq(v[0], a[0]);
+        return v[0] === a[0];
       });
       if (index > -1) {
-        if (SafeMath.gt((v[1], 0))) {
+        if (v[1] > 0) {
           myBooks.bids[index] = v;
           bidsDifference.update.push(v);
         } else {
