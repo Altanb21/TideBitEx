@@ -145,7 +145,11 @@ class Middleman {
 
   async _getTrades({ market, limit, lotSz }) {
     try {
-      const trades = await this.communicator.getTrades({ market, limit, lotSz });
+      const trades = await this.communicator.getTrades({
+        market,
+        limit,
+        lotSz,
+      });
       this.tradeBook.updateAll(market, trades);
     } catch (error) {
       console.error(`_getTrades error`, error);
@@ -162,7 +166,11 @@ class Middleman {
 
   async _getDepthBooks({ market, sz, lotSz }) {
     try {
-      const depthBook = await this.communicator.getDepthBooks({ market, sz, lotSz });
+      const depthBook = await this.communicator.getDepthBooks({
+        market,
+        sz,
+        lotSz,
+      });
       this.depthBook.updateAll(market, depthBook);
     } catch (error) {
       console.error(`_getDepthBooks error`, error);
@@ -201,9 +209,9 @@ class Middleman {
         .getAccounts
         // this.selectedTicker?.instId?.replace("-", ",")
         ();
-      if (accounts) {
+      this.accountBook.updateAll(accounts);
+      if (accounts && !this.isLogin) {
         this.isLogin = true;
-        this.accountBook.updateAll(accounts);
         const CSRFToken = await this.communicator.CSRFTokenRenew();
         // console.log(`[Middleman] _getAccounts userId`, this._userId);
         const userId = this._userId;
@@ -327,12 +335,15 @@ class Middleman {
 
   async sync() {
     // --- WORKAROUND---
-    // console.log(`--- WORKAROUND--- sync [START]`);
     await wait(1 * 60 * 1000);
-    const market = this.tickerBook.getCurrentMarket();
-    await this._getOrderList(market);
-    await this._getOrderHistory(market);
-    // console.log(`--- WORKAROUND--- sync [END]`);
+    if (this.isLogin) {
+      // console.log(`--- WORKAROUND--- sync [START]`);
+      const market = this.tickerBook.getCurrentMarket();
+      await this._getAccounts(market);
+      await this._getOrderList(market);
+      await this._getOrderHistory(market);
+      // console.log(`--- WORKAROUND--- sync [END]`);
+    }
     this.sync();
     // --- WORKAROUND---
   }
