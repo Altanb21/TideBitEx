@@ -1579,12 +1579,13 @@ class OkexConnector extends ConnectorBase {
     const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
     this.logger.log(
       `[${this.constructor.name}] _updateBooks`,
-      `asks[${data.asks.length}]`,
-      `bids[${data.bids.length}]`
+      `asks[${updateBooks.asks.length}]`,
+      `bids[${updateBooks.bids.length}]`
     );
-    if (data.asks.length === 400 && data.bids.length === 400) {
+    if (updateBooks.asks.length === 400 && updateBooks.bids.length === 400) {
+      this.logger.log(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
       try {
-        this.depthBook.updateAll(instId, lotSz, data);
+        this.depthBook.updateAll(instId, lotSz, updateBooks);
       } catch (error) {
         this.logger.error(`_updateBooks updateAll error`, error);
       }

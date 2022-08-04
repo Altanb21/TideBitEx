@@ -6,8 +6,8 @@ class DepthBook extends BookBase {
   constructor({ logger, markets }) {
     super({ logger, markets });
     this.markets.forEach((market) => {
-      this._snapshot[market.instId] = {};
-      this._difference[market.instId] = {};
+      this._snapshot[market.instId] = { asks: [], bids: [] };
+      this._difference[market.instId] = { asks: {}, bids: {} };
     });
     this._config = { remove: true, add: true, update: true };
     this.name = `DepthBook`;
@@ -261,6 +261,12 @@ class DepthBook extends BookBase {
     try {
       if (!this._markets[instId]["lotSz"])
         this._markets[instId]["lotSz"] = lotSz;
+      this.logger.log(
+        `[${this.constructor.name}] updateAll`,
+        `this._snapshot[instId]`,
+        this._snapshot[instId]
+      );
+      this.logger.log(`[${this.constructor.name}] updateAll`, `data`, data);
       this._difference[instId]["asks"] = this._calculateDifference(
         this._snapshot[instId].asks,
         data.asks
