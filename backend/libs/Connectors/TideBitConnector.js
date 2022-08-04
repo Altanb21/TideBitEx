@@ -208,21 +208,24 @@ class TibeBitConnector extends ConnectorBase {
       });
     }
     const tBTickers = tBTickersRes.data;
-    const formatTickers = Object.keys(tBTickers).reduce((prev, currId) => {
-      const instId = this._findInstId(currId);
-      const tickerObj = tBTickers[currId];
-      prev[currId] = this.tickerBook.formatTicker(
-        {
-          ...tickerObj.ticker,
-          id: currId,
-          market: currId,
-          instId,
-          at: tickerObj.at,
-        },
-        SupportedExchange.TIDEBIT
-      );
-      return prev;
-    }, {});
+    this.logger.log(`tBTickers`, tBTickers);
+    const formatTickers = Object.keys(tBTickers)
+      .filter((id) => !!this._findInstId(id))
+      .reduce((prev, currId) => {
+        const instId = this._findInstId(currId);
+        const tickerObj = tBTickers[currId];
+        prev[currId] = this.tickerBook.formatTicker(
+          {
+            ...tickerObj.ticker,
+            id: currId,
+            market: currId,
+            instId,
+            at: tickerObj.at,
+          },
+          SupportedExchange.TIDEBIT
+        );
+        return prev;
+      }, {});
     const tickers = {};
     optional.mask.forEach((market) => {
       let ticker = formatTickers[market.id];
