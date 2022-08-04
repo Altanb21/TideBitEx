@@ -49,7 +49,7 @@ class TradeBook extends BookBase {
               side:
                 i === data.length - 1
                   ? "up"
-                  : SafeMath.gte(trade.price, data[i + 1].price)
+                  : SafeMath.gt(trade.price, data[i + 1].price)
                   ? "up"
                   : "down",
             }
