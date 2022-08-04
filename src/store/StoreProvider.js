@@ -334,7 +334,7 @@ const StoreProvider = (props) => {
         pathname: `/markets/${market}`,
       });
       await middleman.start(market);
-      // await middleman.sync();
+      await middleman.sync();
     }
   }, [history, location.pathname, middleman]);
 
