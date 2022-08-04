@@ -770,6 +770,7 @@ class TibeBitConnector extends ConnectorBase {
       this.accountBook.getDifference(memberId)
     );
   }
+  
   async tbGetOrderList(query) {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);

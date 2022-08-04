@@ -15,13 +15,7 @@ const { waterfallPromise } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
-  // _tickersUpdateInterval = 0;
-  // _booksUpdateInterval = 300;
-  // _tradesUpdateInterval = 300;
-
-  // _tickersTimestamp = 0;
-  // _booksTimestamp = 0;
-  // _tradesTimestamp = 0;
+  isStart = false;
 
   tickers = {};
   okexWsChannels = {};
@@ -64,11 +58,6 @@ class OkexConnector extends ConnectorBase {
     this.passPhrase = passPhrase;
     this.brokerId = brokerId;
     this.markets = markets;
-    await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
-    await this.websocketPrivate.init({
-      url: wssPrivate,
-      heartBeat: HEART_BEAT_TIME,
-    });
     this.depthBook = depthBook;
     this.tickerBook = tickerBook;
     this.tradeBook = tradeBook;
@@ -77,8 +66,52 @@ class OkexConnector extends ConnectorBase {
     this.currencies = currencies;
     this.database = database;
     this.tidebitMarkets = tidebitMarkets;
+    this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
+    this.websocketPrivate.init({
+      url: wssPrivate,
+      heartBeat: HEART_BEAT_TIME,
+    });
+    this._okexWsEventListener();
     return this;
   }
+
+  async start() {
+    this.isStart = true;
+    Object.keys(this.markets).forEach((key) => {
+      if (this.markets[key] === "OKEx") {
+        const instId = key.replace("tb", "");
+        this.instIds.push(instId);
+      }
+    });
+    this._subscribeTickers(this.instIds);
+    this._wsPrivateLogin();
+  }
+
+  async okAccessSign({ timeString, method, path, body }) {
+    const msg = timeString + method + path + (JSON.stringify(body) || "");
+    this.logger.debug("okAccessSign msg", msg);
+
+    const cr = crypto.createHmac("sha256", this.secretKey);
+    const signMsg = cr.update(msg).digest("base64");
+    this.logger.debug("okAccessSign signMsg", signMsg);
+    return signMsg;
+  }
+
+  getHeaders(needAuth, params = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+    };
+
+    if (needAuth) {
+      const { timeString, okAccessSign } = params;
+      headers["OK-ACCESS-KEY"] = this.apiKey;
+      headers["OK-ACCESS-SIGN"] = okAccessSign;
+      headers["OK-ACCESS-TIMESTAMP"] = timeString;
+      headers["OK-ACCESS-PASSPHRASE"] = this.passPhrase;
+    }
+    return headers;
+  }
+
   //   {
   //     "side": "sell",
   //     "fillSz": "0.002",
@@ -308,44 +341,6 @@ class OkexConnector extends ConnectorBase {
     }
   }
 
-  async start() {
-    this._okexWsEventListener();
-    // this._subscribeInstruments();
-    Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === "OKEx") {
-        const instId = key.replace("tb", "");
-        this.instIds.push(instId);
-      }
-    });
-    this._subscribeTickers(this.instIds);
-    this._wsPrivateLogin();
-  }
-
-  async okAccessSign({ timeString, method, path, body }) {
-    const msg = timeString + method + path + (JSON.stringify(body) || "");
-    this.logger.debug("okAccessSign msg", msg);
-
-    const cr = crypto.createHmac("sha256", this.secretKey);
-    const signMsg = cr.update(msg).digest("base64");
-    this.logger.debug("okAccessSign signMsg", signMsg);
-    return signMsg;
-  }
-
-  getHeaders(needAuth, params = {}) {
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    if (needAuth) {
-      const { timeString, okAccessSign } = params;
-      headers["OK-ACCESS-KEY"] = this.apiKey;
-      headers["OK-ACCESS-SIGN"] = okAccessSign;
-      headers["OK-ACCESS-TIMESTAMP"] = timeString;
-      headers["OK-ACCESS-PASSPHRASE"] = this.passPhrase;
-    }
-    return headers;
-  }
-
   // account api
   async getBalance({ query }) {
     const method = "GET";
@@ -392,12 +387,12 @@ class OkexConnector extends ConnectorBase {
             uTime: parseInt(dtl.uTime),
           };
 
-          const summaryIndex = summary.findIndex((v) => v.ccy == dtl.ccy);
+          const summaryIndex = summary.findIndex((v) => v.ccy === dtl.ccy);
           if (summaryIndex > -1) {
             summary[summaryIndex].totalBal += ccyData.cashBal;
             summary[summaryIndex].availBal += ccyData.availBal;
             summary[summaryIndex].frozenBal += ccyData.frozenBal;
-            uTime = Math.max(summary[summaryIndex].uTime, ccyData.uTime);
+            // uTime = Math.max(summary[summaryIndex].uTime, ccyData.uTime);
           } else {
             summary.push(ccyData);
           }
@@ -542,20 +537,20 @@ class OkexConnector extends ConnectorBase {
 
     if (!this.fetchedBook[instId]) {
       try {
-        const res = await axios({
-          method: method.toLocaleLowerCase(),
-          url: `${this.domain}${path}${qs}`,
-          headers: this.getHeaders(false),
-        });
-        if (res.data && res.data.code !== "0") {
-          const [message] = res.data.data;
-          this.logger.trace(res.data);
-          return new ResponseFormat({
-            message: message.sMsg,
-            code: Codes.THIRD_PARTY_API_ERROR,
-          });
-        }
-        const [data] = res.data.data;
+        // const res = await axios({
+        //   method: method.toLocaleLowerCase(),
+        //   url: `${this.domain}${path}${qs}`,
+        //   headers: this.getHeaders(false),
+        // });
+        // if (res.data && res.data.code !== "0") {
+        //   const [message] = res.data.data;
+        //   this.logger.trace(res.data);
+        //   return new ResponseFormat({
+        //     message: message.sMsg,
+        //     code: Codes.THIRD_PARTY_API_ERROR,
+        //   });
+        // }
+        // const [data] = res.data.data;
         // this.logger.log(
         //   `----------- [API][RES](${instId}) [START] ----------------`
         // );
@@ -567,7 +562,7 @@ class OkexConnector extends ConnectorBase {
         // this.logger.log(
         //   `----------- [API][RES](${instId}) [END] ----------------`
         // );
-        this.depthBook.updateAll(instId, lotSz, data);
+        this.depthBook.updateAll(instId, lotSz, { asks: [], bids: [] });
       } catch (error) {
         this.logger.error(error);
         let message = error.message;
@@ -1417,7 +1412,7 @@ class OkexConnector extends ConnectorBase {
             delete this.okexWsChannels[channel];
           }
         } else if (data.event === "error") {
-          this.logger.log("!!! _okexWsEventListener on event error", data);
+          this.logger.error("!!! _okexWsEventListener on event error", data);
         }
       } else if (data.data) {
         // okex server push data
@@ -1577,36 +1572,26 @@ class OkexConnector extends ConnectorBase {
     const [updateBooks] = data;
     const market = instId.replace("-", "").toLowerCase();
     const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
-    // this.logger.log(
-    //   `[FROM][OKEx][WS] _updateBooks data`,
-    //   updateBooks
-    // );
-    // this.logger.log(
-    //   `[FROM][OKEx][WS] _updateBooks updateBooks.bids`,
-    //   updateBooks.bids
-    // );
-    try {
-      this.depthBook.updateByDifference(instId, lotSz, updateBooks);
-    } catch (error) {
-      // ++
-      this.logger.error(`_updateBooks`, error);
+    this.logger.log(
+      `[${this.constructor.name}] _updateBooks`,
+      `asks[${updateBooks.asks.length}]`,
+      `bids[${updateBooks.bids.length}]`
+    );
+    if (updateBooks.asks.length === 400 && updateBooks.bids.length === 400) {
+      this.logger.log(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
+      try {
+        this.depthBook.updateAll(instId, lotSz, updateBooks);
+      } catch (error) {
+        this.logger.error(`_updateBooks updateAll error`, error);
+      }
+    } else {
+      try {
+        this.depthBook.updateByDifference(instId, lotSz, updateBooks);
+      } catch (error) {
+        // ++
+        this.logger.error(`_updateBooks updateByDifference error`, error);
+      }
     }
-    // this.logger.log(
-    //   `=+===+===+== [AFTER WS UPDATE][START](${instId})  =+===+===+==`
-    // );
-    // this.logger.log(
-    //   `[${this.constructor.name}] getDepthBook res`,
-    //   `asks[${this.depthBook.getSnapshot(instId).asks.length}]`,
-    //   `bids[${this.depthBook.getSnapshot(instId).bids.length}]`
-    // );
-    // this.logger.log(
-    //   `=+===+===+== [AFTER WS UPDATE][END](${instId})  =+===+===+==`
-    // );
-    // this.logger.log(
-    //   `[AFTER WS UPDATE] depthBook snapshot(${instId})`,
-    //   this.depthBook.getSnapshot(instId)
-    // );
-
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
@@ -1876,6 +1861,7 @@ class OkexConnector extends ConnectorBase {
 
   // TideBitEx ws
   _subscribeMarket(market, wsId, lotSz) {
+    if (!this.isStart) this.start();
     const instId = this._findInstId(market);
     if (this._findSource(instId) === SupportedExchange.OKEX) {
       this.logger.log(
