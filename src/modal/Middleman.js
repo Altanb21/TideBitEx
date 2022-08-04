@@ -209,17 +209,19 @@ class Middleman {
         .getAccounts
         // this.selectedTicker?.instId?.replace("-", ",")
         ();
-      this.accountBook.updateAll(accounts);
-      if (accounts && !this.isLogin) {
-        this.isLogin = true;
-        const CSRFToken = await this.communicator.CSRFTokenRenew();
-        // console.log(`[Middleman] _getAccounts userId`, this._userId);
-        const userId = this._userId;
-        this.tbWebSocket.setCurrentUser(market, {
-          CSRFToken,
-          userId,
-        });
-        this.tickerBook.setCurrentMarket(market);
+      if (accounts) {
+        this.accountBook.updateAll(accounts);
+        if (!this.isLogin) {
+          this.isLogin = true;
+          const CSRFToken = await this.communicator.CSRFTokenRenew();
+          // console.log(`[Middleman] _getAccounts userId`, this._userId);
+          const userId = this._userId;
+          this.tbWebSocket.setCurrentUser(market, {
+            CSRFToken,
+            userId,
+          });
+          this.tickerBook.setCurrentMarket(market);
+        }
       }
     } catch (error) {
       this.isLogin = false;
