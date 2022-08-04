@@ -72,8 +72,8 @@ class OkexConnector extends ConnectorBase {
     this.currencies = currencies;
     this.database = database;
     this.tidebitMarkets = tidebitMarkets;
-    this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
-    this.websocketPrivate.init({
+    await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
+    await this.websocketPrivate.init({
       url: wssPrivate,
       heartBeat: HEART_BEAT_TIME,
     });

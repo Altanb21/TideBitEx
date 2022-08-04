@@ -105,20 +105,23 @@ class DepthBook extends BookBase {
     total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
     asks = asks.map((v) => [...v, SafeMath.div(v[2], total)]);
     bids = bids.map((v) => [...v, SafeMath.div(v[2], total)]);
-    ask = asks[0];
-    bid = bids[0];
-    if (parseFloat(ask[0]) > parseFloat(bid[0])) {
-      result = `ask: ${ask}, bid: ${bid}`;
-    } else {
-      this.logger.error(new Date().toLocaleTimeString());
-      result = `* ask: ${ask}, bid: ${bid}`;
-    }
+    if (asks.length > 0 && bids.length > 0) {
+      ask = asks[0];
+      bid = bids[0];
+      if (parseFloat(ask[0]) > parseFloat(bid[0])) {
+        result = `ask: ${ask}, bid: ${bid}`;
+      } else {
+        this.logger.error(new Date().toLocaleTimeString());
+        result = `* ask: ${ask}, bid: ${bid}`;
+      }
 
-    if (this.endPriceResult && this.endPriceResult !== result) {
-      if (result.includes("*")) this.logger.error(`cross Price error`, result);
-      else this.logger.log(result);
+      if (this.endPriceResult && this.endPriceResult !== result) {
+        if (result.includes("*"))
+          this.logger.error(`cross Price error`, result);
+        else this.logger.log(result);
+      }
+      this.endPriceResult = result;
     }
-    this.endPriceResult = result;
     return {
       market,
       asks,
