@@ -40,7 +40,7 @@ class TradeBook extends BookBase {
     let lotSz = this._markets[instId]["lotSz"] || 0;
     const trimed = data
       .filter((trade) => trade.volume >= lotSz)
-      .sort((a, b) => +b.at - +a.at)
+      // .sort((a, b) => +b.at - +a.at)
       .slice(0, 50)
       .map((trade, i) =>
         !trade.side
@@ -74,7 +74,10 @@ class TradeBook extends BookBase {
       let updateSnapshot = this._snapshot[instId].map((trade) => ({
         ...trade,
       }));
-      let ts = newTrades[newTrades.length - 1]["ts"];
+      let _newTrades = newTrades
+        .map((newTrade) => ({ ...newTrade }))
+        .sort((a, b) => +b.ts - +a.ts);
+      let ts = _newTrades[_newTrades.length - 1]["ts"];
       if (ts > updateSnapshot[0]["ts"]) {
         this._snapshot[instId] = this._trim(
           instId,
