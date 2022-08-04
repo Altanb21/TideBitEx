@@ -329,7 +329,9 @@ class Middleman {
     // --- WORKAROUND---
     // console.log(`--- WORKAROUND--- sync [START]`);
     await wait(1 * 60 * 1000);
-    await this.selectMarket(this.tickerBook.getCurrentMarket());
+    const market = this.tickerBook.getCurrentMarket();
+    await this._getOrderList(market);
+    await this._getOrderHistory(market);
     // console.log(`--- WORKAROUND--- sync [END]`);
     this.sync();
     // --- WORKAROUND---
