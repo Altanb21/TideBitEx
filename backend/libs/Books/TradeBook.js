@@ -40,7 +40,7 @@ class TradeBook extends BookBase {
     let lotSz = this._markets[instId]["lotSz"] || 0;
     const trimed = data
       .filter((trade) => trade.volume >= lotSz)
-      .sort((a, b) => +b.at - +a.at)
+      // .sort((a, b) => +b.at - +a.at)
       .slice(0, 50)
       .map((trade, i) =>
         !trade.side
@@ -49,7 +49,7 @@ class TradeBook extends BookBase {
               side:
                 i === data.length - 1
                   ? "up"
-                  : SafeMath.gte(trade.price, data[i + 1].price)
+                  : SafeMath.gt(trade.price, data[i + 1].price)
                   ? "up"
                   : "down",
             }
@@ -67,17 +67,35 @@ class TradeBook extends BookBase {
    * @param {String} instId BTC-USDT
    * @param {Difference} difference
    */
-  updateByDifference(instId, lotSz, difference) {
-    if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
-    // this.logger.debug(
-    //   `[${this.constructor.name}]updateByDifference`,
-    //   instId,
-    //   difference
-    // );
-    // const add = difference.add.filter(
-    //   (diff) => !this._snapshot[instId].some((trade) => trade.id === diff.id)
-    // );
-    return super.updateByDifference(instId, difference);
+  updateByDifference(instId, lotSz, newTrades) {
+    try {
+      if (!this._markets[instId]["lotSz"])
+        this._markets[instId]["lotSz"] = lotSz;
+      let updateSnapshot = this._snapshot[instId].map((trade) => ({
+        ...trade,
+      }));
+      let _newTrades = newTrades
+        .map((newTrade) => ({ ...newTrade }))
+        .sort((a, b) => +b.ts - +a.ts);
+      let _newTrade = _newTrades[_newTrades.length - 1];
+      if (
+        _newTrade["ts"] >= updateSnapshot[0]["ts"] &&
+        _newTrade["id"] !== updateSnapshot[0]["id"]
+      ) {
+        this._snapshot[instId] = this._trim(
+          instId,
+          newTrades.concat(updateSnapshot)
+        );
+        this._difference[instId] = { add: newTrades };
+      }
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `[${this.constructor.name}] updateByDifference[${instId}] error`,
+        error
+      );
+      return false;
+    }
   }
 
   // /**
@@ -86,7 +104,7 @@ class TradeBook extends BookBase {
   //  */
   updateAll(instId, lotSz, data) {
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
-    return super.updateAll(instId, data)
+    return super.updateAll(instId, data);
   }
 }
 

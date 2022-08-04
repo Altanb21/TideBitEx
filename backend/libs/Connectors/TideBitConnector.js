@@ -200,13 +200,6 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   async getTickers({ optional }) {
-    // this.logger.log(`------------------------ tidebitMarkets --------------------------`);
-    // this.logger.log( this.tidebitMarkets);
-    // this.logger.log(`------------------------ tidebitMarkets --------------------------`);
-    // this.logger.log(`------------------------ getTickers optiona l--------------------------`);
-    // this.logger.log(optional);
-    // this.logger.log(`------------------------  getTickers optional --------------------------`);
-
     const tBTickersRes = await axios.get(`${this.peatio}/api/v2/tickers`);
     if (!tBTickersRes || !tBTickersRes.data) {
       return new ResponseFormat({
@@ -215,52 +208,23 @@ class TibeBitConnector extends ConnectorBase {
       });
     }
     const tBTickers = tBTickersRes.data;
-    // this.logger.log(`------------------------ tBTickers --------------------------`);
-    // this.logger.log(tBTickers);
-    // this.logger.log(`------------------------ tBTickers --------------------------`);
-    const formatTickers = Object.keys(tBTickers).reduce((prev, currId) => {
-      const instId = this._findInstId(currId);
-      const tickerObj = tBTickers[currId];
-      const change = SafeMath.minus(
-        tickerObj.ticker.last,
-        tickerObj.ticker.open
-      );
-      const tbTicker = this.tidebitMarkets.find(
-        (market) => market.id === currId
-      );
-      const changePct = SafeMath.gt(tickerObj.ticker.open, "0")
-        ? SafeMath.div(change, tickerObj.ticker.open)
-        : SafeMath.eq(change, "0")
-        ? "0"
-        : "1";
-      prev[currId] = {
-        id: tbTicker?.id,
-        market: currId,
-        instId,
-        name: tbTicker?.name,
-        base_unit: tbTicker?.base_unit,
-        quote_unit: tbTicker?.quote_unit,
-        group: tbTicker?.group,
-        pricescale: tbTicker?.price_group_fixed,
-        buy: tickerObj.ticker.buy,
-        sell: tickerObj.ticker.sell,
-        low: tickerObj.ticker.low,
-        high: tickerObj.ticker.high,
-        last: tickerObj.ticker.last,
-        open: tickerObj.ticker.open,
-        volume: tickerObj.ticker.vol,
-        change,
-        changePct,
-        at: parseInt(tickerObj.at),
-        ts: parseInt(SafeMath.mult(tickerObj.at, "1000")),
-        source: SupportedExchange.TIDEBIT,
-        tickSz: Utils.getDecimal(tbTicker?.bid?.fixed),
-        lotSz: Utils.getDecimal(tbTicker?.ask?.fixed),
-        minSz: Utils.getDecimal(tbTicker?.ask?.fixed),
-        ticker: tickerObj.ticker,
-      };
-      return prev;
-    }, {});
+    const formatTickers = Object.keys(tBTickers)
+      .filter((id) => !!this._findInstId(id))
+      .reduce((prev, currId) => {
+        const instId = this._findInstId(currId);
+        const tickerObj = tBTickers[currId];
+        prev[currId] = this.tickerBook.formatTicker(
+          {
+            ...tickerObj.ticker,
+            id: currId,
+            market: currId,
+            instId,
+            at: tickerObj.at,
+          },
+          SupportedExchange.TIDEBIT
+        );
+        return prev;
+      }, {});
     const tickers = {};
     optional.mask.forEach((market) => {
       let ticker = formatTickers[market.id];
@@ -300,58 +264,10 @@ class TibeBitConnector extends ConnectorBase {
         };
       }
     });
-    // this.logger.log(`------------------------ (tickers) --------------------------`);
-    // this.logger.log(tickers);
-    // this.logger.log(`------------------------ (tickers) --------------------------`);
-    // ++ TODO !!! Ticker dataFormate is different
-    // this.tickerBook.updateAll(tickers);
     return new ResponseFormat({
       message: "getTickers from TideBit",
       payload: tickers,
     });
-  }
-  // ++ TODO: verify function works properly
-  _formateTicker(data) {
-    // return tickerData.map((data) => {
-    const id = data.name.replace("/", "").toLowerCase();
-    const tbTicker = this.tidebitMarkets.find((market) => market.id === id);
-    const change = SafeMath.minus(data.last, data.open);
-    const changePct = SafeMath.gt(data.open, "0")
-      ? SafeMath.div(change, data.open)
-      : SafeMath.eq(change, "0")
-      ? "0"
-      : "1";
-    const updateTicker = {
-      ...data,
-      name: tbTicker?.name,
-      base_unit: tbTicker?.base_unit,
-      quote_unit: tbTicker?.quote_unit,
-      group: tbTicker?.group,
-      pricescale: tbTicker?.price_group_fixed,
-      id,
-      ts: parseInt(SafeMath.mult(data.at, "1000")),
-      at: parseInt(data.at),
-      instId: this._findInstId(id),
-      market: id,
-      change,
-      changePct,
-      source: SupportedExchange.TIDEBIT,
-      ticker: {
-        // [about to decrepted]
-        buy: data.buy,
-        sell: data.sell,
-        low: data.low,
-        high: data.high,
-        last: data.last,
-        open: data.open,
-        vol: data.volume,
-      },
-      tickSz: Utils.getDecimal(tbTicker?.bid?.fixed),
-      lotSz: Utils.getDecimal(tbTicker?.ask?.fixed),
-      minSz: Utils.getDecimal(tbTicker?.ask?.fixed),
-    };
-    return updateTicker;
-    // });
   }
 
   // ++ TODO: verify function works properly
@@ -378,8 +294,13 @@ class TibeBitConnector extends ConnectorBase {
     // );
     // this.logger.log(`[FROM TideBit]  _updateTickers data`, data);
     Object.values(data).forEach((d) => {
-      const ticker = this._formateTicker(d);
-      if (this._findSource(ticker.instId) === SupportedExchange.TIDEBIT) {
+      const market = d.name.replace("/", "").toLowerCase();
+      const instId = this._findInstId(market);
+      if (this._findSource(instId) === SupportedExchange.TIDEBIT) {
+        const ticker = this.tickerBook.formatTicker(
+          { ...d, id: market, market, instId },
+          SupportedExchange.TIDEBIT
+        );
         const result = this.tickerBook.updateByDifference(
           ticker.instId,
           ticker
@@ -525,6 +446,7 @@ class TibeBitConnector extends ConnectorBase {
       },
     ]
     */
+  // descending
   async getTrades({ query }) {
     this.logger.log(`getTrades query`, query);
     const { instId, market, lotSz } = query;
@@ -580,9 +502,13 @@ class TibeBitConnector extends ConnectorBase {
     const lotSz =
       this.market_channel[`market-${newTrade.market}-global`]["lotSz"];
     const instId = this._findInstId(newTrade.market);
-    this.tradeBook.updateByDifference(instId, lotSz, {
-      add: [{ ...newTrade, ts: parseInt(SafeMath.mult(newTrade.at, "1000")) }],
-    });
+    const newTrades = [
+      {
+        ...newTrade,
+        ts: parseInt(SafeMath.mult(newTrade.at, "1000")),
+      },
+    ];
+    this.tradeBook.updateByDifference(instId, lotSz, newTrades);
     EventBus.emit(Events.trade, memberId, newTrade.market, {
       market: newTrade.market,
       difference: this.tradeBook.getDifference(instId),
@@ -625,9 +551,10 @@ class TibeBitConnector extends ConnectorBase {
     }
     */
     const instId = this._findInstId(market);
-    this.tradeBook.updateByDifference(instId, lotSz, {
-      add: data.trades.map((trade) => this._formateTrade(market, trade)),
-    });
+    const newTrades = data.trades.map((trade) =>
+      this._formateTrade(market, trade)
+    );
+    this.tradeBook.updateByDifference(instId, lotSz, newTrades);
 
     EventBus.emit(Events.trades, market, {
       market,
@@ -1368,6 +1295,12 @@ class TibeBitConnector extends ConnectorBase {
     // });
     this.isStart = true;
     this._registerGlobalChannel();
+    Object.keys(this.markets).forEach((key) => {
+      if (this.markets[key] === "TideBit") {
+        const instId = key.replace("tb", "");
+        this.instIds.push(instId);
+      }
+    });
     // this.public_pusher.bind_global((data) =>
     //   this.logger.log(`[_startPusher][bind_global] data`, data)
     // );

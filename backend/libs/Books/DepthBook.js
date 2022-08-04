@@ -264,12 +264,6 @@ class DepthBook extends BookBase {
     try {
       if (!this._markets[instId]["lotSz"])
         this._markets[instId]["lotSz"] = lotSz;
-      this.logger.log(
-        `[${this.constructor.name}] updateAll`,
-        `this._snapshot[instId]`,
-        this._snapshot[instId]
-      );
-      this.logger.log(`[${this.constructor.name}] updateAll`, `data`, data);
       this._difference[instId]["asks"] = this._calculateDifference(
         this._snapshot[instId].asks,
         data.asks
@@ -284,7 +278,6 @@ class DepthBook extends BookBase {
       this.logger.error(`[${this.constructor.name}] updateAll error`, error);
       return false;
     }
-    // return super.updateAll(instId, this._formateBooks(data));
   }
 }
 

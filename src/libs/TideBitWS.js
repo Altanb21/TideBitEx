@@ -42,7 +42,6 @@ class TideBitWS {
       msg.reason
     );
     clearTimeout(this.wsReConnectTimeout);
-    if (this.interval) clearInterval(this.interval);
     // in case connection is broken
     if (msg.code === 1006 || msg.reason === "" || msg.wasClean === false)
       this.wsReConnectTimeout = setTimeout(async () => {
@@ -54,7 +53,6 @@ class TideBitWS {
     if (this.ws) {
       this.ws.onclose = (msg) => this.clear(msg);
       this.ws.onerror = async (err) => {
-        if (this.interval) clearInterval(this.interval);
         console.error(`[TideBitWS] this.ws.onerror`, err);
         clearTimeout(this.wsReConnectTimeout);
         this.wsReConnectTimeout = setTimeout(async () => {
@@ -114,7 +112,6 @@ class TideBitWS {
       });
     } catch (e) {
       console.log(`middleman ws init error:`, e);
-      if (this.interval) clearInterval(this.interval);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init({ url: this.url });
