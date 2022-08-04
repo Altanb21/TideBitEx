@@ -338,7 +338,7 @@ class ExchangeHub extends Bot {
 
   async start() {
     await super.start();
-    await this.okexConnector.start();
+    // await this.okexConnector.start();
     this._eventListener();
     this._syncTransactionDetail();
     return this;

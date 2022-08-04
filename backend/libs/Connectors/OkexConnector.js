@@ -15,13 +15,7 @@ const { waterfallPromise } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
-  // _tickersUpdateInterval = 0;
-  // _booksUpdateInterval = 300;
-  // _tradesUpdateInterval = 300;
-
-  // _tickersTimestamp = 0;
-  // _booksTimestamp = 0;
-  // _tradesTimestamp = 0;
+  isStart = false;
 
   tickers = {};
   okexWsChannels = {};
@@ -72,8 +66,8 @@ class OkexConnector extends ConnectorBase {
     this.currencies = currencies;
     this.database = database;
     this.tidebitMarkets = tidebitMarkets;
-    await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
-    await this.websocketPrivate.init({
+    this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
+    this.websocketPrivate.init({
       url: wssPrivate,
       heartBeat: HEART_BEAT_TIME,
     });
@@ -82,6 +76,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   async start() {
+    this.isStart = true;
     Object.keys(this.markets).forEach((key) => {
       if (this.markets[key] === "OKEx") {
         const instId = key.replace("tb", "");
@@ -1866,6 +1861,7 @@ class OkexConnector extends ConnectorBase {
 
   // TideBitEx ws
   _subscribeMarket(market, wsId, lotSz) {
+    if (!this.isStart) this.start();
     const instId = this._findInstId(market);
     if (this._findSource(instId) === SupportedExchange.OKEX) {
       this.logger.log(
