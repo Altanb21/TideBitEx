@@ -208,7 +208,6 @@ class TibeBitConnector extends ConnectorBase {
       });
     }
     const tBTickers = tBTickersRes.data;
-    this.logger.log(`tBTickers`, tBTickers);
     const formatTickers = Object.keys(tBTickers)
       .filter((id) => !!this._findInstId(id))
       .reduce((prev, currId) => {
@@ -295,13 +294,13 @@ class TibeBitConnector extends ConnectorBase {
     // );
     // this.logger.log(`[FROM TideBit]  _updateTickers data`, data);
     Object.values(data).forEach((d) => {
-      const market = data.name.replace("/", "").toLowerCase();
+      const market = d.name.replace("/", "").toLowerCase();
       const instId = this._findInstId(market);
-      const ticker = this.tickerBook.formatTicker(
-        { ...d, id: market, market, instId },
-        SupportedExchange.TIDEBIT
-      );
-      if (this._findSource(ticker.instId) === SupportedExchange.TIDEBIT) {
+      if (this._findSource(instId) === SupportedExchange.TIDEBIT) {
+        const ticker = this.tickerBook.formatTicker(
+          { ...d, id: market, market, instId },
+          SupportedExchange.TIDEBIT
+        );
         const result = this.tickerBook.updateByDifference(
           ticker.instId,
           ticker
@@ -447,6 +446,7 @@ class TibeBitConnector extends ConnectorBase {
       },
     ]
     */
+  // descending
   async getTrades({ query }) {
     this.logger.log(`getTrades query`, query);
     const { instId, market, lotSz } = query;
@@ -502,9 +502,13 @@ class TibeBitConnector extends ConnectorBase {
     const lotSz =
       this.market_channel[`market-${newTrade.market}-global`]["lotSz"];
     const instId = this._findInstId(newTrade.market);
-    this.tradeBook.updateByDifference(instId, lotSz, {
-      add: [{ ...newTrade, ts: parseInt(SafeMath.mult(newTrade.at, "1000")) }],
-    });
+    const newTrades = [
+      {
+        ...newTrade,
+        ts: parseInt(SafeMath.mult(newTrade.at, "1000")),
+      },
+    ];
+    this.tradeBook.updateByDifference(instId, lotSz, newTrades);
     EventBus.emit(Events.trade, memberId, newTrade.market, {
       market: newTrade.market,
       difference: this.tradeBook.getDifference(instId),
@@ -547,9 +551,10 @@ class TibeBitConnector extends ConnectorBase {
     }
     */
     const instId = this._findInstId(market);
-    this.tradeBook.updateByDifference(instId, lotSz, {
-      add: data.trades.map((trade) => this._formateTrade(market, trade)),
-    });
+    const newTrades = data.trades.map((trade) =>
+      this._formateTrade(market, trade)
+    );
+    this.tradeBook.updateByDifference(instId, lotSz, newTrades);
 
     EventBus.emit(Events.trades, market, {
       market,

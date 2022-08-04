@@ -774,12 +774,9 @@ class OkexConnector extends ConnectorBase {
     }
   }
 
+  // descending
   async getTrades({ query }) {
     const { instId, limit, lotSz } = query;
-    // this.logger.log(
-    //   `[${this.constructor.name}] getTrades this.fetchedTrades[${instId}]`,
-    //   this.fetchedTrades[instId]
-    // );
     if (!this.fetchedTrades[instId]) {
       const method = "GET";
       const path = "/api/v5/market/trades";
@@ -803,13 +800,8 @@ class OkexConnector extends ConnectorBase {
             code: Codes.THIRD_PARTY_API_ERROR,
           });
         }
-        // ++ TODO: verify function works properly
         const market = instId.replace("-", "").toLowerCase();
         const trades = this._formateTrades(market, res.data.data);
-        // this.logger.log(
-        //   `[${this.constructor.name}] getTrades trades[${instId}]`,
-        //   trades
-        // );
         this.tradeBook.updateAll(instId, lotSz, trades);
         this.fetchedTrades[instId] = true;
       } catch (error) {
@@ -1546,11 +1538,6 @@ class OkexConnector extends ConnectorBase {
         at: parseInt(SafeMath.div(data.ts, "1000")),
         ts: data.ts,
       };
-      // this.logger.debug(
-      //   `[${this.constructor.name}]_updateTrades`,
-      //   market,
-      //   new Date(trade.ts)
-      // );
       return trade;
     });
   }
@@ -1562,9 +1549,7 @@ class OkexConnector extends ConnectorBase {
       const market = instId.replace("-", "").toLowerCase();
       const newTrades = this._formateTrades(market, trades);
       // this.logger.debug(`[${this.constructor.name}]_updateTrades`, newTrades);
-      this.tradeBook.updateByDifference(instId, lotSz, {
-        add: newTrades,
-      });
+      this.tradeBook.updateByDifference(instId, lotSz, newTrades);
       EventBus.emit(Events.trades, market, {
         market,
         trades: this.tradeBook.getSnapshot(instId),

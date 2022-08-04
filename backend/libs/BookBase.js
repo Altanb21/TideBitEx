@@ -11,7 +11,7 @@ class BookBase {
     this.markets = markets;
     this.markets.forEach((market) => {
       this._markets[market.instId] = {};
-      this._markets[market.instId]['market'] = market;
+      this._markets[market.instId]["market"] = market;
       this._snapshot[market.instId] = [];
       this._difference[market.instId] = [];
     });
@@ -124,7 +124,7 @@ class BookBase {
           )
           .concat(difference.add);
       }
-      this._snapshot[instId] = this._trim(instId, updateSnapshot);
+      this._snapshot[instId] = updateSnapshot;
       this._difference[instId] = difference;
       return true;
     } catch (error) {
