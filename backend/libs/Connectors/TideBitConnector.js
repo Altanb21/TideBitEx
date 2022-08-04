@@ -200,51 +200,101 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   async getTickers({ optional }) {
-    const tBTickersRes = await axios.get(`${this.peatio}/api/v2/tickers`);
+   const tBTickersRes = await axios.get(`${this.peatio}/api/v2/tickers`);
     if (!tBTickersRes || !tBTickersRes.data) {
       return new ResponseFormat({
         message: "Something went wrong",
         code: Codes.API_UNKNOWN_ERROR,
       });
     }
-    const tBTickers = this.instIds.map((instId) =>
-      tBTickersRes.data.find((data) => data.instId === instId)
-    );
+    const tBTickers = tBTickersRes.data;
+    const formatTickers = Object.keys(tBTickers).reduce((prev, currId) => {
+      const instId = this._findInstId(currId);
+      const tickerObj = tBTickers[currId];
+      const change = SafeMath.minus(
+        tickerObj.ticker.last,
+        tickerObj.ticker.open
+      );
+      const tbTicker = this.tidebitMarkets.find(
+        (market) => market.id === currId
+      );
+      const changePct = SafeMath.gt(tickerObj.ticker.open, "0")
+        ? SafeMath.div(change, tickerObj.ticker.open)
+        : SafeMath.eq(change, "0")
+        ? "0"
+        : "1";
+      prev[currId] = {
+        id: tbTicker?.id,
+        market: currId,
+        instId,
+        name: tbTicker?.name,
+        base_unit: tbTicker.base_unit,
+        quote_unit: tbTicker.quote_unit,
+        group: tbTicker?.group,
+        pricescale: tbTicker?.price_group_fixed,
+        buy: tickerObj.ticker.buy,
+        sell: tickerObj.ticker.sell,
+        low: tickerObj.ticker.low,
+        high: tickerObj.ticker.high,
+        last: tickerObj.ticker.last,
+        open: tickerObj.ticker.open,
+        volume: tickerObj.ticker.vol,
+        change,
+        changePct,
+        at: parseInt(tickerObj.at),
+        ts: parseInt(SafeMath.mult(tickerObj.at, "1000")),
+        source: SupportedExchange.TIDEBIT,
+        tickSz: Utils.getDecimal(tbTicker?.bid?.fixed),
+        lotSz: Utils.getDecimal(tbTicker?.ask?.fixed),
+        minSz: Utils.getDecimal(tbTicker?.ask?.fixed),
+        ticker: tickerObj.ticker,
+      };
+      return prev;
+    }, {});
     const tickers = {};
     optional.mask.forEach((market) => {
-      let ticker = tBTickers[market.id];
-      if (ticker) {
-        tickers[market.id] = this.tickerBook.formatTicker(
-          {
-            ...tBTickers[market.id]["ticker"],
-            id: market.id,
-            market: market.id,
-            instId: market.instId,
-            volume: tBTickers[market.id]["ticker"]["vol"],
-            at: tBTickers[market.id]["at"],
-          },
-          SupportedExchange.TIDEBIT
+      let ticker = formatTickers[market.id];
+      if (ticker)
+        tickers[market.id] = {
+          ...ticker,
+        };
+      else {
+        const tbTicker = this.tidebitMarkets.find(
+          (_market) => market.id === _market.id
         );
-      } else {
         const instId = this._findInstId(market.id);
-        tickers[market.id] = this.tickerBook.formatTicker(
-          {
-            id: market.id,
-            market: market.id,
-            instId,
-            buy: "0.0",
-            sell: "0.0",
-            low: "0.0",
-            high: "0.0",
-            last: "0.0",
-            open: "0.0",
-            volume: "0.0",
-            at: 0,
-          },
-          SupportedExchange.TIDEBIT
-        );
+        tickers[market.id] = {
+          id: market.id,
+          market: market.id,
+          instId,
+          name: market.name,
+          base_unit: market.base_unit,
+          quote_unit: market.quote_unit,
+          group: market.group,
+          pricescale: market.price_group_fixed,
+          buy: "0.0",
+          sell: "0.0",
+          low: "0.0",
+          high: "0.0",
+          last: "0.0",
+          open: "0.0",
+          volume: "0.0",
+          change: "0.0",
+          changePct: "0.0",
+          at: 0,
+          ts: 0,
+          source: SupportedExchange.TIDEBIT,
+          tickSz: Utils.getDecimal(tbTicker?.bid?.fixed),
+          lotSz: Utils.getDecimal(tbTicker?.ask?.fixed),
+          minSz: Utils.getDecimal(tbTicker?.ask?.fixed),
+        };
       }
     });
+    // this.logger.log(`------------------------ (tickers) --------------------------`);
+    // this.logger.log(tickers);
+    // this.logger.log(`------------------------ (tickers) --------------------------`);
+    // ++ TODO !!! Ticker dataFormate is different
+    // this.tickerBook.updateAll(tickers);
     return new ResponseFormat({
       message: "getTickers from TideBit",
       payload: tickers,
