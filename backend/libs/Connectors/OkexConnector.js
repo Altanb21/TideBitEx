@@ -310,13 +310,28 @@ class OkexConnector extends ConnectorBase {
 
   async start() {
     this._okexWsEventListener();
-    // this._subscribeInstruments();
     Object.keys(this.markets).forEach((key) => {
       if (this.markets[key] === "OKEx") {
         const instId = key.replace("tb", "");
         this.instIds.push(instId);
       }
     });
+    let instruments,
+      instrumentsRes = await this.getInstruments({
+        query: { instType: "SPOT" },
+      });
+    if (instrumentsRes.success) {
+      instruments = instrumentsRes.payload.map((instrument) => {
+        const instId = instrument.instId;
+        const instrumentObj = {};
+        instrumentObj[instId] = instrument;
+        return instrumentObj;
+      });
+      // .filter((inst) =>
+      //   this.instIds.some((instId) => instId === inst.instId)
+      // );
+    }
+    this.tickerBook.instruments = instruments;
     this._subscribeTickers(this.instIds);
     this._wsPrivateLogin();
   }
@@ -397,7 +412,7 @@ class OkexConnector extends ConnectorBase {
             summary[summaryIndex].totalBal += ccyData.cashBal;
             summary[summaryIndex].availBal += ccyData.availBal;
             summary[summaryIndex].frozenBal += ccyData.frozenBal;
-            uTime = Math.max(summary[summaryIndex].uTime, ccyData.uTime);
+            // uTime = Math.max(summary[summaryIndex].uTime, ccyData.uTime);
           } else {
             summary.push(ccyData);
           }
@@ -422,7 +437,7 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
-  async getTicker({ query, optional }) {
+  async getTicker({ query }) {
     const method = "GET";
     const path = "/api/v5/market/ticker";
     const { instId } = query;
@@ -446,10 +461,11 @@ class OkexConnector extends ConnectorBase {
         });
       }
       const [data] = res.data.data;
-      const ticker = {};
-      ticker[data.instId.replace("-", "").toLowerCase()] =
-        this._formateTicker(data);
-      // this.logger.log(`[${this.constructor.name}] getTicker`, ticker);
+      const ticker = this.tickerBook.formatTicker(
+        data,
+        SupportedExchange.OKEX
+      );
+      this.logger.log(`[${this.constructor.name}] getTicker`, ticker);
       return new ResponseFormat({
         message: "getTicker",
         payload: ticker,
@@ -468,11 +484,6 @@ class OkexConnector extends ConnectorBase {
   // account api end
   // market api
   async getTickers({ query }) {
-    let instruments,
-      instrumentsRes = await this.getInstruments({ query });
-    if (instrumentsRes.success) {
-      instruments = instrumentsRes.payload;
-    }
     const method = "GET";
     const path = "/api/v5/market/tickers";
     const { instType, uly } = query;
@@ -496,26 +507,20 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      const defaultObj = {};
-      const tickers = res.data.data.reduce((prev, data) => {
-        prev[data.instId] = this._formateTicker(data);
-        return prev;
-      }, defaultObj);
-      const filteredTickers = Utils.tickersFilterInclude(
-        this.instIds.map((instId) =>
-          this.tidebitMarkets.find(
-            (market) => market.id === instId.replace("-", "").toLowerCase()
-          )
-        ),
-        tickers,
-        instruments
+      const tickers = res.data.data.filter((data) =>
+        this.instIds.some((instId) => instId === data.insId)
       );
-      this.logger.log(`instId`, this.instId);
-      this.logger.log(`filteredTickers`, filteredTickers);
-      // this.tickerBook.updateAll(tickers);
+      const formatedTickers = tickers.reduce((prev, data) => {
+        prev[data.instId] = this.tickerBook.formatTicker(
+          data,
+          SupportedExchange.OKEX
+        );
+        return prev;
+      }, {});
+      this.logger.log(`formatedTickers`, formatedTickers);
       return new ResponseFormat({
         message: "getTickers from OKEx",
-        payload: filteredTickers,
+        payload: formatedTickers,
       });
     } catch (error) {
       this.logger.error(error);
@@ -1434,10 +1439,7 @@ class OkexConnector extends ConnectorBase {
             this._updateTrades(instId, data.data);
             break;
           case "books":
-            if (data.action === "update") {
-              // there has 2 action, snapshot: full data; update: incremental data.
-              this._updateBooks(instId, data.data);
-            }
+            this._updateBooks(instId, data.data, data.action);
             break;
           case this.candleChannel:
             // this._updateCandle(data.arg.instId, data.arg.channel, data.data);
@@ -1572,41 +1574,27 @@ class OkexConnector extends ConnectorBase {
     } catch (error) {}
   }
 
-  // ++ TODO: verify function works properly
-  _updateBooks(instId, data) {
+  // there has 2 action, snapshot: full data; update: incremental data.
+  _updateBooks(instId, data, action) {
     const [updateBooks] = data;
     const market = instId.replace("-", "").toLowerCase();
     const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
-    // this.logger.log(
-    //   `[FROM][OKEx][WS] _updateBooks data`,
-    //   updateBooks
-    // );
-    // this.logger.log(
-    //   `[FROM][OKEx][WS] _updateBooks updateBooks.bids`,
-    //   updateBooks.bids
-    // );
-    try {
-      this.depthBook.updateByDifference(instId, lotSz, updateBooks);
-    } catch (error) {
-      // ++
-      this.logger.error(`_updateBooks`, error);
+    if (action === "snapshot") {
+      this.logger.log(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
+      try {
+        this.depthBook.updateAll(instId, lotSz, updateBooks);
+      } catch (error) {
+        this.logger.error(`_updateBooks updateAll error`, error);
+      }
     }
-    // this.logger.log(
-    //   `=+===+===+== [AFTER WS UPDATE][START](${instId})  =+===+===+==`
-    // );
-    // this.logger.log(
-    //   `[${this.constructor.name}] getDepthBook res`,
-    //   `asks[${this.depthBook.getSnapshot(instId).asks.length}]`,
-    //   `bids[${this.depthBook.getSnapshot(instId).bids.length}]`
-    // );
-    // this.logger.log(
-    //   `=+===+===+== [AFTER WS UPDATE][END](${instId})  =+===+===+==`
-    // );
-    // this.logger.log(
-    //   `[AFTER WS UPDATE] depthBook snapshot(${instId})`,
-    //   this.depthBook.getSnapshot(instId)
-    // );
-
+    if (action === "update") {
+      try {
+        this.depthBook.updateByDifference(instId, lotSz, updateBooks);
+      } catch (error) {
+        // ++
+        this.logger.error(`_updateBooks`, error);
+      }
+    }
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
@@ -1638,64 +1626,10 @@ class OkexConnector extends ConnectorBase {
   }
 
   // ++ TODO: verify function works properly
-  _formateTicker(data) {
-    const id = data.instId.replace("-", "").toLowerCase();
-    const change = SafeMath.minus(data.last, data.open24h);
-    const changePct = SafeMath.gt(data.open24h, "0")
-      ? SafeMath.div(change, data.open24h)
-      : SafeMath.eq(change, "0")
-      ? "0"
-      : "1";
-    const updateTicker = {
-      id,
-      market: id,
-      instId: data.instId,
-      name: data.instId.replace("-", "/"),
-      base_unit: data.instId.split("-")[0].toLowerCase(),
-      quote_unit: data.instId.split("-")[1].toLowerCase(),
-      group:
-        data.instId.split("-")[1].toLowerCase().includes("usd") &&
-        data.instId.split("-")[1].toLowerCase().length > 3
-          ? "usdx"
-          : data.instId.split("-")[1].toLowerCase(),
-      last: data.last,
-      change,
-      changePct,
-      open: data.open24h,
-      high: data.high24h,
-      low: data.low24h,
-      volume: data.vol24h,
-      volumeCcy: data.volCcy24h,
-      at: parseInt(SafeMath.div(data.ts, "1000")),
-      ts: parseInt(data.ts),
-      source: SupportedExchange.OKEX,
-      sell: data.askPx, // [about to decrepted]
-      buy: data.bidPx, // [about to decrepted]
-      ticker: {
-        // [about to decrepted]
-        buy: data.bidPx,
-        sell: data.askPx,
-        low: data.low24h,
-        high: data.high24h,
-        last: data.last,
-        open: data.open24h,
-        vol: data.vol24h,
-      },
-    };
-    return updateTicker;
-  }
-
-  // ++ TODO: verify function works properly
   _updateTickers(data) {
     data.forEach((d) => {
-      // if (d.instId === "BTC-USDT")
-      //   this.logger.log(
-      //     `[${this.constructor.name}]_updateTickers d.last`,
-      //     d.last,
-      //     new Date(parseInt(d.ts)).toISOString()
-      //   );
       if (this._findSource(d.instId) === SupportedExchange.OKEX) {
-        const ticker = this._formateTicker(d);
+        const ticker = this.tickerBook.formatTicker(d, SupportedExchange.OKEX);
         const result = this.tickerBook.updateByDifference(d.instId, ticker);
         if (result)
           EventBus.emit(Events.tickers, this.tickerBook.getDifference());

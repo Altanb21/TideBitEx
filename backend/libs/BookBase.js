@@ -7,10 +7,11 @@ class BookBase {
     this.name = `BookBase`;
     this._snapshot = {};
     this._difference = {};
-    this._markets = {}
+    this._markets = {};
     this.markets = markets;
     this.markets.forEach((market) => {
-      this._markets[market.instId] = {}
+      this._markets[market.instId] = {};
+      this._markets[market.instId]['market'] = market;
       this._snapshot[market.instId] = [];
       this._difference[market.instId] = [];
     });

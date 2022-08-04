@@ -230,7 +230,7 @@ class Middleman {
     lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
     this.depthBook.lotSz = lotSz;
     this.tbWebSocket.setCurrentMarket(market, lotSz);
-    await this._getDepthBooks({ market, lotSz });
+    // await this._getDepthBooks({ market, lotSz });
     await this._getTrades({ market, lotSz });
     // if (this.isLogin) {
     // TODO to verify if user is not login would be a problem
