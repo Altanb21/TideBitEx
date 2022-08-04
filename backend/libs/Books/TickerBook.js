@@ -29,11 +29,10 @@ class TickerBook extends BookBase {
   }
 
   formatTicker(data, source) {
-    const tbMarket = this._markets[data.instId]["market"];
-    const instrument = this.instruments[data.instId];
-    let id, change, changePct, ticker;
+    let id, change, changePct, ticker, tbMarket = this._markets[data.instId]["market"], instrument;
     switch (source) {
       case SupportedExchange.OKEX:
+        instrument = this.instruments[data.instId];
         id = data.instId.replace("-", "").toLowerCase();
         change = SafeMath.minus(data.last, data.open24h);
         changePct = SafeMath.gt(data.open24h, "0")
