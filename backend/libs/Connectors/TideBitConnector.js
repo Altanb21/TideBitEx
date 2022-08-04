@@ -207,30 +207,25 @@ class TibeBitConnector extends ConnectorBase {
         code: Codes.API_UNKNOWN_ERROR,
       });
     }
-    const tBTickers = tBTickersRes.data;
-    const formatTickers = Object.keys(tBTickers).reduce((prev, market) => {
-      const instId = this._findInstId(market);
-      prev[market] = this.tickerBook.formatTicker(
-        {
-          ...tBTickers[market]["ticker"],
-          id: market,
-          market,
-          instId,
-          volume: tBTickers[market]["ticker"]["vol"],
-          at: tBTickers[market]["at"],
-        },
-        SupportedExchange.TIDEBIT
-      );
-      return prev;
-    }, {});
+    const tBTickers = this.instIds.map((instId) =>
+      tBTickersRes.data.find((data) => data.instId === instId)
+    );
     const tickers = {};
     optional.mask.forEach((market) => {
-      let ticker = formatTickers[market.id];
-      if (ticker)
-        tickers[market.id] = {
-          ...ticker,
-        };
-      else {
+      let ticker = tBTickers[market.id];
+      if (ticker) {
+        tickers[market.id] = this.tickerBook.formatTicker(
+          {
+            ...tBTickers[market.id]["ticker"],
+            id: market.id,
+            market: market.id,
+            instId: market.instId,
+            volume: tBTickers[market.id]["ticker"]["vol"],
+            at: tBTickers[market.id]["at"],
+          },
+          SupportedExchange.TIDEBIT
+        );
+      } else {
         const instId = this._findInstId(market.id);
         tickers[market.id] = this.tickerBook.formatTicker(
           {
@@ -250,9 +245,6 @@ class TibeBitConnector extends ConnectorBase {
         );
       }
     });
-    this.logger.log(`------------------------ [${this.constructor.name}](getTickers) --------------------------`);
-    this.logger.log(tickers);
-    this.logger.log(`------------------------ [${this.constructor.name}](getTickers) --------------------------`);
     return new ResponseFormat({
       message: "getTickers from TideBit",
       payload: tickers,
@@ -1277,6 +1269,12 @@ class TibeBitConnector extends ConnectorBase {
     // });
     this.isStart = true;
     this._registerGlobalChannel();
+    Object.keys(this.markets).forEach((key) => {
+      if (this.markets[key] === "TideBit") {
+        const instId = key.replace("tb", "");
+        this.instIds.push(instId);
+      }
+    });
     // this.public_pusher.bind_global((data) =>
     //   this.logger.log(`[_startPusher][bind_global] data`, data)
     // );

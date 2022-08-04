@@ -21,7 +21,7 @@ class TickerBook extends BookBase {
    */
   set instruments(data) {
     this._instruments = data;
-    this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
+    // this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
   }
 
   get instruments() {

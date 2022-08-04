@@ -10,7 +10,6 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const Utils = require("../Utils");
 const { waterfallPromise } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
@@ -321,15 +320,11 @@ class OkexConnector extends ConnectorBase {
         query: { instType: "SPOT" },
       });
     if (instrumentsRes.success) {
-      instruments = instrumentsRes.payload.map((instrument) => {
+      instruments = instrumentsRes.payload.reduce((prev, instrument) => {
         const instId = instrument.instId;
-        const instrumentObj = {};
-        instrumentObj[instId] = instrument;
-        return instrumentObj;
-      });
-      // .filter((inst) =>
-      //   this.instIds.some((instId) => instId === inst.instId)
-      // );
+        prev[instId] = instrument;
+        return prev;
+      }, {});
     }
     this.tickerBook.instruments = instruments;
     this._subscribeTickers(this.instIds);
@@ -461,10 +456,7 @@ class OkexConnector extends ConnectorBase {
         });
       }
       const [data] = res.data.data;
-      const ticker = this.tickerBook.formatTicker(
-        data,
-        SupportedExchange.OKEX
-      );
+      const ticker = this.tickerBook.formatTicker(data, SupportedExchange.OKEX);
       this.logger.log(`[${this.constructor.name}] getTicker`, ticker);
       return new ResponseFormat({
         message: "getTicker",
@@ -507,8 +499,8 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      const tickers = res.data.data.filter((data) =>
-        this.instIds.some((instId) => instId === data.insId)
+      const tickers = this.instIds.map((instId) =>
+        res.data.data.find((data) => data.instId === instId)
       );
       const formatedTickers = tickers.reduce((prev, data) => {
         prev[data.instId] = this.tickerBook.formatTicker(
@@ -517,7 +509,13 @@ class OkexConnector extends ConnectorBase {
         );
         return prev;
       }, {});
+      this.logger.log(
+        `------------------------ [${this.constructor.name}](getTickers) --------------------------`
+      );
       this.logger.log(`formatedTickers`, formatedTickers);
+      this.logger.log(
+        `------------------------ [${this.constructor.name}](getTickers) --------------------------`
+      );
       return new ResponseFormat({
         message: "getTickers from OKEx",
         payload: formatedTickers,
