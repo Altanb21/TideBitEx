@@ -1,4 +1,4 @@
-export const baseUrl = 'staging3.tidebit.network';
+export const baseUrl = 'new.tidebit.com';
 // Make requests to CryptoCompare API
 export async function makeApiRequest(path) {
 	try {
