@@ -62,6 +62,7 @@ class TibeBitConnector extends ConnectorBase {
     orderBook,
     tidebitMarkets,
     currencies,
+    websocketDomain,
   }) {
     await super.init();
     this.app = app;
@@ -83,6 +84,7 @@ class TibeBitConnector extends ConnectorBase {
     this.accountBook = accountBook;
     this.orderBook = orderBook;
     this.tidebitMarkets = tidebitMarkets;
+    this.websocketDomain = websocketDomain;
     this.websocket.init({
       url: `${this.wsProtocol}://${this.wsHost}:${this.wsPort}/app/${this.key}?protocol=7&client=js&version=2.2.0&flash=false`,
       heartBeat: HEART_BEAT_TIME,
@@ -1128,7 +1130,7 @@ class TibeBitConnector extends ConnectorBase {
 
   async getTradingViewHistory({ query }) {
     const method = "GET";
-    const path = `${this.peatio}/api/v2/tradingview/history`;
+    const path = `${this.websocketDomain}/api/v2/tradingview/history`;
     let { instId, resolution, from, to } = query;
 
     let arr = [];
@@ -1142,9 +1144,7 @@ class TibeBitConnector extends ConnectorBase {
     let qs = !!arr.length ? `?${arr.join("&")}` : "";
 
     try {
-      const tbTradesRes = await axios.get(
-        `${path}${qs}`
-     );
+      const tbTradesRes = await axios.get(`${path}${qs}`);
       this.logger.log(`getTradingViewHistory tbTradesRes`, tbTradesRes);
       if (tbTradesRes.data && tbTradesRes.data.s !== "ok") {
         const [message] = tbTradesRes.data.data;
@@ -1162,11 +1162,11 @@ class TibeBitConnector extends ConnectorBase {
             ...bars,
             {
               time: parseInt(t) * 1000,
-              low: (data.l[i]),
+              low: data.l[i],
               high: data.h[i],
               open: data.o[i],
               close: data.c[i],
-              volume: data.v[i]
+              volume: data.v[i],
             },
           ];
         }

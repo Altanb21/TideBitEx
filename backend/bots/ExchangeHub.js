@@ -81,6 +81,7 @@ class ExchangeHub extends Bot {
           accountBook: this.accountBook,
           tidebitMarkets: this.tidebitMarkets,
           currencies: this.currencies,
+          websocketDomain: this.config.websocket,
         });
         this.okexConnector = new OkexConnector({ logger });
         await this.okexConnector.init({
@@ -371,18 +372,18 @@ class ExchangeHub extends Bot {
     // this.logger.log(`getTradingViewSymbol market`, market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
-      return this.okexConnector.router("getTradingViewSymbol", {
-        query: { ...query, instId, id, market },
-      });
+        return this.okexConnector.router("getTradingViewSymbol", {
+          query: { ...query, instId, id, market },
+        });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTradingViewSymbol", {
           query: { ...query, instId, id, market },
         });
       default:
-      return new ResponseFormat({
-        message: "getTradingViewSymbol",
-        payload: [],
-      });
+        return new ResponseFormat({
+          message: "getTradingViewSymbol",
+          payload: [],
+        });
     }
   }
 
