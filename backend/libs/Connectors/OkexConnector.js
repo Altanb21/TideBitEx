@@ -738,18 +738,18 @@ class OkexConnector extends ConnectorBase {
       //   v: [],
       // };
       resData
-        // .sort((a, b) => a[0] - b[0])
+        .sort((a, b) => a[0] - b[0])
         .forEach((d) => {
           if (d[0] / 1000 >= from && d[0] / 1000 < to) {
             bars = [
               ...bars,
               {
-                time: d[0],
-                open: d[1],
-                high: d[2],
-                low: d[3],
-                close: d[4],
-                volume: d[5],
+                time: parseInt(d[0]),
+                open: parseFloat(d[1]),
+                high: parseFloat(d[2]),
+                low: parseFloat(d[3]),
+                close: parseFloat(d[4]),
+                volume: parseFloat(d[5]),
               },
             ];
           }

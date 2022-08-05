@@ -1140,7 +1140,6 @@ class TibeBitConnector extends ConnectorBase {
     if (to) arr.push(`after=${parseInt(to) * 1000}`); //6/2
     arr.push(`limit=${300}`);
     let qs = !!arr.length ? `?${arr.join("&")}` : "";
-    // this.logger.log(`getTradingViewHistory arr`, arr);
 
     try {
       let res = await axios({
@@ -1148,7 +1147,8 @@ class TibeBitConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(false),
       });
-      if (res.data && res.data.code !== "0") {
+      this.logger.log(`getTradingViewHistory res`, res);
+      if (res.data && res.data.s !== "ok") {
         const [message] = res.data.data;
         this.logger.trace(res.data);
         return new ResponseFormat({
@@ -1156,15 +1156,15 @@ class TibeBitConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      let data = res.data.data;
+      let data = res.data;
       let bars = [];
       data.t.forEach((t, i) => {
         if (t >= from && t < to) {
           bars = [
             ...bars,
             {
-              time: t * 1000,
-              low: data.l[i],
+              time: parseInt(t) * 1000,
+              low: (data.l[i]),
               high: data.h[i],
               open: data.o[i],
               close: data.c[i],

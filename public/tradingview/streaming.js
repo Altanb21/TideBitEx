@@ -26,40 +26,20 @@ socket.addEventListener("message", (event) => {
 
   switch (metaData.type) {
     case "candleOnUpdate":
-      // 0~Bitfinex~BTC~USD~1~1181312512~1659667877~0.005~23064~115.32~1659667877~314000000~326000000~1bf
-      console.log("channelToSubscription", channelToSubscription);
-      console.log("Message from server ", metaData);
+      // console.log("channelToSubscription", channelToSubscription);
+      // console.log("Message from server ", metaData);
 
       const tradePrice = parseFloat(metaData.data.trade.price);
       const tradeTime = parseInt(metaData.data.trade.ts);
       const channelString = `market:${metaData.data.market}`;
-      // const channelString = `0~OKEx~ETH~USDT`;
-      /**
-       * subscriptionItem
-       * {
-       *   handlers: [{…}]
-       *   lastDailyBar: {
-       *     close: 23248,
-       *     high: 23418,z
-       *     isBarClosed: false,
-       *     isLastBar: true,
-       *     low: 22619.03,
-       *     open: 23088,
-       *     time: 1659657600000,
-       *   }
-       *   resolution: "D,
-       *   subscribeUID: "Bitfinex:BTC/USD_D",
-       * }
-       */
       const subscriptionItem = channelToSubscription.get(channelString);
-      console.log(`subscriptionItem`, subscriptionItem);
       if (subscriptionItem === undefined) {
         return;
       }
       const lastDailyBar = subscriptionItem.lastDailyBar;
-      console.log(`onlistener lastDailyBar.time`, lastDailyBar.time, new Date(lastDailyBar.time))
+      // console.log(`onlistener lastDailyBar.time`, lastDailyBar.time, new Date(lastDailyBar.time))
       const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
-      console.log(`onlistener nextDailyBarTime`, nextDailyBarTime, new Date(nextDailyBarTime))
+      // console.log(`onlistener nextDailyBarTime`, nextDailyBarTime, new Date(nextDailyBarTime))
 
       let bar;
       if (tradeTime >= nextDailyBarTime) {
@@ -70,7 +50,7 @@ socket.addEventListener("message", (event) => {
           low: tradePrice,
           close: tradePrice,
         };
-        console.log("[socket] Generate new bar", bar);
+        // console.log("[socket] Generate new bar", bar);
       } else {
         bar = {
           ...lastDailyBar,
@@ -78,7 +58,7 @@ socket.addEventListener("message", (event) => {
           low: Math.min(lastDailyBar.low, tradePrice),
           close: tradePrice,
         };
-        console.log("[socket] Update the latest bar by price", tradePrice);
+        // console.log("[socket] Update the latest bar by price", tradePrice);
       }
       subscriptionItem.lastDailyBar = bar;
 
@@ -122,10 +102,10 @@ export function subscribeOnStream(
     handlers: [handler],
   };
   channelToSubscription.set(channelString, subscriptionItem);
-  console.log(
-    "[subscribeBars]: Subscribe to streaming. Channel:",
-    channelString
-  );
+  // console.log(
+  //   "[subscribeBars]: Subscribe to streaming. Channel:",
+  //   channelString
+  // );
   socket.send(
     JSON.stringify({
       op: "switchMarket",
@@ -150,10 +130,10 @@ export function unsubscribeFromStream(subscriberUID) {
 
       if (subscriptionItem.handlers.length === 0) {
         // unsubscribe from the channel, if it was the last handler
-        console.log(
-          "[unsubscribeBars]: Unsubscribe from streaming. Channel:",
-          channelString
-        );
+        // console.log(
+        //   "[unsubscribeBars]: Unsubscribe from streaming. Channel:",
+        //   channelString
+        // );
         // ++ TODO
         // socket.emit("SubRemove", { subs: [channelString] });
         channelToSubscription.delete(channelString);
