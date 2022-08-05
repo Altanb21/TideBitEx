@@ -1107,6 +1107,25 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
+  async getTradingViewSymbol({ query }) {
+    return Promise.resolve({
+      name: query.symbol,
+      timezone: "Asia/Hong_Kong",
+      session: "24x7",
+      ticker: query.id,
+      minmov: 1,
+      minmove2: 0,
+      volume_precision: 8,
+      pricescale: query.market?.price_group_fixed
+        ? 10 ** query.market.price_group_fixed
+        : 10000,
+      has_intraday: true,
+      has_daily: true,
+      intraday_multipliers: ["1", "5", "15", "30", "60"],
+      has_weekly_and_monthly: true,
+    });
+  }
+
   async _registerPrivateChannel(auth, memberId, sn) {
     let channel;
     try {

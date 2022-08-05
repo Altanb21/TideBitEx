@@ -370,35 +370,19 @@ class ExchangeHub extends Bot {
     const market = this.tidebitMarkets.find((market) => market.id === id);
     this.logger.log(`getTradingViewSymbol market`, market);
     switch (this._findSource(instId)) {
-      // case SupportedExchange.OKEX:
-      // return this.okexConnector.router("getTradingViewSymbol", {
-      //   query: { ...query, instId, id, market },
-      // });
       case SupportedExchange.OKEX:
+      return this.okexConnector.router("getTradingViewSymbol", {
+        query: { ...query, instId, id, market },
+      });
       case SupportedExchange.TIDEBIT:
-      default:
-        return Promise.resolve({
-          ticker: query.id,
-          name: query.symbol,
-          description: query.symbol,
-          type: "crypto",
-          timezone: "Asia/Hong_Kong",
-          session: "24x7",
-          minmov: 1,
-          minmove2: 0,
-          volume_precision: 8,
-          pricescale: market?.price_group_fixed
-            ? 10 ** market.price_group_fixed
-            : 10000,
-          has_intraday: true,
-          has_daily: true,
-          intraday_multipliers: ["1", "5", "15", "30", "60"],
-          has_weekly_and_monthly: true,
+        return this.tideBitConnector.router("getTradingViewSymbol", {
+          query: { ...query, instId, id, market },
         });
-      // return new ResponseFormat({
-      //   message: "getTradingViewSymbol",
-      //   payload: [],
-      // });
+      default:
+      return new ResponseFormat({
+        message: "getTradingViewSymbol",
+        payload: [],
+      });
     }
   }
 
