@@ -1,7 +1,8 @@
+import { baseUrl } from "./config/config.js";
 import { parseFullSymbol } from "./helpers.js";
 
 // const socket = io('wss://streamer.cryptocompare.com');
-const socket = new WebSocket("wss://test.tidebit.network");
+const socket = new WebSocket(`wss://${baseUrl}`);
 const channelToSubscription = new Map();
 
 // Connection opened
@@ -29,7 +30,7 @@ socket.addEventListener("message", (event) => {
       console.log("Message from server ", metaData);
 
       const tradePrice = parseFloat(metaData.data.trade.price);
-      const tradeTime = parseInt(metaData.data.trade.ts);
+      const tradeTime = parseInt(metaData.data.trade.at);
       const channelString = `market:${metaData.data.market}`;
       // const channelString = `0~OKEx~ETH~USDT`;
       /**
@@ -38,7 +39,7 @@ socket.addEventListener("message", (event) => {
        *   handlers: [{…}]
        *   lastDailyBar: {
        *     close: 23248,
-       *     high: 23418,
+       *     high: 23418,z
        *     isBarClosed: false,
        *     isLastBar: true,
        *     low: 22619.03,
@@ -99,10 +100,8 @@ export function subscribeOnStream(
   onResetCacheNeededCallback,
   lastDailyBar
 ) {
-  console.log("[subscribeBars]: symbolInfo", symbolInfo);
   //   const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
   const channelString = `market:${symbolInfo.ticker}`;
-  //   const channelString = `ethusdt`;
   const handler = {
     id: subscribeUID,
     callback: onRealtimeCallback,

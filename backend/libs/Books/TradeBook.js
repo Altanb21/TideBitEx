@@ -79,8 +79,8 @@ class TradeBook extends BookBase {
         .sort((a, b) => +b.ts - +a.ts);
       let _newTrade = _newTrades[_newTrades.length - 1];
       if (
-        _newTrade["ts"] >= updateSnapshot[0]["ts"] &&
-        _newTrade["id"] !== updateSnapshot[0]["id"]
+        _newTrade["ts"] >= updateSnapshot[0]?.ts &&
+        _newTrade["id"] !== updateSnapshot[0]?.id
       ) {
         this._snapshot[instId] = this._trim(
           instId,

@@ -1,0 +1,1 @@
+export const baseUrl = 'https://staging3.tidebit.network';
