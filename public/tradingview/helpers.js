@@ -2,6 +2,7 @@
 export async function makeApiRequest(path) {
 	try {
 		const response = await fetch(`https://min-api.cryptocompare.com/${path}`);
+		// const response = await fetch(`https://test.tidebit.network/${path}`);
 		return response.json();
 	} catch (error) {
 		throw new Error(`CryptoCompare request error: ${error.status}`);

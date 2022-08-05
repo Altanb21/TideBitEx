@@ -17,6 +17,7 @@ socket.on('error', (error) => {
 
 socket.on('m', data => {
 	console.log('[socket] Message:', data);
+	// 0~Bitfinex~BTC~USD~1~1181312512~1659667877~0.005~23064~115.32~1659667877~314000000~326000000~1bf
 	const [
 		eventTypeStr,
 		exchange,
@@ -40,6 +41,7 @@ socket.on('m', data => {
 	if (subscriptionItem === undefined) {
 		return;
 	}
+	console.log(`subscriptionItem`, subscriptionItem)
 	const lastDailyBar = subscriptionItem.lastDailyBar;
 	const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
 
