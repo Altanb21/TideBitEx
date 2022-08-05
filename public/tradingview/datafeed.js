@@ -3,6 +3,9 @@ import { subscribeOnStream, unsubscribeFromStream } from "./streaming.js";
 
 let configurationData;
 const lastBarsCache = new Map();
+const qs = window.location.search.replace("?", "").split("&");
+const symbolName = qs.find((q) => q.includes("symbol"))?.replace("symbol=", "");
+const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
 
 async function getConfigurationData() {
   const data = await makeApiRequest(`v1/tradingview/config`);
@@ -47,11 +50,6 @@ const Datafeed = {
     onResolveErrorCallback
   ) => {
     if (!configurationData) configurationData = await getConfigurationData();
-    const qs = window.location.search.replace("?", "").split("&");
-    // const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
-    const symbolName = qs
-      .find((q) => q.includes("symbol"))
-      ?.replace("symbol=", "");
     const symbolItem = await getSymbolItem(symbolName);
     if (!symbolItem) {
       console.error("[resolveSymbol]: Cannot resolve symbol", symbolName);
@@ -77,17 +75,11 @@ const Datafeed = {
     onHistoryCallback,
     onErrorCallback
   ) => {
+    let res,
+      bars = [],
+      path = `${source === "TideBit" ? "v2" : "v1"}/tradingview/history`;
     const from = rangeStartDate;
     const to = rangeEndDate;
-    // console.log(
-    //   "[getBars]: Method call",
-    //   symbolInfo,
-    //   resolution,
-    //   rangeStartDate,
-    //   rangeEndDate,
-    //   onHistoryCallback,
-    //   onErrorCallback
-    // );
     const urlParameters = {
       symbol: symbolInfo.ticker,
       from,
@@ -98,7 +90,7 @@ const Datafeed = {
       .map((name) => `${name}=${encodeURIComponent(urlParameters[name])}`)
       .join("&");
     try {
-      const res = await makeApiRequest(`v1/tradingview/history?${query}`);
+      res = await makeApiRequest(`${path}?${query}`);
       if (!res.success || res.payload.length === 0) {
         // "noData" should be set if there is no data in the requested period.
         onHistoryCallback([], {
@@ -106,7 +98,23 @@ const Datafeed = {
         });
         return;
       }
-      let bars = res.payload;
+      if (source === "TideBit") {
+        console.log(`res`, res)
+        res.t.forEach((t, i) => {
+          if (t >= from && t < to) {
+            bars = [
+              ...bars,
+              {
+                time: t,
+                low: res.l[i],
+                high: res.h[i],
+                open: res.o[i],
+                close: res.c[i],
+              },
+            ];
+          }
+        });
+      } else bars = res.payload;
       lastBarsCache.set(symbolInfo.full_name, {
         ...bars[bars.length - 1],
       });
