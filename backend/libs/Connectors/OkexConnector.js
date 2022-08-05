@@ -62,17 +62,16 @@ class OkexConnector extends ConnectorBase {
     this.currencies = currencies;
     this.database = database;
     this.tidebitMarkets = tidebitMarkets;
-    this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
-    this.websocketPrivate.init({
+    await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
+    await this.websocketPrivate.init({
       url: wssPrivate,
       heartBeat: HEART_BEAT_TIME,
     });
-    this._okexWsEventListener();
     return this;
   }
 
   async start() {
-    this.isStart = true;
+    this._okexWsEventListener();
     Object.keys(this.markets).forEach((key) => {
       if (this.markets[key] === "OKEx") {
         const instId = key.replace("tb", "");
@@ -1751,7 +1750,6 @@ class OkexConnector extends ConnectorBase {
 
   // TideBitEx ws
   _subscribeMarket(market, wsId, lotSz) {
-    if (!this.isStart) this.start();
     const instId = this._findInstId(market);
     if (this._findSource(instId) === SupportedExchange.OKEX) {
       this.logger.log(
