@@ -865,6 +865,37 @@ class Utils {
     });
     return newList;
   }
+
+  static   getBar(resolution) {
+    let bar;
+    switch (resolution) {
+      case "1":
+        bar = "1m";
+        break;
+      case "5":
+        bar = "5m";
+        break;
+      case "15":
+        bar = "15m";
+        break;
+      case "30":
+        bar = "30m";
+        break;
+      case "60":
+        bar = "1H";
+        break;
+      case "1W":
+      case "W":
+        bar = "1W";
+        break;
+      case "1D":
+      case "D":
+      default:
+        bar = "1D";
+        break;
+    }
+    return bar;
+  }
 }
 
 module.exports = Utils;

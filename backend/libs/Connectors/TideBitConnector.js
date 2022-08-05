@@ -1,5 +1,4 @@
 const ConnectorBase = require("../ConnectorBase");
-const Pusher = require("pusher-js");
 const axios = require("axios");
 const SafeMath = require("../SafeMath");
 const EventBus = require("../EventBus");
@@ -10,6 +9,7 @@ const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
 const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
+const { getBar } = require("../Utils");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {
@@ -62,6 +62,7 @@ class TibeBitConnector extends ConnectorBase {
     orderBook,
     tidebitMarkets,
     currencies,
+    websocketDomain,
   }) {
     await super.init();
     this.app = app;
@@ -83,6 +84,7 @@ class TibeBitConnector extends ConnectorBase {
     this.accountBook = accountBook;
     this.orderBook = orderBook;
     this.tidebitMarkets = tidebitMarkets;
+    this.websocketDomain = websocketDomain;
     this.websocket.init({
       url: `${this.wsProtocol}://${this.wsHost}:${this.wsPort}/app/${this.key}?protocol=7&client=js&version=2.2.0&flash=false`,
       heartBeat: HEART_BEAT_TIME,
@@ -127,7 +129,12 @@ class TibeBitConnector extends ConnectorBase {
         let memberId;
         switch (data.event) {
           case "trades":
-            this._updateTrades(market, JSON.parse(data.data));
+            const instId = this._findInstId(market);
+            const trades = JSON.parse(data.data).trades.map((trade) =>
+              this._formateTrade(market, trade)
+            );
+            this._updateTrades(instId, market, trades);
+            this._updateCandle(market, trades);
             break;
           case "update":
             this._updateBooks(market, JSON.parse(data.data));
@@ -565,6 +572,15 @@ class TibeBitConnector extends ConnectorBase {
     );
   }
 
+  _updateCandle(market, trades) {
+    trades.reverse().forEach((trade) => {
+      EventBus.emit(Events.candleOnUpdate, market, {
+        market,
+        trade,
+      });
+    });
+  }
+
   /* 
   {
     'BTC': {
@@ -697,7 +713,7 @@ class TibeBitConnector extends ConnectorBase {
       this.accountBook.getDifference(memberId)
     );
   }
-  
+
   async tbGetOrderList(query) {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
@@ -1089,6 +1105,84 @@ class TibeBitConnector extends ConnectorBase {
       return new ResponseFormat({
         message: "cancelAll error",
         code: Codes.UNKNOWN_ERROR,
+      });
+    }
+  }
+
+  async getTradingViewSymbol({ query }) {
+    return Promise.resolve({
+      name: query.symbol,
+      timezone: "Asia/Hong_Kong",
+      session: "24x7",
+      ticker: query.id,
+      minmov: 1,
+      minmove2: 0,
+      volume_precision: 8,
+      pricescale: query.market?.price_group_fixed
+        ? 10 ** query.market.price_group_fixed
+        : 10000,
+      has_intraday: true,
+      has_daily: true,
+      intraday_multipliers: ["1", "5", "15", "30", "60"],
+      has_weekly_and_monthly: true,
+    });
+  }
+
+  async getTradingViewHistory({ query }) {
+    const method = "GET";
+    const path = `${this.websocketDomain}/api/v2/tradingview/history`;
+    let { instId, resolution, from, to } = query;
+
+    let arr = [];
+    if (instId) arr.push(`instId=${instId}`);
+    if (resolution) arr.push(`bar=${getBar(resolution)}`);
+    // before	String	否	请求此时间戳之后（更新的数据）的分页内容，传的值为对应接口的ts
+    // if (from) arr.push(`before=${parseInt(from) * 1000}`); //5/23
+    //after	String	否	请求此时间戳之前（更旧的数据）的分页内容，传的值为对应接口的ts
+    if (to) arr.push(`after=${parseInt(to) * 1000}`); //6/2
+    arr.push(`limit=${300}`);
+    let qs = !!arr.length ? `?${arr.join("&")}` : "";
+
+    try {
+      const tbTradesRes = await axios.get(`${path}${qs}`);
+      this.logger.log(`getTradingViewHistory tbTradesRes`, tbTradesRes);
+      if (tbTradesRes.data && tbTradesRes.data.s !== "ok") {
+        const [message] = tbTradesRes.data.data;
+        this.logger.trace(tbTradesRes.data);
+        return new ResponseFormat({
+          message: message.sMsg,
+          code: Codes.THIRD_PARTY_API_ERROR,
+        });
+      }
+      let data = tbTradesRes.data;
+      let bars = [];
+      data.t.forEach((t, i) => {
+        if (t >= from && t < to) {
+          bars = [
+            ...bars,
+            {
+              time: parseInt(t) * 1000,
+              low: data.l[i],
+              high: data.h[i],
+              open: data.o[i],
+              close: data.c[i],
+              volume: data.v[i],
+            },
+          ];
+        }
+      });
+      return new ResponseFormat({
+        message: "getTradingViewHistory",
+        payload: bars,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      return new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
       });
     }
   }

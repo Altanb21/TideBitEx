@@ -1,6 +1,5 @@
 const axios = require("axios");
 const crypto = require("crypto");
-// const dvalue = require("dvalue");
 
 const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
@@ -10,12 +9,10 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const { waterfallPromise } = require("../Utils");
+const { waterfallPromise, getBar } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
-  isStart = false;
-
   tickers = {};
   okexWsChannels = {};
   instIds = [];
@@ -65,23 +62,34 @@ class OkexConnector extends ConnectorBase {
     this.currencies = currencies;
     this.database = database;
     this.tidebitMarkets = tidebitMarkets;
-    this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
-    this.websocketPrivate.init({
+    await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
+    await this.websocketPrivate.init({
       url: wssPrivate,
       heartBeat: HEART_BEAT_TIME,
     });
-    this._okexWsEventListener();
     return this;
   }
 
   async start() {
-    this.isStart = true;
+    this._okexWsEventListener();
     Object.keys(this.markets).forEach((key) => {
       if (this.markets[key] === "OKEx") {
         const instId = key.replace("tb", "");
         this.instIds.push(instId);
       }
     });
+    let instruments,
+      instrumentsRes = await this.getInstruments({
+        query: { instType: "SPOT" },
+      });
+    if (instrumentsRes.success) {
+      instruments = instrumentsRes.payload.reduce((prev, instrument) => {
+        const instId = instrument.instId;
+        prev[instId] = instrument;
+        return prev;
+      }, {});
+    }
+    this.tickerBook.instruments = instruments;
     this._subscribeTickers(this.instIds);
     this._wsPrivateLogin();
   }
@@ -340,55 +348,6 @@ class OkexConnector extends ConnectorBase {
     }
   }
 
-  async start() {
-    this._okexWsEventListener();
-    Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === "OKEx") {
-        const instId = key.replace("tb", "");
-        this.instIds.push(instId);
-      }
-    });
-    let instruments,
-      instrumentsRes = await this.getInstruments({
-        query: { instType: "SPOT" },
-      });
-    if (instrumentsRes.success) {
-      instruments = instrumentsRes.payload.reduce((prev, instrument) => {
-        const instId = instrument.instId;
-        prev[instId] = instrument;
-        return prev;
-      }, {});
-    }
-    this.tickerBook.instruments = instruments;
-    this._subscribeTickers(this.instIds);
-    this._wsPrivateLogin();
-  }
-
-  async okAccessSign({ timeString, method, path, body }) {
-    const msg = timeString + method + path + (JSON.stringify(body) || "");
-    this.logger.debug("okAccessSign msg", msg);
-
-    const cr = crypto.createHmac("sha256", this.secretKey);
-    const signMsg = cr.update(msg).digest("base64");
-    this.logger.debug("okAccessSign signMsg", signMsg);
-    return signMsg;
-  }
-
-  getHeaders(needAuth, params = {}) {
-    const headers = {
-      "Content-Type": "application/json",
-    };
-
-    if (needAuth) {
-      const { timeString, okAccessSign } = params;
-      headers["OK-ACCESS-KEY"] = this.apiKey;
-      headers["OK-ACCESS-SIGN"] = okAccessSign;
-      headers["OK-ACCESS-TIMESTAMP"] = timeString;
-      headers["OK-ACCESS-PASSPHRASE"] = this.passPhrase;
-    }
-    return headers;
-  }
-
   // account api
   async getBalance({ query }) {
     const method = "GET";
@@ -396,7 +355,6 @@ class OkexConnector extends ConnectorBase {
     const { ccy } = query;
     let result;
     let summary = [];
-
     const arr = [];
     if (ccy) arr.push(`ccy=${ccy}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
@@ -688,36 +646,6 @@ class OkexConnector extends ConnectorBase {
     });
   }
 
-  getBar(resolution) {
-    let bar;
-    switch (resolution) {
-      case "1":
-        bar = "1m";
-        break;
-      case "5":
-        bar = "5m";
-        break;
-      case "15":
-        bar = "15m";
-        break;
-      case "30":
-        bar = "30m";
-        break;
-      case "60":
-        bar = "1H";
-        break;
-      case "1W":
-      case "W":
-        bar = "1W";
-        break;
-      case "1D":
-      case "D":
-      default:
-        bar = "1D";
-        break;
-    }
-    return bar;
-  }
 
   async getTradingViewHistory({ query }) {
     const method = "GET";
@@ -726,7 +654,7 @@ class OkexConnector extends ConnectorBase {
 
     let arr = [];
     if (instId) arr.push(`instId=${instId}`);
-    if (resolution) arr.push(`bar=${this.getBar(resolution)}`);
+    if (resolution) arr.push(`bar=${getBar(resolution)}`);
     // before	String	否	请求此时间戳之后（更新的数据）的分页内容，传的值为对应接口的ts
     // if (from) arr.push(`before=${parseInt(from) * 1000}`); //5/23
     //after	String	否	请求此时间戳之前（更旧的数据）的分页内容，传的值为对应接口的ts
@@ -758,7 +686,7 @@ class OkexConnector extends ConnectorBase {
       if (resData[resData.length - 1][0] / 1000 > from) {
         arr = [];
         if (instId) arr.push(`instId=${instId}`);
-        if (resolution) arr.push(`bar=${this.getBar(resolution)}`);
+        if (resolution) arr.push(`bar=${getBar(resolution)}`);
         if (to) arr.push(`after=${resData[resData.length - 1][0]}`); //6/2
         arr.push(`limit=${300}`);
         qs = !!arr.length ? `?${arr.join("&")}` : "";
@@ -769,32 +697,49 @@ class OkexConnector extends ConnectorBase {
         });
         resData = resData.concat(res.data.data);
       }
-      const data = {
-        s: "ok",
-        t: [],
-        o: [],
-        h: [],
-        l: [],
-        c: [],
-        v: [],
-      };
+      let bars = [];
+      // const data = {
+      //   s: "ok",
+      //   t: [],
+      //   o: [],
+      //   h: [],
+      //   l: [],
+      //   c: [],
+      //   v: [],
+      // };
       resData
         .sort((a, b) => a[0] - b[0])
         .forEach((d) => {
-          const ts = parseInt(d[0]) / 1000;
-          const o = parseFloat(d[1]);
-          const h = parseFloat(d[2]);
-          const l = parseFloat(d[3]);
-          const c = parseFloat(d[4]);
-          const v = parseFloat(d[5]);
-          data.t.push(ts);
-          data.o.push(o);
-          data.h.push(h);
-          data.l.push(l);
-          data.c.push(c);
-          data.v.push(v);
+          if (d[0] / 1000 >= from && d[0] / 1000 < to) {
+            bars = [
+              ...bars,
+              {
+                time: parseInt(d[0]),
+                open: parseFloat(d[1]),
+                high: parseFloat(d[2]),
+                low: parseFloat(d[3]),
+                close: parseFloat(d[4]),
+                volume: parseFloat(d[5]),
+              },
+            ];
+          }
+          // const ts = parseInt(d[0]);
+          // const o = parseFloat(d[1]);
+          // const h = parseFloat(d[2]);
+          // const l = parseFloat(d[3]);
+          // const c = parseFloat(d[4]);
+          // const v = parseFloat(d[5]);
+          // data.t.push(ts);
+          // data.o.push(o);
+          // data.h.push(h);
+          // data.l.push(l);
+          // data.c.push(c);
+          // data.v.push(v);
         });
-      return data;
+      return new ResponseFormat({
+        message: "getTradingViewHistory",
+        payload: bars,
+      });
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -898,10 +843,6 @@ class OkexConnector extends ConnectorBase {
         });
         if (subAccBalRes.success) {
           const subAccBals = subAccBalRes.payload;
-          // this.logger.debug(
-          //   `[${this.constructor.name}: fetchSubAcctsBalsJob] subAccBals`,
-          //   subAccBals
-          // );
           resolve(subAccBals);
         } else {
           // ++ TODO
@@ -921,10 +862,6 @@ class OkexConnector extends ConnectorBase {
           this.fetchSubAcctsBalsJob(subAccount)
         );
         waterfallPromise(jobs, 1000).then((subAcctsBals) => {
-          // this.logger.debug(
-          //   `[${this.constructor.name}] getExAccounts subAcctsBals`,
-          //   subAcctsBals
-          // );
           const _subAcctsBals = subAcctsBals.reduce((prev, curr) => {
             prev = prev.concat(curr);
             return prev;
@@ -982,10 +919,6 @@ class OkexConnector extends ConnectorBase {
         });
       }
       const payload = res.data.data;
-      // this.logger.debug(
-      //   `[${this.constructor.name}] getSubAccounts payload`,
-      //   payload
-      // );
       return new ResponseFormat({
         message: "getSubAccounts",
         payload,
@@ -1248,17 +1181,7 @@ class OkexConnector extends ConnectorBase {
           ts: parseInt(data.uTime),
         };
       });
-      // this.logger.log(
-      //   `[${this.constructor.name} getOrderList] instId:`,
-      //   instId,
-      //   `orders`,
-      //   orders
-      // );
       this.orderBook.updateAll(memberId, instId, orders);
-      // return new ResponseFormat({
-      //   message: "getOrderList",
-      //   payload,
-      // });
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -1459,7 +1382,10 @@ class OkexConnector extends ConnectorBase {
             // this._updateInstruments(instId, data.data);
             break;
           case "trades":
-            this._updateTrades(instId, data.data);
+            const market = instId.replace("-", "").toLowerCase();
+            const trades = this._formateTrades(market, data.data);
+            this._updateTrades(instId, market, trades);
+            this._updateCandle(market, trades);
             break;
           case "books":
             this._updateBooks(instId, data.data, data.action);
@@ -1576,18 +1502,24 @@ class OkexConnector extends ConnectorBase {
   }
 
   // ++ TODO: verify function works properly
-  async _updateTrades(instId, trades) {
+  async _updateTrades(instId, market, trades) {
     try {
       const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
-      const market = instId.replace("-", "").toLowerCase();
-      const newTrades = this._formateTrades(market, trades);
-      // this.logger.debug(`[${this.constructor.name}]_updateTrades`, newTrades);
-      this.tradeBook.updateByDifference(instId, lotSz, newTrades);
+      this.tradeBook.updateByDifference(instId, lotSz, trades);
       EventBus.emit(Events.trades, market, {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
     } catch (error) {}
+  }
+
+  _updateCandle(market, trades) {
+    trades.reverse().forEach((trade) => {
+      EventBus.emit(Events.candleOnUpdate, market, {
+        market,
+        trade,
+      });
+    });
   }
 
   // there has 2 action, snapshot: full data; update: incremental data.
@@ -1612,33 +1544,6 @@ class OkexConnector extends ConnectorBase {
       }
     }
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
-  }
-
-  _updateCandle(instId, channel, candleData) {
-    // this.candleChannel = channel;
-    // this.logger.debug(
-    //   `[${this.constructor.name}]_updateCandle  this.okexWsChannels[${this.candleChannel}]`,
-    //   this.okexWsChannels,
-    //   instId,
-    //   channel,
-    //   candleData
-    // );
-    this.okexWsChannels[this.candleChannel][instId] = candleData;
-    const formatCandle = candleData
-      .map((data) => ({
-        time: parseInt(data[0]),
-        open: data[1],
-        high: data[2],
-        low: data[3],
-        close: data[4],
-        volume: data[5],
-      }))
-      .sort((a, b) => a.time - b.time);
-    EventBus.emit(Events.candleOnUpdate, instId, {
-      instId,
-      channel,
-      candle: formatCandle,
-    });
   }
 
   // ++ TODO: verify function works properly
@@ -1826,7 +1731,6 @@ class OkexConnector extends ConnectorBase {
 
   // TideBitEx ws
   _subscribeMarket(market, wsId, lotSz) {
-    if (!this.isStart) this.start();
     const instId = this._findInstId(market);
     if (this._findSource(instId) === SupportedExchange.OKEX) {
       this.logger.log(

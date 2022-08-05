@@ -1,60 +1,173 @@
-// https://zlq4863947.gitbook.io/tradingview/3-shu-ju-bang-ding/js-api
-// https://github.com/tradingview/charting-library-tutorial/blob/master/documentation/datafeed-implementation.md
-const getParameterByName = (name) => {
-  name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-  var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-    results = regex.exec(location.search);
-  return results === null
-    ? ""
-    : decodeURIComponent(results[1].replace(/\+/g, " "));
-};
+import { makeApiRequest } from "./helpers.js";
+import { subscribeOnStream, unsubscribeFromStream } from "./streaming.js";
 
-const initOnReady = () => {
-  const qs = window.location.search.replace("?", "").split("&");
-  const symbol = qs.find((q) => q.includes("symbol"))?.replace("symbol=", "");
-  const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
-  const isMobile =
-    qs.find((q) => q.includes("mobile"))?.replace("mobile=", "") === "1";
-  const widget = (window.tvWidget = new TradingView.widget({
-    // debug: true, // uncomment this line to see Library errors and warnings in the console
-    fullscreen: true,
-    symbol: symbol,
-    interval: "D",
-    container_id: "tv_chart_container",
+let configurationData;
+const lastBarsCache = new Map();
+const qs = window.location.search.replace("?", "").split("&");
+const symbolName = qs.find((q) => q.includes("symbol"))?.replace("symbol=", "");
+const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
 
-    //	BEWARE: no trailing slash is expected in feed URL
-    // datafeed: Datafeed,
-    datafeed:
-      source === "OKEx"
-        ? // ? Datafeed
-          new window.Datafeeds.UDFCompatibleDatafeed("/api/v1/tradingview")
-        : new window.Datafeeds.UDFCompatibleDatafeed("/api/v2/tradingview"),
-    library_path: "charting_library/",
-    locale: getParameterByName("lang") || "en",
-    theme: "light",
-    autosize: true,
-    // custom_css_url: isMobile ? "tradingview_chart.css" : null,
-    favorites: isMobile
-      ? {
-          intervals: ["1", "5", "60", "D"],
+async function getConfigurationData() {
+  const data = await makeApiRequest(`v1/tradingview/config`);
+  return data;
+}
+
+async function getSymbolItem(symbolName) {
+  const data = await makeApiRequest(
+    `v1/tradingview/symbols?symbol=${symbolName}`
+  );
+  return data;
+}
+
+const Datafeed = {
+  onReady: async (callback) => {
+    // console.log("[onReady]: Method call");
+    if (!configurationData) configurationData = await getConfigurationData();
+    callback(configurationData);
+  },
+
+  searchSymbols: async (
+    userInput,
+    exchange,
+    symbolType,
+    onResultReadyCallback
+  ) => {
+    // console.log("[searchSymbols]: Method call");
+    // const symbols = await getAllSymbols();
+    // const newSymbols = symbols.filter((symbol) => {
+    //   const isExchangeValid = exchange === "" || symbol.exchange === exchange;
+    //   const isFullSymbolContainsInput =
+    //     symbol.full_name.toLowerCase().indexOf(userInput.toLowerCase()) !== -1;
+    //   return isExchangeValid && isFullSymbolContainsInput;
+    // });
+    // onResultReadyCallback(newSymbols);
+  },
+
+  resolveSymbol: async (
+    fullName,
+    // symbolName,
+    onSymbolResolvedCallback,
+    onResolveErrorCallback
+  ) => {
+    if (!configurationData) configurationData = await getConfigurationData();
+    const symbolItem = await getSymbolItem(symbolName);
+    if (!symbolItem) {
+      console.error("[resolveSymbol]: Cannot resolve symbol", symbolName);
+      onResolveErrorCallback("cannot resolve symbol");
+      return;
+    }
+    const symbolInfo = {
+      ...symbolItem,
+      exchange: "",
+      data_status: "streaming",
+      supported_resolutions: configurationData.supported_resolutions,
+    };
+    // console.log("[resolveSymbol]: Symbol resolved", symbolItem);
+    onSymbolResolvedCallback(symbolInfo);
+  },
+
+  getBars: async (
+    // symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback
+    symbolInfo,
+    resolution,
+    rangeStartDate,
+    rangeEndDate,
+    onHistoryCallback,
+    onErrorCallback
+  ) => {
+    let res,
+      bars = [],
+      path = `${source === "TideBit" ? "v2" : "v1"}/tradingview/history`;
+    const from = rangeStartDate;
+    const to = rangeEndDate;
+    const urlParameters = {
+      symbol: symbolInfo.ticker,
+      from,
+      to,
+      resolution,
+    };
+    const query = Object.keys(urlParameters)
+      .map((name) => `${name}=${encodeURIComponent(urlParameters[name])}`)
+      .join("&");
+    try {
+      res = await makeApiRequest(`${path}?${query}`);
+      if (source === "TideBit") {
+        console.log(`res`, res);
+        if (res.s !== "ok" || res.t.length === 0) {
+          // "noData" should be set if there is no data in the requested period.
+          onHistoryCallback([], {
+            noData: true,
+          });
+          return;
         }
-      : null,
-    disabled_features: isMobile
-      ? [
-          "edit_buttons_in_legend",
-          "header_settings",
-          "header_undo_redo",
-          "header_symbol_search",
-          "header_compare",
-          "compare_symbol",
-          "header_indicators",
-          "header_screenshot",
-          "left_toolbar",
-          "timeframes_toolbar",
-          "property_pages",
-        ]
-      : ["header_symbol_search", "header_compare"],
-  }));
+        res.t.forEach((t, i) => {
+          if (t >= from && t < to) {
+            bars = [
+              ...bars,
+              {
+                time: t,
+                low: res.l[i],
+                high: res.h[i],
+                open: res.o[i],
+                close: res.c[i],
+              },
+            ];
+          }
+        });
+      } else {
+        if (!res.success || res.payload.length === 0) {
+          // "noData" should be set if there is no data in the requested period.
+          onHistoryCallback([], {
+            noData: true,
+          });
+          return;
+        }
+        bars = res.payload;
+      }
+      lastBarsCache.set(symbolInfo.full_name, {
+        ...bars[bars.length - 1],
+      });
+      // console.log(
+      //   `[getBars]: returned ${bars.length} bar(s) lastbar`,
+      //   bars[bars.length - 1]
+      // );
+      onHistoryCallback(bars, {
+        noData: false,
+      });
+    } catch (error) {
+      console.error("[getBars]: Get error", error);
+      onErrorCallback(error);
+    }
+  },
+
+  subscribeBars: (
+    symbolInfo,
+    resolution,
+    onRealtimeCallback,
+    subscribeUID,
+    onResetCacheNeededCallback
+  ) => {
+    // console.log(
+    //   "[subscribeBars]: Method call with subscribeUID:",
+    //   subscribeUID
+    // );
+    subscribeOnStream(
+      symbolInfo,
+      resolution,
+      onRealtimeCallback,
+      subscribeUID,
+      onResetCacheNeededCallback,
+      lastBarsCache.get(symbolInfo.full_name)
+    );
+  },
+
+  unsubscribeBars: (subscriberUID) => {
+    // console.log(
+    //   "[unsubscribeBars]: Method call with subscriberUID:",
+    //   subscriberUID
+    // );
+    unsubscribeFromStream(subscriberUID);
+  },
 };
 
-window.addEventListener("load", initOnReady);
+export default Datafeed;
