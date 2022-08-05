@@ -1,6 +1,5 @@
 const axios = require("axios");
 const crypto = require("crypto");
-// const dvalue = require("dvalue");
 
 const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
@@ -14,14 +13,6 @@ const { waterfallPromise } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
-  // _tickersUpdateInterval = 0;
-  // _booksUpdateInterval = 300;
-  // _tradesUpdateInterval = 300;
-
-  // _tickersTimestamp = 0;
-  // _booksTimestamp = 0;
-  // _tradesTimestamp = 0;
-
   tickers = {};
   okexWsChannels = {};
   instIds = [];
@@ -334,7 +325,6 @@ class OkexConnector extends ConnectorBase {
   async okAccessSign({ timeString, method, path, body }) {
     const msg = timeString + method + path + (JSON.stringify(body) || "");
     this.logger.debug("okAccessSign msg", msg);
-
     const cr = crypto.createHmac("sha256", this.secretKey);
     const signMsg = cr.update(msg).digest("base64");
     this.logger.debug("okAccessSign signMsg", signMsg);
@@ -345,7 +335,6 @@ class OkexConnector extends ConnectorBase {
     const headers = {
       "Content-Type": "application/json",
     };
-
     if (needAuth) {
       const { timeString, okAccessSign } = params;
       headers["OK-ACCESS-KEY"] = this.apiKey;
@@ -363,7 +352,6 @@ class OkexConnector extends ConnectorBase {
     const { ccy } = query;
     let result;
     let summary = [];
-
     const arr = [];
     if (ccy) arr.push(`ccy=${ccy}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
@@ -865,10 +853,6 @@ class OkexConnector extends ConnectorBase {
         });
         if (subAccBalRes.success) {
           const subAccBals = subAccBalRes.payload;
-          // this.logger.debug(
-          //   `[${this.constructor.name}: fetchSubAcctsBalsJob] subAccBals`,
-          //   subAccBals
-          // );
           resolve(subAccBals);
         } else {
           // ++ TODO
@@ -888,10 +872,6 @@ class OkexConnector extends ConnectorBase {
           this.fetchSubAcctsBalsJob(subAccount)
         );
         waterfallPromise(jobs, 1000).then((subAcctsBals) => {
-          // this.logger.debug(
-          //   `[${this.constructor.name}] getExAccounts subAcctsBals`,
-          //   subAcctsBals
-          // );
           const _subAcctsBals = subAcctsBals.reduce((prev, curr) => {
             prev = prev.concat(curr);
             return prev;
@@ -949,10 +929,6 @@ class OkexConnector extends ConnectorBase {
         });
       }
       const payload = res.data.data;
-      // this.logger.debug(
-      //   `[${this.constructor.name}] getSubAccounts payload`,
-      //   payload
-      // );
       return new ResponseFormat({
         message: "getSubAccounts",
         payload,
@@ -1215,17 +1191,7 @@ class OkexConnector extends ConnectorBase {
           ts: parseInt(data.uTime),
         };
       });
-      // this.logger.log(
-      //   `[${this.constructor.name} getOrderList] instId:`,
-      //   instId,
-      //   `orders`,
-      //   orders
-      // );
       this.orderBook.updateAll(memberId, instId, orders);
-      // return new ResponseFormat({
-      //   message: "getOrderList",
-      //   payload,
-      // });
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
