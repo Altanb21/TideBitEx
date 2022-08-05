@@ -128,8 +128,7 @@ export function subscribeOnStream(
     JSON.stringify({
       op: "switchMarket",
       args: {
-        market: "ethusdt",
-        // market: symbolInfo.ticker,
+        market: symbolInfo.ticker,
       },
     })
   );

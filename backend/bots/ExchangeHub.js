@@ -368,7 +368,7 @@ class ExchangeHub extends Bot {
     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
     const instId = this._findInstId(id);
     const market = this.tidebitMarkets.find((market) => market.id === id);
-    // this.logger.log(`getTradingViewSymbol market`, market);
+    this.logger.log(`getTradingViewSymbol market`, market);
     switch (this._findSource(instId)) {
       // case SupportedExchange.OKEX:
       // return this.okexConnector.router("getTradingViewSymbol", {

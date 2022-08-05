@@ -78,6 +78,18 @@ class OkexConnector extends ConnectorBase {
         this.instIds.push(instId);
       }
     });
+    let instruments,
+      instrumentsRes = await this.getInstruments({
+        query: { instType: "SPOT" },
+      });
+    if (instrumentsRes.success) {
+      instruments = instrumentsRes.payload.reduce((prev, instrument) => {
+        const instId = instrument.instId;
+        prev[instId] = instrument;
+        return prev;
+      }, {});
+    }
+    this.tickerBook.instruments = instruments;
     this._subscribeTickers(this.instIds);
     this._wsPrivateLogin();
   }
