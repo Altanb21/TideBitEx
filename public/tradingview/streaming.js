@@ -102,7 +102,7 @@ export function subscribeOnStream(
   console.log("[subscribeBars]: symbolInfo", symbolInfo);
   //   const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
   const channelString = `market:${symbolInfo.ticker}`;
-//   const channelString = `ethusdt`;
+  //   const channelString = `ethusdt`;
   const handler = {
     id: subscribeUID,
     callback: onRealtimeCallback,
@@ -124,15 +124,15 @@ export function subscribeOnStream(
     "[subscribeBars]: Subscribe to streaming. Channel:",
     channelString
   );
-//   socket.send(
-//     JSON.stringify({
-//       op: "switchMarket",
-//       args: {
-//         market: "ethusdt",
-//         // market: symbolInfo.ticker,
-//       },
-//     })
-//   );
+  socket.send(
+    JSON.stringify({
+      op: "switchMarket",
+      args: {
+        market: "ethusdt",
+        // market: symbolInfo.ticker,
+      },
+    })
+  );
 }
 
 export function unsubscribeFromStream(subscriberUID) {
