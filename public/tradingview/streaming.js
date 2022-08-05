@@ -1,7 +1,8 @@
-import { baseUrl } from "./config/config.js";
+import { baseUrl } from "./helpers.js";
 import { parseFullSymbol } from "./helpers.js";
 
 // const socket = io('wss://streamer.cryptocompare.com');
+// const socket = new WebSocket(`wss://https://staging3.tidebit.network`);
 const socket = new WebSocket(`wss://${baseUrl}`);
 const channelToSubscription = new Map();
 
@@ -30,7 +31,7 @@ socket.addEventListener("message", (event) => {
       console.log("Message from server ", metaData);
 
       const tradePrice = parseFloat(metaData.data.trade.price);
-      const tradeTime = parseInt(metaData.data.trade.at);
+      const tradeTime = parseInt(metaData.data.trade.ts);
       const channelString = `market:${metaData.data.market}`;
       // const channelString = `0~OKEx~ETH~USDT`;
       /**
@@ -56,7 +57,9 @@ socket.addEventListener("message", (event) => {
         return;
       }
       const lastDailyBar = subscriptionItem.lastDailyBar;
+      console.log(`onlistener lastDailyBar.time`, lastDailyBar.time, new Date(lastDailyBar.time))
       const nextDailyBarTime = getNextDailyBarTime(lastDailyBar.time);
+      console.log(`onlistener nextDailyBarTime`, nextDailyBarTime, new Date(nextDailyBarTime))
 
       let bar;
       if (tradeTime >= nextDailyBarTime) {
@@ -87,9 +90,9 @@ socket.addEventListener("message", (event) => {
 });
 
 function getNextDailyBarTime(barTime) {
-  const date = new Date(barTime * 1000);
+  const date = new Date(barTime);
   date.setDate(date.getDate() + 1);
-  return date.getTime() / 1000;
+  return date.getTime();
 }
 
 export function subscribeOnStream(

@@ -727,32 +727,49 @@ class OkexConnector extends ConnectorBase {
         });
         resData = resData.concat(res.data.data);
       }
-      const data = {
-        s: "ok",
-        t: [],
-        o: [],
-        h: [],
-        l: [],
-        c: [],
-        v: [],
-      };
+      let bars = [];
+      // const data = {
+      //   s: "ok",
+      //   t: [],
+      //   o: [],
+      //   h: [],
+      //   l: [],
+      //   c: [],
+      //   v: [],
+      // };
       resData
-        .sort((a, b) => a[0] - b[0])
+        // .sort((a, b) => a[0] - b[0])
         .forEach((d) => {
-          const ts = parseInt(d[0]) / 1000;
-          const o = parseFloat(d[1]);
-          const h = parseFloat(d[2]);
-          const l = parseFloat(d[3]);
-          const c = parseFloat(d[4]);
-          const v = parseFloat(d[5]);
-          data.t.push(ts);
-          data.o.push(o);
-          data.h.push(h);
-          data.l.push(l);
-          data.c.push(c);
-          data.v.push(v);
+          if (d[0] / 1000 >= from && d[0] / 1000 < to) {
+            bars = [
+              ...bars,
+              {
+                time: d[0],
+                open: d[1],
+                high: d[2],
+                low: d[3],
+                close: d[4],
+                volume: d[5],
+              },
+            ];
+          }
+          // const ts = parseInt(d[0]);
+          // const o = parseFloat(d[1]);
+          // const h = parseFloat(d[2]);
+          // const l = parseFloat(d[3]);
+          // const c = parseFloat(d[4]);
+          // const v = parseFloat(d[5]);
+          // data.t.push(ts);
+          // data.o.push(o);
+          // data.h.push(h);
+          // data.l.push(l);
+          // data.c.push(c);
+          // data.v.push(v);
         });
-      return data;
+      return new ResponseFormat({
+        message: "getTradingViewHistory",
+        payload: bars,
+      });
     } catch (error) {
       this.logger.error(error);
       let message = error.message;

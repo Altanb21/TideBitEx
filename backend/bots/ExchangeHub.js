@@ -394,6 +394,9 @@ class ExchangeHub extends Bot {
           query: { ...query, instId },
         });
       case SupportedExchange.TIDEBIT:
+        return this.tideBitConnector.router("getTradingViewHistory", {
+          query: { ...query, instId },
+        });
       default:
         return new ResponseFormat({
           message: "getTradingViewHistory",

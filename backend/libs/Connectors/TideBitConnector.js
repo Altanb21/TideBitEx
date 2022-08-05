@@ -1126,6 +1126,69 @@ class TibeBitConnector extends ConnectorBase {
     });
   }
 
+  async getTradingViewHistory({ query }) {
+    const method = "GET";
+    const path = `${this.peatio}/api/v2/tradingview/history`;
+    let { instId, resolution, from, to } = query;
+
+    let arr = [];
+    if (instId) arr.push(`instId=${instId}`);
+    if (resolution) arr.push(`bar=${this.getBar(resolution)}`);
+    // before	String	否	请求此时间戳之后（更新的数据）的分页内容，传的值为对应接口的ts
+    // if (from) arr.push(`before=${parseInt(from) * 1000}`); //5/23
+    //after	String	否	请求此时间戳之前（更旧的数据）的分页内容，传的值为对应接口的ts
+    if (to) arr.push(`after=${parseInt(to) * 1000}`); //6/2
+    arr.push(`limit=${300}`);
+    let qs = !!arr.length ? `?${arr.join("&")}` : "";
+    // this.logger.log(`getTradingViewHistory arr`, arr);
+
+    try {
+      let res = await axios({
+        method: method.toLocaleLowerCase(),
+        url: `${this.domain}${path}${qs}`,
+        headers: this.getHeaders(false),
+      });
+      if (res.data && res.data.code !== "0") {
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
+        return new ResponseFormat({
+          message: message.sMsg,
+          code: Codes.THIRD_PARTY_API_ERROR,
+        });
+      }
+      let data = res.data.data;
+      let bars = [];
+      data.t.forEach((t, i) => {
+        if (t >= from && t < to) {
+          bars = [
+            ...bars,
+            {
+              time: t * 1000,
+              low: data.l[i],
+              high: data.h[i],
+              open: data.o[i],
+              close: data.c[i],
+              volume: data.v[i]
+            },
+          ];
+        }
+      });
+      return new ResponseFormat({
+        message: "getTradingViewHistory",
+        payload: bars,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      return new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+  }
+
   async _registerPrivateChannel(auth, memberId, sn) {
     let channel;
     try {

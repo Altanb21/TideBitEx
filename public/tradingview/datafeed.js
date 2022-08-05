@@ -109,7 +109,9 @@ const Datafeed = {
     // const symbolName = fullName.split(":")[1];
     const qs = window.location.search.replace("?", "").split("&");
     const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
-    const symbolName = qs.find((q) => q.includes("symbol"))?.replace("symbol=", "");
+    const symbolName = qs
+      .find((q) => q.includes("symbol"))
+      ?.replace("symbol=", "");
 
     /**
      * SymbolItem
@@ -240,11 +242,7 @@ const Datafeed = {
       .join("&");
     try {
       // const data = await makeApiRequest(`data/histoday?${query}`);
-      const data = await makeApiRequest(
-        `${
-          symbolInfo.exchange === "TideBit" ? "v2" : "v1"
-        }/tradingview/history?${query}`
-      );
+      const res = await makeApiRequest(`v1/tradingview/history?${query}`);
       // console.log(data);
       // if (
       //   (data.Response && data.Response === "Error") ||
@@ -256,14 +254,14 @@ const Datafeed = {
       //   });
       //   return;
       // }
-      if (data.s !== "ok" || data.t.length === 0) {
+      if (res.success || res.payload.length === 0) {
         // "noData" should be set if there is no data in the requested period.
         onHistoryCallback([], {
           noData: true,
         });
         return;
       }
-      let bars = [];
+      let bars = res.payload;
       // data.Data.forEach((bar) => {
       //   if (bar.time >= from && bar.time < to) {
       //     bars = [
@@ -278,26 +276,29 @@ const Datafeed = {
       //     ];
       //   }
       // });
-      data.t.forEach((t, i) => {
-        if (t >= from && t < to) {
-          bars = [
-            ...bars,
-            {
-              time: t * 1000,
-              low: data.l[i],
-              high: data.h[i],
-              open: data.o[i],
-              close: data.c[i],
-            },
-          ];
-        }
-      });
+      // data.t.forEach((t, i) => {
+      //   if (t >= from && t < to) {
+      //     bars = [
+      //       ...bars,
+      //       {
+      //         time: t,
+      //         low: data.l[i],
+      //         high: data.h[i],
+      //         open: data.o[i],
+      //         close: data.c[i],
+      //       },
+      //     ];
+      //   }
+      // });
       //   if (firstDataRequest) {
       lastBarsCache.set(symbolInfo.full_name, {
         ...bars[bars.length - 1],
       });
       //   }
-      console.log(`[getBars]: returned ${bars.length} bar(s)`);
+      console.log(
+        `[getBars]: returned ${bars.length} bar(s) lastbar`,
+        bars[bars.length - 1]
+      );
       onHistoryCallback(bars, {
         noData: false,
       });
