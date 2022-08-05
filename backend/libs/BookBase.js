@@ -7,10 +7,11 @@ class BookBase {
     this.name = `BookBase`;
     this._snapshot = {};
     this._difference = {};
-    this._markets = {}
+    this._markets = {};
     this.markets = markets;
     this.markets.forEach((market) => {
-      this._markets[market.instId] = {}
+      this._markets[market.instId] = {};
+      this._markets[market.instId]["market"] = market;
       this._snapshot[market.instId] = [];
       this._difference[market.instId] = [];
     });
@@ -123,7 +124,7 @@ class BookBase {
           )
           .concat(difference.add);
       }
-      this._snapshot[instId] = this._trim(instId, updateSnapshot);
+      this._snapshot[instId] = updateSnapshot;
       this._difference[instId] = difference;
       return true;
     } catch (error) {
@@ -147,6 +148,7 @@ class BookBase {
         data
       );
       this._snapshot[instId] = this._trim(instId, data);
+      return true;
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] updateAll error`, error);
       return false;

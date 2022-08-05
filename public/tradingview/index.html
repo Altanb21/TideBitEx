@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>TradingView Charting Library demo</title>
-
-    <!-- Fix for iOS Safari zooming bug -->
-    <meta
-      name="viewport"
-      content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0"
-    />
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <title>TradingView Charting Library example</title>
     <script
       type="text/javascript"
       src="charting_library/charting_library.min.js"
@@ -18,10 +11,13 @@
       src="datafeeds/udf/dist/polyfills.js"
     ></script>
     <script type="text/javascript" src="datafeeds/udf/dist/bundle.js"></script>
-    <script type="module" src="datafeed.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.2/socket.io.js"></script>
+    <!-- Custom datafeed module. -->
+    <script type="module" src="main.js"></script>
   </head>
-
   <body style="margin: 0px">
-    <div id="tv_chart_container"></div>
+    <div id="tv_chart_container">
+      <!-- This div will contain the Charting Library widget. -->
+    </div>
   </body>
 </html>

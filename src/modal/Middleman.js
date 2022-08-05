@@ -145,7 +145,11 @@ class Middleman {
 
   async _getTrades({ market, limit, lotSz }) {
     try {
-      const trades = await this.communicator.getTrades({ market, limit, lotSz });
+      const trades = await this.communicator.getTrades({
+        market,
+        limit,
+        lotSz,
+      });
       this.tradeBook.updateAll(market, trades);
     } catch (error) {
       console.error(`_getTrades error`, error);
@@ -162,7 +166,11 @@ class Middleman {
 
   async _getDepthBooks({ market, sz, lotSz }) {
     try {
-      const depthBook = await this.communicator.getDepthBooks({ market, sz, lotSz });
+      const depthBook = await this.communicator.getDepthBooks({
+        market,
+        sz,
+        lotSz,
+      });
       this.depthBook.updateAll(market, depthBook);
     } catch (error) {
       console.error(`_getDepthBooks error`, error);
@@ -202,16 +210,18 @@ class Middleman {
         // this.selectedTicker?.instId?.replace("-", ",")
         ();
       if (accounts) {
-        this.isLogin = true;
         this.accountBook.updateAll(accounts);
-        const CSRFToken = await this.communicator.CSRFTokenRenew();
-        // console.log(`[Middleman] _getAccounts userId`, this._userId);
-        const userId = this._userId;
-        this.tbWebSocket.setCurrentUser(market, {
-          CSRFToken,
-          userId,
-        });
-        this.tickerBook.setCurrentMarket(market);
+        if (!this.isLogin) {
+          this.isLogin = true;
+          const CSRFToken = await this.communicator.CSRFTokenRenew();
+          // console.log(`[Middleman] _getAccounts userId`, this._userId);
+          const userId = this._userId;
+          this.tbWebSocket.setCurrentUser(market, {
+            CSRFToken,
+            userId,
+          });
+          this.tickerBook.setCurrentMarket(market);
+        }
       }
     } catch (error) {
       this.isLogin = false;
@@ -230,7 +240,7 @@ class Middleman {
     lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
     this.depthBook.lotSz = lotSz;
     this.tbWebSocket.setCurrentMarket(market, lotSz);
-    await this._getDepthBooks({ market, lotSz });
+    // await this._getDepthBooks({ market, lotSz });
     await this._getTrades({ market, lotSz });
     // if (this.isLogin) {
     // TODO to verify if user is not login would be a problem
@@ -327,10 +337,15 @@ class Middleman {
 
   async sync() {
     // --- WORKAROUND---
-    // console.log(`--- WORKAROUND--- sync [START]`);
     await wait(1 * 60 * 1000);
-    await this.selectMarket(this.tickerBook.getCurrentMarket());
-    // console.log(`--- WORKAROUND--- sync [END]`);
+    if (this.isLogin) {
+      // console.log(`--- WORKAROUND--- sync [START]`);
+      const market = this.tickerBook.getCurrentMarket();
+      await this._getAccounts(market);
+      await this._getOrderList(market);
+      await this._getOrderHistory(market);
+      // console.log(`--- WORKAROUND--- sync [END]`);
+    }
     this.sync();
     // --- WORKAROUND---
   }
