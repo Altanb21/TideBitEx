@@ -91,15 +91,15 @@ const Datafeed = {
       .join("&");
     try {
       res = await makeApiRequest(`${path}?${query}`);
-      if (!res.success || res.payload.length === 0) {
-        // "noData" should be set if there is no data in the requested period.
-        onHistoryCallback([], {
-          noData: true,
-        });
-        return;
-      }
       if (source === "TideBit") {
-        console.log(`res`, res)
+        console.log(`res`, res);
+        if (res.s !== "ok" || res.t.length === 0) {
+          // "noData" should be set if there is no data in the requested period.
+          onHistoryCallback([], {
+            noData: true,
+          });
+          return;
+        }
         res.t.forEach((t, i) => {
           if (t >= from && t < to) {
             bars = [
@@ -114,7 +114,16 @@ const Datafeed = {
             ];
           }
         });
-      } else bars = res.payload;
+      } else {
+        if (!res.success || res.payload.length === 0) {
+          // "noData" should be set if there is no data in the requested period.
+          onHistoryCallback([], {
+            noData: true,
+          });
+          return;
+        }
+        bars = res.payload;
+      }
       lastBarsCache.set(symbolInfo.full_name, {
         ...bars[bars.length - 1],
       });
