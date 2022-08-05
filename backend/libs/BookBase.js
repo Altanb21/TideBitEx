@@ -148,6 +148,7 @@ class BookBase {
         data
       );
       this._snapshot[instId] = this._trim(instId, data);
+      return true;
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] updateAll error`, error);
       return false;
