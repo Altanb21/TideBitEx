@@ -1383,7 +1383,10 @@ class OkexConnector extends ConnectorBase {
             // this._updateInstruments(instId, data.data);
             break;
           case "trades":
-            this._updateTrades(instId, data.data);
+            const market = instId.replace("-", "").toLowerCase();
+            const trades = this._formateTrades(market, data.data);
+            this._updateTrades(instId, market, trades);
+            this._updateCandle(market, trades);
             break;
           case "books":
             this._updateBooks(instId, data.data, data.action);
@@ -1500,18 +1503,24 @@ class OkexConnector extends ConnectorBase {
   }
 
   // ++ TODO: verify function works properly
-  async _updateTrades(instId, trades) {
+  async _updateTrades(instId, market, trades) {
     try {
       const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
-      const market = instId.replace("-", "").toLowerCase();
-      const newTrades = this._formateTrades(market, trades);
-      // this.logger.debug(`[${this.constructor.name}]_updateTrades`, newTrades);
-      this.tradeBook.updateByDifference(instId, lotSz, newTrades);
+      this.tradeBook.updateByDifference(instId, lotSz, trades);
       EventBus.emit(Events.trades, market, {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
     } catch (error) {}
+  }
+
+  _updateCandle(market, trades) {
+    trades.reverse().forEach((trade) => {
+      EventBus.emit(Events.candleOnUpdate, market, {
+        market,
+        trade,
+      });
+    });
   }
 
   // there has 2 action, snapshot: full data; update: incremental data.
@@ -1536,33 +1545,6 @@ class OkexConnector extends ConnectorBase {
       }
     }
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
-  }
-
-  _updateCandle(instId, channel, candleData) {
-    // this.candleChannel = channel;
-    // this.logger.debug(
-    //   `[${this.constructor.name}]_updateCandle  this.okexWsChannels[${this.candleChannel}]`,
-    //   this.okexWsChannels,
-    //   instId,
-    //   channel,
-    //   candleData
-    // );
-    this.okexWsChannels[this.candleChannel][instId] = candleData;
-    const formatCandle = candleData
-      .map((data) => ({
-        time: parseInt(data[0]),
-        open: data[1],
-        high: data[2],
-        low: data[3],
-        close: data[4],
-        volume: data[5],
-      }))
-      .sort((a, b) => a.time - b.time);
-    EventBus.emit(Events.candleOnUpdate, instId, {
-      instId,
-      channel,
-      candle: formatCandle,
-    });
   }
 
   // ++ TODO: verify function works properly

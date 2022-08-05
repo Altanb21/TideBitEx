@@ -17,9 +17,9 @@ const getParameterByName = (name) => {
 };
 
 window.tvWidget = new TradingView.widget({
-  symbol: "Bitfinex:BTC/USD", // default symbol
-//   symbol: `${source}:${symbol}`,
-  interval: "1D", // default interval
+  // symbol: "Bitfinex:BTC/USD", // default symbol
+  symbol: `${source}:${symbol}`,
+  interval: "D", // default interval
   fullscreen: true, // displays the chart in the fullscreen mode
   container_id: "tv_chart_container",
   datafeed: Datafeed,

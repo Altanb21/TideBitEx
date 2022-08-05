@@ -381,7 +381,7 @@ class ExchangeHub extends Bot {
           ticker: query.id,
           name: query.symbol,
           description: query.symbol,
-          type: query.symbol,
+          type: "crypto",
           timezone: "Asia/Hong_Kong",
           session: "24x7",
           minmov: 1,
@@ -1716,10 +1716,10 @@ class ExchangeHub extends Bot {
       });
     });
 
-    EventBus.on(Events.candleOnUpdate, (market, formatCandle) => {
+    EventBus.on(Events.candleOnUpdate, (market, trade) => {
       this.broadcast(market, {
         type: Events.candleOnUpdate,
-        data: formatCandle,
+        data: trade,
       });
     });
 

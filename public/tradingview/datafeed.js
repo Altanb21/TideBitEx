@@ -2,45 +2,45 @@ import { makeApiRequest, generateSymbol, parseFullSymbol } from "./helpers.js";
 import { subscribeOnStream, unsubscribeFromStream } from "./streaming.js";
 
 const lastBarsCache = new Map();
-// let configurationData;
-const configurationData = {
-  supported_resolutions: ["1D", "1W", "1M"],
-  exchanges: [
-    {
-      value: "Bitfinex",
-      name: "Bitfinex",
-      desc: "Bitfinex",
-    },
-    {
-      // `exchange` argument for the `searchSymbols` method, if a user selects this exchange
-      value: "Kraken",
+let configurationData;
+// const configurationData = {
+//   supported_resolutions: ["1D", "1W", "1M"],
+//   exchanges: [
+//     {
+//       value: "Bitfinex",
+//       name: "Bitfinex",
+//       desc: "Bitfinex",
+//     },
+//     {
+//       // `exchange` argument for the `searchSymbols` method, if a user selects this exchange
+//       value: "Kraken",
 
-      // filter name
-      name: "Kraken",
+//       // filter name
+//       name: "Kraken",
 
-      // full exchange name displayed in the filter popup
-      desc: "Kraken bitcoin exchange",
-    },
-  ],
-  symbols_types: [
-    {
-      name: "crypto",
+//       // full exchange name displayed in the filter popup
+//       desc: "Kraken bitcoin exchange",
+//     },
+//   ],
+//   symbols_types: [
+//     {
+//       name: "crypto",
 
-      // `symbolType` argument for the `searchSymbols` method, if a user selects this symbol type
-      value: "crypto",
-    },
-    // ...
-  ],
-};
+//       // `symbolType` argument for the `searchSymbols` method, if a user selects this symbol type
+//       value: "crypto",
+//     },
+//     // ...
+//   ],
+// };
 
 async function getConfigurationData() {
-  const data = await makeApiRequest(`api/v1/tradingview/config`);
+  const data = await makeApiRequest(`v1/tradingview/config`);
   return data;
 }
 
 async function getSymbolItem(symbolName) {
   const data = await makeApiRequest(
-    `api/v1/tradingview/symbols?symbol=${symbolName}`
+    `v1/tradingview/symbols?symbol=${symbolName}`
   );
   return data;
 }
@@ -97,16 +97,20 @@ const Datafeed = {
   },
 
   resolveSymbol: async (
-    // fullName,
-    symbolName,
+    fullName,
+    // symbolName,
     onSymbolResolvedCallback,
     onResolveErrorCallback
   ) => {
-    // if (!configurationData) configurationData = await getConfigurationData();
-    console.log("[resolveSymbol]: Method call", symbolName);
-    // console.log("[resolveSymbol]: Method call", fullName);
+    if (!configurationData) configurationData = await getConfigurationData();
+    // console.log("[resolveSymbol]: Method call", symbolName);
+    console.log("[resolveSymbol]: Method call fullName", fullName);
     // const exchange = fullName.split(":")[0];
     // const symbolName = fullName.split(":")[1];
+    const qs = window.location.search.replace("?", "").split("&");
+    const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
+    const symbolName = qs.find((q) => q.includes("symbol"))?.replace("symbol=", "");
+
     /**
      * SymbolItem
      * {
@@ -118,11 +122,12 @@ const Datafeed = {
      * }
      * Array<SymbolItem>
      */
-     const symbols = await getAllSymbols();
-     const symbolItem = symbols.find(
-       ({ full_name }) => full_name === symbolName
-     );
-    // const symbolItem = await getSymbolItem(symbolName);
+    // const symbols = await getAllSymbols();
+    // const symbolItem = symbols.find(
+    //   ({ full_name }) => full_name === symbolName
+    // );
+
+    const symbolItem = await getSymbolItem(symbolName);
     if (!symbolItem) {
       console.log("[resolveSymbol]: Cannot resolve symbol", symbolName);
       onResolveErrorCallback("cannot resolve symbol");
@@ -162,37 +167,32 @@ const Datafeed = {
      * type: "crypto"
      * volume_precision: 2
      */
+    const symbolInfo = {
+      ...symbolItem,
+      exchange: "",
+      data_status: "streaming",
+      // exchange,
+      supported_resolutions: configurationData.supported_resolutions,
+      // data_status: "streaming",
+    };
     // const symbolInfo = {
-    //   ...symbolItem,
-    //   data_status: "streaming",
+    //   ticker: symbolItem.full_name,
+    //   name: symbolItem.symbol,
     //   description: symbolItem.description,
-    //   type: "crypto",
-    //   exchange,
-    //   supported_resolutions: configurationData.supported_resolutions,
-
+    //   type: symbolItem.type,
+    //   session: "24x7",
+    //   timezone: "Etc/UTC",
+    //   exchange: symbolItem.exchange,
+    //   minmov: 1,
+    //   pricescale: 100,
     //   has_intraday: false,
     //   has_no_volume: true,
     //   has_weekly_and_monthly: false,
+    //   supported_resolutions: configurationData.supported_resolutions,
+    //   volume_precision: 2,
     //   data_status: "streaming",
     // };
-    const symbolInfo = {
-      ticker: symbolItem.full_name,
-      name: symbolItem.symbol,
-      description: symbolItem.description,
-      type: symbolItem.type,
-      session: "24x7",
-      timezone: "Etc/UTC",
-      exchange: symbolItem.exchange,
-      minmov: 1,
-      pricescale: 100,
-      has_intraday: false,
-      has_no_volume: true,
-      has_weekly_and_monthly: false,
-      supported_resolutions: configurationData.supported_resolutions,
-      volume_precision: 2,
-      data_status: "streaming",
-    };
-    console.log("[resolveSymbol]: Symbol resolved", symbolInfo);
+    console.log("[resolveSymbol]: Symbol resolved", symbolItem);
     onSymbolResolvedCallback(symbolInfo);
   },
 
@@ -217,23 +217,46 @@ const Datafeed = {
       onHistoryCallback,
       onErrorCallback
     );
-    const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
+    /**
+     * history?symbol=ethusdt&resolution=D&from=1658813621&to=1659677621
+     * histoday?e=OKEx&fsym=ETH&tsym=USDT&toTs=1659678509&limit=2000
+     */
+    // const parsedSymbol = parseFullSymbol(symbolInfo.full_name);
+    // const urlParameters = {
+    //   e: parsedSymbol.exchange,
+    //   fsym: parsedSymbol.fromSymbol,
+    //   tsym: parsedSymbol.toSymbol,
+    //   toTs: to,
+    //   limit: 2000,
+    // };
     const urlParameters = {
-      e: parsedSymbol.exchange,
-      fsym: parsedSymbol.fromSymbol,
-      tsym: parsedSymbol.toSymbol,
-      toTs: to,
-      limit: 2000,
+      symbol: symbolInfo.ticker,
+      from,
+      to,
+      resolution,
     };
     const query = Object.keys(urlParameters)
       .map((name) => `${name}=${encodeURIComponent(urlParameters[name])}`)
       .join("&");
     try {
-      const data = await makeApiRequest(`data/histoday?${query}`);
-      if (
-        (data.Response && data.Response === "Error") ||
-        data.Data.length === 0
-      ) {
+      // const data = await makeApiRequest(`data/histoday?${query}`);
+      const data = await makeApiRequest(
+        `${
+          symbolInfo.exchange === "TideBit" ? "v2" : "v1"
+        }/tradingview/history?${query}`
+      );
+      // console.log(data);
+      // if (
+      //   (data.Response && data.Response === "Error") ||
+      //   data.Data.length === 0
+      // ) {
+      //   // "noData" should be set if there is no data in the requested period.
+      //   onHistoryCallback([], {
+      //     noData: true,
+      //   });
+      //   return;
+      // }
+      if (data.s !== "ok" || data.t.length === 0) {
         // "noData" should be set if there is no data in the requested period.
         onHistoryCallback([], {
           noData: true,
@@ -241,16 +264,30 @@ const Datafeed = {
         return;
       }
       let bars = [];
-      data.Data.forEach((bar) => {
-        if (bar.time >= from && bar.time < to) {
+      // data.Data.forEach((bar) => {
+      //   if (bar.time >= from && bar.time < to) {
+      //     bars = [
+      //       ...bars,
+      //       {
+      //         time: bar.time * 1000,
+      //         low: bar.low,
+      //         high: bar.high,
+      //         open: bar.open,
+      //         close: bar.close,
+      //       },
+      //     ];
+      //   }
+      // });
+      data.t.forEach((t, i) => {
+        if (t >= from && t < to) {
           bars = [
             ...bars,
             {
-              time: bar.time * 1000,
-              low: bar.low,
-              high: bar.high,
-              open: bar.open,
-              close: bar.close,
+              time: t * 1000,
+              low: data.l[i],
+              high: data.h[i],
+              open: data.o[i],
+              close: data.c[i],
             },
           ];
         }

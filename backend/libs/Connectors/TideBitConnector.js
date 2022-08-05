@@ -127,7 +127,12 @@ class TibeBitConnector extends ConnectorBase {
         let memberId;
         switch (data.event) {
           case "trades":
-            this._updateTrades(market, JSON.parse(data.data));
+            const instId = this._findInstId(market);
+            const trades = JSON.parse(data.data).trades.map((trade) =>
+              this._formateTrade(market, trade)
+            );
+            this._updateTrades(instId, market, trades);
+            this._updateCandle(market, trades);
             break;
           case "update":
             this._updateBooks(market, JSON.parse(data.data));
@@ -565,6 +570,15 @@ class TibeBitConnector extends ConnectorBase {
     );
   }
 
+  _updateCandle(market, trades) {
+    trades.reverse().forEach((trade) => {
+      EventBus.emit(Events.candleOnUpdate, market, {
+        market,
+        trade,
+      });
+    });
+  }
+
   /* 
   {
     'BTC': {
@@ -697,7 +711,7 @@ class TibeBitConnector extends ConnectorBase {
       this.accountBook.getDifference(memberId)
     );
   }
-  
+
   async tbGetOrderList(query) {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
