@@ -9,7 +9,7 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const { waterfallPromise } = require("../Utils");
+const { waterfallPromise, getBar } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
@@ -646,36 +646,6 @@ class OkexConnector extends ConnectorBase {
     });
   }
 
-  getBar(resolution) {
-    let bar;
-    switch (resolution) {
-      case "1":
-        bar = "1m";
-        break;
-      case "5":
-        bar = "5m";
-        break;
-      case "15":
-        bar = "15m";
-        break;
-      case "30":
-        bar = "30m";
-        break;
-      case "60":
-        bar = "1H";
-        break;
-      case "1W":
-      case "W":
-        bar = "1W";
-        break;
-      case "1D":
-      case "D":
-      default:
-        bar = "1D";
-        break;
-    }
-    return bar;
-  }
 
   async getTradingViewHistory({ query }) {
     const method = "GET";
@@ -684,7 +654,7 @@ class OkexConnector extends ConnectorBase {
 
     let arr = [];
     if (instId) arr.push(`instId=${instId}`);
-    if (resolution) arr.push(`bar=${this.getBar(resolution)}`);
+    if (resolution) arr.push(`bar=${getBar(resolution)}`);
     // before	String	否	请求此时间戳之后（更新的数据）的分页内容，传的值为对应接口的ts
     // if (from) arr.push(`before=${parseInt(from) * 1000}`); //5/23
     //after	String	否	请求此时间戳之前（更旧的数据）的分页内容，传的值为对应接口的ts
@@ -716,7 +686,7 @@ class OkexConnector extends ConnectorBase {
       if (resData[resData.length - 1][0] / 1000 > from) {
         arr = [];
         if (instId) arr.push(`instId=${instId}`);
-        if (resolution) arr.push(`bar=${this.getBar(resolution)}`);
+        if (resolution) arr.push(`bar=${getBar(resolution)}`);
         if (to) arr.push(`after=${resData[resData.length - 1][0]}`); //6/2
         arr.push(`limit=${300}`);
         qs = !!arr.length ? `?${arr.join("&")}` : "";

@@ -1,5 +1,4 @@
 const ConnectorBase = require("../ConnectorBase");
-const Pusher = require("pusher-js");
 const axios = require("axios");
 const SafeMath = require("../SafeMath");
 const EventBus = require("../EventBus");
@@ -10,6 +9,7 @@ const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
 const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
+const { getBar } = require("../Utils");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {
@@ -1133,7 +1133,7 @@ class TibeBitConnector extends ConnectorBase {
 
     let arr = [];
     if (instId) arr.push(`instId=${instId}`);
-    if (resolution) arr.push(`bar=${this.getBar(resolution)}`);
+    if (resolution) arr.push(`bar=${getBar(resolution)}`);
     // before	String	否	请求此时间戳之后（更新的数据）的分页内容，传的值为对应接口的ts
     // if (from) arr.push(`before=${parseInt(from) * 1000}`); //5/23
     //after	String	否	请求此时间戳之前（更旧的数据）的分页内容，传的值为对应接口的ts
@@ -1142,21 +1142,19 @@ class TibeBitConnector extends ConnectorBase {
     let qs = !!arr.length ? `?${arr.join("&")}` : "";
 
     try {
-      let res = await axios({
-        method: method.toLocaleLowerCase(),
-        url: `${this.domain}${path}${qs}`,
-        headers: this.getHeaders(false),
-      });
-      this.logger.log(`getTradingViewHistory res`, res);
-      if (res.data && res.data.s !== "ok") {
-        const [message] = res.data.data;
-        this.logger.trace(res.data);
+      const tbTradesRes = await axios.get(
+        `${path}${qs}`
+     );
+      this.logger.log(`getTradingViewHistory tbTradesRes`, tbTradesRes);
+      if (tbTradesRes.data && tbTradesRes.data.s !== "ok") {
+        const [message] = tbTradesRes.data.data;
+        this.logger.trace(tbTradesRes.data);
         return new ResponseFormat({
           message: message.sMsg,
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      let data = res.data;
+      let data = tbTradesRes.data;
       let bars = [];
       data.t.forEach((t, i) => {
         if (t >= from && t < to) {
