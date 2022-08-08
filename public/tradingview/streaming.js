@@ -1,4 +1,4 @@
-import config from "../../Config.js";
+import config from "../../src/constant/Config.js";
 import { baseUrl } from "./helpers.js";
 import { parseFullSymbol } from "./helpers.js";
 

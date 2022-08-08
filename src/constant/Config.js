@@ -1,33 +1,22 @@
-const apiVersion = "/api/v1";
-// const apiURL = "https://www.okex.com";
+import prod from "../../prod.config.json";
+import staging from "../../staging.config.json";
+import dev from "../../dev.config.json";
 
-/* ++ TODO
-const host = "3.37.130.251";
-const port = "5566";
-const apiURL = `http://${host}:${port}`;
-const websocket = `${
-  window.location.protocol === "https:" ? "wss://" : "ws://"
-}${host}:${port}/ws`;
-*/
+let config = {};
+const WS_PROTOCOL = window.location.protocol === "https:" ? "wss://" : "ws://";
 
-// -- TEST
-const apiURL = ``;
-const websocket =
-  (window.location.protocol === "https:" ? "wss://" : "ws://") +
-  window.location.host +
-  "/ws";
-// --
+switch (window.location.hostname) {
+  case "new.tidebit.com":
+    config = { ...prod, WS_PROTOCOL };
+    break;
+  case "staging3.tidebit.network":
+    config = { ...staging, WS_PROTOCOL };
+    break;
+  case "test.tidebit.network":
+    config = { ...dev, WS_PROTOCOL };
+    break;
+  default:
+    config = { ...dev, WS_PROTOCOL };
+}
 
-export const Config = {
-  status: "staging",
-  staging: {
-    apiURL,
-    apiVersion,
-    websocket,
-  },
-  production: {
-    apiURL,
-    apiVersion,
-    websocket,
-  },
-};
+export default config;

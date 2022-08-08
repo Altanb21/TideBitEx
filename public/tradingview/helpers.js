@@ -1,4 +1,4 @@
-import config from "../../Config";
+import config from "../../src/constant/Config";
 
 export const baseUrl = 'test.tidebit.network';
 // Make requests to CryptoCompare API

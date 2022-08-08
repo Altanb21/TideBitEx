@@ -1,5 +1,5 @@
 import { decode } from "jsonwebtoken";
-import config from "../../Config";
+import config from "../constant/Config";
 import Codes from "../constant/Codes";
 
 import HTTPAgent from "../utils/HTTPAgent";
