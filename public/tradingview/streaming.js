@@ -2,7 +2,7 @@ import { baseUrl } from "./helpers.js";
 import { parseFullSymbol } from "./helpers.js";
 
 // const socket = io('wss://streamer.cryptocompare.com');
-// const socket = new WebSocket(`wss://https://staging3.tidebit.network`);
+// const socket = new WebSocket(`wss://ws.tidebit.network`);
 const socket = new WebSocket(`wss://${baseUrl}`);
 const channelToSubscription = new Map();
 
