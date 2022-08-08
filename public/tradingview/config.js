@@ -21,4 +21,16 @@
 
 // export default config;
 
-export const baseUrl = 'test.tidebit.network';
+export const baseUrl = `${window.location.hostname}`;
+export const wsUrl = () => {
+  switch (window.location.hostname) {
+    case "new.tidebit.com":
+      return "ws.tidebit.network";
+    case "staging3.tidebit.network":
+      return "staging3.tidebit.network";
+    case "test.tidebit.network":
+      return "test.tidebit.network";
+    default:
+      return "ws.tidebit.network";
+  }
+};
