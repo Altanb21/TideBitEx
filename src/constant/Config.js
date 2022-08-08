@@ -1,6 +1,6 @@
-import prod from "../../prod.config.json";
-import staging from "../../staging.config.json";
-import dev from "../../dev.config.json";
+import prod from "../json/prod.config.json";
+import staging from "../json/staging.config.json";
+import dev from "../json/dev.config.json";
 
 let config = {};
 const WS_PROTOCOL = window.location.protocol === "https:" ? "wss://" : "ws://";
