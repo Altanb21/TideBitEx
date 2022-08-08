@@ -1,0 +1,5 @@
+{
+  "API_URL": "test.tidebit.network",
+  "API_VERSION": "/api/v1",
+  "WS_DOMAIN": "test.tidebit.network/ws"
+}
