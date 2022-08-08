@@ -1,6 +1,7 @@
 import { decode } from "jsonwebtoken";
+import config from "../../Config";
 import Codes from "../constant/Codes";
-import { Config } from "../constant/Config";
+
 import HTTPAgent from "../utils/HTTPAgent";
 
 // retry
@@ -9,10 +10,10 @@ class Communicator {
     this._userId = userId;
     this.httpAgent = new HTTPAgent({
       userId,
-      apiURL: Config[Config.status].apiURL,
-      apiVersion: Config[Config.status].apiVersion,
-      apiKey: Config[Config.status].apiKey,
-      apiSecret: Config[Config.status].apiSecret,
+      apiURL: ``,
+      apiVersion: config.API_VERSION,
+      apiKey: config.API_KEY,
+      apiSecret: config.API_SECRET,
     });
     this.token = null;
     this.tokenSecret = null;
@@ -44,7 +45,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -63,7 +64,7 @@ class Communicator {
       this._setCSRFToken(csrfToken);
       return csrfToken;
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -84,7 +85,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -102,7 +103,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -127,7 +128,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -150,7 +151,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -173,7 +174,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -197,7 +198,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
   // Trade
@@ -223,7 +224,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -249,7 +250,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -268,7 +269,7 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       // console.error(`[getAccounts] error`, error);
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -287,7 +288,7 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       // console.error(`[getAccounts] error`, error);
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -305,7 +306,7 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       // console.error(`[getAccounts] error`, error);
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -341,7 +342,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -358,7 +359,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
@@ -376,7 +377,7 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       console.error(`[getOptions] error`, error);
-       return Promise.reject({ ...error });
+      return Promise.reject({ ...error });
     }
   }
 
