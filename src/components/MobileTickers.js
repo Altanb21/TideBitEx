@@ -8,6 +8,7 @@ import { ImCross } from "react-icons/im";
 import { IoMdArrowDropdown } from "react-icons/io";
 
 const TickerTile = (props) => {
+  const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   return (
     <li
@@ -29,7 +30,11 @@ const TickerTile = (props) => {
         </div>
       </div>
       <div className="mobile-tickers__price">
-        <div>{formateDecimal(props.ticker?.last, { decimalLength: 2 })}</div>
+        <div>
+          {formateDecimal(props.ticker?.last, {
+            decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          })}
+        </div>
         <div
           className={SafeMath.gte(props.ticker?.change, "0") ? "green" : "red"}
         >

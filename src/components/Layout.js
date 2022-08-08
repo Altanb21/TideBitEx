@@ -52,16 +52,20 @@ const Layout = ({ children }) => {
       case "en":
       case "en-us":
       case "en_us":
+      case "en-US":
         changeLanguage("en-US");
         break;
       case "zh-hk":
       case "zh_hk":
       case "zh_tw":
       case "zh-tw":
+      case "zh-TW":
+      case "zh-HK":
         changeLanguage("zh-HK");
         break;
       case "zh_cn":
       case "zh-cn":
+      case "zh-CN":
         changeLanguage("zh-CN");
         break;
       // case "jp":

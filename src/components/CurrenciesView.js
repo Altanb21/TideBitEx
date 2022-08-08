@@ -23,7 +23,7 @@ const CurrencyDetail = (props) => {
             decimalLength: 2,
           })}: ${props.currency}`}</div>
           <div>
-            TideBit:{" "}
+            TideBit:
             {`${formateDecimal(props.tb_total, { decimalLength: 2 })}${
               props.currency
             }`}

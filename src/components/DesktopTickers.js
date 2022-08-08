@@ -13,6 +13,7 @@ import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 
 const TickerTile = (props) => {
+  const storeCtx = useContext(StoreContext);
   return (
     <li
       onClick={props.onClick}
@@ -21,7 +22,11 @@ const TickerTile = (props) => {
       }`}
     >
       <div>{props.ticker.name}</div>
-      <div>{formateDecimal(props.ticker.last, { decimalLength: 2 })}</div>
+      <div>
+        {formateDecimal(props.ticker.last, {
+          decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+        })}
+      </div>
       <div className={SafeMath.gte(props.ticker.change, "0") ? "green" : "red"}>
         {`${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
           decimalLength: 2,
@@ -30,8 +35,16 @@ const TickerTile = (props) => {
         })}%`}
       </div>
       <div>{formateDecimal(props.ticker.volume, { decimalLength: 2 })}</div>
-      <div>{formateDecimal(props.ticker.high, { decimalLength: 2 })}</div>
-      <div>{formateDecimal(props.ticker.low, { decimalLength: 2 })}</div>
+      <div>
+        {formateDecimal(props.ticker.high, {
+          decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+        })}
+      </div>
+      <div>
+        {formateDecimal(props.ticker.low, {
+          decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+        })}
+      </div>
     </li>
   );
 };
