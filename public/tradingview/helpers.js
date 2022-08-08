@@ -1,9 +1,12 @@
-export const baseUrl = 'new.tidebit.com';
+
+import config from './config.json';
+// export const baseUrl = 'test.tidebit.network';
 // Make requests to CryptoCompare API
 export async function makeApiRequest(path) {
 	try {
 		// const response = await fetch(`https://min-api.cryptocompare.com/${path}`);
-		const response = await fetch(`https://${baseUrl}/api/${path}`);
+		// const response = await fetch(`https://${baseUrl}/api/${path}`);
+		const response = await fetch(`https://${JSON.parse(config).BASE_URL}/api/${path}`);
 		// const response = await fetch(`${path}`);
 		return response.json();
 	} catch (error) {
