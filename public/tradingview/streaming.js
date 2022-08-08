@@ -3,7 +3,7 @@ import { wsUrl } from "./config.js";
 
 // const socket = io('wss://streamer.cryptocompare.com');
 // const socket = new WebSocket(`wss://ws.tidebit.network`);
-const socket = new WebSocket(`wss://${wsUrl()}`);
+const socket = new WebSocket(`wss://${wsUrl}`);
 // const socket = new WebSocket(`${config.WS_PROTOCOL}${config.WS_DOMAIN}`);
 const channelToSubscription = new Map();
 
