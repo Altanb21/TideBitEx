@@ -110,3 +110,7 @@ private.*
 config.toml
 
 build
+
+# config
+src/constant/Config.js
+src/shell/restart.sh
