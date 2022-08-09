@@ -97,7 +97,7 @@
 @media only screen and (max-width: 414px) {
   .market-order {
     border: none;
-
+    min-width: unset;
     &__header {
       display: none;
     }

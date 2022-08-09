@@ -638,7 +638,7 @@ class TibeBitConnector extends ConnectorBase {
       });
       // this.logger.debug(`[${this.constructor.name} getUsersAccounts]`, accounts)
       return new ResponseFormat({
-        message: "getAccounts",
+        message: "getUsersAccounts",
         payload: accounts,
       });
     } catch (error) {

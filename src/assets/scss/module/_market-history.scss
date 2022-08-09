@@ -106,7 +106,7 @@
   // If [device width] is less than or equal to 600px, then do
   .market-history {
     border: none;
-
+    min-width: unset;
     &__header {
       display: none;
     }
