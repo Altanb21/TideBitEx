@@ -113,5 +113,5 @@ build
 
 # config
 src/constant/Config.js
-src/shell/restart.sh
+shell/restart.sh
 public/tradingview/config.js
