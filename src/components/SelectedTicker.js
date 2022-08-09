@@ -14,13 +14,13 @@ const SelectedTicker = (props) => {
     <div className="ticker">
       <div className="ticker__button">
         <div className="selectedTicker">
-          <AiOutlineBarChart />
+          <AiOutlineBarChart size={28}/>
           <div className="selectedTicker__text">{storeCtx.selectedTicker?.name || "--"}</div>
           <AiFillCaretDown />
         </div>
         <DesktopTickers />
       </div>
-      <div className="ticker__details">
+      <div className="ticker__price">
         <div
           className={`showPrice ${
             !storeCtx.selectedTicker
