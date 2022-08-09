@@ -133,10 +133,10 @@ export const baseUrl = 'new.tidebit.com';
 export const wsUrl = 'ws.tidebit.network/ws';
 ```
 將 default.config.js 複製到 public/tradingview/config.js
-將 default.config.js 複製到 constant/Config.js
+將 default.config.js 複製到 src/constant/Config.js
 ```
 cp default.config.js public/tradingview/config.js
-cp default.config.js constant/Config.js
+cp default.config.js src/constant/Config.js
 ```
 
 ### 設定 crontab
