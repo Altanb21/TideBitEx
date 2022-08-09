@@ -1,5 +1,5 @@
 import { decode } from "jsonwebtoken";
-import config from "../constant/Config";
+import { apiVersion, apiKey, apiSecret } from "../constant/Config";
 import Codes from "../constant/Codes";
 
 import HTTPAgent from "../utils/HTTPAgent";
@@ -11,9 +11,9 @@ class Communicator {
     this.httpAgent = new HTTPAgent({
       userId,
       apiURL: ``,
-      apiVersion: config.API_VERSION,
-      apiKey: config.API_KEY,
-      apiSecret: config.API_SECRET,
+      apiVersion: apiVersion,
+      apiKey: apiKey,
+      apiSecret: apiSecret,
     });
     this.token = null;
     this.tokenSecret = null;
