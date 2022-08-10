@@ -461,11 +461,8 @@ class ExchangeHubService {
           trade.fillSz
         );
         bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
-        _bidLocDiff = SafeMath.mult(
-          bidAccBalDiff,
-          "-1"
-        );
-        bidLoc = SafeMath.plus(bidAccount.locked, _bidLocDiff);
+        _bidLocDiff = SafeMath.mult(bidAccBalDiff, "-1");
+        bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
         await this._updateAccountsRecord({
           account: bidAccount,
           accBalDiff: _bidAccBalDiff,
