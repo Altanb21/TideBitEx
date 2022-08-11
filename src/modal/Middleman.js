@@ -244,8 +244,8 @@ class Middleman {
       }
     } catch (error) {
       console.error(`_getAccounts error`, error);
-      // this.isLogin = false;
-      // this.accountBook.clearAll();
+      this.isLogin = false;
+      this.accountBook.clearAll();
     }
   }
 
