@@ -103,7 +103,7 @@ class Middleman {
         market,
       });
       // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      if (!!orders) this.orderBook.updateByDifference(market, orders);
+      if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {
       console.error(`_getOrderHistory error`, error);
       // throw error;
