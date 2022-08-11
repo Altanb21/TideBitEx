@@ -21,26 +21,26 @@ class TideBitLegacyAdapter {
     }
     let peatioToken,
       XSRFToken,
-      userId,
+      // userId,
       memberId = -1;
-    userId = header.userid;
+    // userId = header.userid;
     // console.log(`[TideBitLegacyAdapter] parseMemberId header`, header);
-    if (userId) {
-      if (tokens[userId]) {
-        peatioToken = tokens[userId].peatioToken;
-        XSRFToken = Utils.XSRFToken(header) ?? tokens[userId].XSRFToken; // ++TODO XSRFToken 會過期， ws 拿不到 XSRFToken
-        // console.log(
-        //   `[TideBitLegacyAdapter] parseMemberId tokens[userId:${userId}]`,
-        //   tokens[userId]
-        // );
-      } else {
-        peatioToken = Utils.peatioToken(header);
-        XSRFToken = Utils.XSRFToken(header);
-        tokens[userId] = {};
-        tokens[userId]["peatioToken"] = peatioToken;
-        tokens[userId]["XSRFToken"] = XSRFToken;
-      }
-    }
+    // if (userId) {
+    //   if (tokens[userId]) {
+    //     peatioToken = tokens[userId].peatioToken;
+    //     XSRFToken = Utils.XSRFToken(header) ?? tokens[userId].XSRFToken; // ++TODO XSRFToken 會過期， ws 拿不到 XSRFToken
+    //     // console.log(
+    //     //   `[TideBitLegacyAdapter] parseMemberId tokens[userId:${userId}]`,
+    //     //   tokens[userId]
+    //     // );
+    //   } else {
+    peatioToken = Utils.peatioToken(header);
+    XSRFToken = Utils.XSRFToken(header);
+    // tokens[userId] = {};
+    // tokens[userId]["peatioToken"] = peatioToken;
+    // tokens[userId]["XSRFToken"] = XSRFToken;
+    // }
+    // }
     if (peatioToken) {
       if (users[peatioToken]) {
         memberId = users[peatioToken].memberId;
@@ -53,19 +53,19 @@ class TideBitLegacyAdapter {
           memberId = await Utils.getMemberIdFromRedis(radisDomain, peatioToken);
           users[peatioToken] = { memberId, ts: Date.now() };
         } catch (error) {
-          // console.error(
-          //   `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
-          //   error
-          // );
-          users[peatioToken] = { memberId, ts: Date.now() };
+          console.error(
+            `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
+            error
+          );
+          // users[peatioToken] = { memberId, ts: Date.now() };
         }
       }
     }
-    // console.log(
-    //   `[TideBitLegacyAdapter] parseMemberId users[${peatioToken}]`,
-    //   users[peatioToken],
-    //   `memberId:${memberId}`
-    // );
+    console.log(
+      `[TideBitLegacyAdapter] parseMemberId users[${peatioToken}]`,
+      users[peatioToken],
+      `memberId:${memberId}`
+    );
     return { peatioToken, memberId, XSRFToken };
   }
 

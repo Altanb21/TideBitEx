@@ -6,12 +6,12 @@ import TickerBook from "../libs/books/TickerBook";
 import TradeBook from "../libs/books/TradeBook";
 import TideBitWS from "../libs/TideBitWS";
 import Communicator from "./Communicator";
-import Pusher from "pusher-js";
-import { randomID } from "dvalue";
+// import Pusher from "pusher-js";
+// import { randomID } from "dvalue";
 import { wait } from "../utils/Utils";
 
 class Middleman {
-  _userId;
+  // _userId;
   isLogin = false;
   constructor() {
     this.name = "Middleman";
@@ -21,9 +21,10 @@ class Middleman {
     this.tickerBook = new TickerBook();
     this.tradeBook = new TradeBook();
     this.tbWebSocket = new TideBitWS();
-    this._userId = randomID(8);
+    // this._userId = randomID(8);
     // console.log(`[Middleman] userId`, this._userId);
-    this.communicator = new Communicator({ userId: this._userId });
+    // this.communicator = new Communicator({ userId: this._userId });
+    this.communicator = new Communicator();
     // -- TEST
     window.middleman = this;
     // -- TEST
@@ -215,13 +216,15 @@ class Middleman {
           this.isLogin = true;
           const CSRFToken = await this.communicator.CSRFTokenRenew();
           // console.log(`[Middleman] _getAccounts userId`, this._userId);
-          const userId = this._userId;
+          // const userId = this._userId;
           this.tbWebSocket.setCurrentUser(market, {
             CSRFToken,
-            userId,
+            // userId,
           });
           this.tickerBook.setCurrentMarket(market);
         }
+      } else {
+        this.isLogin = false;
       }
     } catch (error) {
       this.isLogin = false;
@@ -338,14 +341,14 @@ class Middleman {
   async sync() {
     // --- WORKAROUND---
     await wait(1 * 60 * 1000);
-    if (this.isLogin) {
-      // console.log(`--- WORKAROUND--- sync [START]`);
-      const market = this.tickerBook.getCurrentMarket();
-      await this._getAccounts(market);
-      await this._getOrderList(market);
-      await this._getOrderHistory(market);
-      // console.log(`--- WORKAROUND--- sync [END]`);
-    }
+    // if (this.isLogin) {
+    // console.log(`--- WORKAROUND--- sync [START]`);
+    const market = this.tickerBook.getCurrentMarket();
+    await this._getAccounts(market);
+    await this._getOrderList(market);
+    await this._getOrderHistory(market);
+    // console.log(`--- WORKAROUND--- sync [END]`);
+    // }
     this.sync();
     // --- WORKAROUND---
   }
