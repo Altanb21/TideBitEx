@@ -540,6 +540,7 @@ class TibeBitConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   _updateTrades(market, data) {
     const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
+    this.logger.log(`[this.market_channel[market-${market}-global] lotSz`, lotSz);
     this.logger.log(
       `---------- [${this.constructor.name}]  _updateTrades [START] ----------`
     );
