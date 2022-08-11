@@ -86,7 +86,7 @@ class AccountBook extends BookBase {
   clearAll() {
     // console.log(`[AccountBook updateAll]`, accounts);
     const _updateSnapshot = {};
-    Object.key(this._snapshot).forEach((currency) => {
+    Object.keys(this._snapshot).forEach((currency) => {
       this._difference[currency] = this._snapshot[currency];
       // }
       this._snapshot[currency] = {
