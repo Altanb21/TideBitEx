@@ -27,6 +27,7 @@ const TradeForm = (props) => {
   const [quoteCcyAvailable, setQuoteCcyAvailable] = useState("0");
   const [baseCcyAvailable, setBaseCcyAvailable] = useState("0");
   const [refresh, setRefresh] = useState(false);
+  const [memberId, setMemberId] = useState(null);
 
   const formatPrice = useCallback(
     (value) => {
@@ -186,8 +187,10 @@ const TradeForm = (props) => {
         ((storeCtx.selectedTicker && !selectedTicker) ||
           (storeCtx.selectedTicker &&
             storeCtx.selectedTicker.instId !== selectedTicker?.instId))) ||
-      refresh
+      refresh ||
+      memberId !== storeCtx.memberId
     ) {
+      setMemberId(storeCtx.memberId);
       let quoteCcyAccount = storeCtx.accounts?.find((account) => {
         return (
           account.currency ===
@@ -218,6 +221,8 @@ const TradeForm = (props) => {
     price,
     formatSize,
     volume,
+    storeCtx.memberId,
+    memberId,
   ]);
 
   useEffect(() => {

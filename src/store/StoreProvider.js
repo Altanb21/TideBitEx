@@ -26,6 +26,7 @@ const StoreProvider = (props) => {
   const location = useLocation();
   const history = useHistory();
   const [isLogin, setIsLogin] = useState(false);
+  const [memberId, setMemberId] = useState(false);
   const [tickers, setTickers] = useState([]);
   const [books, setBooks] = useState(null);
   const [trades, setTrades] = useState([]);
@@ -343,7 +344,7 @@ const StoreProvider = (props) => {
           // );
           const accounts = middleman.getAccounts();
           // console.log(`middleman.accounts`, accounts);
-          setIsLogin(middleman.isLogin);
+          // setIsLogin(middleman.isLogin);
           setAccounts(accounts);
           break;
         case Events.update:
@@ -403,6 +404,7 @@ const StoreProvider = (props) => {
   const sync = useCallback(async () => {
     await middleman.sync();
     setIsLogin(middleman.isLogin);
+    setMemberId(middleman.memberId);
     setAccounts(middleman.getAccounts());
     const orders = middleman.getMyOrders();
     setPendingOrders(orders.pendingOrders);
