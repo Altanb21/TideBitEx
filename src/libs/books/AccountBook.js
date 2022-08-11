@@ -83,6 +83,21 @@ class AccountBook extends BookBase {
       return false;
     }
   }
+  clearAll() {
+    // console.log(`[AccountBook updateAll]`, accounts);
+    const _updateSnapshot = {};
+    Object.key(this._snapshot).forEach((currency) => {
+      this._difference[currency] = this._snapshot[currency];
+      // }
+      this._snapshot[currency] = {
+        balance: "0",
+        currency,
+        locked: "0",
+        total: "0",
+      };
+    });
+    this._snapshot = _updateSnapshot;
+  }
 }
 
 export default AccountBook;

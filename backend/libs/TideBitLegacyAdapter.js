@@ -22,8 +22,9 @@ class TideBitLegacyAdapter {
     let peatioToken,
       XSRFToken,
       // userId,
-      memberId = -1;
-    // userId = header.userid;
+      // memberId = -1;
+      // userId = header.userid;
+      memberId = header?.memberId !== undefined ? header.memberId : -1;
     // console.log(`[TideBitLegacyAdapter] parseMemberId header`, header);
     // if (userId) {
     //   if (tokens[userId]) {
@@ -41,7 +42,7 @@ class TideBitLegacyAdapter {
     // tokens[userId]["XSRFToken"] = XSRFToken;
     // }
     // }
-    if (peatioToken) {
+    if (peatioToken && memberId === -1) {
       if (users[peatioToken]) {
         memberId = users[peatioToken].memberId;
       } else {

@@ -176,6 +176,7 @@ class WSChannel extends Bot {
     let { memberId, XSRFToken, peatioToken } = await parseMemberId(
       {
         ...header,
+        memberId: args.memberId,
         // userid: args.userId
       },
       redis

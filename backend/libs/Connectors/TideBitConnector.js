@@ -685,7 +685,7 @@ class TibeBitConnector extends ConnectorBase {
     // );
     return new ResponseFormat({
       message: "getAccounts",
-      payload: this.accountBook.getSnapshot(memberId),
+      payload: { accounts: this.accountBook.getSnapshot(memberId), memberId },
     });
   }
 
