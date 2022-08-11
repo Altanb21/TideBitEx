@@ -428,6 +428,7 @@ const StoreProvider = (props) => {
       setSelectedTicker(middleman.getTicker());
       setTickers(middleman.getTickers());
       setTrades(middleman.getTrades());
+      setBooks(middleman.getDepthBooks());
       await sync();
     }
   }, [history, location.pathname, middleman, eventListener, sync]);
