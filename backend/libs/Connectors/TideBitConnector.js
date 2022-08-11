@@ -538,9 +538,14 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   // ++ TODO: verify function works properly
-  _updateTrades(market, data) {
-    const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
-    this.logger.log(`[this.market_channel[market-${market}-global] lotSz`, lotSz);
+  _updateTrades(instId, market, data) {
+    const lotSz = this.market_channel[`market-${market}-global`]
+      ? this.market_channel[`market-${market}-global`]["lotSz"]
+      : undefined;
+    this.logger.log(
+      `[this.market_channel[market-${market}-global] lotSz`,
+      lotSz
+    );
     this.logger.log(
       `---------- [${this.constructor.name}]  _updateTrades [START] ----------`
     );
@@ -558,7 +563,7 @@ class TibeBitConnector extends ConnectorBase {
        ]
     }
     */
-    const instId = this._findInstId(market);
+    // const instId = this._findInstId(market);
     const newTrades = data.trades.map((trade) =>
       this._formateTrade(market, trade)
     );
