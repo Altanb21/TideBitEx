@@ -129,6 +129,19 @@ class TibeBitConnector extends ConnectorBase {
         let memberId;
         switch (data.event) {
           case "trades":
+            /**
+            {
+              trades: [
+               {
+                  tid: 118,
+                  type: 'buy',
+                  date: 1650532785,
+                   price: '95.0',
+                   amount: '0.1'
+                }
+              ]
+            }
+            */
             const instId = this._findInstId(market);
             const trades = JSON.parse(data.data).trades.map((trade) =>
               this._formateTrade(market, trade)
@@ -538,7 +551,7 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   // ++ TODO: verify function works properly
-  _updateTrades(instId, market, data) {
+  _updateTrades(instId, market, trades) {
     const lotSz = this.market_channel[`market-${market}-global`]
       ? this.market_channel[`market-${market}-global`]["lotSz"]
       : undefined;
@@ -549,22 +562,9 @@ class TibeBitConnector extends ConnectorBase {
     this.logger.log(
       `---------- [${this.constructor.name}]  _updateTrades [START] ----------`
     );
-    this.logger.log(`[FROM TideBit market:${market}] data`, data);
-    /**
-    {
-       trades: [
-         {
-           tid: 118,
-           type: 'buy',
-           date: 1650532785,
-           price: '95.0',
-           amount: '0.1'
-         }
-       ]
-    }
-    */
+    this.logger.log(`[FROM TideBit market:${market}] trades`, trades);
     // const instId = this._findInstId(market);
-    const newTrades = data.trades.map((trade) =>
+    const newTrades = trades.map((trade) =>
       this._formateTrade(market, trade)
     );
     this.tradeBook.updateByDifference(instId, lotSz, newTrades);
