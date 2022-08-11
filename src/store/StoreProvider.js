@@ -423,7 +423,10 @@ const StoreProvider = (props) => {
       });
       await middleman.start(market);
       eventListener();
-      sync();
+      setSelectedTicker(middleman.getTicker());
+      setTickers(middleman.getTickers());
+      setTrades(middleman.getTrades());
+      await sync();
     }
   }, [history, location.pathname, middleman, eventListener, sync]);
 

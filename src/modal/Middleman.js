@@ -261,8 +261,8 @@ class Middleman {
     await this._getTrades({ market, lotSz });
     // if (this.isLogin) {
     // TODO to verify if user is not login would be a problem
-    await this._getOrderList(market);
-    await this._getOrderHistory(market);
+    // await this._getOrderList(market);
+    // await this._getOrderHistory(market);
     // }
     // let pusher = new Pusher("2b78567f96a2c0f40368", {
     //   wsHost: "pusher.tinfo.top",
@@ -347,9 +347,9 @@ class Middleman {
       }/ws`,
     });
     // this._tbWSEventListener();
-    this._getAccounts(market);
-    this._getTickers();
-    this.selectMarket(market);
+    // this._getAccounts(market);
+    await this._getTickers();
+    await this.selectMarket(market);
   }
 
   async sync() {
