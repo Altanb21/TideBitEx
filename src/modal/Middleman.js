@@ -220,15 +220,19 @@ class Middleman {
           if (!this.isLogin || this.memberId !== res.memberId) {
             this.memberId = res.memberId;
             this.isLogin = true;
-            const CSRFToken = await this.communicator.CSRFTokenRenew();
-            // console.log(`[Middleman] _getAccounts userId`, this._userId);
-            // const userId = this._userId;
-            this.tbWebSocket.setCurrentUser(market, {
-              CSRFToken,
-              memberId: this.memberId,
-              // userId,
-            });
-            this.tickerBook.setCurrentMarket(market);
+            try {
+              const CSRFToken = await this.communicator.CSRFTokenRenew();
+              // console.log(`[Middleman] _getAccounts userId`, this._userId);
+              // const userId = this._userId;
+              this.tbWebSocket.setCurrentUser(market, {
+                CSRFToken,
+                memberId: this.memberId,
+                // userId,
+              });
+              this.tickerBook.setCurrentMarket(market);
+            } catch (error) {
+              console.error(`tbWebSocket error`, error);
+            }
           }
         }
       } else {
@@ -342,7 +346,7 @@ class Middleman {
         options.wsUrl
       }/ws`,
     });
-    this._tbWSEventListener();
+    // this._tbWSEventListener();
     this._getAccounts(market);
     this._getTickers();
     this.selectMarket(market);

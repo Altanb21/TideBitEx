@@ -5,6 +5,7 @@ import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import { wait } from "../utils/Utils";
+import Events from "../constant/Events";
 
 let interval,
   accountInterval = 500,
@@ -324,6 +325,78 @@ const StoreProvider = (props) => {
     sync();
   }, [middleman]);
 
+  const eventListener = useCallback(() => {
+    middleman.tbWebSocket.onmessage = (msg) => {
+      let metaData = JSON.parse(msg.data);
+      // console.log(metaData);
+      switch (metaData.type) {
+        case Events.account:
+          // console.log(`_tbWSEventListener Events.account`, metaData);
+          // console.log(
+          //   `_tbWSEventListener this.accountBook.getSnapshot`,
+          //   this.accountBook.getSnapshot()
+          // );
+          middleman.accountBook.updateByDifference(metaData.data);
+          // console.log(
+          //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
+          //   middleman.accountBook.getSnapshot()
+          // );
+          const accounts = middleman.getAccounts();
+          // console.log(`middleman.accounts`, accounts);
+          setIsLogin(middleman.isLogin);
+          setAccounts(accounts);
+          break;
+        case Events.update:
+          middleman.depthBook.updateAll(metaData.data.market, metaData.data);
+          setBooks(middleman.getDepthBooks());
+          break;
+        case Events.order:
+          // console.log(`_tbWSEventListener Events.order`, metaData);
+          // console.log(
+          //   `_tbWSEventListener middleman.orderBook.getSnapshot`,
+          //   middleman.orderBook.getSnapshot(metaData.data.market)
+          // );
+          middleman.orderBook.updateByDifference(
+            metaData.data.market,
+            metaData.data.difference
+          );
+          // console.log(
+          //   `_tbWSEventListener middleman.orderBook.getSnapshot`,
+          //   middleman.orderBook.getSnapshot(metaData.data.market)
+          // );
+          const orders = middleman.getMyOrders();
+          setPendingOrders(orders.pendingOrders);
+          setCloseOrders(orders.closedOrders);
+          break;
+        case Events.tickers:
+          // if (metaData.data["BTC-USDT"])
+          //   console.log(
+          //     `middleman metaData.data["BTC-USDT"].last`,
+          //     metaData.data["BTC-USDT"]?.last
+          //   );
+          middleman.tickerBook.updateByDifference(metaData.data);
+          let ticker = middleman.getTicker();
+          if (ticker) setPrecision(ticker);
+          setSelectedTicker(middleman.getTicker());
+          setTickers(middleman.getTickers());
+          break;
+        case Events.trades:
+          // console.log(`middleman metaData.data.trades`, metaData.data.trades);
+          this.tradeBook.updateAll(metaData.data.market, metaData.data.trades);
+          setTrades(middleman.getTrades());
+          break;
+        case Events.trade:
+          this.tradeBook.updateByDifference(
+            metaData.data.market,
+            metaData.data.difference
+          );
+          setTrades(middleman.getTrades());
+          break;
+        default:
+      }
+    };
+  }, [middleman]);
+
   const start = useCallback(async () => {
     if (location.pathname.includes("/markets")) {
       let market;
@@ -334,9 +407,10 @@ const StoreProvider = (props) => {
         pathname: `/markets/${market}`,
       });
       await middleman.start(market);
+      eventListener();
       await middleman.sync();
     }
-  }, [history, location.pathname, middleman]);
+  }, [history, location.pathname, middleman, eventListener]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
