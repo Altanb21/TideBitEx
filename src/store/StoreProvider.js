@@ -333,8 +333,8 @@ const StoreProvider = (props) => {
         case Events.account:
           // console.log(`_tbWSEventListener Events.account`, metaData);
           // console.log(
-          //   `_tbWSEventListener this.accountBook.getSnapshot`,
-          //   this.accountBook.getSnapshot()
+          //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
+          //   middleman.accountBook.getSnapshot()
           // );
           middleman.accountBook.updateByDifference(metaData.data);
           // console.log(
@@ -382,11 +382,11 @@ const StoreProvider = (props) => {
           break;
         case Events.trades:
           // console.log(`middleman metaData.data.trades`, metaData.data.trades);
-          this.tradeBook.updateAll(metaData.data.market, metaData.data.trades);
+          middleman.tradeBook.updateAll(metaData.data.market, metaData.data.trades);
           setTrades(middleman.getTrades());
           break;
         case Events.trade:
-          this.tradeBook.updateByDifference(
+          middleman.tradeBook.updateByDifference(
             metaData.data.market,
             metaData.data.difference
           );
