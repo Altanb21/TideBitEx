@@ -34,11 +34,15 @@
 .tool.active {
   color: #007bff;
 }
+@media only screen and (max-width: 776px) {
+  .main-chart {
+    min-width: 587px;
+  }
+}
 @media only screen and (max-width: 414px) {
   .main-chart {
     height: 100%;
     flex: auto;
     border: none;
-    min-width: unset;
   }
 }
