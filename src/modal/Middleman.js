@@ -239,12 +239,13 @@ class Middleman {
         }
       } else {
         this.isLogin = false;
+        this.memberId = null;
         this.accountBook.clearAll();
       }
     } catch (error) {
       console.error(`_getAccounts error`, error);
-      this.isLogin = false;
-      this.accountBook.clearAll();
+      // this.isLogin = false;
+      // this.accountBook.clearAll();
     }
   }
 
