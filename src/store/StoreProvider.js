@@ -88,6 +88,9 @@ const StoreProvider = (props) => {
         setPrecision(ticker);
         setTrades(middleman.getTrades())
         setBooks(middleman.getDepthBooks());
+        const orders = middleman.getMyOrders();
+        setPendingOrders(orders.pendingOrders);
+        setCloseOrders(orders.closedOrders);
       }
       // console.log(`****^^^^**** selectTickerHandler [END] ****^^^^****`);
     },
