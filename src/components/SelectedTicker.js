@@ -103,7 +103,7 @@ const SelectedTicker = (props) => {
           {!storeCtx.selectedTicker
             ? "--"
             : formateDecimal(storeCtx.selectedTicker?.volume, {
-                decimalLength: 2,
+                decimalLength: storeCtx?.lotSz,
               })}
         </div>
       </div>

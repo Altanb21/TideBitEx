@@ -35,7 +35,11 @@ const TickerTile = (props) => {
           withSign: true,
         })}%`}
       </div>
-      <div>{formateDecimal(props.ticker.volume, { decimalLength: 2 })}</div>
+      <div>
+        {formateDecimal(props.ticker.volume, {
+          decimalLength: props.ticker?.lotSz,
+        })}
+      </div>
       <div>
         {formateDecimal(props.ticker.high, {
           decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
