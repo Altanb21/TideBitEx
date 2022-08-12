@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import StoreContext from "../store/store-context";
 import { Tabs, Tab, Nav } from "react-bootstrap";
-import { formateDecimal } from "../utils/Utils";
+import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
@@ -36,12 +36,12 @@ const TradeForm = (props) => {
         arr = storeCtx.selectedTicker?.tickSz.split(".");
       if (arr.length > 1) precision = arr[1].length;
       else precision = 0;
-      let _value = +value < 0 ? "0" : value;
+      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
       let price,
-        vArr = _value.toFixed(storeCtx.tickSz).split(".");
+        vArr = _value.toString().split(".");
       if (
-        _value.toFixed(storeCtx.tickSz).length > 2 &&
-        _value.toFixed(storeCtx.tickSz).startsWith("0") &&
+        _value.toString().length > 2 &&
+        _value.toString().startsWith("0") &&
         !_value.includes(".")
       ) {
         _value = _value.substring(1);
@@ -86,7 +86,6 @@ const TradeForm = (props) => {
       storeCtx.selectedTicker?.last,
       storeCtx.selectedTicker?.quote_unit,
       storeCtx.selectedTicker?.tickSz,
-      storeCtx.tickSz,
       volume,
     ]
   );
@@ -100,12 +99,12 @@ const TradeForm = (props) => {
           props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
       if (arr.length > 1) precision = arr[1].length;
       else precision = 0;
-      let _value = +value < 0 ? "0" : value;
+      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
       let size,
         vArr = _value.split(".");
       if (
-        _value.toFixed(storeCtx.lotSz).length > 2 &&
-        _value.toFixed(storeCtx.lotSz).startsWith("0") &&
+        _value.toString().length > 2 &&
+        _value.toString().startsWith("0") &&
         !_value.includes(".")
       ) {
         _value = _value.substring(1);
@@ -142,7 +141,6 @@ const TradeForm = (props) => {
       props.kind,
       props.ordType,
       quoteCcyAvailable,
-      storeCtx.lotSz,
       storeCtx.selectedTicker?.base_unit,
       storeCtx.selectedTicker?.last,
       storeCtx.selectedTicker?.lotSz,
