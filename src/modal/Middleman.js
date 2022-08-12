@@ -213,7 +213,7 @@ class Middleman {
         .getAccounts
         // this.selectedTicker?.instId?.replace("-", ",")
         ();
-      console.log(`_getAccounts res`, res);
+      // console.log(`_getAccounts res`, res);
       if (res) {
         if (res.accounts) {
           this.accountBook.updateAll(res.accounts);
