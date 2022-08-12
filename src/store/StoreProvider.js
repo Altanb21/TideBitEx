@@ -434,6 +434,12 @@ const StoreProvider = (props) => {
       setTickers(middleman.getTickers());
       setTrades(middleman.getTrades());
       setBooks(middleman.getDepthBooks());
+      setIsLogin(middleman.isLogin);
+      setMemberId(middleman.memberId);
+      setAccounts(middleman.getAccounts());
+      const orders = middleman.getMyOrders();
+      setPendingOrders(orders.pendingOrders);
+      setCloseOrders(orders.closedOrders);
       // await sync();
     }
   }, [history, location.pathname, middleman, eventListener]);
