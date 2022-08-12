@@ -38,6 +38,7 @@ const TickerTile = (props) => {
       <div>
         {formateDecimal(props.ticker.volume, {
           decimalLength: props.ticker?.lotSz,
+          pad: true,
         })}
       </div>
       <div>
