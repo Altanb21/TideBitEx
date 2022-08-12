@@ -500,13 +500,13 @@ class OkexConnector extends ConnectorBase {
         );
         return prev;
       }, {});
-      this.logger.log(
-        `------------------------ [${this.constructor.name}](getTickers) --------------------------`
-      );
-      this.logger.log(`formatedTickers`, formatedTickers);
-      this.logger.log(
-        `------------------------ [${this.constructor.name}](getTickers) --------------------------`
-      );
+      // this.logger.log(
+      //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
+      // );
+      // this.logger.log(`formatedTickers`, formatedTickers);
+      // this.logger.log(
+      //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
+      // );
       return new ResponseFormat({
         message: "getTickers from OKEx",
         payload: formatedTickers,
