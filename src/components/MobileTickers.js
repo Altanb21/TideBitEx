@@ -33,6 +33,7 @@ const TickerTile = (props) => {
         <div>
           {formateDecimal(props.ticker?.last, {
             decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+            pad: true,
           })}
         </div>
         <div

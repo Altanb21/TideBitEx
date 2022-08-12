@@ -25,6 +25,7 @@ const TickerTile = (props) => {
       <div>
         {formateDecimal(props.ticker.last, {
           decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          pad: true,
         })}
       </div>
       <div className={SafeMath.gte(props.ticker.change, "0") ? "green" : "red"}>
@@ -38,11 +39,13 @@ const TickerTile = (props) => {
       <div>
         {formateDecimal(props.ticker.high, {
           decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          pad: true,
         })}
       </div>
       <div>
         {formateDecimal(props.ticker.low, {
           decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          pad: true,
         })}
       </div>
     </li>
