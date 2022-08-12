@@ -9,7 +9,7 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const { waterfallPromise, getBar } = require("../Utils");
+const { waterfallPromise, getBar, parseClOrdId } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
@@ -1157,8 +1157,9 @@ class OkexConnector extends ConnectorBase {
         return {
           instId,
           market: instId.replace("-", "").toLowerCase(),
+          id: parseClOrdId(data.clOrdId)?.orderId,
           clOrdId: data.clOrdId,
-          id: data.ordId,
+          ordId: data.ordId,
           ordType: data.ordType,
           price: data.px,
           kind: data.side === "buy" ? "bid" : "ask",
@@ -1207,7 +1208,7 @@ class OkexConnector extends ConnectorBase {
 
     const filterBody = {
       instId: body.instId,
-      ordId: body.id,
+      ordId: body.ordId,
       clOrdId: body.clOrdId,
     };
 

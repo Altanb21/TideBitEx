@@ -86,8 +86,11 @@ const StoreProvider = (props) => {
         const ticker = middleman.getTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
-        setTrades(middleman.getTrades())
+        setTrades(middleman.getTrades());
         setBooks(middleman.getDepthBooks());
+        const orders = middleman.getMyOrders();
+        setPendingOrders(orders.pendingOrders);
+        setCloseOrders(orders.closedOrders);
       }
       // console.log(`****^^^^**** selectTickerHandler [END] ****^^^^****`);
     },
@@ -431,9 +434,15 @@ const StoreProvider = (props) => {
       setTickers(middleman.getTickers());
       setTrades(middleman.getTrades());
       setBooks(middleman.getDepthBooks());
-      await sync();
+      setIsLogin(middleman.isLogin);
+      setMemberId(middleman.memberId);
+      setAccounts(middleman.getAccounts());
+      const orders = middleman.getMyOrders();
+      setPendingOrders(orders.pendingOrders);
+      setCloseOrders(orders.closedOrders);
+      // await sync();
     }
-  }, [history, location.pathname, middleman, eventListener, sync]);
+  }, [history, location.pathname, middleman, eventListener]);
 
   const stop = useCallback(() => {
     console.log(`stop`);

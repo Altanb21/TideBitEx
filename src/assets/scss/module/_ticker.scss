@@ -9,8 +9,14 @@
     // flex-direction: column;
     // align-self: center;
   }
-  &__button:hover > .market-tickers,
-  &__button:hover > * ~ .market-tickers {
+  // &__button:hover > .market-tickers,
+  // &__button:hover > * ~ .market-tickers {
+  //   z-index: 1000;
+  //   opacity: 1;
+  //   pointer-events: stroke;
+  // }
+  &__button.open > .market-tickers,
+  &__button.open > * ~ .market-tickers {
     z-index: 1000;
     opacity: 1;
     pointer-events: stroke;
@@ -35,12 +41,14 @@
     border: 1px solid #ddd;
     margin: 2px;
     margin-left: 0px;
-    min-width: 130px;
+    padding: 0 5px;
+    gap: 5px;
     &__text {
       font-size: 20px;
-      min-width: 80px;
+      min-width: 100px;
+      text-align: center;
       font-weight: 500;
-      padding: 4px 0 0 0;
+      line-height: 1.6;
     }
   }
   .tickerPriceText,
@@ -81,7 +89,7 @@
 }
 
 // iphone XR
-@media only screen and (max-width: 414px) {
+@media only screen and (max-width: $mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .ticker {
     & > &__details:nth-child(5),

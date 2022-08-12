@@ -13,6 +13,7 @@ const MobileTicker = (props) => {
         <div className="mobile-ticker__price">
           {formateDecimal(storeCtx.selectedTicker?.last, {
             decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+            pad: true,
           })}
         </div>
         <div
@@ -42,6 +43,7 @@ const MobileTicker = (props) => {
           <div className="tickerPriceText">
             {formateDecimal(storeCtx.selectedTicker?.high, {
               decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+              pad: true,
             })}
           </div>
         </div>
@@ -50,6 +52,7 @@ const MobileTicker = (props) => {
           <div className="tickerPriceText">
             {formateDecimal(storeCtx.selectedTicker?.low, {
               decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+              pad: true,
             })}
           </div>
         </div>
@@ -60,7 +63,7 @@ const MobileTicker = (props) => {
               !storeCtx.selectedTicker
                 ? "--"
                 : formateDecimal(storeCtx.selectedTicker?.volume, {
-                    decimalLength: 2,
+                    decimalLength: storeCtx?.lotSz,
                   })
             }${storeCtx.selectedTicker?.base_unit?.toUpperCase() || "--"}`}
           </div>

@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useState, useContext } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { formateDecimal } from "../utils/Utils";
@@ -8,17 +8,31 @@ import { AiOutlineBarChart } from "react-icons/ai";
 import { AiFillCaretDown } from "react-icons/ai";
 
 const SelectedTicker = (props) => {
+  const [openTickerList, setOpenTickerList] = useState(false);
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
+  const openTickerListHandler = (open) => {
+    setOpenTickerList((prev) => (open !== undefined ? open : !prev));
+  };
+
   return (
     <div className="ticker">
-      <div className="ticker__button">
-        <div className="selectedTicker">
-          <AiOutlineBarChart size={28}/>
-          <div className="selectedTicker__text">{storeCtx.selectedTicker?.name || "--"}</div>
+      <div
+        className={`ticker__button${openTickerList ? " open" : ""}`}
+        onMouseEnter={() => openTickerListHandler(true)}
+        onMouseLeave={() => openTickerListHandler(false)}
+      >
+        <div
+          className="selectedTicker"
+          onClick={(_) => openTickerListHandler()}
+        >
+          <AiOutlineBarChart size={28} />
+          <div className="selectedTicker__text">
+            {storeCtx.selectedTicker?.name || "--"}
+          </div>
           <AiFillCaretDown />
         </div>
-        <DesktopTickers />
+        <DesktopTickers openTickerListHandler={openTickerListHandler} />
       </div>
       <div className="ticker__price">
         <div
@@ -32,6 +46,7 @@ const SelectedTicker = (props) => {
         >
           {formateDecimal(storeCtx.selectedTicker?.last, {
             decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+            pad: true,
           })}
         </div>
       </div>
@@ -65,6 +80,7 @@ const SelectedTicker = (props) => {
         <div className="tickerPriceText">
           {formateDecimal(storeCtx.selectedTicker?.high, {
             decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+            pad: true,
           })}
         </div>
       </div>
@@ -73,6 +89,7 @@ const SelectedTicker = (props) => {
         <div className="tickerPriceText">
           {formateDecimal(storeCtx.selectedTicker?.low, {
             decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+            pad: true,
           })}
         </div>
       </div>
@@ -86,7 +103,7 @@ const SelectedTicker = (props) => {
           {!storeCtx.selectedTicker
             ? "--"
             : formateDecimal(storeCtx.selectedTicker?.volume, {
-                decimalLength: 2,
+                decimalLength: storeCtx?.lotSz,
               })}
         </div>
       </div>

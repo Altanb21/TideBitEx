@@ -236,6 +236,7 @@ class TibeBitConnector extends ConnectorBase {
         prev[currId] = this.tickerBook.formatTicker(
           {
             ...tickerObj.ticker,
+            volume: tickerObj.ticker.vol,
             id: currId,
             market: currId,
             instId,
@@ -564,9 +565,7 @@ class TibeBitConnector extends ConnectorBase {
     );
     this.logger.log(`[FROM TideBit market:${market}] trades`, trades);
     // const instId = this._findInstId(market);
-    const newTrades = trades.map((trade) =>
-      this._formateTrade(market, trade)
-    );
+    const newTrades = trades.map((trade) => this._formateTrade(market, trade));
     this.tradeBook.updateByDifference(instId, lotSz, newTrades);
 
     EventBus.emit(Events.trades, market, {
@@ -930,6 +929,12 @@ class TibeBitConnector extends ConnectorBase {
       //   SafeMath.eq(data.volume, "0") ? data.origin_volume : data.volume
       // ),
       filled: data.volume !== data.origin_volume,
+      state:
+        data.state === "wait"
+          ? "wait"
+          : data.state === "done"
+          ? "done"
+          : "canceled",
       state_text:
         data.state === "wait"
           ? "Waiting"

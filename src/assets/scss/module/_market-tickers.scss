@@ -16,6 +16,9 @@
   z-index: 1;
   opacity: 0;
   pointer-events: none;
+  // z-index: 1000;
+  // opacity: 1;
+  // pointer-events: stroke;
   & .input-group {
     padding: 0 14px;
   }
@@ -25,7 +28,7 @@
   & input {
     border-color: #e0e3eb;
     border-left: 0;
-    font-weight: 300;
+    // font-weight: 300;
   }
   & input:focus {
     box-shadow: none;
@@ -106,7 +109,7 @@
 @media only screen and (max-width: 820px) {
   // If [device width] is greater than or equal to 600px,
   .market-tickers {
-    width: 100vw;
+    width: calc(100vw - 4px);
     & .header > *:nth-child(4),
     & .header > *:nth-child(5),
     & .header > *:nth-child(6),
@@ -122,7 +125,7 @@
 //   // The query above will trigger only for screens that are 600-400px wide. This can be used to target specific devices with known widths.
 // }
 // iphone XR
-@media only screen and (max-width: 414px) {
+@media only screen and (max-width:$mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .market-tickers {
     height: 60vh;

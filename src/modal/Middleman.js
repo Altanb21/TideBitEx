@@ -88,8 +88,8 @@ class Middleman {
         ...options,
         market,
       });
-      // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      if (!!orders) this.orderBook.updateAll(market, orders);
+      if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
+      // if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {
       console.error(`_getOrderList error`, error);
       // throw error;
@@ -102,8 +102,8 @@ class Middleman {
         ...options,
         market,
       });
-      // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      if (!!orders) this.orderBook.updateAll(market, orders);
+      if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
+      // if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {
       console.error(`_getOrderHistory error`, error);
       // throw error;
@@ -213,7 +213,7 @@ class Middleman {
         .getAccounts
         // this.selectedTicker?.instId?.replace("-", ",")
         ();
-      console.log(`_getAccounts res`, res);
+      // console.log(`_getAccounts res`, res);
       if (res) {
         if (res.accounts) {
           this.accountBook.updateAll(res.accounts);
@@ -241,6 +241,7 @@ class Middleman {
         this.isLogin = false;
         this.memberId = null;
         this.accountBook.clearAll();
+        // this.orderBook.clearAll();
       }
     } catch (error) {
       console.error(`_getAccounts error`, error);
@@ -262,11 +263,10 @@ class Middleman {
     this.tbWebSocket.setCurrentMarket(market, lotSz);
     // await this._getDepthBooks({ market, lotSz });
     await this._getTrades({ market, lotSz });
-    // if (this.isLogin) {
-    // TODO to verify if user is not login would be a problem
-    // await this._getOrderList(market);
-    // await this._getOrderHistory(market);
-    // }
+    if (this.isLogin) {
+      await this._getOrderList(market);
+      await this._getOrderHistory(market);
+    }
     // let pusher = new Pusher("2b78567f96a2c0f40368", {
     //   wsHost: "pusher.tinfo.top",
     //   port: 4567,
@@ -352,6 +352,7 @@ class Middleman {
     // this._tbWSEventListener();
     // this._getAccounts(market);
     await this._getTickers();
+    await this._getAccounts(market);
     await this.selectMarket(market);
   }
 

@@ -1,3 +1,66 @@
+import SafeMath from "./SafeMath";
+
+const padDecimal = (n, length) => {
+  let padR = n.toString();
+  for (let i = padR.length; i < length; i++) {
+    padR += "0";
+  }
+  return padR;
+};
+
+const formateDecimal = (
+  amount,
+  { maxLength = 18, decimalLength = 2, pad = false, withSign = false }
+) => {
+  try {
+    // console.log(`maxLength`, maxLength)
+    // console.log(`decimalLength`, decimalLength)
+    // console.log(`pad`, pad)
+    let formatAmount;
+    // 非數字
+    if (isNaN(amount) || (!SafeMath.eq(amount, "0") && !amount))
+      formatAmount = "--";
+    else {
+      formatAmount = SafeMath.eq(amount, "0") ? "0" : amount;
+      // 以小數點為界分成兩部份
+      const splitChunck = convertExponentialToDecimal(amount).split(".");
+      // 限制總長度
+      if (SafeMath.lt(splitChunck[0].length, maxLength)) {
+        // 小數點前的長度不超過 maxLength
+        console.log(`splitChunck[0]`, splitChunck[0])
+        const maxDecimalLength = SafeMath.minus(
+          maxLength,
+          splitChunck[0].length
+        );
+        const _decimalLength = SafeMath.lt(maxDecimalLength, decimalLength)
+          ? maxDecimalLength
+          : decimalLength;
+          console.log(`_decimalLength`, _decimalLength)
+        if (splitChunck.length === 1) splitChunck[1] = "0";
+        // 限制小數位數
+        splitChunck[1] = splitChunck[1].substring(0, _decimalLength);
+        // 小數補零
+        if (pad) {
+          splitChunck[1] = padDecimal(splitChunck[1], _decimalLength);
+        }
+        formatAmount =
+          splitChunck[1].length > 0
+            ? `${splitChunck[0]}.${splitChunck[1]}`
+            : splitChunck[0];
+      } else {
+        // 小數點前的長度超過 maxLength
+        // formatAmount = formateNumber(amount, decimalLength);
+      }
+      if (withSign && SafeMath.gt(amount, 0)) formatAmount = `+${formatAmount}`;
+    }
+    return formatAmount;
+  } catch (error) {
+    console.log(`formateDecimal error`, error, amount);
+    return amount;
+  }
+};
+
+
 const onlyInLeft = (left, right) =>
   left.filter(
     (leftValue) => !right.some((rightValue) => leftValue === rightValue)
@@ -254,17 +317,53 @@ const memberId16777217 =
 //   });
 // });
 
-describe("decodeMember", () => {
+// describe("decodeMember", () => {
+//   test("true is working properly", () => {
+//     let memberId;
+//     const valueArr = splitStr(memberId65536);
+//     const memberIdL = parseInt(valueArr[44].slice(0, 2), 16);
+//     console.log(`memberIdL`, memberIdL);
+//     if (memberIdL > 5) memberId = memberIdL - 5;
+//     if (memberIdL > 0 && memberIdL <= 3) {
+//       const memberIdBuffer = valueArr[44].slice(2, memberIdL * 2 + 2);
+//       console.log(`memberIdBuffer`, memberIdBuffer);
+//     }
+//     expect(memberId).toBe("65536");
+//   });
+// });
+
+export const convertExponentialToDecimal = (exponentialNumber) => {
+  // sanity check - is it exponential strber
+  const str = exponentialNumber.toString();
+  if (str.indexOf("e") !== -1) {
+    const exponent = parseInt(str.split("-")[1], 10);
+    // Unfortunately I can not return 1e-8 as 0.00000001, because even if I call parseFloat() on it,
+    // it will still return the exponential representation
+    // So I have to use .toFixed()
+    const result = exponentialNumber.toFixed(exponent);
+    return result;
+  } else {
+    return str;
+  }
+};
+
+
+const getPrecision = (num) => {
+  const str = convertExponentialToDecimal(num)
+  const precision =
+    str?.split(".").length > 1 ? str?.split(".")[1].length : 0;
+  return precision;
+};
+
+describe("formatDecimal", () => {
   test("true is working properly", () => {
-    let memberId;
-    const valueArr = splitStr(memberId65536);
-    const memberIdL = parseInt(valueArr[44].slice(0, 2), 16);
-    console.log(`memberIdL`, memberIdL);
-    if (memberIdL > 5) memberId = memberIdL - 5;
-    if (memberIdL > 0 && memberIdL <= 3) {
-      const memberIdBuffer = valueArr[44].slice(2, memberIdL * 2 + 2);
-      console.log(`memberIdBuffer`, memberIdBuffer);
-    }
-    expect(memberId).toBe("65536");
+    let price =  0.01,
+      tickSz = "0.01";
+    const formatPrice = formateDecimal(price, {
+      decimalLength: getPrecision(tickSz),
+      pad: true,
+    });
+    expect(formatPrice).toBe("0.01");
   });
 });
+

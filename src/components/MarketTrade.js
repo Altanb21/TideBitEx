@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import StoreContext from "../store/store-context";
 import { Tabs, Tab, Nav } from "react-bootstrap";
-import { formateDecimal } from "../utils/Utils";
+import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
@@ -36,7 +36,7 @@ const TradeForm = (props) => {
         arr = storeCtx.selectedTicker?.tickSz.split(".");
       if (arr.length > 1) precision = arr[1].length;
       else precision = 0;
-      let _value = +value < 0 ? "0" : value;
+      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
       let price,
         vArr = _value.toString().split(".");
       if (
@@ -99,7 +99,7 @@ const TradeForm = (props) => {
           props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
       if (arr.length > 1) precision = arr[1].length;
       else precision = 0;
-      let _value = +value < 0 ? "0" : value;
+      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
       let size,
         vArr = _value.split(".");
       if (
@@ -491,7 +491,7 @@ const TradeForm = (props) => {
 };
 
 const TradePannel = (props) => {
-  const breakpoint = 414;
+  const breakpoint = 428;
   const { width } = useViewport();
   const { t } = useTranslation();
 
