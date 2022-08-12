@@ -125,6 +125,18 @@ ormEnable = false
 
 ```
 
+### 設定 tradingview config
+Sample:
+in private/config
+```
+export const baseUrl = 'new.tidebit.com';
+export const wsUrl = 'ws.tidebit.network/ws';
+```
+將 private/config.js 複製到 public/tradingview/config.js
+```
+cp private/config.js public/tradingview/config.js
+```
+
 ### 設定markets
 ```sh
 vi private/marketsSource.toml

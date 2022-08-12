@@ -9,6 +9,9 @@ const source = qs.find((q) => q.includes("source"))?.replace("source=", "");
 
 async function getConfigurationData() {
   const data = await makeApiRequest(`v1/tradingview/config`);
+  // const data = await makeApiRequest(
+  //   `https://test.tidebit.network/api/v1/tradingview/config`
+  // );
   return data;
 }
 
@@ -16,6 +19,9 @@ async function getSymbolItem(symbolName) {
   const data = await makeApiRequest(
     `v1/tradingview/symbols?symbol=${symbolName}`
   );
+  // const data = await makeApiRequest(
+  //   `https://test.tidebit.network/api/v1/tradingview/symbols?symbol=${symbolName}`
+  // );
   return data;
 }
 
@@ -77,9 +83,14 @@ const Datafeed = {
   ) => {
     let res,
       bars = [],
+      // path = `https://new.tidebit.com/api/${
+      //   source === "TideBit" ? "v2" : "v1"
+      // }/tradingview/history`;
       path = `${source === "TideBit" ? "v2" : "v1"}/tradingview/history`;
     const from = rangeStartDate;
     const to = rangeEndDate;
+    // console.log(`from`, from, new Date(from * 1000));
+    // console.log(`to`, to, new Date(to * 1000));
     const urlParameters = {
       symbol: symbolInfo.ticker,
       from,
@@ -101,15 +112,17 @@ const Datafeed = {
           return;
         }
         res.t.forEach((t, i) => {
+          // console.log(`t[${i}]`,t, new Date(t*1000))
           if (t >= from && t < to) {
             bars = [
               ...bars,
               {
-                time: t,
+                time: t * 1000,
                 low: res.l[i],
                 high: res.h[i],
                 open: res.o[i],
                 close: res.c[i],
+                volume: res.v[i],
               },
             ];
           }
@@ -129,7 +142,8 @@ const Datafeed = {
       });
       // console.log(
       //   `[getBars]: returned ${bars.length} bar(s) lastbar`,
-      //   bars[bars.length - 1]
+      //   bars[bars.length - 1],
+      //   bars
       // );
       onHistoryCallback(bars, {
         noData: false,
