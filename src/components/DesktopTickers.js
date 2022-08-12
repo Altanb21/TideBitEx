@@ -10,7 +10,7 @@ import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { IoSearch } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
-import { formateDecimal } from "../utils/Utils";
+import { formateDecimal, getPrecision } from "../utils/Utils";
 
 const TickerTile = (props) => {
   // const storeCtx = useContext(StoreContext);
@@ -24,7 +24,9 @@ const TickerTile = (props) => {
       <div>{props.ticker.name}</div>
       <div>
         {formateDecimal(props.ticker.last, {
-          decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
+          decimalLength: props.ticker?.tickSz
+            ? getPrecision(props.ticker?.tickSz)
+            : "0",
           pad: true,
         })}
       </div>
@@ -37,19 +39,23 @@ const TickerTile = (props) => {
       </div>
       <div>
         {formateDecimal(props.ticker.volume, {
-          decimalLength: props.ticker?.lotSz,
+          decimalLength: getPrecision(props.ticker?.lotSz),
           pad: true,
         })}
       </div>
       <div>
         {formateDecimal(props.ticker.high, {
-          decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
+          decimalLength: props.ticker?.tickSz
+            ? getPrecision(props.ticker?.tickSz)
+            : "0",
           pad: true,
         })}
       </div>
       <div>
         {formateDecimal(props.ticker.low, {
-          decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
+          decimalLength: props.ticker?.tickSz
+            ? getPrecision(props.ticker?.tickSz)
+            : "0",
           pad: true,
         })}
       </div>

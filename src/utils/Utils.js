@@ -239,6 +239,12 @@ export const padDecimal = (n, length) => {
   return padR;
 };
 
+export const getPrecision = (strNum) => {
+  const precision =
+    strNum?.split(".").length > 1 ? strNum?.split(".")[1].length : 0;
+  return precision;
+};
+
 export const formateDecimal = (
   amount,
   { maxLength = 18, decimalLength = 2, pad = false, withSign = false }
@@ -420,6 +426,4 @@ export const toggleSidebar = (toggle = true) => {
   }
 };
 
-export const addPushableContainer = () => {
-  
-};
+export const addPushableContainer = () => {};

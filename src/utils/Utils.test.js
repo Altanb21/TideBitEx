@@ -1,3 +1,5 @@
+import SafeMath from "./SafeMath";
+
 const padDecimal = (n, length) => {
   let padR = n.toString();
   for (let i = padR.length; i < length; i++) {
@@ -11,20 +13,29 @@ const formateDecimal = (
   { maxLength = 18, decimalLength = 2, pad = false, withSign = false }
 ) => {
   try {
-    let _amount = parseFloat(amount);
+    console.log(`maxLength`, maxLength)
+    console.log(`decimalLength`, decimalLength)
+    console.log(`pad`, pad)
     let formatAmount;
     // 非數字
-    if (isNaN(_amount) || (_amount !== 0 && !_amount)) formatAmount = "--";
+    if (isNaN(amount) || (!SafeMath.eq(amount, "0") && !amount))
+      formatAmount = "--";
     else {
-      formatAmount = _amount;
+      formatAmount = SafeMath.eq(amount, "0") ? "0" : amount;
       // 以小數點為界分成兩部份
-      const splitChunck = _amount.toString().split(".");
+      const splitChunck = amount.toString().split(".");
       // 限制總長度
-      if (splitChunck[0].length < maxLength) {
+      if (SafeMath.lt(splitChunck[0].length, maxLength)) {
         // 小數點前的長度不超過 maxLength
-        const maxDecimalLength = maxLength - splitChunck[0].length;
-        const _decimalLength =
-          maxDecimalLength < decimalLength ? maxDecimalLength : decimalLength;
+        console.log(`splitChunck[0]`, splitChunck[0])
+        const maxDecimalLength = SafeMath.minus(
+          maxLength,
+          splitChunck[0].length
+        );
+        const _decimalLength = SafeMath.lt(maxDecimalLength, decimalLength)
+          ? maxDecimalLength
+          : decimalLength;
+          console.log(`_decimalLength`, _decimalLength)
         if (splitChunck.length === 1) splitChunck[1] = "0";
         // 限制小數位數
         splitChunck[1] = splitChunck[1].substring(0, _decimalLength);
@@ -40,7 +51,7 @@ const formateDecimal = (
         // 小數點前的長度超過 maxLength
         // formatAmount = formateNumber(amount, decimalLength);
       }
-      if (withSign && amount > 0) formatAmount = `+${formatAmount}`;
+      if (withSign && SafeMath.gt(amount, 0)) formatAmount = `+${formatAmount}`;
     }
     return formatAmount;
   } catch (error) {
@@ -48,6 +59,7 @@ const formateDecimal = (
     return amount;
   }
 };
+
 
 const onlyInLeft = (left, right) =>
   left.filter(
@@ -320,14 +332,21 @@ const memberId16777217 =
 //   });
 // });
 
+const getPrecision = (strNum) => {
+  const precision =
+    strNum?.split(".").length > 1 ? strNum?.split(".")[1].length : 0;
+  return precision;
+};
+
 describe("formatDecimal", () => {
   test("true is working properly", () => {
     let price = 0,
       tickSz = 0.0001;
     const formatPrice = formateDecimal(price, {
-      decimalLength: tickSz,
+      decimalLength: getPrecision(tickSz.toString()),
       pad: true,
     });
     expect(formatPrice).toBe("0.0000");
   });
 });
+
