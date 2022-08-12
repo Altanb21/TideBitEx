@@ -41,10 +41,12 @@
     border: 1px solid #ddd;
     margin: 2px;
     margin-left: 0px;
-    min-width: 130px;
+    padding: 0 5px;
+    gap: 5px;
     &__text {
       font-size: 20px;
-      min-width: 80px;
+      min-width: 100px;
+      text-align: center;
       font-weight: 500;
       line-height: 1.6;
     }
