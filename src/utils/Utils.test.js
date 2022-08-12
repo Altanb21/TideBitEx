@@ -1,3 +1,54 @@
+const padDecimal = (n, length) => {
+  let padR = n.toString();
+  for (let i = padR.length; i < length; i++) {
+    padR += "0";
+  }
+  return padR;
+};
+
+const formateDecimal = (
+  amount,
+  { maxLength = 18, decimalLength = 2, pad = false, withSign = false }
+) => {
+  try {
+    let _amount = parseFloat(amount);
+    let formatAmount;
+    // 非數字
+    if (isNaN(_amount) || (_amount !== 0 && !_amount)) formatAmount = "--";
+    else {
+      formatAmount = _amount;
+      // 以小數點為界分成兩部份
+      const splitChunck = _amount.toString().split(".");
+      // 限制總長度
+      if (splitChunck[0].length < maxLength) {
+        // 小數點前的長度不超過 maxLength
+        const maxDecimalLength = maxLength - splitChunck[0].length;
+        const _decimalLength =
+          maxDecimalLength < decimalLength ? maxDecimalLength : decimalLength;
+        if (splitChunck.length === 1) splitChunck[1] = "0";
+        // 限制小數位數
+        splitChunck[1] = splitChunck[1].substring(0, _decimalLength);
+        // 小數補零
+        if (pad) {
+          splitChunck[1] = padDecimal(splitChunck[1], _decimalLength);
+        }
+        formatAmount =
+          splitChunck[1].length > 0
+            ? `${splitChunck[0]}.${splitChunck[1]}`
+            : splitChunck[0];
+      } else {
+        // 小數點前的長度超過 maxLength
+        // formatAmount = formateNumber(amount, decimalLength);
+      }
+      if (withSign && amount > 0) formatAmount = `+${formatAmount}`;
+    }
+    return formatAmount;
+  } catch (error) {
+    console.log(`formateDecimal error`, error, amount);
+    return amount;
+  }
+};
+
 const onlyInLeft = (left, right) =>
   left.filter(
     (leftValue) => !right.some((rightValue) => leftValue === rightValue)
@@ -254,17 +305,29 @@ const memberId16777217 =
 //   });
 // });
 
-describe("decodeMember", () => {
+// describe("decodeMember", () => {
+//   test("true is working properly", () => {
+//     let memberId;
+//     const valueArr = splitStr(memberId65536);
+//     const memberIdL = parseInt(valueArr[44].slice(0, 2), 16);
+//     console.log(`memberIdL`, memberIdL);
+//     if (memberIdL > 5) memberId = memberIdL - 5;
+//     if (memberIdL > 0 && memberIdL <= 3) {
+//       const memberIdBuffer = valueArr[44].slice(2, memberIdL * 2 + 2);
+//       console.log(`memberIdBuffer`, memberIdBuffer);
+//     }
+//     expect(memberId).toBe("65536");
+//   });
+// });
+
+describe("formatDecimal", () => {
   test("true is working properly", () => {
-    let memberId;
-    const valueArr = splitStr(memberId65536);
-    const memberIdL = parseInt(valueArr[44].slice(0, 2), 16);
-    console.log(`memberIdL`, memberIdL);
-    if (memberIdL > 5) memberId = memberIdL - 5;
-    if (memberIdL > 0 && memberIdL <= 3) {
-      const memberIdBuffer = valueArr[44].slice(2, memberIdL * 2 + 2);
-      console.log(`memberIdBuffer`, memberIdBuffer);
-    }
-    expect(memberId).toBe("65536");
+    let price = 0,
+      tickSz = 0.0001;
+    const formatPrice = formateDecimal(price, {
+      decimalLength: tickSz,
+      pad: true,
+    });
+    expect(formatPrice).toBe("0.0000");
   });
 });

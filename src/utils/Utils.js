@@ -244,24 +244,20 @@ export const formateDecimal = (
   { maxLength = 18, decimalLength = 2, pad = false, withSign = false }
 ) => {
   try {
+    let _amount = parseFloat(amount);
     let formatAmount;
     // 非數字
-    if (isNaN(amount) || (!SafeMath.eq(amount, "0") && !amount))
-      formatAmount = "--";
+    if (isNaN(_amount) || (_amount !== 0 && !_amount)) formatAmount = "--";
     else {
-      formatAmount = SafeMath.eq(amount, "0") ? "0" : amount;
+      formatAmount = _amount;
       // 以小數點為界分成兩部份
-      const splitChunck = amount.toString().split(".");
+      const splitChunck = _amount.toString().split(".");
       // 限制總長度
-      if (SafeMath.lt(splitChunck[0].length, maxLength)) {
+      if (splitChunck[0].length < maxLength) {
         // 小數點前的長度不超過 maxLength
-        const maxDecimalLength = SafeMath.minus(
-          maxLength,
-          splitChunck[0].length
-        );
-        const _decimalLength = SafeMath.lt(maxDecimalLength, decimalLength)
-          ? maxDecimalLength
-          : decimalLength;
+        const maxDecimalLength = maxLength - splitChunck[0].length;
+        const _decimalLength =
+          maxDecimalLength < decimalLength ? maxDecimalLength : decimalLength;
         if (splitChunck.length === 1) splitChunck[1] = "0";
         // 限制小數位數
         splitChunck[1] = splitChunck[1].substring(0, _decimalLength);
@@ -275,9 +271,9 @@ export const formateDecimal = (
             : splitChunck[0];
       } else {
         // 小數點前的長度超過 maxLength
-        formatAmount = formateNumber(amount, decimalLength);
+        // formatAmount = formateNumber(amount, decimalLength);
       }
-      if (withSign && SafeMath.gt(amount, 0)) formatAmount = `+${formatAmount}`;
+      if (withSign && amount > 0) formatAmount = `+${formatAmount}`;
     }
     return formatAmount;
   } catch (error) {
@@ -420,6 +416,4 @@ export const toggleSidebar = (toggle = true) => {
   }
 };
 
-export const addPushableContainer = () => {
-  
-};
+export const addPushableContainer = () => {};
