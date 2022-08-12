@@ -352,8 +352,8 @@ class Middleman {
     // this._tbWSEventListener();
     // this._getAccounts(market);
     await this._getTickers();
-    await this.selectMarket(market);
     await this._getAccounts(market);
+    await this.selectMarket(market);
   }
 
   async sync() {
