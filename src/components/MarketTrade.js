@@ -38,10 +38,10 @@ const TradeForm = (props) => {
       else precision = 0;
       let _value = +value < 0 ? "0" : value;
       let price,
-        vArr = _value.toString().split(".");
+        vArr = _value.toFixed(storeCtx.tickSz).split(".");
       if (
-        _value.toString().length > 2 &&
-        _value.toString().startsWith("0") &&
+        _value.toFixed(storeCtx.tickSz).length > 2 &&
+        _value.toFixed(storeCtx.tickSz).startsWith("0") &&
         !_value.includes(".")
       ) {
         _value = _value.substring(1);
@@ -86,6 +86,7 @@ const TradeForm = (props) => {
       storeCtx.selectedTicker?.last,
       storeCtx.selectedTicker?.quote_unit,
       storeCtx.selectedTicker?.tickSz,
+      storeCtx.tickSz,
       volume,
     ]
   );
@@ -103,8 +104,8 @@ const TradeForm = (props) => {
       let size,
         vArr = _value.split(".");
       if (
-        _value.toString().length > 2 &&
-        _value.toString().startsWith("0") &&
+        _value.toFixed(storeCtx.lotSz).length > 2 &&
+        _value.toFixed(storeCtx.lotSz).startsWith("0") &&
         !_value.includes(".")
       ) {
         _value = _value.substring(1);
@@ -141,6 +142,7 @@ const TradeForm = (props) => {
       props.kind,
       props.ordType,
       quoteCcyAvailable,
+      storeCtx.lotSz,
       storeCtx.selectedTicker?.base_unit,
       storeCtx.selectedTicker?.last,
       storeCtx.selectedTicker?.lotSz,

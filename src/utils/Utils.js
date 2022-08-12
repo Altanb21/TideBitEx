@@ -257,7 +257,7 @@ export const formateDecimal = (
     else {
       formatAmount = SafeMath.eq(amount, "0") ? "0" : amount;
       // 以小數點為界分成兩部份
-      const splitChunck = amount.toString().split(".");
+      const splitChunck = amount.toFixed(20).split(".");
       // 限制總長度
       if (SafeMath.lt(splitChunck[0].length, maxLength)) {
         // 小數點前的長度不超過 maxLength
