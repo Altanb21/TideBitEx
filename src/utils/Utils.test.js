@@ -13,9 +13,9 @@ const formateDecimal = (
   { maxLength = 18, decimalLength = 2, pad = false, withSign = false }
 ) => {
   try {
-    console.log(`maxLength`, maxLength)
-    console.log(`decimalLength`, decimalLength)
-    console.log(`pad`, pad)
+    // console.log(`maxLength`, maxLength)
+    // console.log(`decimalLength`, decimalLength)
+    // console.log(`pad`, pad)
     let formatAmount;
     // 非數字
     if (isNaN(amount) || (!SafeMath.eq(amount, "0") && !amount))
@@ -357,13 +357,13 @@ const getPrecision = (num) => {
 
 describe("formatDecimal", () => {
   test("true is working properly", () => {
-    let price = 1e-8,
-      tickSz = '0.00000001';
+    let price =  0.01,
+      tickSz = "0.01";
     const formatPrice = formateDecimal(price, {
       decimalLength: getPrecision(tickSz),
       pad: true,
     });
-    expect(formatPrice).toBe("0.00000001");
+    expect(formatPrice).toBe("0.01");
   });
 });
 

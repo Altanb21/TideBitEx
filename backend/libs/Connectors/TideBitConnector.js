@@ -236,6 +236,7 @@ class TibeBitConnector extends ConnectorBase {
         prev[currId] = this.tickerBook.formatTicker(
           {
             ...tickerObj.ticker,
+            volume: tickerObj.ticker.vol,
             id: currId,
             market: currId,
             instId,
