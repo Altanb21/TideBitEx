@@ -857,10 +857,11 @@ class ExchangeHub extends Bot {
     // const t = await this.database.transaction();
     try {
       // 1. get orderId from body.clOrdId
-      let { orderId } =
-        source === SupportedExchange.OKEX
-          ? Utils.parseClOrdId(body.clOrdId)
-          : { orderId: body.id };
+      // let { orderId } =
+      //   source === SupportedExchange.OKEX
+      //     ? Utils.parseClOrdId(body.clOrdId)
+      //     : { orderId: body.id };
+      let orderId = body.id;
       switch (source) {
         case SupportedExchange.OKEX:
           /* !!! HIGH RISK (start) !!! */
