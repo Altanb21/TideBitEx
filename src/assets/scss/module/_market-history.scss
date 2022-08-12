@@ -1,6 +1,7 @@
 .market-history {
   height: calc(50vh - 57px);
   min-height: 400px;
+  min-width: 300px;
   border: 1px solid #333;
   flex: 1;
   display: flex;
@@ -105,7 +106,7 @@
   // If [device width] is less than or equal to 600px, then do
   .market-history {
     border: none;
-
+    min-width: unset;
     &__header {
       display: none;
     }

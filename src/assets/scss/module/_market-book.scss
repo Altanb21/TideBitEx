@@ -4,7 +4,7 @@
   flex: auto;
   height: 100%;
   border: 1px solid #333;
-
+  min-width: 587px;
   &__tool-bar {
     background-color: #4597e6;
     border-bottom: 1px solid #333;
@@ -121,6 +121,7 @@
   // If [device width] is less than or equal to 600px, then do
   .order-book {
     border: 1px solid #ddd;
+    min-width: unset;
     &--mobile {
       margin: 0 10px 10px;
       flex: auto;

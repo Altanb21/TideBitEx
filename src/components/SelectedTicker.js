@@ -4,6 +4,8 @@ import SafeMath from "../utils/SafeMath";
 import { formateDecimal } from "../utils/Utils";
 import DesktopTickers from "./DesktopTickers";
 import { useTranslation } from "react-i18next";
+import { AiOutlineBarChart } from "react-icons/ai";
+import { AiFillCaretDown } from "react-icons/ai";
 
 const SelectedTicker = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -12,11 +14,13 @@ const SelectedTicker = (props) => {
     <div className="ticker">
       <div className="ticker__button">
         <div className="selectedTicker">
-          {storeCtx.selectedTicker?.name || "--"}
+          <AiOutlineBarChart size={28}/>
+          <div className="selectedTicker__text">{storeCtx.selectedTicker?.name || "--"}</div>
+          <AiFillCaretDown />
         </div>
         <DesktopTickers />
       </div>
-      <div className="ticker__details">
+      <div className="ticker__price">
         <div
           className={`showPrice ${
             !storeCtx.selectedTicker

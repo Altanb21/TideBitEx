@@ -110,3 +110,8 @@ private.*
 config.toml
 
 build
+
+# config
+src/constant/Config.js
+shell/restart.sh
+public/tradingview/config.js
