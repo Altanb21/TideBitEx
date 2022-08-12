@@ -18,21 +18,21 @@ const SelectedTicker = (props) => {
   return (
     <div className="ticker">
       <div
-        className="ticker__button"
-        onClick={openTickerListHandler}
-        onMouseOver={() => openTickerListHandler(true)}
-        onMouseOut={() => openTickerListHandler(false)}
+        className={`ticker__button${openTickerList ? " open" : ""}`}
+        onMouseEnter={() => openTickerListHandler(true)}
+        onMouseLeave={() => openTickerListHandler(false)}
       >
-        <div className="selectedTicker">
+        <div
+          className="selectedTicker"
+          onClick={(_) => openTickerListHandler()}
+        >
           <AiOutlineBarChart size={28} />
           <div className="selectedTicker__text">
             {storeCtx.selectedTicker?.name || "--"}
           </div>
           <AiFillCaretDown />
         </div>
-        {openTickerList && (
-          <DesktopTickers openTickerListHandler={openTickerListHandler} />
-        )}
+        <DesktopTickers openTickerListHandler={openTickerListHandler} />
       </div>
       <div className="ticker__price">
         <div

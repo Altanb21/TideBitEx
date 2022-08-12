@@ -13,12 +13,12 @@
   flex-direction: column;
   flex: auto;
   display: flex;
-  // z-index: 1;
-  // opacity: 0;
-  // pointer-events: none;
-  z-index: 1000;
-  opacity: 1;
-  pointer-events: stroke;
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  // z-index: 1000;
+  // opacity: 1;
+  // pointer-events: stroke;
   & .input-group {
     padding: 0 14px;
   }

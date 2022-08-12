@@ -15,6 +15,12 @@
   //   opacity: 1;
   //   pointer-events: stroke;
   // }
+  &__button.open > .market-tickers,
+  &__button.open > * ~ .market-tickers {
+    z-index: 1000;
+    opacity: 1;
+    pointer-events: stroke;
+  }
   .tickerItemLabel {
     font-size: 12px;
     margin-right: 0px;
