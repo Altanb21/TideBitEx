@@ -241,7 +241,7 @@ class Middleman {
         this.isLogin = false;
         this.memberId = null;
         this.accountBook.clearAll();
-        this.orderBook.clearAll();
+        // this.orderBook.clearAll();
       }
     } catch (error) {
       console.error(`_getAccounts error`, error);
