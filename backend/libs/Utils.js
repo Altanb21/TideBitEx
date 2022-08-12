@@ -745,6 +745,7 @@ class Utils {
   };
 
   static decodeMemberId(value) {
+    if(!value) throw Error("Could not decode memberId");
     let memberId, memberIdHexR, memberIdBufferR, memberIdBuffer;
     const valueBuffer = Buffer.from(value);
     const valueHex = valueBuffer.toString("hex");

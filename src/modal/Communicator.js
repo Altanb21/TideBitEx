@@ -6,10 +6,11 @@ import HTTPAgent from "../utils/HTTPAgent";
 
 // retry
 class Communicator {
-  constructor({ userId }) {
-    this._userId = userId;
+  constructor() {
+    // constructor({ userId }) {
+    // this._userId = userId;
     this.httpAgent = new HTTPAgent({
-      userId,
+      // userId,
       apiURL: ``,
       apiVersion: apiVersion,
       apiKey: apiKey,

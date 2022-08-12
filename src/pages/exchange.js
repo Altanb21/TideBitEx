@@ -18,7 +18,7 @@ const Exchange = () => {
       if (!isStart) {
         window.storeCtx = storeCtx;
         storeCtx.start();
-        storeCtx.sync();
+        // storeCtx.sync();
         setIsStart(true);
       }
     }

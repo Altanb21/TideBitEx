@@ -29,10 +29,10 @@ const DepthChart = (props) => {
               _asks[i - 1]?.price || "0",
               i + 1 > _bids.length - 1
                 ? SafeMath.minus(
-                    _bids[_bids.length - 1].price,
-                    _bids[_bids.length - 2].price
+                    _bids[_bids.length - 1]?.price,
+                    _bids[_bids.length - 2]?.price
                   )
-                : SafeMath.minus(_bids[i + 1].price, _bids[i].price)
+                : SafeMath.minus(_bids[i + 1]?.price, _bids[i]?.price)
             ),
             total: _asks[d]?.total || "0",
           });
@@ -45,12 +45,12 @@ const DepthChart = (props) => {
               _bids[i - 1]?.price || "0",
               i + 1 > _bids.length - 1
                 ? SafeMath.minus(
-                    _asks[_asks.length - 1].price,
-                    _asks[_asks.length - 2].price
+                    _asks[_asks.length - 1]?.price,
+                    _asks[_asks.length - 2]?.price
                   )
-                : SafeMath.minus(_asks[i + 1].price, _asks[i].price)
+                : SafeMath.minus(_asks[i + 1]?.price, _asks[i]?.price)
             ),
-            total: _bids[d].total || "0",
+            total: _bids[d]?.total || "0",
           });
         }
       }
