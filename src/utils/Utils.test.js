@@ -23,7 +23,7 @@ const formateDecimal = (
     else {
       formatAmount = SafeMath.eq(amount, "0") ? "0" : amount;
       // 以小數點為界分成兩部份
-      const splitChunck = amount.toString().split(".");
+      const splitChunck = convertExponentialToDecimal(amount).split(".");
       // 限制總長度
       if (SafeMath.lt(splitChunck[0].length, maxLength)) {
         // 小數點前的長度不超過 maxLength
@@ -332,21 +332,38 @@ const memberId16777217 =
 //   });
 // });
 
-const getPrecision = (strNum) => {
+export const convertExponentialToDecimal = (exponentialNumber) => {
+  // sanity check - is it exponential strber
+  const str = exponentialNumber.toString();
+  if (str.indexOf("e") !== -1) {
+    const exponent = parseInt(str.split("-")[1], 10);
+    // Unfortunately I can not return 1e-8 as 0.00000001, because even if I call parseFloat() on it,
+    // it will still return the exponential representation
+    // So I have to use .toFixed()
+    const result = exponentialNumber.toFixed(exponent);
+    return result;
+  } else {
+    return str;
+  }
+};
+
+
+const getPrecision = (num) => {
+  const str = convertExponentialToDecimal(num)
   const precision =
-    strNum?.split(".").length > 1 ? strNum?.split(".")[1].length : 0;
+    str?.split(".").length > 1 ? str?.split(".")[1].length : 0;
   return precision;
 };
 
 describe("formatDecimal", () => {
   test("true is working properly", () => {
-    let price = 0,
-      tickSz = 0.0001;
+    let price = 1e-8,
+      tickSz = '0.00000001';
     const formatPrice = formateDecimal(price, {
-      decimalLength: getPrecision(tickSz.toString()),
+      decimalLength: getPrecision(tickSz),
       pad: true,
     });
-    expect(formatPrice).toBe("0.0000");
+    expect(formatPrice).toBe("0.00000001");
   });
 });
 

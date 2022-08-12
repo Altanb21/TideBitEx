@@ -239,9 +239,24 @@ export const padDecimal = (n, length) => {
   return padR;
 };
 
-export const getPrecision = (strNum) => {
-  const precision =
-    strNum?.split(".").length > 1 ? strNum?.split(".")[1].length : 0;
+export const convertExponentialToDecimal = (exponentialNumber) => {
+  // sanity check - is it exponential number
+  const str = exponentialNumber.toString();
+  if (str.indexOf("e") !== -1) {
+    const exponent = parseInt(str.split("-")[1], 10);
+    // Unfortunately I can not return 1e-8 as 0.00000001, because even if I call parseFloat() on it,
+    // it will still return the exponential representation
+    // So I have to use .toFixed()
+    const result = exponentialNumber.toFixed(exponent);
+    return result;
+  } else {
+    return str;
+  }
+};
+
+export const getPrecision = (num) => {
+  const str = convertExponentialToDecimal(num);
+  const precision = str?.split(".").length > 1 ? str?.split(".")[1].length : 0;
   return precision;
 };
 
@@ -257,7 +272,7 @@ export const formateDecimal = (
     else {
       formatAmount = SafeMath.eq(amount, "0") ? "0" : amount;
       // 以小數點為界分成兩部份
-      const splitChunck = amount.toFixed(20).split(".");
+      const splitChunck = convertExponentialToDecimal(amount).split(".");
       // 限制總長度
       if (SafeMath.lt(splitChunck[0].length, maxLength)) {
         // 小數點前的長度不超過 maxLength
