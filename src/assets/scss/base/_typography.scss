@@ -1,8 +1,12 @@
+// @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap');
+
 body {
-  font-family: 'Overpass', sans-serif;
+  // font-family: 'Roboto Mono', monospace;
+  font-family: "Helvetica Neue", Arial, "Hiragino Sans GB", sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: #18214D;
   background: #FFFFFF;
   font-weight: 400;
+  -webkit-font-smoothing: antialiased !important;
 }
