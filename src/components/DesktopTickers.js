@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 
 const TickerTile = (props) => {
-  const storeCtx = useContext(StoreContext);
+  // const storeCtx = useContext(StoreContext);
   return (
     <li
       onClick={props.onClick}
@@ -24,7 +24,7 @@ const TickerTile = (props) => {
       <div>{props.ticker.name}</div>
       <div>
         {formateDecimal(props.ticker.last, {
-          decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
           pad: true,
         })}
       </div>
@@ -38,13 +38,13 @@ const TickerTile = (props) => {
       <div>{formateDecimal(props.ticker.volume, { decimalLength: 2 })}</div>
       <div>
         {formateDecimal(props.ticker.high, {
-          decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
           pad: true,
         })}
       </div>
       <div>
         {formateDecimal(props.ticker.low, {
-          decimalLength: storeCtx?.tickSz ? storeCtx?.tickSz : "0",
+          decimalLength: props.ticker?.tickSz ? props.ticker?.tickSz : "0",
           pad: true,
         })}
       </div>

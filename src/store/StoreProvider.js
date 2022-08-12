@@ -86,7 +86,7 @@ const StoreProvider = (props) => {
         const ticker = middleman.getTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
-        setTrades(middleman.getTrades())
+        setTrades(middleman.getTrades());
         setBooks(middleman.getDepthBooks());
       }
       // console.log(`****^^^^**** selectTickerHandler [END] ****^^^^****`);
@@ -416,15 +416,16 @@ const StoreProvider = (props) => {
     sync();
   }, [middleman]);
 
-  const start = useCallback(async () => {
-    if (location.pathname.includes("/markets")) {
-      let market;
-      market = location.pathname.includes("/markets/")
-        ? location.pathname.replace("/markets/", "")
-        : "ethhkd";
-      history.push({
-        pathname: `/markets/${market}`,
-      });
+  const start = useCallback(
+    async (market) => {
+      // if (location.pathname.includes("/markets")) {
+      // let market;
+      // market = location.pathname.includes("/markets/")
+      //   ? location.pathname.replace("/markets/", "")
+      //   : "ethhkd";
+      // history.push({
+      //   pathname: `/markets/${market}`,
+      // });
       await middleman.start(market);
       eventListener();
       setSelectedTicker(middleman.getTicker());
@@ -432,8 +433,10 @@ const StoreProvider = (props) => {
       setTrades(middleman.getTrades());
       setBooks(middleman.getDepthBooks());
       await sync();
-    }
-  }, [history, location.pathname, middleman, eventListener, sync]);
+      // }
+    },
+    [middleman, eventListener, sync]
+  );
 
   const stop = useCallback(() => {
     console.log(`stop`);
