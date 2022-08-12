@@ -491,7 +491,7 @@ const TradeForm = (props) => {
 };
 
 const TradePannel = (props) => {
-  const breakpoint = 414;
+  const breakpoint = 428;
   const { width } = useViewport();
   const { t } = useTranslation();
 

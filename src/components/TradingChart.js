@@ -10,7 +10,7 @@ import TradingIframe from "./TradingIframe";
 const TradingChart = (props) => {
   const storeCtx = useContext(StoreContext);
   const { width } = useViewport();
-  const breakpoint = 414;
+  const breakpoint = 428;
   const { t } = useTranslation();
   const [query, setQuery] = useState(null);
 
