@@ -86,7 +86,7 @@ const StoreProvider = (props) => {
         const ticker = middleman.getTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
-        setTrades(middleman.getTrades())
+        setTrades(middleman.getTrades());
         setBooks(middleman.getDepthBooks());
         const orders = middleman.getMyOrders();
         setPendingOrders(orders.pendingOrders);
@@ -434,9 +434,9 @@ const StoreProvider = (props) => {
       setTickers(middleman.getTickers());
       setTrades(middleman.getTrades());
       setBooks(middleman.getDepthBooks());
-      await sync();
+      // await sync();
     }
-  }, [history, location.pathname, middleman, eventListener, sync]);
+  }, [history, location.pathname, middleman, eventListener]);
 
   const stop = useCallback(() => {
     console.log(`stop`);

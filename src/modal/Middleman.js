@@ -263,11 +263,10 @@ class Middleman {
     this.tbWebSocket.setCurrentMarket(market, lotSz);
     // await this._getDepthBooks({ market, lotSz });
     await this._getTrades({ market, lotSz });
-    // if (this.isLogin) {
-    // TODO to verify if user is not login would be a problem
-    // await this._getOrderList(market);
-    // await this._getOrderHistory(market);
-    // }
+    if (this.isLogin) {
+      await this._getOrderList(market);
+      await this._getOrderHistory(market);
+    }
     // let pusher = new Pusher("2b78567f96a2c0f40368", {
     //   wsHost: "pusher.tinfo.top",
     //   port: 4567,
