@@ -61,6 +61,7 @@ const TickerList = (props) => {
           update={ticker.update}
           onClick={() => {
             storeCtx.selectMarket(ticker.market);
+            props.openTickerListHandler(false);
           }}
         />
       ))}
@@ -152,6 +153,7 @@ const DesktopTickers = (props) => {
               tickers={filteredTickers.filter(
                 (ticker) => ticker.group === quoteCcy.toLowerCase()
               )}
+              openTickerListHandler={props.openTickerListHandler}
             />
           </Tab>
         ))}

@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useState, useContext } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { formateDecimal } from "../utils/Utils";
@@ -8,17 +8,31 @@ import { AiOutlineBarChart } from "react-icons/ai";
 import { AiFillCaretDown } from "react-icons/ai";
 
 const SelectedTicker = (props) => {
+  const [openTickerList, setOpenTickerList] = useState(false);
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
+  const openTickerListHandler = (open) => {
+    setOpenTickerList((prev) => (open !== undefined ? open : !prev));
+  };
+
   return (
     <div className="ticker">
-      <div className="ticker__button">
+      <div
+        className="ticker__button"
+        onClick={openTickerListHandler}
+        onMouseOver={() => openTickerListHandler(true)}
+        onMouseOut={() => openTickerListHandler(false)}
+      >
         <div className="selectedTicker">
-          <AiOutlineBarChart size={28}/>
-          <div className="selectedTicker__text">{storeCtx.selectedTicker?.name || "--"}</div>
+          <AiOutlineBarChart size={28} />
+          <div className="selectedTicker__text">
+            {storeCtx.selectedTicker?.name || "--"}
+          </div>
           <AiFillCaretDown />
         </div>
-        <DesktopTickers />
+        {openTickerList && (
+          <DesktopTickers openTickerListHandler={openTickerListHandler} />
+        )}
       </div>
       <div className="ticker__price">
         <div

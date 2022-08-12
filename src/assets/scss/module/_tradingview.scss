@@ -39,7 +39,7 @@
     min-width: 587px;
   }
 }
-@media only screen and (max-width: 414px) {
+@media only screen and (max-width: $mobile-width) {
   .main-chart {
     height: 100%;
     flex: auto;

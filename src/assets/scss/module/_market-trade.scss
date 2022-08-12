@@ -195,7 +195,7 @@
   }
 }
 
-@media only screen and (max-width: 414px) {
+@media only screen and (max-width: $mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .market-trade {
     border: none;

@@ -9,7 +9,7 @@ main.main {
   overflow: auto;
 }
 
-@media only screen and (max-width: 414px) {
+@media only screen and (max-width: $mobile-width) {
   main.main {
     padding: 0;
     flex: auto;
