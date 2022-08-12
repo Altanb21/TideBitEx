@@ -108,7 +108,7 @@
   &__input {
     flex: auto;
     border: 1px solid #e0e3eb;
-    font-weight: 300;
+    // font-weight: 300;
     border-radius: 0px;
     text-align: right;
     pointer-events: auto;
@@ -123,7 +123,6 @@
     min-width: 70px;
     background: #eff2f6;
     color: #4a4a4a;
-    font-weight: 300;
   }
   &__input-group--append > span {
     width: 100%;
@@ -155,7 +154,7 @@
   &__amount-controller > li > span {
     background: #eff2f6;
     color: #4a4a4a;
-    font-weight: 300;
+    // font-weight: 300;
     padding: 3px 15px;
     border-radius: 5px;
   }
