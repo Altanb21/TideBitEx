@@ -557,7 +557,7 @@ class ExchangeHub extends Bot {
             if (body.ordType !== "market") {
               updateOrder = {
                 ...updateOrder,
-                id: response.payload.ordId,
+                ordId: response.payload.ordId,
                 clOrdId: response.payload.clOrdId,
               };
               this._emitUpdateOrder({

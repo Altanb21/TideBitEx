@@ -1207,7 +1207,7 @@ class OkexConnector extends ConnectorBase {
 
     const filterBody = {
       instId: body.instId,
-      ordId: body.id,
+      ordId: body.ordId,
       clOrdId: body.clOrdId,
     };
 

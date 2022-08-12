@@ -88,8 +88,8 @@ class Middleman {
         ...options,
         market,
       });
-      // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      if (!!orders) this.orderBook.updateAll(market, orders);
+      if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
+      // if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {
       console.error(`_getOrderList error`, error);
       // throw error;
@@ -102,8 +102,8 @@ class Middleman {
         ...options,
         market,
       });
-      // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      if (!!orders) this.orderBook.updateAll(market, orders);
+      if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
+      // if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {
       console.error(`_getOrderHistory error`, error);
       // throw error;
@@ -241,6 +241,7 @@ class Middleman {
         this.isLogin = false;
         this.memberId = null;
         this.accountBook.clearAll();
+        this.orderBook.clearAll();
       }
     } catch (error) {
       console.error(`_getAccounts error`, error);
@@ -362,8 +363,8 @@ class Middleman {
     // console.log(`--- WORKAROUND--- sync [START]`);
     const market = this.tickerBook.getCurrentMarket();
     await this._getAccounts(market);
-    await this._getOrderList(market);
-    await this._getOrderHistory(market);
+    // await this._getOrderList(market);
+    // await this._getOrderHistory(market);
     // console.log(`--- WORKAROUND--- sync [END]`);
     // }
     // this.sync();
