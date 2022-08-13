@@ -42,33 +42,34 @@ const Layout = ({ children }) => {
   );
 
   useEffect(() => {
-    const lang =
+    const lang = (
       document.cookie
         .split(";")
         .filter((v) => /lang/.test(v))
         .pop()
-        ?.split("=")[1] || navigator.language;
+        ?.split("=")[1] || navigator.language
+    ).toLowerCase();
     switch (lang.toLowerCase()) {
       case "en":
       case "en-us":
       case "en_us":
-        changeLanguage("en-US");
+        storeCtx.setLanguageKey("en-US");
         break;
       case "zh-hk":
       case "zh_hk":
       case "zh_tw":
       case "zh-tw":
-        changeLanguage("zh-HK");
+        storeCtx.setLanguageKey("zh-HK");
         break;
       case "zh_cn":
       case "zh-cn":
-        changeLanguage("zh-CN");
+        storeCtx.setLanguageKey("zh-CN");
         break;
       // case "jp":
-      //   changeLanguage("jp");
+      //   storeCtx.setLanguageKey("jp");
       //   break;
       default:
-        changeLanguage("en-US");
+        storeCtx.setLanguageKey("en-US");
         break;
     }
     // window.cookieStore.get("lang").then((lang) => {
@@ -76,7 +77,7 @@ const Layout = ({ children }) => {
     //   console.log(`lang`, lang, `key`, key);
     //   storeCtx.setLanguageKey(key);
     // });
-  }, [changeLanguage]);
+  }, [storeCtx]);
 
   return (
     <div id="layout" className="layout layout--pushable">

@@ -339,6 +339,8 @@ class ExchangeHubService {
       bidAccBal,
       bidLocDiff,
       bidLoc,
+      _bidAccBalDiff,
+      _bidLocDiff,
       updateAskAccount,
       updateBidAccount;
     try {
@@ -358,8 +360,8 @@ class ExchangeHubService {
        * 4.2 bidAccount: balance = SafeMath.plus(bidAccount.balance, balanceDiff)
        * 4.3 bidAccount: lockedDiff  = SafeMath.mult(SafeMath.mult(trade.fillPx, trade.fillSz), "-1");
        * 4.4 bidAccount: locked = SafeMath.plus(bidAccount.locked, lockedDiff),
-       * 4.5 update accountBook
-       * 4.6 update DB
+       * 4.5 update DB
+       * 4.6 update accountBook
        * -----
        */
       // 1. get askAccount from table
@@ -418,30 +420,17 @@ class ExchangeHubService {
       // 4. calculate bidAccount balance change
       // 4.1 bidAccount: lockedDiff  = SafeMath.mult(SafeMath.mult(trade.fillPx, trade.fillSz), "-1");
       bidLocDiff = SafeMath.mult(
-        SafeMath.mult(order.price, trade.fillSz),
+        SafeMath.mult(trade.fillPx, trade.fillSz),
         "-1"
       );
       // 4.2 bidAccount: locked = SafeMath.plus(bidAccount.locked, lockedDiff),
       // ++ TODO if bidLoc < 0 ,!!! alert , systemError send email to all admins
       bidLoc = SafeMath.plus(bidAccount.locked, bidLocDiff);
       // 4.3 bidAccount: balanceDiff = 0;
-      bidAccBalDiff =
-        order.state === this.database.ORDER_STATE.DONE
-          ? SafeMath.minus(
-              SafeMath.mult(order.price, trade.fillSz),
-              SafeMath.mult(trade.fillPx, trade.fillSz)
-            )
-          : 0;
+      bidAccBalDiff = 0;
       // 4.4 bidAccount: balance = SafeMath.plus(bidAccount.balance, balanceDiff)
       bidAccBal = SafeMath.plus(bidAccount.balance, bidAccBalDiff);
-      // ++ TODO 4.5 update accountBook
-      updateBidAccount = {
-        balance: bidAccBal,
-        locked: bidLoc,
-        currency: market.bid.currency.toUpperCase(),
-        total: SafeMath.plus(bidAccBal, bidLoc),
-      };
-      // 4.6 update DB
+      // 4.5 update DB
       this.logger.log(`bidAccount`, bidAccount);
       this.logger.log(`bidAccBalDiff`, bidAccBalDiff);
       this.logger.log(`bidAccBal`, bidAccBal);
@@ -463,6 +452,38 @@ class ExchangeHubService {
         fun: this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
         dbTransaction,
       });
+      if (
+        order.state === this.database.ORDER_STATE.DONE &&
+        order.price > trade.fillPx
+      ) {
+        _bidAccBalDiff = SafeMath.mult(
+          SafeMath.minus(order.price, trade.fillPx),
+          trade.fillSz
+        );
+        bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
+        _bidLocDiff = SafeMath.mult(bidAccBalDiff, "-1");
+        bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
+        await this._updateAccountsRecord({
+          account: bidAccount,
+          accBalDiff: _bidAccBalDiff,
+          accBal: bidAccBal,
+          accLocDiff: _bidLocDiff,
+          accLoc: bidLoc,
+          reason: this.database.REASON.ORDER_FULLFILLED,
+          fee: 0,
+          modifiableId: trade.id,
+          updateAt: new Date(parseInt(trade.ts)).toISOString(),
+          fun: this.database.FUNC.UNLOCK_FUNDS,
+          dbTransaction,
+        });
+      }
+      // ++ TODO 4.6 update accountBook
+      updateBidAccount = {
+        balance: bidAccBal,
+        locked: bidLoc,
+        currency: market.bid.currency.toUpperCase(),
+        total: SafeMath.plus(bidAccBal, bidLoc),
+      };
     } catch (error) {
       this.logger.error(`_updateAccByAskTrade`, error);
       throw error;

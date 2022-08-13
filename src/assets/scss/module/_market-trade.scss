@@ -3,6 +3,7 @@
   border: 1px solid #333;
   display: flex;
   flex-direction: column;
+  min-width: 587px;
   &__cover {
     position: absolute;
     top: 0;
@@ -23,7 +24,7 @@
     flex-direction: column;
     flex: auto;
     height: 100%;
-    min-width: 489px;
+    // min-width: 489px;
   }
   &__header {
     border-bottom: 1px solid #333;
@@ -107,7 +108,7 @@
   &__input {
     flex: auto;
     border: 1px solid #e0e3eb;
-    font-weight: 300;
+    // font-weight: 300;
     border-radius: 0px;
     text-align: right;
     pointer-events: auto;
@@ -122,7 +123,6 @@
     min-width: 70px;
     background: #eff2f6;
     color: #4a4a4a;
-    font-weight: 300;
   }
   &__input-group--append > span {
     width: 100%;
@@ -130,15 +130,17 @@
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
   }
-  &__error-message--container {
-    height: 27px;
-  }
+  // &__error-message--container {
+    // height: 27px;
+  // }
   &__error-message {
     margin-bottom: 6px;
     line-height: 1;
+    height: 12px;
     font-size: 13px;
     color: #ef5350;
     text-align: right;
+    margin-top: -3px;
   }
   &__amount-controller {
     display: flex;
@@ -152,7 +154,7 @@
   &__amount-controller > li > span {
     background: #eff2f6;
     color: #4a4a4a;
-    font-weight: 300;
+    // font-weight: 300;
     padding: 3px 15px;
     border-radius: 5px;
   }
@@ -192,11 +194,11 @@
   }
 }
 
-@media only screen and (max-width: 414px) {
+@media only screen and (max-width: $mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .market-trade {
     border: none;
-
+    min-width: unset;
     &__input-group {
       display: flex;
       align-items: center;

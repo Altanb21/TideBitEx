@@ -11,14 +11,14 @@ const Exchange = () => {
   const location = useLocation();
   const [isStart, setIsStart] = useState(false);
   const { width } = useViewport();
-  const breakpoint = 414;
+  const breakpoint = 428;
 
   useEffect(() => {
     if (location.pathname.includes("/markets")) {
       if (!isStart) {
         window.storeCtx = storeCtx;
         storeCtx.start();
-        storeCtx.sync();
+        // storeCtx.sync();
         setIsStart(true);
       }
     }

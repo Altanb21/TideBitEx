@@ -129,6 +129,19 @@ class TibeBitConnector extends ConnectorBase {
         let memberId;
         switch (data.event) {
           case "trades":
+            /**
+            {
+              trades: [
+               {
+                  tid: 118,
+                  type: 'buy',
+                  date: 1650532785,
+                   price: '95.0',
+                   amount: '0.1'
+                }
+              ]
+            }
+            */
             const instId = this._findInstId(market);
             const trades = JSON.parse(data.data).trades.map((trade) =>
               this._formateTrade(market, trade)
@@ -223,6 +236,7 @@ class TibeBitConnector extends ConnectorBase {
         prev[currId] = this.tickerBook.formatTicker(
           {
             ...tickerObj.ticker,
+            volume: tickerObj.ticker.vol,
             id: currId,
             market: currId,
             instId,
@@ -538,29 +552,20 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   // ++ TODO: verify function works properly
-  _updateTrades(market, data) {
-    const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
+  _updateTrades(instId, market, trades) {
+    const lotSz = this.market_channel[`market-${market}-global`]
+      ? this.market_channel[`market-${market}-global`]["lotSz"]
+      : undefined;
+    this.logger.log(
+      `[this.market_channel[market-${market}-global] lotSz`,
+      lotSz
+    );
     this.logger.log(
       `---------- [${this.constructor.name}]  _updateTrades [START] ----------`
     );
-    this.logger.log(`[FROM TideBit market:${market}] data`, data);
-    /**
-    {
-       trades: [
-         {
-           tid: 118,
-           type: 'buy',
-           date: 1650532785,
-           price: '95.0',
-           amount: '0.1'
-         }
-       ]
-    }
-    */
-    const instId = this._findInstId(market);
-    const newTrades = data.trades.map((trade) =>
-      this._formateTrade(market, trade)
-    );
+    this.logger.log(`[FROM TideBit market:${market}] trades`, trades);
+    // const instId = this._findInstId(market);
+    const newTrades = trades.map((trade) => this._formateTrade(market, trade));
     this.tradeBook.updateByDifference(instId, lotSz, newTrades);
 
     EventBus.emit(Events.trades, market, {
@@ -638,7 +643,7 @@ class TibeBitConnector extends ConnectorBase {
       });
       // this.logger.debug(`[${this.constructor.name} getUsersAccounts]`, accounts)
       return new ResponseFormat({
-        message: "getAccounts",
+        message: "getUsersAccounts",
         payload: accounts,
       });
     } catch (error) {
@@ -685,7 +690,7 @@ class TibeBitConnector extends ConnectorBase {
     // );
     return new ResponseFormat({
       message: "getAccounts",
-      payload: this.accountBook.getSnapshot(memberId),
+      payload: { accounts: this.accountBook.getSnapshot(memberId), memberId },
     });
   }
 
@@ -924,6 +929,12 @@ class TibeBitConnector extends ConnectorBase {
       //   SafeMath.eq(data.volume, "0") ? data.origin_volume : data.volume
       // ),
       filled: data.volume !== data.origin_volume,
+      state:
+        data.state === "wait"
+          ? "wait"
+          : data.state === "done"
+          ? "done"
+          : "canceled",
       state_text:
         data.state === "wait"
           ? "Waiting"

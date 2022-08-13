@@ -5,6 +5,7 @@ import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import { wait } from "../utils/Utils";
+import Events from "../constant/Events";
 
 let interval,
   accountInterval = 500,
@@ -25,6 +26,7 @@ const StoreProvider = (props) => {
   const location = useLocation();
   const history = useHistory();
   const [isLogin, setIsLogin] = useState(false);
+  const [memberId, setMemberId] = useState(false);
   const [tickers, setTickers] = useState([]);
   const [books, setBooks] = useState(null);
   const [trades, setTrades] = useState([]);
@@ -84,6 +86,11 @@ const StoreProvider = (props) => {
         const ticker = middleman.getTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
+        setTrades(middleman.getTrades());
+        setBooks(middleman.getDepthBooks());
+        const orders = middleman.getMyOrders();
+        setPendingOrders(orders.pendingOrders);
+        setCloseOrders(orders.closedOrders);
       }
       // console.log(`****^^^^**** selectTickerHandler [END] ****^^^^****`);
     },
@@ -282,45 +289,133 @@ const StoreProvider = (props) => {
   }, []);
 
   // ++ TODO1: verify function works properly
-  const sync = useCallback(async () => {
-    // const startTime = performance.now();
-    const time = Date.now();
-    // console.log(`sync time`,time);
-    // console.time('UniquetLabelName')
+  // const sync = useCallback(async () => {
+  //   // const startTime = performance.now();
+  //   const time = Date.now();
+  //   // console.log(`sync time`,time);
+  //   // console.time('UniquetLabelName')
 
-    if (time - accountTs > accountInterval) {
-      const accounts = middleman.getAccounts();
-      // console.log(`middleman.accounts`, accounts);
-      setIsLogin(middleman.isLogin);
-      setAccounts(accounts);
-    }
-    if (time - tickerTs > tickerInterval) {
-      let ticker = middleman.getTicker();
-      if (ticker) setPrecision(ticker);
-      setSelectedTicker(middleman.getTicker());
-    }
-    if (time - depthTs > depthInterval) {
-      // console.log(`middleman.getDepthBooks()`, middleman.getDepthBooks());
-      setBooks(middleman.getDepthBooks());
-    }
-    if (time - tradeTs > tradeInterval) {
-      // console.log(`middleman.getTrades()`, middleman.getTrades());
-      setTrades(middleman.getTrades());
-    }
-    if (time - tickersTs > tickersInterval) {
-      setTickers(middleman.getTickers());
-    }
-    // // TODO orderBook is not completed
-    if (time - orderTs > orderInterval) {
-      // console.log(`middleman.getMyOrders()`, middleman.getMyOrders());
-      const orders = middleman.getMyOrders();
-      setPendingOrders(orders.pendingOrders);
-      setCloseOrders(orders.closedOrders);
-    }
-    // const duration = performance.now() - startTime;
-    // console.log(`someMethodIThinkMightBeSlow took ${duration}ms`);
-    // console.timeEnd('UniqueLabelName')
-    await wait(500);
+  //   if (time - accountTs > accountInterval) {
+  //     const accounts = middleman.getAccounts();
+  //     // console.log(`middleman.accounts`, accounts);
+  //     setIsLogin(middleman.isLogin);
+  //     setAccounts(accounts);
+  //   }
+  //   if (time - tickerTs > tickerInterval) {
+  //     let ticker = middleman.getTicker();
+  //     if (ticker) setPrecision(ticker);
+  //     setSelectedTicker(middleman.getTicker());
+  //   }
+  //   if (time - depthTs > depthInterval) {
+  //     // console.log(`middleman.getDepthBooks()`, middleman.getDepthBooks());
+  //     setBooks(middleman.getDepthBooks());
+  //   }
+  //   if (time - tradeTs > tradeInterval) {
+  //     // console.log(`middleman.getTrades()`, middleman.getTrades());
+  //     setTrades(middleman.getTrades());
+  //   }
+  //   if (time - tickersTs > tickersInterval) {
+  //     setTickers(middleman.getTickers());
+  //   }
+  //   // // TODO orderBook is not completed
+  //   if (time - orderTs > orderInterval) {
+  //     // console.log(`middleman.getMyOrders()`, middleman.getMyOrders());
+  //     const orders = middleman.getMyOrders();
+  //     setPendingOrders(orders.pendingOrders);
+  //     setCloseOrders(orders.closedOrders);
+  //   }
+  //   // const duration = performance.now() - startTime;
+  //   // console.log(`someMethodIThinkMightBeSlow took ${duration}ms`);
+  //   // console.timeEnd('UniqueLabelName')
+  //   await wait(500);
+  //   sync();
+  // }, [middleman]);
+
+  const eventListener = useCallback(() => {
+    middleman.tbWebSocket.onmessage = (msg) => {
+      let metaData = JSON.parse(msg.data);
+      // console.log(metaData);
+      switch (metaData.type) {
+        case Events.account:
+          // console.log(`_tbWSEventListener Events.account`, metaData);
+          // console.log(
+          //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
+          //   middleman.accountBook.getSnapshot()
+          // );
+          middleman.accountBook.updateByDifference(metaData.data);
+          // console.log(
+          //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
+          //   middleman.accountBook.getSnapshot()
+          // );
+          const accounts = middleman.getAccounts();
+          // console.log(`middleman.accounts`, accounts);
+          // setIsLogin(middleman.isLogin);
+          setAccounts(accounts);
+          break;
+        case Events.update:
+          middleman.depthBook.updateAll(metaData.data.market, metaData.data);
+          setBooks(middleman.getDepthBooks());
+          break;
+        case Events.order:
+          // console.log(`_tbWSEventListener Events.order`, metaData);
+          // console.log(
+          //   `_tbWSEventListener middleman.orderBook.getSnapshot`,
+          //   middleman.orderBook.getSnapshot(metaData.data.market)
+          // );
+          middleman.orderBook.updateByDifference(
+            metaData.data.market,
+            metaData.data.difference
+          );
+          // console.log(
+          //   `_tbWSEventListener middleman.orderBook.getSnapshot`,
+          //   middleman.orderBook.getSnapshot(metaData.data.market)
+          // );
+          const orders = middleman.getMyOrders();
+          setPendingOrders(orders.pendingOrders);
+          setCloseOrders(orders.closedOrders);
+          break;
+        case Events.tickers:
+          // if (metaData.data["BTC-USDT"])
+          //   console.log(
+          //     `middleman metaData.data["BTC-USDT"].last`,
+          //     metaData.data["BTC-USDT"]?.last
+          //   );
+          middleman.tickerBook.updateByDifference(metaData.data);
+          let ticker = middleman.getTicker();
+          if (ticker) setPrecision(ticker);
+          setSelectedTicker(middleman.getTicker());
+          setTickers(middleman.getTickers());
+          break;
+        case Events.trades:
+          // console.log(`middleman metaData.data.trades`, metaData.data.trades);
+          middleman.tradeBook.updateAll(
+            metaData.data.market,
+            metaData.data.trades
+          );
+          setTrades(middleman.getTrades());
+          break;
+        case Events.trade:
+          middleman.tradeBook.updateByDifference(
+            metaData.data.market,
+            metaData.data.difference
+          );
+          setTrades(middleman.getTrades());
+          break;
+        default:
+      }
+    };
+  }, [middleman]);
+
+  const sync = useCallback(async () => {
+    await middleman.sync();
+    setIsLogin(middleman.isLogin);
+    setMemberId(middleman.memberId);
+    setAccounts(middleman.getAccounts());
+    const orders = middleman.getMyOrders();
+    setPendingOrders(orders.pendingOrders);
+    setCloseOrders(orders.closedOrders);
+    // --- WORKAROUND---
+    await wait(1 * 60 * 1000);
     sync();
   }, [middleman]);
 
@@ -334,9 +429,20 @@ const StoreProvider = (props) => {
         pathname: `/markets/${market}`,
       });
       await middleman.start(market);
-      await middleman.sync();
+      eventListener();
+      setSelectedTicker(middleman.getTicker());
+      setTickers(middleman.getTickers());
+      setTrades(middleman.getTrades());
+      setBooks(middleman.getDepthBooks());
+      setIsLogin(middleman.isLogin);
+      setMemberId(middleman.memberId);
+      setAccounts(middleman.getAccounts());
+      const orders = middleman.getMyOrders();
+      setPendingOrders(orders.pendingOrders);
+      setCloseOrders(orders.closedOrders);
+      // await sync();
     }
-  }, [history, location.pathname, middleman]);
+  }, [history, location.pathname, middleman, eventListener]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
@@ -361,7 +467,7 @@ const StoreProvider = (props) => {
         tickSz,
         lotSz,
         setIsLogin,
-        sync,
+        // sync,
         start,
         stop,
         depthBookHandler,

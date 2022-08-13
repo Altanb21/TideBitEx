@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import StoreContext from "../store/store-context";
 import { Tabs, Tab, Nav } from "react-bootstrap";
-import { formateDecimal } from "../utils/Utils";
+import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
@@ -27,6 +27,7 @@ const TradeForm = (props) => {
   const [quoteCcyAvailable, setQuoteCcyAvailable] = useState("0");
   const [baseCcyAvailable, setBaseCcyAvailable] = useState("0");
   const [refresh, setRefresh] = useState(false);
+  const [memberId, setMemberId] = useState(null);
 
   const formatPrice = useCallback(
     (value) => {
@@ -35,7 +36,7 @@ const TradeForm = (props) => {
         arr = storeCtx.selectedTicker?.tickSz.split(".");
       if (arr.length > 1) precision = arr[1].length;
       else precision = 0;
-      let _value = +value < 0 ? "0" : value;
+      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
       let price,
         vArr = _value.toString().split(".");
       if (
@@ -98,7 +99,7 @@ const TradeForm = (props) => {
           props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
       if (arr.length > 1) precision = arr[1].length;
       else precision = 0;
-      let _value = +value < 0 ? "0" : value;
+      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
       let size,
         vArr = _value.split(".");
       if (
@@ -186,8 +187,10 @@ const TradeForm = (props) => {
         ((storeCtx.selectedTicker && !selectedTicker) ||
           (storeCtx.selectedTicker &&
             storeCtx.selectedTicker.instId !== selectedTicker?.instId))) ||
-      refresh
+      refresh ||
+      memberId !== storeCtx.memberId
     ) {
+      setMemberId(storeCtx.memberId);
       let quoteCcyAccount = storeCtx.accounts?.find((account) => {
         return (
           account.currency ===
@@ -218,6 +221,8 @@ const TradeForm = (props) => {
     price,
     formatSize,
     volume,
+    storeCtx.memberId,
+    memberId,
   ]);
 
   useEffect(() => {
@@ -486,7 +491,7 @@ const TradeForm = (props) => {
 };
 
 const TradePannel = (props) => {
-  const breakpoint = 414;
+  const breakpoint = 428;
   const { width } = useViewport();
   const { t } = useTranslation();
 

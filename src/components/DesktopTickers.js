@@ -10,9 +10,10 @@ import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { IoSearch } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
-import { formateDecimal } from "../utils/Utils";
+import { formateDecimal, getPrecision } from "../utils/Utils";
 
 const TickerTile = (props) => {
+  // const storeCtx = useContext(StoreContext);
   return (
     <li
       onClick={props.onClick}
@@ -21,7 +22,14 @@ const TickerTile = (props) => {
       }`}
     >
       <div>{props.ticker.name}</div>
-      <div>{formateDecimal(props.ticker.last, { decimalLength: 2 })}</div>
+      <div>
+        {formateDecimal(props.ticker.last, {
+          decimalLength: props.ticker?.tickSz
+            ? getPrecision(props.ticker?.tickSz)
+            : "0",
+          pad: true,
+        })}
+      </div>
       <div className={SafeMath.gte(props.ticker.change, "0") ? "green" : "red"}>
         {`${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
           decimalLength: 2,
@@ -29,9 +37,28 @@ const TickerTile = (props) => {
           withSign: true,
         })}%`}
       </div>
-      <div>{formateDecimal(props.ticker.volume, { decimalLength: 2 })}</div>
-      <div>{formateDecimal(props.ticker.high, { decimalLength: 2 })}</div>
-      <div>{formateDecimal(props.ticker.low, { decimalLength: 2 })}</div>
+      <div>
+        {formateDecimal(props.ticker.volume, {
+          decimalLength: getPrecision(props.ticker?.lotSz),
+          pad: true,
+        })}
+      </div>
+      <div>
+        {formateDecimal(props.ticker.high, {
+          decimalLength: props.ticker?.tickSz
+            ? getPrecision(props.ticker?.tickSz)
+            : "0",
+          pad: true,
+        })}
+      </div>
+      <div>
+        {formateDecimal(props.ticker.low, {
+          decimalLength: props.ticker?.tickSz
+            ? getPrecision(props.ticker?.tickSz)
+            : "0",
+          pad: true,
+        })}
+      </div>
     </li>
   );
 };
@@ -48,6 +75,7 @@ const TickerList = (props) => {
           update={ticker.update}
           onClick={() => {
             storeCtx.selectMarket(ticker.market);
+            props.openTickerListHandler(false);
           }}
         />
       ))}
@@ -139,6 +167,7 @@ const DesktopTickers = (props) => {
               tickers={filteredTickers.filter(
                 (ticker) => ticker.group === quoteCcy.toLowerCase()
               )}
+              openTickerListHandler={props.openTickerListHandler}
             />
           </Tab>
         ))}

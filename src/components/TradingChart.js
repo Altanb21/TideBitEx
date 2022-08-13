@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import { useViewport } from "../store/ViewportProvider";
 
@@ -8,10 +8,24 @@ import { useTranslation } from "react-i18next";
 import TradingIframe from "./TradingIframe";
 
 const TradingChart = (props) => {
-  const { width } = useViewport();
-  const breakpoint = 414;
   const storeCtx = useContext(StoreContext);
+  const { width } = useViewport();
+  const breakpoint = 428;
   const { t } = useTranslation();
+  const [query, setQuery] = useState(null);
+
+  useEffect(() => {
+    if (storeCtx.selectedTicker) {
+      const { name, pricescale, source } = storeCtx.selectedTicker;
+      const arr = [];
+      if (name) arr.push(`symbol=${name}`);
+      if (pricescale) arr.push(`pricescale=${pricescale}`);
+      if (source) arr.push(`source=${source}`);
+      if (props.isMobile) arr.push(`mobile=${1}`);
+      const qs = !!arr.length ? `?${arr.join("&")}` : "";
+      setQuery(qs);
+    }
+  }, [storeCtx.selectedTicker, props.isMobile]);
 
   return (
     <div
@@ -21,8 +35,8 @@ const TradingChart = (props) => {
     >
       <div className="main-chart__header">{t("chart")}</div>
       {/* {window.location.host.includes("legacy2") ? ( */}
-      {storeCtx.selectedTicker && (
-        <TradingIframe isMobile={width <= breakpoint} />
+      {!!query && (
+        <TradingIframe isMobile={width <= breakpoint} query={query} />
       )}
       {/* ) : storeCtx.selectedTicker?.source === "TideBit" ? (
         <TradingApexChart />

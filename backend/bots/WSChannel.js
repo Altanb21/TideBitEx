@@ -174,7 +174,11 @@ class WSChannel extends Bot {
       ws.id
     );
     let { memberId, XSRFToken, peatioToken } = await parseMemberId(
-      { ...header, userid: args.userId },
+      {
+        ...header,
+        memberId: args.memberId,
+        // userid: args.userId
+      },
       redis
     );
     if (!findClient.isStart) {
@@ -184,7 +188,7 @@ class WSChannel extends Bot {
         this._channelClients[args.market] = {};
       }
       if (Object.values(this._channelClients[args.market]).length === 0) {
-        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id);
+        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id, args.lotSz);
       }
       this._channelClients[args.market][ws.id] = ws;
     }

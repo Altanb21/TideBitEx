@@ -41,9 +41,9 @@
     z-index: 10;
   }
 }
-
-@media only screen and (max-width: 414px) {
-  // If [device width] is less than or equal to 600px, then do
+//https://worship.agency/mobile-screen-sizes-for-2022-based-on-data-from-2021
+@media only screen and (max-width: $mobile-width) {
+  // If [device width] is less than or equal to 428px, then do
   .layout {
     &--pusher {
       display: flex;

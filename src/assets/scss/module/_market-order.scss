@@ -55,6 +55,7 @@
   display: flex;
   flex-direction: column;
   flex: auto;
+  min-width: 470px;
   & > nav.nav-tabs > a.nav-link.active,
   & > nav.nav-tabs > a.nav-link:hover {
     color: #007bff;
@@ -93,10 +94,17 @@
     padding: 8px 5px;
   }
 }
-@media only screen and (max-width: 414px) {
+
+@media only screen and (max-width: 776px) {
+  .main-chart {
+    min-width: 587px;
+  }
+}
+
+@media only screen and (max-width: $mobile-width) {
   .market-order {
     border: none;
-
+    min-width: unset;
     &__header {
       display: none;
     }

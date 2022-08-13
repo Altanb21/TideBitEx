@@ -3,11 +3,12 @@ import { Tabs, Tab } from "react-bootstrap";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
-import { formateDecimal } from "../utils/Utils";
+import { formateDecimal, getPrecision } from "../utils/Utils";
 import { ImCross } from "react-icons/im";
 import { IoMdArrowDropdown } from "react-icons/io";
 
 const TickerTile = (props) => {
+  // const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   return (
     <li
@@ -29,7 +30,12 @@ const TickerTile = (props) => {
         </div>
       </div>
       <div className="mobile-tickers__price">
-        <div>{formateDecimal(props.ticker?.last, { decimalLength: 2 })}</div>
+        <div>
+          {formateDecimal(props.ticker?.last, {
+            decimalLength: props.ticker?.tickSz ? getPrecision(props.ticker?.tickSz) : "0",
+            pad: true,
+          })}
+        </div>
         <div
           className={SafeMath.gte(props.ticker?.change, "0") ? "green" : "red"}
         >

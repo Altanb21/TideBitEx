@@ -125,6 +125,30 @@ ormEnable = false
 
 ```
 
+### 設定 tradingview Communicator config
+Sample:
+in default.config.js
+```
+export const baseUrl = 'new.tidebit.com';
+export const wsUrl = 'ws.tidebit.network/ws';
+```
+將 default.config.js 複製到 public/tradingview/config.js
+將 default.config.js 複製到 src/constant/Config.js
+```
+cp default.config.js public/tradingview/config.js
+cp default.config.js src/constant/Config.js
+```
+
+### 設定 crontab
+將 default.restart.sh 複製到 shell/restart.sh
+```
+cp default.restart.sh shell/restart.sh
+crontab -e
+* */6 * * * /bin/bash -l -c 'sh ./workspace/TideBitEx/shell/restart.sh' //At every minute past every 6th hour
+sudo service cron restart
+```
+
+
 ### 設定markets
 ```sh
 vi private/marketsSource.toml

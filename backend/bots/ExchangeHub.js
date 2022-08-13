@@ -557,7 +557,7 @@ class ExchangeHub extends Bot {
             if (body.ordType !== "market") {
               updateOrder = {
                 ...updateOrder,
-                id: response.payload.ordId,
+                ordId: response.payload.ordId,
                 clOrdId: response.payload.clOrdId,
               };
               this._emitUpdateOrder({
@@ -857,10 +857,11 @@ class ExchangeHub extends Bot {
     // const t = await this.database.transaction();
     try {
       // 1. get orderId from body.clOrdId
-      let { orderId } =
-        source === SupportedExchange.OKEX
-          ? Utils.parseClOrdId(body.clOrdId)
-          : { orderId: body.id };
+      // let { orderId } =
+      //   source === SupportedExchange.OKEX
+      //     ? Utils.parseClOrdId(body.clOrdId)
+      //     : { orderId: body.id };
+      let orderId = body.id;
       switch (source) {
         case SupportedExchange.OKEX:
           /* !!! HIGH RISK (start) !!! */

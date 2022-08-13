@@ -4,7 +4,7 @@
   flex: auto;
   height: 100%;
   border: 1px solid #333;
-
+  min-width: 587px;
   &__tool-bar {
     background-color: #4597e6;
     border-bottom: 1px solid #333;
@@ -107,7 +107,7 @@
 // }
 
 // // ipad air & ipad mini
-// @media only screen and (max-width: 820px) and (min-width: 414px) {
+// @media only screen and (max-width: 820px) and (min-width: 428px) {
 //   // The query above will trigger only for screens that are 600-400px wide. This can be used to target specific devices with known widths.
 //   .order-book {
 //     &__header > *,
@@ -116,11 +116,12 @@
 //   }
 // }
 
-// iphone XR
-@media only screen and (max-width: 414px) {
+// iphone 12&13 pro
+@media only screen and (max-width: $mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .order-book {
     border: 1px solid #ddd;
+    min-width: unset;
     &--mobile {
       margin: 0 10px 10px;
       flex: auto;

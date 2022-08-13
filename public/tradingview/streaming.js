@@ -1,9 +1,10 @@
-import { baseUrl } from "./helpers.js";
-import { parseFullSymbol } from "./helpers.js";
+import { wsProtocol, wsUrl } from "./config.js";
+// import { parseFullSymbol } from "./helpers.js";
 
 // const socket = io('wss://streamer.cryptocompare.com');
-// const socket = new WebSocket(`wss://https://staging3.tidebit.network`);
-const socket = new WebSocket(`wss://${baseUrl}`);
+// const socket = new WebSocket(`wss://ws.tidebit.network`);
+const socket = new WebSocket(`${wsProtocol}${wsUrl}`);
+// const socket = new WebSocket(`${config.WS_PROTOCOL}${config.WS_DOMAIN}`);
 const channelToSubscription = new Map();
 
 // Connection opened
