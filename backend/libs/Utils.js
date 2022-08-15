@@ -745,7 +745,7 @@ class Utils {
   };
 
   static decodeMemberId(value) {
-    if(!value) throw Error("Could not decode memberId");
+    if (!value) throw Error("Could not decode memberId");
     let memberId, memberIdHexR, memberIdBufferR, memberIdBuffer;
     const valueBuffer = Buffer.from(value);
     const valueHex = valueBuffer.toString("hex");
@@ -826,9 +826,7 @@ class Utils {
     let updateTickers = {};
     Object.keys(tickersObj).forEach((instId) => {
       const maskData = masks.find((mask) => mask === instId);
-      const instData = instruments?.find(
-        (inst) => inst.instId === instId
-      );
+      const instData = instruments?.find((inst) => inst.instId === instId);
       if (maskData) {
         updateTickers[instId] = {
           ...tickersObj[instId],
@@ -867,7 +865,7 @@ class Utils {
     return newList;
   }
 
-  static   getBar(resolution) {
+  static getBar(resolution) {
     let bar;
     switch (resolution) {
       case "1":
@@ -897,6 +895,21 @@ class Utils {
     }
     return bar;
   }
+
+  static convertExponentialToDecimal = (exponentialNumber) => {
+    // sanity check - is it exponential number
+    const str = exponentialNumber.toString();
+    if (str.indexOf("e") !== -1) {
+      const exponent = parseInt(str.split("-")[1], 10);
+      // Unfortunately I can not return 1e-8 as 0.00000001, because even if I call parseFloat() on it,
+      // it will still return the exponential representation
+      // So I have to use .toFixed()
+      const result = parseFloat(exponentialNumber).toFixed(exponent);
+      return result;
+    } else {
+      return str;
+    }
+  };
 }
 
 module.exports = Utils;
