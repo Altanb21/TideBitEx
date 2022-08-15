@@ -8,6 +8,7 @@ class WebSocket {
   ws;
   options;
   heartBeatTime;
+  connection_resolvers = [];
   constructor({ logger }) {
     this.logger = logger;
     return this;
@@ -70,9 +71,26 @@ class WebSocket {
     }
   }
 
-  async send(data, cb) {
-    return this.ws.send(data, cb);
+  send(data, cb) {
+    this.connection_resolvers.push({ data, cb });
+    this.sendDataFromQueue();
   }
+
+  sendDataFromQueue() {
+    if (this.ws) {
+      if (this.ws.readyState === 1) {
+        const obj = this.connection_resolvers.shift();
+        if (obj) {
+          this.ws.send(obj.data, obj.cb);
+          this.sendDataFromQueue();
+        }
+      } else {
+        clearTimeout(this.timeout);
+        this.timeout = setTimeout(() => this.sendDataFromQueue(), 1500);
+      }
+    }
+  }
+
   set onmessage(cb) {
     this.ws.onmessage = cb;
   }

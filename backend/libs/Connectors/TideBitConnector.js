@@ -1218,7 +1218,7 @@ class TibeBitConnector extends ConnectorBase {
           },
         }
       );
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:subscribe",
           data: {
@@ -1243,7 +1243,7 @@ class TibeBitConnector extends ConnectorBase {
     try {
       // client["channel"]?.unbind();
       // client["pusher"]?.unsubscribe(`private-${client["sn"]}`);
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:unsubscribe",
           data: {
@@ -1274,7 +1274,7 @@ class TibeBitConnector extends ConnectorBase {
         //     this._updateTrades(market, data);
         //   }
         // );
-        this.websocket.ws.send(
+        this.websocket.send(
           JSON.stringify({
             event: "pusher:subscribe",
             data: {
@@ -1322,7 +1322,7 @@ class TibeBitConnector extends ConnectorBase {
       ) {
         // this.market_channel[`market-${market}-global`]["channel"]?.unbind();
         // this.public_pusher?.unsubscribe(`market-${market}-global`);
-        this.websocket.ws.send(
+        this.websocket.send(
           JSON.stringify({
             event: "pusher:unsubscribe",
             data: {
@@ -1352,7 +1352,7 @@ class TibeBitConnector extends ConnectorBase {
     try {
       // this.global_channel = this.public_pusher.subscribe("market-global");
       // this.global_channel.bind("tickers", (data) => this._updateTickers(data));
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:subscribe",
           data: {
@@ -1371,7 +1371,7 @@ class TibeBitConnector extends ConnectorBase {
     try {
       // this.global_channel?.unbind();
       // this.public_pusher?.unsubscribe("market-global");
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:unsubscribe",
           data: {
