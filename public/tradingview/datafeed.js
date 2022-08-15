@@ -103,7 +103,7 @@ const Datafeed = {
     try {
       res = await makeApiRequest(`${path}?${query}`);
       if (source === "TideBit") {
-        console.log(`res`, res);
+        // console.log(`res`, res);
         if (res.s !== "ok" || res.t.length === 0) {
           // "noData" should be set if there is no data in the requested period.
           onHistoryCallback([], {
