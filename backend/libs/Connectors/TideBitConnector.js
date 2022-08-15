@@ -9,7 +9,7 @@ const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
 const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
-const { getBar } = require("../Utils");
+const { getBar, convertExponentialToDecimal } = require("../Utils");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {
@@ -361,15 +361,16 @@ class TibeBitConnector extends ConnectorBase {
           ask.state === "wait"
         ) {
           let index;
-          index = asks.findIndex((_ask) =>
-            SafeMath.eq(_ask[0], ask.price.toString())
-          );
+          index = asks.findIndex((_ask) => SafeMath.eq(_ask[0], ask.price));
           if (index !== -1) {
             let updateAsk = asks[index];
             updateAsk[1] = SafeMath.plus(updateAsk[1], ask.remaining_volume);
             asks[index] = updateAsk;
           } else {
-            let newAsk = [ask.price.toString(), ask.remaining_volume]; // [價格, volume]
+            let newAsk = [
+              convertExponentialToDecimal(ask.price),
+              convertExponentialToDecimal(ask.remaining_volume),
+            ]; // [價格, volume]
             asks.push(newAsk);
           }
         }
@@ -381,15 +382,16 @@ class TibeBitConnector extends ConnectorBase {
           bid.state === "wait"
         ) {
           let index;
-          index = bids.findIndex((_bid) =>
-            SafeMath.eq(_bid[0], bid.price.toString())
-          );
+          index = bids.findIndex((_bid) => SafeMath.eq(_bid[0], bid.price));
           if (index !== -1) {
             let updateBid = bids[index];
             updateBid[1] = SafeMath.plus(updateBid[1], bid.remaining_volume);
             bids[index] = updateBid;
           } else {
-            let newBid = [bid.price.toString(), bid.remaining_volume]; // [價格, volume]
+            let newBid = [
+              convertExponentialToDecimal(bid.price),
+              convertExponentialToDecimal(bid.remaining_volume),
+            ]; // [價格, volume]
             bids.push(newBid);
           }
         }

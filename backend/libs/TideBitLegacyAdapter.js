@@ -58,7 +58,7 @@ class TideBitLegacyAdapter {
             `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
             error
           );
-          // users[peatioToken] = { memberId, ts: Date.now() };
+          users[peatioToken] = { memberId, ts: Date.now() };
         }
       }
     }
