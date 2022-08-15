@@ -15,23 +15,31 @@ class WebSocket {
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
-    if (!url && !this.url) throw new Error("Invalid input");
-    if (url) this.url = url;
-    if (options) this.options = { ...options };
-    this.heartBeatTime = heartBeat;
-    this.logger.log("[WebSocket] connect url", this.url);
-    if (!!this.options) {
-      this.ws = new ws(this.url, this.options);
-    } else this.ws = new ws(this.url);
+    try {
+      if (!url && !this.url) throw new Error("Invalid input");
+      if (url) this.url = url;
+      if (options) this.options = { ...options };
+      this.heartBeatTime = heartBeat;
+      this.logger.log("[WebSocket] connect url", this.url);
+      if (!!this.options) {
+        this.ws = new ws(this.url, this.options);
+      } else this.ws = new ws(this.url);
 
-    return new Promise((resolve) => {
-      this.ws.onopen = (r) => {
-        this.logger.log("[WebSocket] status", `onopen`);
-        this.heartbeat();
-        this.eventListener();
-        return resolve(r);
-      };
-    });
+      return new Promise((resolve) => {
+        this.ws.onopen = (r) => {
+          this.logger.log("[WebSocket] status", `onopen`);
+          this.heartbeat();
+          this.eventListener();
+          return resolve(r);
+        };
+      });
+    } catch (e) {
+      console.log(`WebSocket init error:`, e);
+      clearTimeout(this.wsReConnectTimeout);
+      this.wsReConnectTimeout = setTimeout(async () => {
+        await this.init({ url: this.url });
+      }, 1000);
+    }
   }
 
   eventListener() {
@@ -49,7 +57,7 @@ class WebSocket {
   heartbeat() {
     clearTimeout(this.pingTimeout);
     this.pingTimeout = setTimeout(() => {
-      // this.logger.debug('heartbeat');
+      this.logger.debug("heartbeat");
       this.ws.ping();
     }, this.heartBeatTime);
   }
