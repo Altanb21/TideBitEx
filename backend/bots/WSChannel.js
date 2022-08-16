@@ -181,6 +181,9 @@ class WSChannel extends Bot {
       },
       redis
     );
+    console.log(
+      `-----&----- [WSChabbel][FROM WS parseMemberId peatioToken:[${peatioToken}] member:[${memberId}] -----&-----`
+    );
     if (!findClient.isStart) {
       findClient.channel = args.market;
       findClient.isStart = true;

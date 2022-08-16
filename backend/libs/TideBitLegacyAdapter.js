@@ -62,27 +62,24 @@ class TideBitLegacyAdapter {
         }
       }
     }
-    console.log(
-      `[TideBitLegacyAdapter] parseMemberId users[${peatioToken}]`,
-      users[peatioToken],
-      `memberId:${memberId}`
-    );
     return { peatioToken, memberId, XSRFToken };
   }
 
   // ++ middleware
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
-    // console.log(
-    //   `-----*----- [TideBitLegacyAdapter][FROM API] getMemberId userId -----*-----`,
-    //   userId
-    // );
+    console.log(
+      `-----*----- [TideBitLegacyAdapter][FROM API] getMemberId -----*-----`
+    );
     const parsedResult = await TideBitLegacyAdapter.parseMemberId(
       ctx.header,
       redisDomain
     );
     ctx.token = parsedResult.peatioToken;
     ctx.memberId = parsedResult.memberId;
+    console.log(
+      `-----*----- [TideBitLegacyAdapter][FROM API] parseMemberId peatioToken:[${parsedResult.peatioToken}] member:[${parsedResult.memberId}]-----*-----`
+    );
     return next();
   }
 
