@@ -68,9 +68,6 @@ class TideBitLegacyAdapter {
   // ++ middleware
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
-    console.log(
-      `-----*----- [TideBitLegacyAdapter][FROM API] getMemberId -----*-----`
-    );
     const parsedResult = await TideBitLegacyAdapter.parseMemberId(
       ctx.header,
       redisDomain

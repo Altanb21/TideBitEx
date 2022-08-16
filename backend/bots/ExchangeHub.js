@@ -687,7 +687,7 @@ class ExchangeHub extends Bot {
             market,
           });
           orderHistories = orderHistories.filter(
-            (order) => order.state_code === this.database.ORDER_STATE.WAIT
+            (order) => order.state_code !== this.database.ORDER_STATE.WAIT
           );
           this.orderBook.updateAll(
             memberId,
