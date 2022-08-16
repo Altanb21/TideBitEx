@@ -454,7 +454,7 @@ class TibeBitConnector extends ConnectorBase {
     //   updateBooks
     // );
     // WORKAROUND
-    if (!updateBooks.asks.length > 0 && !updateBooks.bids.length > 0) return;
+    // if (!updateBooks.asks.length > 0 && !updateBooks.bids.length > 0) return;
     // WORKAROUND
     /**
     {
