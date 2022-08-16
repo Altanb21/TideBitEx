@@ -168,8 +168,35 @@ class mysql {
   }
 
   async getDoneOrder(orderId) {
-    const query =
-      "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`id` = ?";
+    // const query =
+    //   "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`id` = ?";
+    const query = `
+      SELECT
+	        orders.id,
+	        orders.bid,
+	        orders.ask,
+	        orders.currency,
+	        vouchers.price AS price,
+	        orders.volume,
+	        orders.origin_volume,
+	        orders.state,
+	        orders.done_at,
+	        orders.type,
+	        orders.member_id,
+	        orders.created_at,
+	        orders.updated_at,
+	        orders.sn,
+	        orders.source,
+	        orders.ord_type,
+	        orders.locked,
+	        orders.origin_locked,
+	        orders.funds_received,
+	        orders.trades_count
+      FROM
+          orders
+	        JOIN vouchers ON orders.id = vouchers.order_id
+      WHERE
+          orders.id = ?;`
     try {
       this.logger.log(
         "getDoneOrder",
@@ -188,8 +215,37 @@ class mysql {
   }
 
   async getDoneOrders({ quoteCcy, baseCcy, memberId }) {
-    const query =
-      "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?";
+    // const query =
+    //   "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?";
+    const query = `
+      SELECT
+	        orders.id,
+	        orders.bid,
+	        orders.ask,
+	        orders.currency,
+	        vouchers.price AS price,
+	        orders.volume,
+	        orders.origin_volume,
+	        orders.state,
+	        orders.done_at,
+	        orders.type,
+	        orders.member_id,
+	        orders.created_at,
+	        orders.updated_at,
+	        orders.sn,
+	        orders.source,
+	        orders.ord_type,
+	        orders.locked,
+	        orders.origin_locked,
+	        orders.funds_received,
+	        orders.trades_count
+      FROM
+          orders
+	        JOIN vouchers ON orders.id = vouchers.order_id
+      WHERE
+          orders.member_id = ?
+	        AND orders.bid = ?
+	        AND orders.ask = ?;`
     try {
       this.logger.log(
         "getDoneOrders",
