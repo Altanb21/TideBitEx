@@ -16,7 +16,8 @@ class OrderBook extends BookBase {
       arrayA.some(
         (arrayAValue) =>
           arrayBValue.id === arrayAValue.id &&
-          (arrayBValue.volume !== arrayAValue.volume ||
+          (arrayBValue.price !== arrayAValue.price ||
+            arrayBValue.volume !== arrayAValue.volume ||
             arrayBValue.state !== arrayAValue.state)
       )
     );
@@ -32,12 +33,12 @@ class OrderBook extends BookBase {
     data
       .sort((a, b) => +b.at - +a.at)
       .forEach((d) => {
-        if (pendingOrders.length >= 30 && historyOrders.length >= 30) return;
-        if (d.state === "wait" && pendingOrders.length < 30)
+        if (pendingOrders.length >= 100 && historyOrders.length >= 100) return;
+        if (d.state === "wait" && pendingOrders.length < 100)
           pendingOrders.push(d);
         if (
           (d.state === "canceled" || d.state === "done") &&
-          historyOrders.length < 30
+          historyOrders.length < 100
         )
           historyOrders.push(d);
       });
@@ -60,10 +61,11 @@ class OrderBook extends BookBase {
         return this._snapshot[memberId][instId].filter(
           (order) => order.state === "wait"
         );
-      if (state === "history")
+      else if (state === "history")
         return this._snapshot[memberId][instId].filter(
           (order) => order.state === "canceled" || order.state === "done"
         );
+      else return this._snapshot[memberId][instId];
     }
   }
 
@@ -74,17 +76,14 @@ class OrderBook extends BookBase {
       if (!this._snapshot[memberId][instId])
         this._snapshot[memberId][instId] = [];
       this._difference[memberId][instId] = difference;
-      let updateSnapshot = this._snapshot[memberId][instId]
-        .filter(
-          (data) =>
-            !difference.add.some((diff) => this._isEqual(data.id, diff.id))
-        )
-        .concat(difference.add);
-      // .filter(
-      //   (data) =>
-      //     !difference.update.some((diff) => this._isEqual(data.id, diff.id))
-      // )
-      // .concat(difference.update);
+      let updateSnapshot = this._snapshot[memberId][instId].map((data) => ({
+        ...data,
+      }));
+      for (let data of difference.add) {
+        let i = updateSnapshot.findIndex((_d) => _d.id === data.id);
+        if (i !== -1) updateSnapshot.push(data);
+        else updateSnapshot[i] = data;
+      }
       this._snapshot[memberId][instId] = this._trim(instId, updateSnapshot);
     } catch (error) {
       this.logger.error(

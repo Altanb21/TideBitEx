@@ -167,18 +167,63 @@ class mysql {
     }
   }
 
-  async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
+  async getDoneOrder(orderId) {
     const query =
-      "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ? AND `orders`.`ord_type` = ?;";
+      "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`id` = ?";
+    try {
+      this.logger.log(
+        "getDoneOrder",
+        query,
+        `[${orderId}]`
+      );
+      const [[order]] = await this.db.query({
+        query,
+        values: [orderId],
+      });
+      return order;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
+  async getDoneOrders({ quoteCcy, baseCcy, memberId }) {
+    const query =
+      "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?";
+    try {
+      this.logger.log(
+        "getDoneOrders",
+        query,
+        `[${memberId}, ${quoteCcy}, ${baseCcy}]`
+      );
+      const [orders] = await this.db.query({
+        query,
+        values: [memberId, quoteCcy, baseCcy],
+      });
+      return orders;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
+  async getOrderList({ quoteCcy, baseCcy, memberId }) {
+    // async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
+    const query =
+      "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?;";
+    // const query =
+    //   "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ? AND `orders`.`ord_type` = ?;";
     try {
       this.logger.log(
         "getOrderList",
         query,
-        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${orderType}]`
+        `[${memberId}, ${quoteCcy}, ${baseCcy}]`
+        // `[${memberId}, ${quoteCcy}, ${baseCcy}, ${orderType}]`
       );
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy, orderType],
+        values: [memberId, quoteCcy, baseCcy],
+        // values: [memberId, quoteCcy, baseCcy, orderType],
       });
       return orders;
     } catch (error) {

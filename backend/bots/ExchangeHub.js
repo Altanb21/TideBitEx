@@ -163,48 +163,57 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found${query.market.base_unit}`);
     }
-    let orderList;
-    // if (query.memberId) {
-    orderList = await this.database.getOrderList({
+    let _orders, doneOrders;
+    _orders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
     });
-    const orders = orderList.map((order) => {
-      return {
-        id: order.id,
-        ts: parseInt(new Date(order.updated_at).getTime()),
-        at: parseInt(
-          SafeMath.div(new Date(order.updated_at).getTime(), "1000")
-        ),
-        market: query.instId.replace("-", "").toLowerCase(),
-        kind: order.type === "OrderAsk" ? "ask" : "bid",
-        price: Utils.removeZeroEnd(order.price),
-        origin_volume: Utils.removeZeroEnd(order.origin_volume),
-        volume: Utils.removeZeroEnd(order.volume),
-        state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "wait"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "done"
-          : "unkwon",
-        state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "Canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "Waiting"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "Done"
-          : "Unkwon",
-        clOrdId: order.id,
-        instId: query.instId,
-        ordType: order.ord_type,
-        filled: order.volume !== order.origin_volume,
-      };
-      /*
+    doneOrders = await this.database.getDoneOrders({
+      quoteCcy: bid,
+      baseCcy: ask,
+      memberId: query.memberId,
+    });
+    const orders = _orders
+      .filter((order) => order.state !== this.database.ORDER_STATE.DONE)
+      .concat(doneOrders)
+      .map((order) => {
+        return {
+          id: order.id,
+          ts: parseInt(new Date(order.updated_at).getTime()),
+          at: parseInt(
+            SafeMath.div(new Date(order.updated_at).getTime(), "1000")
+          ),
+          market: query.instId.replace("-", "").toLowerCase(),
+          kind: order.type === "OrderAsk" ? "ask" : "bid",
+          price: Utils.removeZeroEnd(order.price),
+          origin_volume: Utils.removeZeroEnd(order.origin_volume),
+          volume: Utils.removeZeroEnd(order.volume),
+          state_code: order.state,
+          state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
+            ? "canceled"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
+            ? "wait"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
+            ? "done"
+            : "unkwon",
+          state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
+            ? "Canceled"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
+            ? "Waiting"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
+            ? "Done"
+            : "Unkwon",
+          clOrdId: order.id,
+          instId: query.instId,
+          ordType: order.ord_type,
+          filled: order.volume !== order.origin_volume,
+        };
+        /*
       }
       */
-    });
+      })
+      .sort((a, b) => b.ts - a.ts);
     return orders;
   }
 
@@ -629,6 +638,72 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async getOrders({ query, memberId }) {
+    this.logger.log(
+      `-------------[${this.constructor.name} getOrders]----------`
+    );
+    this.logger.log(` memberId:`, memberId);
+    const instId = this._findInstId(query.market);
+    const market = this._findMarket(instId);
+    const source = this._findSource(instId);
+    if (memberId !== -1) {
+      let pendingOrders, orderHistories, orders;
+      switch (source) {
+        case SupportedExchange.OKEX:
+          const pendingOrdersRes = await this.okexConnector.router(
+            "getOrderList",
+            {
+              query: {
+                ...query,
+                instId,
+                market,
+                memberId,
+              },
+            }
+          );
+          pendingOrders = pendingOrdersRes.payload;
+          orderHistories = await this.getOrdersFromDb({
+            ...query,
+            memberId,
+            instId,
+            market,
+          });
+          orderHistories = orderHistories.filter(
+            (order) => order.state_code === this.database.ORDER_STATE.WAIT
+          );
+          this.orderBook.updateAll(
+            memberId,
+            instId,
+            pendingOrders.concat(orderHistories)
+          );
+          return new ResponseFormat({
+            message: "getOrders",
+            payload: this.orderBook.getSnapshot(memberId, instId),
+          });
+        case SupportedExchange.TIDEBIT:
+          orders = await this.getOrdersFromDb({
+            ...query,
+            memberId,
+            instId,
+            market,
+          });
+          this.orderBook.updateAll(memberId, instId, orders);
+          return new ResponseFormat({
+            message: "getOrders",
+            payload: this.orderBook.getSnapshot(memberId, instId),
+          });
+        default:
+          return new ResponseFormat({
+            message: "getOrders",
+            payload: null,
+          });
+      }
+    }
+    return new ResponseFormat({
+      message: "getOrderList",
+      payload: null,
+    });
+  }
   // TODO integrate getOrderList and getOrderHistory into one
   async getOrderList({ query, memberId }) {
     this.logger.log(

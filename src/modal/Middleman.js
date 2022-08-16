@@ -82,6 +82,20 @@ class Middleman {
     return this.orderBook.getSnapshot(market);
   }
 
+  async _getOrders(market, options = {}) {
+    try {
+      const orders = await this.communicator.getOrders({
+        ...options,
+        market,
+      });
+      // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
+      if (!!orders) this.orderBook.updateAll(market, orders);
+    } catch (error) {
+      console.error(`_getOrders error`, error);
+      // throw error;
+    }
+  }
+
   async _getOrderList(market, options = {}) {
     try {
       const orders = await this.communicator.getOrderList({
@@ -264,8 +278,9 @@ class Middleman {
     await this._getDepthBooks({ market, lotSz });
     await this._getTrades({ market, lotSz });
     if (this.isLogin) {
-      await this._getOrderList(market);
-      await this._getOrderHistory(market);
+      // await this._getOrderList(market);
+      // await this._getOrderHistory(market);
+      await this._getOrders(market)
     }
     // let pusher = new Pusher("2b78567f96a2c0f40368", {
     //   wsHost: "pusher.tinfo.top",
