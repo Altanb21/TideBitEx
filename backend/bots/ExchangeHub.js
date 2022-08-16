@@ -223,10 +223,10 @@ class ExchangeHub extends Bot {
 
   // account api
   async getAccounts({ memberId }) {
-    this.logger.log(
-      `[${this.constructor.name}] getAccounts memberId`,
-      memberId
+    this.logger.debug(
+      `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
+
     if (memberId === -1) {
       return new ResponseFormat({
         message: "getAccounts",
@@ -237,6 +237,7 @@ class ExchangeHub extends Bot {
   }
 
   async getTicker({ params, query }) {
+    this.logger.debug(`*********** [${this.name}] getTicker ************`);
     const instId = this._findInstId(query.id);
     const index = this.tidebitMarkets.findIndex(
       (market) => instId === market.instId
@@ -275,12 +276,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTickers({ query }) {
+    this.logger.debug(`*********** [${this.name}] getTickers ************`);
     if (!this.fetchedTickers) {
       let filteredOkexTickers,
         filteredTBTickers = {};
-      this.logger.debug(
-        `*********** [${this.name}] getTickers [START] ************`
-      );
       try {
         const okexRes = await this.okexConnector.router("getTickers", {
           query,
@@ -326,9 +325,9 @@ class ExchangeHub extends Bot {
           ...filteredOkexTickers,
           ...filteredTBTickers,
         });
-        this.logger.debug(
-          `*********** [${this.name}] getTickers [END] ************`
-        );
+        // this.logger.debug(
+        //   `*********** [${this.name}] getTickers [END] ************`
+        // );
       } catch (error) {
         this.logger.error(error);
         return new ResponseFormat({
@@ -345,7 +344,10 @@ class ExchangeHub extends Bot {
   }
 
   async getDepthBooks({ query }) {
-    this.logger.log(`[${this.constructor.name}] getDepthBooks`, query);
+    this.logger.debug(
+      `*********** [${this.name}] getDepthBooks ************`,
+      query
+    );
     const instId = this._findInstId(query.market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
@@ -365,6 +367,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewConfig({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTradingViewConfig ************`,
+      query
+    );
     return Promise.resolve({
       supported_resolutions: ["1", "5", "15", "30", "60", "1D", "1W"],
       supports_group_request: false,
@@ -375,6 +381,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewSymbol({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTradingViewConfig ************`,
+      query
+    );
     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
     const instId = this._findInstId(id);
     const market = this.tidebitMarkets.find((market) => market.id === id);
@@ -397,6 +407,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewHistory({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTradingViewConfig ************`,
+      query
+    );
     const instId = this._findInstId(query.symbol);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
@@ -429,6 +443,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTrades({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTrades ************`,
+      query
+    );
     const instId = this._findInstId(query.market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
@@ -639,10 +657,10 @@ class ExchangeHub extends Bot {
   }
 
   async getOrders({ query, memberId }) {
-    this.logger.log(
-      `-------------[${this.constructor.name} getOrders]----------`
+    this.logger.debug(
+      `*********** [${this.name}] getOrders memberId:[${memberId}]************`,
+      query
     );
-    this.logger.log(` memberId:`, memberId);
     const instId = this._findInstId(query.market);
     const market = this._findMarket(instId);
     const source = this._findSource(instId);
@@ -1171,6 +1189,7 @@ class ExchangeHub extends Bot {
   }
 
   async getOptions({ query }) {
+    this.logger.debug(`*********** [${this.name}] getOptions ************`);
     this.logger.debug(
       `[${this.constructor.name}] getOptions`,
       this.config.websocket.domain
