@@ -245,7 +245,6 @@ class Middleman {
                 memberId: this.memberId,
                 // userId,
               });
-              this.tickerBook.setCurrentMarket(market);
             } catch (error) {
               console.error(`tbWebSocket error`, error);
             }
