@@ -168,6 +168,7 @@ class ExchangeHubService {
 
   async _updateAccByAskTrade({
     memberId,
+    order,
     askCurr,
     bidCurr,
     askFeeRate,
@@ -180,8 +181,10 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _updateAccByAskTrade -------------`
     );
     let askAccBalDiff,
+      _askAccBalDiff,
       askAccBal,
       askLocDiff,
+      _askLocDiff,
       askLoc,
       bidAccBalDiff,
       bidAccBal,
@@ -258,6 +261,28 @@ class ExchangeHubService {
         fun: this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
         dbTransaction,
       });
+      if (
+        order.state_code === this.database.ORDER_STATE.CANCEL &&
+        order.volume > 0
+      ) {
+        _askAccBalDiff = order.volume;
+        askAccBal = SafeMath.plus(askAccBal, _askAccBalDiff);
+        _askLocDiff = SafeMath.mult(_askAccBalDiff, "-1");
+        askLoc = SafeMath.plus(askLoc, _askLocDiff);
+        await this._updateAccountsRecord({
+          account: askAccount,
+          accBalDiff: _askAccBalDiff,
+          accBal: askAccBal,
+          accLocDiff: _askLocDiff,
+          accLoc: askLoc,
+          reason: this.database.REASON.ORDER_CANCEL,
+          fee: 0,
+          modifiableId: trade.id,
+          updateAt: new Date(parseInt(trade.ts)).toISOString(),
+          fun: this.database.FUNC.UNLOCK_FUNDS,
+          dbTransaction,
+        });
+      }
       // 4. calculate bidAccount balance change
       // 4.1 bidAccount: balanceDiff = SafeMath.minus(SafeMath.mult(trade.fillPx, trade.fillSz), trade.fee)
       bidAccBalDiff = SafeMath.minus(
@@ -483,12 +508,12 @@ class ExchangeHubService {
         });
       }
       if (
-        order.state_code === this.database.ORDER_STATE.WAIT &&
+        order.state_code === this.database.ORDER_STATE.CANCEL &&
         order.volume > 0
       ) {
         _bidAccBalDiff = SafeMath.mult(order.price, order.volume);
         bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
-        _bidLocDiff = SafeMath.mult(bidAccBalDiff, "-1");
+        _bidLocDiff = SafeMath.mult(_bidAccBalDiff, "-1");
         bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
         await this._updateAccountsRecord({
           account: bidAccount,
@@ -978,6 +1003,7 @@ class ExchangeHubService {
                   memberId,
                   askFeeRate,
                   market,
+                  order: updateOrder,
                   askCurr: order.ask,
                   bidCurr: order.bid,
                   trade: { ...trade, id: newTrade.id },
