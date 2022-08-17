@@ -653,6 +653,9 @@ class ExchangeHub extends Bot {
             code: Codes.DB_OPERATION_ERROR,
           });
         }
+        setTimeout(() => {
+          this._syncTransactionDetail(updateOrder, true);
+        }, 5000);
         return response;
       /* !!! HIGH RISK (end) !!! */
       case SupportedExchange.TIDEBIT:
@@ -1754,14 +1757,12 @@ class ExchangeHub extends Bot {
   }
 
   _emitNewTrade({ memberId, instId, market, trade }) {
-    this.tradeBook.updateByDifference(instId, 0, {
-      add: [
-        {
-          ...trade,
-          ts: parseInt(SafeMath.mult(trade.at, "1000")),
-        },
-      ],
-    });
+    this.tradeBook.updateByDifference(instId, 0, [
+      {
+        ...trade,
+        ts: trade.ts || parseInt(SafeMath.mult(trade.at, "1000")),
+      },
+    ]);
     EventBus.emit(Events.trade, memberId, market, {
       market,
       difference: this.tradeBook.getDifference(instId),

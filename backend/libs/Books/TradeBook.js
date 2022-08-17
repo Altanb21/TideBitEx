@@ -93,6 +93,7 @@ class TradeBook extends BookBase {
     } catch (error) {
       this.logger.error(
         `[${this.constructor.name}] updateByDifference[${instId}] error`,
+        newTrades,
         error
       );
       return false;

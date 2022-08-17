@@ -815,7 +815,8 @@ class ExchangeHubService {
         _updateOrder = {
           instId: trade.instId,
           ordType: _order.ord_type,
-          id: trade.ordId,
+          id: _order.id,
+          ordId: trade.ordId,
           clOrdId: trade.clOrdId,
           at: parseInt(SafeMath.div(trade.ts, "1000")),
           ts: parseInt(trade.ts),
