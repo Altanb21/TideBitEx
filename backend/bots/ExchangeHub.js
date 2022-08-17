@@ -656,7 +656,7 @@ class ExchangeHub extends Bot {
         // -- WORKAROUND
         setTimeout(() => {
           this._syncTransactionDetail(updateOrder, true);
-        }, 3000);
+        }, 2000);
         // -- WORKAROUND
         return response;
       /* !!! HIGH RISK (end) !!! */
