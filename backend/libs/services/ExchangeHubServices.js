@@ -452,8 +452,10 @@ class ExchangeHubService {
         fun: this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
         dbTransaction,
       });
+      this.logger.log(`order.state_code`, order.state_code);
+      this.logger.log(`order.price[${order.price}] > trade.fillPx[${trade.fillPx}]`, order.price > trade.fillPx);
       if (
-        order.state === this.database.ORDER_STATE.DONE &&
+        order.state_code === this.database.ORDER_STATE.DONE &&
         order.price > trade.fillPx
       ) {
         _bidAccBalDiff = SafeMath.mult(
@@ -733,12 +735,13 @@ class ExchangeHubService {
           ts: parseInt(trade.ts),
           market: market.id,
           kind: trade.side === "buy" ? "bid" : "ask",
-          price: _order.price,
+          price: trade.fillPx,
           volume,
           origin_volume: _order.origin_volume,
           state_text,
           filled,
           state,
+          state_code: stateCode,
         };
         this.logger.log("_updateOrder for [FRONTEND]", _updateOrder);
       } else {

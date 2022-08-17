@@ -545,6 +545,7 @@ class ExchangeHub extends Bot {
           );
           await this._updateAccount({
             account,
+            reason: this.database.REASON.ORDER_SUBMIT,
             dbTransaction: t,
             balance: orderData.balance,
             locked: orderData.locked,
@@ -905,7 +906,8 @@ class ExchangeHub extends Bot {
             modifiableType: this.database.MODIFIABLE_TYPE.ORDER,
             modifiableId: orderId,
             createdAt,
-            fun: this.database.FUNC.LOCK_FUNDS,
+            fun: this.database.FUNC.UNLOCK_FUNDS,
+            reason: this.database.REASON.ORDER_CANCEL
           });
           updateOrder = {
             ...orderData,
@@ -1623,6 +1625,7 @@ class ExchangeHub extends Bot {
 
   async _updateAccount({
     account,
+    reason,
     dbTransaction,
     balance,
     locked,
@@ -1648,7 +1651,8 @@ class ExchangeHub extends Bot {
     await this.database.insertAccountVersion(
       account.member_id,
       account.id,
-      this.database.REASON.ORDER_CANCEL,
+      reason,
+      // this.database.REASON.ORDER_CANCEL,
       balance,
       locked,
       fee,
