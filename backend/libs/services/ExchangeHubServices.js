@@ -482,6 +482,28 @@ class ExchangeHubService {
           dbTransaction,
         });
       }
+      if (
+        order.state_code === this.database.ORDER_STATE.WAIT &&
+        order.volume > 0
+      ) {
+        _bidAccBalDiff = SafeMath.mult(order.price, order.volume);
+        bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
+        _bidLocDiff = SafeMath.mult(bidAccBalDiff, "-1");
+        bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
+        await this._updateAccountsRecord({
+          account: bidAccount,
+          accBalDiff: _bidAccBalDiff,
+          accBal: bidAccBal,
+          accLocDiff: _bidLocDiff,
+          accLoc: bidLoc,
+          reason: this.database.REASON.ORDER_CANCEL,
+          fee: 0,
+          modifiableId: trade.id,
+          updateAt: new Date(parseInt(trade.ts)).toISOString(),
+          fun: this.database.FUNC.UNLOCK_FUNDS,
+          dbTransaction,
+        });
+      }
       // ++ TODO 4.6 update accountBook
       updateBidAccount = {
         balance: bidAccBal,
@@ -694,9 +716,7 @@ class ExchangeHubService {
         value = SafeMath.mult(trade.fillPx, trade.fillSz);
         volume = SafeMath.minus(_order.volume, trade.fillSz);
         locked =
-          trade.side === "buy"
-            ? SafeMath.minus(_order.locked, SafeMath.mult(_order.price, volume))
-            : SafeMath.minus(_order.locked, volume);
+          trade.side === "buy" ? SafeMath.mult(_order.price, volume) : volume;
         doneAt = `"${new Date(parseInt(trade.ts))
           .toISOString()
           .slice(0, 19)
@@ -751,6 +771,7 @@ class ExchangeHubService {
                 ? "Waiting"
                 : "Unknown";
           }
+          locked = "0";
         }
         _updateOrder = {
           id: _order.id,
