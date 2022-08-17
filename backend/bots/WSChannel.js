@@ -167,12 +167,6 @@ class WSChannel extends Bot {
   // ++ CURRENT_USER UNSAVED
   async _onOpStatusUpdate(header, ws, args, redis) {
     const findClient = this._client[ws.id];
-    this.logger.log(
-      `-----&----- [WSChabbel][FROM WS] _onOpStatusUpdate userId -----&-----`,
-      args,
-      `ws.id`,
-      ws.id
-    );
     let { memberId, XSRFToken, peatioToken } = await parseMemberId(
       {
         ...header,
@@ -181,20 +175,8 @@ class WSChannel extends Bot {
       },
       redis
     );
-    if (!findClient.isStart) {
-      findClient.channel = args.market;
-      findClient.isStart = true;
-      if (!this._channelClients[args.market]) {
-        this._channelClients[args.market] = {};
-      }
-      if (Object.values(this._channelClients[args.market]).length === 0) {
-        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id, args.lotSz);
-      }
-      this._channelClients[args.market][ws.id] = ws;
-    }
-    this.logger.log(
-      `[${this.constructor.name} _onOpStatusUpdate] memberId`,
-      memberId
+    console.log(
+      `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioToken:[${peatioToken}] memberId:[${memberId}] -----&-----`
     );
     if (memberId !== -1 && args.CSRFToken) {
       findClient.isPrivate = true;

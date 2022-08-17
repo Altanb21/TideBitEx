@@ -116,6 +116,14 @@ class DBOperator {
     });
   }
 
+  async getDoneOrders({ quoteCcy, baseCcy, memberId }) {
+    return this.database.getDoneOrders({ quoteCcy, baseCcy, memberId });
+  }
+
+  async getDoneOrder(orderId) {
+    return this.database.getDoneOrder(orderId);
+  }
+
   async getOrder(orderId, { dbTransaction }) {
     return this.database.getOrder(orderId, { dbTransaction });
   }

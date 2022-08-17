@@ -646,7 +646,6 @@ class OkexConnector extends ConnectorBase {
     });
   }
 
-
   async getTradingViewHistory({ query }) {
     const method = "GET";
     const path = "/api/v5/market/candles";
@@ -1137,7 +1136,7 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
-
+    let orders;
     try {
       const res = await axios({
         method: method.toLocaleLowerCase(),
@@ -1153,36 +1152,38 @@ class OkexConnector extends ConnectorBase {
         });
       }
 
-      const orders = res.data.data.map((data) => {
-        return {
-          instId,
-          market: instId.replace("-", "").toLowerCase(),
-          id: parseClOrdId(data.clOrdId)?.orderId,
-          clOrdId: data.clOrdId,
-          ordId: data.ordId,
-          ordType: data.ordType,
-          price: data.px,
-          kind: data.side === "buy" ? "bid" : "ask",
-          volume: SafeMath.minus(data.sz, data.fillSz),
-          origin_volume: data.sz,
-          filled: data.state === "filled",
-          state:
-            data.state === "canceled"
-              ? "canceled"
-              : state === "filled"
-              ? "done"
-              : "wait",
-          state_text:
-            data.state === "canceled"
-              ? "Canceled"
-              : state === "filled"
-              ? "Done"
-              : "Waiting",
-          at: parseInt(SafeMath.div(data.uTime, "1000")),
-          ts: parseInt(data.uTime),
-        };
-      });
-      this.orderBook.updateAll(memberId, instId, orders);
+      orders = res.data.data
+        .filter((data) => data.clOrdId.includes(`${memberId}m`)) // 可能發生與brokerId, randomId碰撞
+        .map((data) => {
+          return {
+            instId,
+            market: instId.replace("-", "").toLowerCase(),
+            id: parseClOrdId(data.clOrdId)?.orderId,
+            clOrdId: data.clOrdId,
+            ordId: data.ordId,
+            ordType: data.ordType,
+            price: data.px,
+            kind: data.side === "buy" ? "bid" : "ask",
+            volume: SafeMath.minus(data.sz, data.fillSz),
+            origin_volume: data.sz,
+            filled: data.state === "filled",
+            state:
+              data.state === "canceled"
+                ? "canceled"
+                : state === "filled"
+                ? "done"
+                : "wait",
+            state_text:
+              data.state === "canceled"
+                ? "Canceled"
+                : state === "filled"
+                ? "Done"
+                : "Waiting",
+            at: parseInt(SafeMath.div(data.uTime, "1000")),
+            ts: parseInt(data.uTime),
+          };
+        });
+      // this.orderBook.updateAll(memberId, instId, orders);
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -1196,7 +1197,8 @@ class OkexConnector extends ConnectorBase {
 
     return new ResponseFormat({
       message: "getOrderList",
-      payload: this.orderBook.getSnapshot(memberId, instId, "pending"),
+      // payload: this.orderBook.getSnapshot(memberId, instId, "pending"),
+      payload: orders,
     });
   }
 

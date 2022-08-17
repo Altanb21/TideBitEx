@@ -163,48 +163,57 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found${query.market.base_unit}`);
     }
-    let orderList;
-    // if (query.memberId) {
-    orderList = await this.database.getOrderList({
+    let _orders, doneOrders;
+    _orders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
     });
-    const orders = orderList.map((order) => {
-      return {
-        id: order.id,
-        ts: parseInt(new Date(order.updated_at).getTime()),
-        at: parseInt(
-          SafeMath.div(new Date(order.updated_at).getTime(), "1000")
-        ),
-        market: query.instId.replace("-", "").toLowerCase(),
-        kind: order.type === "OrderAsk" ? "ask" : "bid",
-        price: Utils.removeZeroEnd(order.price),
-        origin_volume: Utils.removeZeroEnd(order.origin_volume),
-        volume: Utils.removeZeroEnd(order.volume),
-        state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "wait"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "done"
-          : "unkwon",
-        state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "Canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "Waiting"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "Done"
-          : "Unkwon",
-        clOrdId: order.id,
-        instId: query.instId,
-        ordType: order.ord_type,
-        filled: order.volume !== order.origin_volume,
-      };
-      /*
+    doneOrders = await this.database.getDoneOrders({
+      quoteCcy: bid,
+      baseCcy: ask,
+      memberId: query.memberId,
+    });
+    const orders = _orders
+      .filter((order) => order.state !== this.database.ORDER_STATE.DONE)
+      .concat(doneOrders)
+      .map((order) => {
+        return {
+          id: order.id,
+          ts: parseInt(new Date(order.updated_at).getTime()),
+          at: parseInt(
+            SafeMath.div(new Date(order.updated_at).getTime(), "1000")
+          ),
+          market: query.instId.replace("-", "").toLowerCase(),
+          kind: order.type === "OrderAsk" ? "ask" : "bid",
+          price: Utils.removeZeroEnd(order.price),
+          origin_volume: Utils.removeZeroEnd(order.origin_volume),
+          volume: Utils.removeZeroEnd(order.volume),
+          state_code: order.state,
+          state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
+            ? "canceled"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
+            ? "wait"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
+            ? "done"
+            : "unkwon",
+          state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
+            ? "Canceled"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
+            ? "Waiting"
+            : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
+            ? "Done"
+            : "Unkwon",
+          clOrdId: order.id,
+          instId: query.instId,
+          ordType: order.ord_type,
+          filled: order.volume !== order.origin_volume,
+        };
+        /*
       }
       */
-    });
+      })
+      .sort((a, b) => b.ts - a.ts);
     return orders;
   }
 
@@ -214,10 +223,10 @@ class ExchangeHub extends Bot {
 
   // account api
   async getAccounts({ memberId }) {
-    this.logger.log(
-      `[${this.constructor.name}] getAccounts memberId`,
-      memberId
+    this.logger.debug(
+      `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
+
     if (memberId === -1) {
       return new ResponseFormat({
         message: "getAccounts",
@@ -228,6 +237,7 @@ class ExchangeHub extends Bot {
   }
 
   async getTicker({ params, query }) {
+    this.logger.debug(`*********** [${this.name}] getTicker ************`);
     const instId = this._findInstId(query.id);
     const index = this.tidebitMarkets.findIndex(
       (market) => instId === market.instId
@@ -266,12 +276,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTickers({ query }) {
+    this.logger.debug(`*********** [${this.name}] getTickers ************`);
     if (!this.fetchedTickers) {
       let filteredOkexTickers,
         filteredTBTickers = {};
-      this.logger.debug(
-        `*********** [${this.name}] getTickers [START] ************`
-      );
       try {
         const okexRes = await this.okexConnector.router("getTickers", {
           query,
@@ -317,9 +325,9 @@ class ExchangeHub extends Bot {
           ...filteredOkexTickers,
           ...filteredTBTickers,
         });
-        this.logger.debug(
-          `*********** [${this.name}] getTickers [END] ************`
-        );
+        // this.logger.debug(
+        //   `*********** [${this.name}] getTickers [END] ************`
+        // );
       } catch (error) {
         this.logger.error(error);
         return new ResponseFormat({
@@ -336,7 +344,10 @@ class ExchangeHub extends Bot {
   }
 
   async getDepthBooks({ query }) {
-    this.logger.log(`[${this.constructor.name}] getDepthBooks`, query);
+    this.logger.debug(
+      `*********** [${this.name}] getDepthBooks ************`,
+      query
+    );
     const instId = this._findInstId(query.market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
@@ -356,6 +367,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewConfig({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTradingViewConfig ************`,
+      query
+    );
     return Promise.resolve({
       supported_resolutions: ["1", "5", "15", "30", "60", "1D", "1W"],
       supports_group_request: false,
@@ -366,6 +381,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewSymbol({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTradingViewConfig ************`,
+      query
+    );
     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
     const instId = this._findInstId(id);
     const market = this.tidebitMarkets.find((market) => market.id === id);
@@ -388,6 +407,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewHistory({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTradingViewConfig ************`,
+      query
+    );
     const instId = this._findInstId(query.symbol);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
@@ -420,6 +443,10 @@ class ExchangeHub extends Bot {
   }
 
   async getTrades({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTrades ************`,
+      query
+    );
     const instId = this._findInstId(query.market);
     switch (this._findSource(instId)) {
       case SupportedExchange.OKEX:
@@ -629,6 +656,72 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async getOrders({ query, memberId }) {
+    this.logger.debug(
+      `*********** [${this.name}] getOrders memberId:[${memberId}]************`,
+      query
+    );
+    const instId = this._findInstId(query.market);
+    const market = this._findMarket(instId);
+    const source = this._findSource(instId);
+    if (memberId !== -1) {
+      let pendingOrders, orderHistories, orders;
+      switch (source) {
+        case SupportedExchange.OKEX:
+          const pendingOrdersRes = await this.okexConnector.router(
+            "getOrderList",
+            {
+              query: {
+                ...query,
+                instId,
+                market,
+                memberId,
+              },
+            }
+          );
+          pendingOrders = pendingOrdersRes.payload;
+          orderHistories = await this.getOrdersFromDb({
+            ...query,
+            memberId,
+            instId,
+            market,
+          });
+          orderHistories = orderHistories.filter(
+            (order) => order.state_code !== this.database.ORDER_STATE.WAIT
+          );
+          this.orderBook.updateAll(
+            memberId,
+            instId,
+            pendingOrders.concat(orderHistories)
+          );
+          return new ResponseFormat({
+            message: "getOrders",
+            payload: this.orderBook.getSnapshot(memberId, instId),
+          });
+        case SupportedExchange.TIDEBIT:
+          orders = await this.getOrdersFromDb({
+            ...query,
+            memberId,
+            instId,
+            market,
+          });
+          this.orderBook.updateAll(memberId, instId, orders);
+          return new ResponseFormat({
+            message: "getOrders",
+            payload: this.orderBook.getSnapshot(memberId, instId),
+          });
+        default:
+          return new ResponseFormat({
+            message: "getOrders",
+            payload: null,
+          });
+      }
+    }
+    return new ResponseFormat({
+      message: "getOrderList",
+      payload: null,
+    });
+  }
   // TODO integrate getOrderList and getOrderHistory into one
   async getOrderList({ query, memberId }) {
     this.logger.log(
@@ -1096,6 +1189,7 @@ class ExchangeHub extends Bot {
   }
 
   async getOptions({ query }) {
+    this.logger.debug(`*********** [${this.name}] getOptions ************`);
     this.logger.debug(
       `[${this.constructor.name}] getOptions`,
       this.config.websocket.domain
