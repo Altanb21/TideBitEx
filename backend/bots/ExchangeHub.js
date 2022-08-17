@@ -169,14 +169,14 @@ class ExchangeHub extends Bot {
       baseCcy: ask,
       memberId: query.memberId,
     });
-    doneOrders = await this.database.getDoneOrders({
-      quoteCcy: bid,
-      baseCcy: ask,
-      memberId: query.memberId,
-    });
+    // doneOrders = await this.database.getDoneOrders({
+    //   quoteCcy: bid,
+    //   baseCcy: ask,
+    //   memberId: query.memberId,
+    // });
     const orders = _orders
-      .filter((order) => order.state !== this.database.ORDER_STATE.DONE)
-      .concat(doneOrders)
+      // .filter((order) => order.state !== this.database.ORDER_STATE.DONE)
+      // .concat(doneOrders)
       .map((order) => {
         return {
           id: order.id,
@@ -186,7 +186,7 @@ class ExchangeHub extends Bot {
           ),
           market: query.instId.replace("-", "").toLowerCase(),
           kind: order.type === "OrderAsk" ? "ask" : "bid",
-          price: Utils.removeZeroEnd(order.price),
+          price: order.price ? Utils.removeZeroEnd(order.price) : order.price,
           origin_volume: Utils.removeZeroEnd(order.origin_volume),
           volume: Utils.removeZeroEnd(order.volume),
           state_code: order.state,
@@ -907,7 +907,7 @@ class ExchangeHub extends Bot {
             modifiableId: orderId,
             createdAt,
             fun: this.database.FUNC.UNLOCK_FUNDS,
-            reason: this.database.REASON.ORDER_CANCEL
+            reason: this.database.REASON.ORDER_CANCEL,
           });
           updateOrder = {
             ...orderData,
