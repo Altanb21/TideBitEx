@@ -18,6 +18,9 @@ const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 
 class ExchangeHub extends Bot {
+  _timer;
+  _lastSyncTime = 0;
+  _syncInterval = 10 * 60 * 1000; // 10mins
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
   systemMemberId;
@@ -117,7 +120,7 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
-    this._syncTransactionDetail();
+    this._syncTransactionDetail(null, true);
     return this;
   }
 
@@ -583,34 +586,41 @@ class ExchangeHub extends Bot {
           };
           if (response.success) {
             // * 6.1 掛單成功
-            if (body.ordType !== "market") {
-              updateOrder = {
-                ...updateOrder,
-                ordId: response.payload.ordId,
-                clOrdId: response.payload.clOrdId,
-              };
+            updateOrder = {
+              ...updateOrder,
+              ordId: response.payload.ordId,
+              clOrdId: response.payload.clOrdId,
+            };
+            if (body.ordType === "limit") {
               this._emitUpdateOrder({
                 memberId,
                 instId: body.instId,
                 market: body.market,
                 order: updateOrder,
               });
-              let _updateAccount = {
-                balance: SafeMath.plus(account.balance, orderData.balance),
-                locked: SafeMath.plus(account.locked, orderData.locked),
-                currency: this.currencies.find(
-                  (curr) => curr.id === account.currency
-                )?.symbol,
-                total: SafeMath.plus(
-                  SafeMath.plus(account.balance, orderData.balance),
-                  SafeMath.plus(account.locked, orderData.locked)
-                ),
-              };
-              this._emitUpdateAccount({
+            } else {
+              this._emitUpdateMarketOrder({
                 memberId,
-                account: _updateAccount,
+                instId: body.instId,
+                market: body.market,
+                order: updateOrder,
               });
             }
+            let _updateAccount = {
+              balance: SafeMath.plus(account.balance, orderData.balance),
+              locked: SafeMath.plus(account.locked, orderData.locked),
+              currency: this.currencies.find(
+                (curr) => curr.id === account.currency
+              )?.symbol,
+              total: SafeMath.plus(
+                SafeMath.plus(account.balance, orderData.balance),
+                SafeMath.plus(account.locked, orderData.locked)
+              ),
+            };
+            this._emitUpdateAccount({
+              memberId,
+              account: _updateAccount,
+            });
           } else {
             //  * 6.2 掛單失敗
             //  * 6.2.1 DB transaction
@@ -917,12 +927,21 @@ class ExchangeHub extends Bot {
             at: parseInt(SafeMath.div(Date.now(), "1000")),
             ts: Date.now(),
           };
-          this._emitUpdateOrder({
-            memberId,
-            instId: updateOrder.instId,
-            market: updateOrder.market,
-            order: updateOrder,
-          });
+          if (updateOrder.ordType === "limit") {
+            this._emitUpdateOrder({
+              memberId,
+              instId: updateOrder.instId,
+              market: updateOrder.market,
+              order: updateOrder,
+            });
+          } else {
+            this._emitUpdateMarketOrder({
+              memberId,
+              instId: updateOrder.instId,
+              market: updateOrder.market,
+              order: updateOrder,
+            });
+          }
           updateAccount = {
             balance: SafeMath.plus(account.balance, balance),
             locked: SafeMath.plus(account.locked, locked),
@@ -1712,6 +1731,27 @@ class ExchangeHub extends Bot {
       this.orderBook.getDifference(memberId, instId)
     );
   }
+  /**
+   *
+   * @param {String} memberId
+   * @param {String} instId
+   * @param {String} market ex: ethusdt
+   * @param {Object} order
+   */
+  _emitUpdateMarketOrder({ memberId, instId, market, order }) {
+    this.orderBook.updateByDifference(memberId, instId, {
+      add: [order],
+    });
+    EventBus.emit(Events.marketOrder, memberId, market, {
+      market: market,
+      difference: this.orderBook.getDifference(memberId, instId),
+    });
+    this.logger.log(`difference`, order);
+    this.logger.log(
+      `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.marketOrder}] _emitUpdateMarketOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
+      this.orderBook.getDifference(memberId, instId)
+    );
+  }
 
   _emitNewTrade({ memberId, instId, market, trade }) {
     this.tradeBook.updateByDifference(instId, 0, {
@@ -1830,7 +1870,7 @@ class ExchangeHub extends Bot {
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // await this._updateOrderDetail(formatOrder);
-            await this._syncTransactionDetail(formatOrder);
+            await this._syncTransactionDetail(formatOrder, true);
           }
         }
         this.logger.log(
@@ -1840,57 +1880,75 @@ class ExchangeHub extends Bot {
     });
   }
 
-  async _syncTransactionDetail(formatOrder) {
-    this.logger.log(
-      ` ------------- [${this.constructor.name}] _syncTransactionDetail [START]---------------`
-    );
-    const updateData = await this.exchangeHubService.sync(
-      SupportedExchange.OKEX,
-      true,
-      { clOrdId: formatOrder?.clOrdId }
-    );
-    this.logger.log(`updateData length`, updateData?.length);
-    if (updateData) {
-      for (const data of updateData) {
-        const memberId = data.memberId,
-          market = data.market,
-          instId = data.instId,
-          updateOrder = data.updateOrder,
-          newTrade = data.newTrade,
-          updateAskAccount = data.updateAskAccount,
-          updateBidAccount = data.updateBidAccount;
-        if (updateOrder && memberId && instId) {
-          this._emitUpdateOrder({
-            memberId,
-            instId,
-            market,
-            order: updateOrder,
-          });
-        }
-        if (newTrade) {
-          this._emitNewTrade({
-            memberId,
-            instId,
-            market,
-            trade: newTrade,
-          });
-        }
-        if (updateAskAccount) {
-          this._emitUpdateAccount({
-            memberId,
-            account: updateAskAccount,
-          });
-        }
-        if (updateBidAccount) {
-          this._emitUpdateAccount({
-            memberId,
-            account: updateBidAccount,
-          });
+  async _syncTransactionDetail(formatOrder, force = false) {
+    let time = Date.now();
+    // 1. 定期（10mins）執行工作
+    if (time - this._lastSyncTime > this._syncInterval || force) {
+      this.logger.log(
+        ` ------------- [${this.constructor.name}] _syncTransactionDetail [START]---------------`
+      );
+      const updateData = await this.exchangeHubService.sync(
+        SupportedExchange.OKEX,
+        { clOrdId: formatOrder?.clOrdId }
+      );
+      this.logger.log(`updateData length`, updateData?.length);
+      if (updateData) {
+        for (const data of updateData) {
+          const memberId = data.memberId,
+            market = data.market,
+            instId = data.instId,
+            updateOrder = data.updateOrder,
+            newTrade = data.newTrade,
+            updateAskAccount = data.updateAskAccount,
+            updateBidAccount = data.updateBidAccount;
+          if (updateOrder && memberId && instId) {
+            if (updateOrder.ordType === "limit") {
+              this._emitUpdateOrder({
+                memberId,
+                instId,
+                market,
+                order: updateOrder,
+              });
+            } else {
+              this._emitUpdateMarketOrder({
+                memberId,
+                instId,
+                market,
+                order: updateOrder,
+              });
+            }
+          }
+          if (newTrade) {
+            this._emitNewTrade({
+              memberId,
+              instId,
+              market,
+              trade: newTrade,
+            });
+          }
+          if (updateAskAccount) {
+            this._emitUpdateAccount({
+              memberId,
+              account: updateAskAccount,
+            });
+          }
+          if (updateBidAccount) {
+            this._emitUpdateAccount({
+              memberId,
+              account: updateBidAccount,
+            });
+          }
         }
       }
+      this.logger.log(
+        ` ------------- [${this.constructor.name}] _syncTransactionDetail [END]---------------`
+      );
     }
-    this.logger.log(
-      ` ------------- [${this.constructor.name}] _syncTransactionDetail [END]---------------`
+    clearTimeout(this._timer);
+    // 4. 休息
+    this._timer = setTimeout(
+      () => this._syncTransactionDetail(),
+      this._syncInterval + 1000
     );
   }
 

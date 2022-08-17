@@ -945,7 +945,7 @@ class TibeBitConnector extends ConnectorBase {
     if (!price) {
       let _order = await this.database.getDoneOrder(data.id);
       this.logger.log(`[FROM DB _order`, _order);
-      price = _order.price;
+      price = _order?.price;
     }
     const formatOrder = {
       ...data,

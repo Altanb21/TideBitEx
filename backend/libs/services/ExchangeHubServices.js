@@ -58,37 +58,37 @@ class ExchangeHubService {
   //   await this.sync();
   // }
 
-  async sync(exchange, force = false, data) {
+  async sync(exchange, data) {
     this.logger.log(
       `------------- [${this.constructor.name}] sync -------------`
     );
     this.logger.log(`data`, data);
-    let time = Date.now(),
+    let // time = Date.now(),
       upateData,
       result,
       clOrdId = data?.clOrdId;
     // 1. 定期（10mins）執行工作
-    if (
-      time - this._lastSyncTime > this._syncInterval ||
-      force ||
-      !this._isStarted
-    ) {
-      // 2. 從 API 取 outerTrades 並寫入 DB
-      result = await this._syncOuterTrades(
-        exchange || SupportedExchange.OKEX,
-        clOrdId
-      );
-      // if (result) {
-      this._lastSyncTime = Date.now();
-      // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-      upateData = await this._processOuterTrades(SupportedExchange.OKEX);
-      // } else {
-      //   // ++ TODO
-      // }
-      clearTimeout(this.timer);
-      // 4. 休息
-      this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
-    }
+    // if (
+    //   time - this._lastSyncTime > this._syncInterval ||
+    //   force
+    //   // || !this._isStarted
+    // ) {
+    // 2. 從 API 取 outerTrades 並寫入 DB
+    result = await this._syncOuterTrades(
+      exchange || SupportedExchange.OKEX,
+      clOrdId
+    );
+    // if (result) {
+    // this._lastSyncTime = Date.now();
+    // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
+    upateData = await this._processOuterTrades(SupportedExchange.OKEX);
+    // } else {
+    //   // ++ TODO
+    // }
+    // clearTimeout(this.timer);
+    // // 4. 休息
+    // this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
+    // }
     this.logger.log(`upateData`, upateData);
     this.logger.log(
       `------------- [${this.constructor.name}] sync [END] -------------`
@@ -1118,27 +1118,27 @@ class ExchangeHubService {
       case SupportedExchange.OKEX:
       default:
         let okexRes;
-        if (!this._isStarted) {
-          this.logger.log(`fetchTradeFillsHistoryRecords`);
-          okexRes = await this.okexConnector.router(
-            "fetchTradeFillsHistoryRecords",
-            {
-              query: {
-                instType: "SPOT",
-                // before: Date.now() - this._interval,
-              },
-            }
-          );
-          this._isStarted = true;
-        } else {
-          this.logger.log(`fetchTradeFillsRecords`);
-          okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
+        // if (!this._isStarted) {
+        this.logger.log(`fetchTradeFillsHistoryRecords`);
+        okexRes = await this.okexConnector.router(
+          "fetchTradeFillsHistoryRecords",
+          {
             query: {
               instType: "SPOT",
-              before: Date.now() - this._minInterval,
+              // before: Date.now() - this._interval,
             },
-          });
-        }
+          }
+        );
+        //   this._isStarted = true;
+        // } else {
+        //   this.logger.log(`fetchTradeFillsRecords`);
+        //   okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
+        //     query: {
+        //       instType: "SPOT",
+        //       before: Date.now() - this._minInterval,
+        //     },
+        //   });
+        // }
         if (okexRes.success) {
           outerTrades = okexRes.payload;
         } else {
@@ -1177,7 +1177,8 @@ class ExchangeHubService {
     this.logger.log(`[${this.constructor.name}] _syncOuterTrades`);
     const _outerTrades = await this.database.getOuterTradesByDayAfter(
       this.database.EXCHANGE[exchange.toUpperCase()],
-      !this._isStarted ? 180 : 1
+      // !this._isStarted ? 180 : 1
+      180
     );
     let outerTrades = await this._getTransactionsDetail(exchange, clOrdId);
     // this.logger.log(`outerTrades`, outerTrades);
