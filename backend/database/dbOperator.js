@@ -117,7 +117,12 @@ class DBOperator {
   }
 
   async getDoneOrders({ quoteCcy, baseCcy, memberId }) {
-    return this.database.getDoneOrders({ quoteCcy, baseCcy, memberId });
+    return this.database.getDoneOrders({
+      quoteCcy,
+      baseCcy,
+      memberId,
+      state: this.ORDER_STATE.DONE,
+    });
   }
 
   async getDoneOrder(orderId) {

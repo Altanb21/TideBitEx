@@ -208,6 +208,50 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
+  async getOrderDetails({ query }) {
+    const { instId, ordId } = query;
+    this.logger.log(`[${this.constructor.name}] getOrderDetails`);
+    let result,
+      arr = [];
+    const method = "GET";
+    if (instId) arr.push(`instId=${instId}`);
+    if (ordId) arr.push(`ordId=${ordId}`);
+    const path = "/api/v5/trade/order";
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
+    const timeString = new Date().toISOString();
+    const okAccessSign = await this.okAccessSign({
+      timeString,
+      method,
+      path: `${path}${qs}`,
+    });
+    try {
+      const res = await axios({
+        method: method.toLocaleLowerCase(),
+        url: `${this.domain}${path}${qs}`,
+        headers: this.getHeaders(true, { timeString, okAccessSign }),
+      });
+      if (res.data && res.data.code !== "0") {
+        const message = JSON.stringify(res.data);
+        this.logger.trace(message);
+      }
+      const [data] = res.data.data;
+      result = new ResponseFormat({
+        message: "orderDetails",
+        payload: data,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      result = new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+    return result;
+  }
+
   async fetchTradeFillsHistoryRecords({ query }) {
     const { instType, before } = query;
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);

@@ -453,7 +453,10 @@ class ExchangeHubService {
         dbTransaction,
       });
       this.logger.log(`order.state_code`, order.state_code);
-      this.logger.log(`order.price[${order.price}] > trade.fillPx[${trade.fillPx}]`, order.price > trade.fillPx);
+      this.logger.log(
+        `order.price[${order.price}] > trade.fillPx[${trade.fillPx}]`,
+        order.price > trade.fillPx
+      );
       if (
         order.state_code === this.database.ORDER_STATE.DONE &&
         order.price > trade.fillPx
@@ -675,15 +678,17 @@ class ExchangeHubService {
       doneAt,
       fundsReceived,
       tradesCount,
-      value;
+      value,
+      _orderDetails;
     // get _order data from table
     this.logger.log(`orderId`, orderId);
     _order = await this.database.getOrder(orderId, { dbTransaction });
     this.logger.log(`_order`, _order);
+    this.logger.log(`memberId`, memberId);
     try {
       if (
         _order &&
-        _order?.member_id.toString() === memberId &&
+        _order?.member_id.toString() === memberId.toString() &&
         _order?.state === this.database.ORDER_STATE.WAIT
       ) {
         value = SafeMath.mult(trade.fillPx, trade.fillSz);
@@ -711,6 +716,41 @@ class ExchangeHubService {
           state_text = "Done";
           filled = true;
           locked = "0"; //++ TODO to be verify: 使用 TideBit ticker 測試)
+        } else {
+          let res = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: trade.instId,
+              ordId: trade.ordId,
+            },
+          });
+          if (res.success) {
+            _orderDetails = res.payload;
+            this.logger.log(`for _orderDetails`, _orderDetails);
+            state =
+              _orderDetails.state === "canceled"
+                ? _orderDetails.state
+                : _orderDetails.state === "filled"
+                ? "done"
+                : _orderDetails.state === "live"
+                ? "wait"
+                : "Unknown";
+            stateCode =
+              _orderDetails.state === "canceled"
+                ? this.database.ORDER_STATE.CANCEL
+                : _orderDetails.state === "filled"
+                ? this.database.ORDER_STATE.DONE
+                : _orderDetails.state === "live"
+                ? this.database.ORDER_STATE.WAIT
+                : "unknown";
+            state_text =
+              _orderDetails.state === "canceled"
+                ? "Canceled"
+                : _orderDetails.state === "filled"
+                ? "Done"
+                : _orderDetails.state === "live"
+                ? "Waiting"
+                : "Unknown";
+          }
         }
         _updateOrder = {
           id: _order.id,
