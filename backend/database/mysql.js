@@ -260,8 +260,8 @@ class mysql {
     }
   }
 
-  async getOrderList({ quoteCcy, baseCcy, memberId }) {
-    // async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
+  // async getOrderList({ quoteCcy, baseCcy, memberId }) {
+  async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
     const query =
       "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?;";
     // const query =
@@ -270,13 +270,13 @@ class mysql {
       this.logger.log(
         "getOrderList",
         query,
-        `[${memberId}, ${quoteCcy}, ${baseCcy}]`
-        // `[${memberId}, ${quoteCcy}, ${baseCcy}, ${orderType}]`
+        // `[${memberId}, ${quoteCcy}, ${baseCcy}]`
+        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${orderType}]`
       );
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy],
-        // values: [memberId, quoteCcy, baseCcy, orderType],
+        // values: [memberId, quoteCcy, baseCcy],
+        values: [memberId, quoteCcy, baseCcy, orderType],
       });
       return orders;
     } catch (error) {

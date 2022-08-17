@@ -163,7 +163,8 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found${query.market.base_unit}`);
     }
-    let _orders, doneOrders;
+    let _orders;
+    // , doneOrders;
     _orders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
