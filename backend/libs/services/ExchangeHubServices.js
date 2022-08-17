@@ -796,9 +796,9 @@ class ExchangeHubService {
           ts: parseInt(trade.ts),
           market: market.id,
           kind: trade.side === "buy" ? "bid" : "ask",
-          price: trade.fillPx,
+          price: Utils.removeZeroEnd(_order.price),
           volume,
-          origin_volume: _order.origin_volume,
+          origin_volume: Utils.removeZeroEnd(_order.origin_volume),
           state_text,
           filled,
           state,
@@ -1125,7 +1125,7 @@ class ExchangeHubService {
             {
               query: {
                 instType: "SPOT",
-                before: Date.now() - this._interval,
+                // before: Date.now() - this._interval,
               },
             }
           );
