@@ -653,9 +653,11 @@ class ExchangeHub extends Bot {
             code: Codes.DB_OPERATION_ERROR,
           });
         }
+        // -- WORKAROUND
         setTimeout(() => {
           this._syncTransactionDetail(updateOrder, true);
         }, 5000);
+        // -- WORKAROUND
         return response;
       /* !!! HIGH RISK (end) !!! */
       case SupportedExchange.TIDEBIT:
