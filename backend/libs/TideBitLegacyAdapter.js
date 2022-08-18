@@ -74,8 +74,10 @@ class TideBitLegacyAdapter {
         ctx.header,
         redisDomain
       );
-      ctx.session.token = parsedResult.peatioToken;
-      ctx.session.memberId = parsedResult.memberId;
+      ctx.session.set("token", parsedResult.peatioToken);
+      ctx.session.set("memberId", parsedResult.memberId);
+      // ctx.session.token = parsedResult.peatioToken;
+      // ctx.session.memberId = parsedResult.memberId;
       console.log(
         `-----*----- [TideBitLegacyAdapter][FROM API] parseMemberId peatioToken:[${parsedResult.peatioToken}] member:[${parsedResult.memberId}]-----*-----`
       );
