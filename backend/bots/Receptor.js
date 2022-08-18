@@ -48,10 +48,26 @@ class Receptor extends Bot {
         .then((options) => {
           const sessionSecret = dvalue.randomID(24);
           const app = new koa();
+          const CONFIG = {
+            key: 'koa.sess', /** (string) cookie key (default is koa.sess) */
+            /** (number || 'session') maxAge in ms (default is 1 days) */
+            /** 'session' will result in a cookie that expires when session/browser is closed */
+            /** Warning: If a session cookie is stolen, this cookie will never expire */
+            maxAge: 86400000,
+            autoCommit: true, /** (boolean) automatically commit headers (default true) */
+            overwrite: true, /** (boolean) can overwrite or not (default true) */
+            httpOnly: true, /** (boolean) httpOnly or not (default true) */
+            signed: true, /** (boolean) signed or not (default true) */
+            rolling: false, /** (boolean) Force a session identifier cookie to be set on every response. The expiration is reset to the original maxAge, resetting the expiration countdown. (default is false) */
+            renew: false, /** (boolean) renew session when session is nearly expired, so we can always keep user logged in. (default is false)*/
+            secure: true, /** (boolean) secure cookie*/
+            sameSite: null, /** (string) session cookie sameSite options (default null, don't set it) */
+          };
           const peatio = this.config.peatio.domain;
           app
             .use(cors())
             .use(staticServe(this.config.base.static))
+            .use(session(CONFIG, app))
             .use((ctx, next) => getMemberId(ctx, next, this.redis))
             .use(this.router.routes())
             .use(this.router.allowedMethods())
@@ -122,8 +138,8 @@ class Receptor extends Bot {
           method: ctx.method,
           query: ctx.query,
           session: ctx.session,
-          token: ctx.token,
-          memberId: ctx.memberId,
+          token: ctx.session.token,
+          memberId: ctx.session.memberId,
         };
         return operation(inputs).then((rs) => {
           if (rs.html) {
