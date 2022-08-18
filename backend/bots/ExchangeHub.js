@@ -133,7 +133,7 @@ class ExchangeHub extends Bot {
           updateAskAccount = data.updateAskAccount,
           updateBidAccount = data.updateBidAccount;
         if (updateOrder && memberId && instId) {
-          if (updateOrder.ordType === "limit") {
+          if (updateOrder.ordType === this.database.ORD_TYPE.LIMIT) {
             this._emitUpdateOrder({
               memberId,
               instId,
@@ -215,58 +215,94 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found${query.market.base_unit}`);
     }
-    let _orders;
-    // , doneOrders;
+    let _orders,
+      _doneMarketBidOrders,
+      orders = [];
     _orders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
     });
-    // doneOrders = await this.database.getDoneOrders({
-    //   quoteCcy: bid,
-    //   baseCcy: ask,
-    //   memberId: query.memberId,
-    // });
-    const orders = _orders
-      // .filter((order) => order.state !== this.database.ORDER_STATE.DONE)
-      // .concat(doneOrders)
-      .map((order) => {
-        return {
-          id: order.id,
-          ts: parseInt(new Date(order.updated_at).getTime()),
-          at: parseInt(
-            SafeMath.div(new Date(order.updated_at).getTime(), "1000")
-          ),
-          market: query.instId.replace("-", "").toLowerCase(),
-          kind: order.type === "OrderAsk" ? "ask" : "bid",
-          price: order.price ? Utils.removeZeroEnd(order.price) : order.price,
-          origin_volume: Utils.removeZeroEnd(order.origin_volume),
-          volume: Utils.removeZeroEnd(order.volume),
-          state_code: order.state,
-          state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-            ? "canceled"
-            : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-            ? "wait"
-            : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-            ? "done"
-            : "unkwon",
-          state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-            ? "Canceled"
-            : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-            ? "Waiting"
-            : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-            ? "Done"
-            : "Unkwon",
-          clOrdId: order.id,
-          instId: query.instId,
-          ordType: order.ord_type,
-          filled: order.volume !== order.origin_volume,
-        };
-        /*
+    _doneMarketBidOrders = await this.database.getDoneOrders({
+      quoteCcy: bid,
+      baseCcy: ask,
+      memberId: query.memberId,
+      state: this.database.ORDER_STATE.DONE,
+      type: this.database.TYPE.ORDER_BID,
+    });
+    _orders = _orders.concat(_doneMarketBidOrders);
+    for (let _order of _orders) {
+      let order;
+      order = {
+        id: _order.id,
+        ts: parseInt(new Date(_order.updated_at).getTime()),
+        at: parseInt(
+          SafeMath.div(new Date(_order.updated_at).getTime(), "1000")
+        ),
+        market: query.instId.replace("-", "").toLowerCase(),
+        kind: _order.type === this.database.TYPE.ORDER_ASK ? "ask" : "bid",
+        price: _order.price ? Utils.removeZeroEnd(_order.price) : _order.price,
+        origin_volume: Utils.removeZeroEnd(_order.origin_volume),
+        volume: Utils.removeZeroEnd(_order.volume),
+        state_code: _order.state,
+        state: SafeMath.eq(_order.state, this.database.ORDER_STATE.CANCEL)
+          ? "canceled"
+          : SafeMath.eq(_order.state, this.database.ORDER_STATE.WAIT)
+          ? "wait"
+          : SafeMath.eq(_order.state, this.database.ORDER_STATE.DONE)
+          ? "done"
+          : "unkwon",
+        state_text: SafeMath.eq(_order.state, this.database.ORDER_STATE.CANCEL)
+          ? "Canceled"
+          : SafeMath.eq(_order.state, this.database.ORDER_STATE.WAIT)
+          ? "Waiting"
+          : SafeMath.eq(_order.state, this.database.ORDER_STATE.DONE)
+          ? "Done"
+          : "Unkwon",
+        clOrdId: _order.id,
+        instId: query.instId,
+        ordType: _order.ord_type,
+        filled: _order.volume !== _order.origin_volume,
+      };
+      if (
+        order.state_code === this.database.ORDER_STATE.DONE &&
+        order.ordType !== this.database.ORD_TYPE.LIMIT &&
+        _order.type === this.database.TYPE.ORDER_ASK
+      ) {
+        orders.push({
+          ...order,
+          price: SafeMath.div(_order.funds_received, _order.origin_volume),
+        });
+      } else if (
+        (order.state_code === this.database.ORDER_STATE.WAIT &&
+          order.ordType === this.database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
+        order.state_code === this.database.ORDER_STATE.CANCEL || // canceled 單
+        (order.state_code === this.database.ORDER_STATE.DONE &&
+          order.ordType === this.database.ORD_TYPE.LIMIT) ||
+        (order.state_code === this.database.ORDER_STATE.DONE &&
+          order.ordType !== this.database.ORD_TYPE.LIMIT &&
+          _order.type === this.database.TYPE.ORDER_BID)
+      ) {
+        if (order.price) {
+          // _canceledOrders.push(order);
+          orders.push(order);
+        }
+        // tidebit 市價單（no price）是否會出現交易失敗導致交易 canceled ？ okex 市價單或ioc單失敗會顯示 cancled 且有price
+        else
+          this.logger.error(
+            `!!! NOTICE !!! canceledOrder without price`,
+            order
+          );
+      } else if (
+        order.state_code === this.database.ORDER_STATE.DONE &&
+        _order.type === this.database.TYPE.ORDER_BID
+      ) {
       }
-      */
-      })
-      .sort((a, b) => b.ts - a.ts);
+    }
+    // const orders = _pendingOrders
+    //   .concat(_canceledOrders)
+    //   .concat(_doneOrders)
+    //   .sort((a, b) => b.ts - a.ts);
     return orders;
   }
 
@@ -620,7 +656,10 @@ class ExchangeHub extends Bot {
           this.logger.log("[RESPONSE]", response);
           updateOrder = {
             instId: body.instId,
-            ordType: body.ordType === "market" ? "ioc" : body.ordType,
+            ordType:
+              body.ordType === this.database.ORD_TYPE.MARKET
+                ? this.database.ORD_TYPE.IOC
+                : body.ordType,
             id: orderId,
             clOrdId,
             at: parseInt(SafeMath.div(Date.now(), "1000")),
@@ -635,41 +674,34 @@ class ExchangeHub extends Bot {
           };
           if (response.success) {
             // * 6.1 掛單成功
-            updateOrder = {
-              ...updateOrder,
-              ordId: response.payload.ordId,
-              clOrdId: response.payload.clOrdId,
-            };
-            if (body.ordType === "limit") {
+            if (body.ordType === this.database.ORD_TYPE.LIMIT) {
+              updateOrder = {
+                ...updateOrder,
+                ordId: response.payload.ordId,
+                clOrdId: response.payload.clOrdId,
+              };
               this._emitUpdateOrder({
                 memberId,
                 instId: body.instId,
                 market: body.market,
                 order: updateOrder,
               });
-            } else {
-              this._emitUpdateMarketOrder({
+              let _updateAccount = {
+                balance: SafeMath.plus(account.balance, orderData.balance),
+                locked: SafeMath.plus(account.locked, orderData.locked),
+                currency: this.currencies.find(
+                  (curr) => curr.id === account.currency
+                )?.symbol,
+                total: SafeMath.plus(
+                  SafeMath.plus(account.balance, orderData.balance),
+                  SafeMath.plus(account.locked, orderData.locked)
+                ),
+              };
+              this._emitUpdateAccount({
                 memberId,
-                instId: body.instId,
-                market: body.market,
-                order: updateOrder,
+                account: _updateAccount,
               });
             }
-            let _updateAccount = {
-              balance: SafeMath.plus(account.balance, orderData.balance),
-              locked: SafeMath.plus(account.locked, orderData.locked),
-              currency: this.currencies.find(
-                (curr) => curr.id === account.currency
-              )?.symbol,
-              total: SafeMath.plus(
-                SafeMath.plus(account.balance, orderData.balance),
-                SafeMath.plus(account.locked, orderData.locked)
-              ),
-            };
-            this._emitUpdateAccount({
-              memberId,
-              account: _updateAccount,
-            });
           } else {
             //  * 6.2 掛單失敗
             //  * 6.2.1 DB transaction
@@ -985,7 +1017,7 @@ class ExchangeHub extends Bot {
             at: parseInt(SafeMath.div(Date.now(), "1000")),
             ts: Date.now(),
           };
-          if (updateOrder.ordType === "limit") {
+          if (updateOrder.ordType === this.database.ORD_TYPE.LIMIT) {
             this._emitUpdateOrder({
               memberId,
               instId: updateOrder.instId,
@@ -1106,15 +1138,17 @@ class ExchangeHub extends Bot {
             market: this._findMarket(body.instId),
             memberId,
             // state: this.database.ORDER_STATE.WAIT,
-            // orderType: "limit",
+            // orderType: this.database.ORD_TYPE.LIMIT,
           });
 
           const orders = _orders
             .filter(
               (_order) =>
                 body.type === "all" ||
-                (body.type === "ask" && _order.type === "OrderAsk") ||
-                (body.type === "bid" && _order.type === "OrderBid")
+                (body.type === "ask" &&
+                  _order.type === this.database.TYPE.ORDER_ASK) ||
+                (body.type === "bid" &&
+                  _order.type === this.database.TYPE.ORDER_BID)
             )
             .map((_order) => {
               return {
@@ -1691,7 +1725,10 @@ class ExchangeHub extends Bot {
       updatedAt: createdAt,
       sn: null,
       source: "Web",
-      ordType: body.ordType === "market" ? "ioc" : body.ordType,
+      ordType:
+        body.ordType === this.database.ORD_TYPE.MARKET
+          ? this.database.ORD_TYPE.IOC
+          : body.ordType,
       locked,
       originLocked: locked,
       fundsReceived: 0,
