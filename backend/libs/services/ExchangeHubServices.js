@@ -17,6 +17,7 @@ class ExchangeHubService {
     systemMemberId,
     okexConnector,
     tidebitMarkets,
+    emitUpdateData,
     logger,
   }) {
     this.database = database;
@@ -26,6 +27,7 @@ class ExchangeHubService {
     this.okexConnector = okexConnector;
     this.logger = logger;
     this.name = "ExchangeHubService";
+    this.emitUpdateData = emitUpdateData;
     return this;
   }
 
@@ -58,42 +60,38 @@ class ExchangeHubService {
   //   await this.sync();
   // }
 
-  async sync(exchange, data) {
+  async sync(exchange, data, force = false) {
     this.logger.log(
       `------------- [${this.constructor.name}] sync -------------`
     );
     this.logger.log(`data`, data);
-    let // time = Date.now(),
-      upateData,
+    let time = Date.now(),
+      updateData,
       result,
       clOrdId = data?.clOrdId;
     // 1. 定期（10mins）執行工作
-    // if (
-    //   time - this._lastSyncTime > this._syncInterval ||
-    //   force
-    //   // || !this._isStarted
-    // ) {
-    // 2. 從 API 取 outerTrades 並寫入 DB
-    result = await this._syncOuterTrades(
-      exchange || SupportedExchange.OKEX,
-      clOrdId
-    );
-    // if (result) {
-    // this._lastSyncTime = Date.now();
-    // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    upateData = await this._processOuterTrades(SupportedExchange.OKEX);
-    // } else {
-    //   // ++ TODO
-    // }
-    // clearTimeout(this.timer);
-    // // 4. 休息
-    // this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
-    // }
-    this.logger.log(`upateData`, upateData);
+    if (
+      time - this._lastSyncTime > this._syncInterval ||
+      force ||
+      !this._isStarted
+    ) {
+      // 2. 從 API 取 outerTrades 並寫入 DB
+      result = await this._syncOuterTrades(
+        exchange || SupportedExchange.OKEX,
+        clOrdId
+      );
+      // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
+      updateData = await this._processOuterTrades(SupportedExchange.OKEX);
+
+      // 4. 休息
+      clearTimeout(this.timer);
+      this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
+    }
+    this.logger.log(`upateData`, updateData);
     this.logger.log(
       `------------- [${this.constructor.name}] sync [END] -------------`
     );
-    return upateData;
+    this.emitUpdateData(updateData);
   }
 
   // ++ TODO

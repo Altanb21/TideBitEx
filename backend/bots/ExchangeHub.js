@@ -18,9 +18,6 @@ const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 
 class ExchangeHub extends Bot {
-  _timer;
-  _lastSyncTime = 0;
-  _syncInterval = 10 * 60 * 1000; // 10mins
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
   systemMemberId;
@@ -110,6 +107,7 @@ class ExchangeHub extends Bot {
           systemMemberId: this.config.peatio.systemMemberId,
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
+          emitUpdateData: this.emitUpdateData,
           logger,
         });
         return this;
@@ -120,8 +118,59 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
-    this._syncTransactionDetail(null, true);
+    await this.exchangeHubService.sync(SupportedExchange.OKEX, null, true);
     return this;
+  }
+
+  emitUpdateData(updateData) {
+    if (updateData) {
+      for (const data of updateData) {
+        const memberId = data.memberId,
+          market = data.market,
+          instId = data.instId,
+          updateOrder = data.updateOrder,
+          newTrade = data.newTrade,
+          updateAskAccount = data.updateAskAccount,
+          updateBidAccount = data.updateBidAccount;
+        if (updateOrder && memberId && instId) {
+          if (updateOrder.ordType === "limit") {
+            this._emitUpdateOrder({
+              memberId,
+              instId,
+              market,
+              order: updateOrder,
+            });
+          } else {
+            this._emitUpdateMarketOrder({
+              memberId,
+              instId,
+              market,
+              order: updateOrder,
+            });
+          }
+        }
+        if (newTrade) {
+          this._emitNewTrade({
+            memberId,
+            instId,
+            market,
+            trade: newTrade,
+          });
+        }
+        if (updateAskAccount) {
+          this._emitUpdateAccount({
+            memberId,
+            account: updateAskAccount,
+          });
+        }
+        if (updateBidAccount) {
+          this._emitUpdateAccount({
+            memberId,
+            account: updateBidAccount,
+          });
+        }
+      }
+    }
   }
 
   getTidebitMarkets() {
@@ -655,7 +704,11 @@ class ExchangeHub extends Bot {
         }
         // -- WORKAROUND
         setTimeout(() => {
-          this._syncTransactionDetail(updateOrder, true);
+          this.exchangeHubService.sync(
+            SupportedExchange.OKEX,
+            updateOrder,
+            true
+          );
         }, 2000);
         // -- WORKAROUND
         return response;
@@ -1873,7 +1926,11 @@ class ExchangeHub extends Bot {
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // await this._updateOrderDetail(formatOrder);
-            await this._syncTransactionDetail(formatOrder, true);
+            await this.exchangeHubService.sync(
+              SupportedExchange.OKEX,
+              formatOrder,
+              true
+            );
           }
         }
         this.logger.log(
@@ -1881,78 +1938,6 @@ class ExchangeHub extends Bot {
         );
       }
     });
-  }
-
-  async _syncTransactionDetail(formatOrder, force = false) {
-    let time = Date.now();
-    // 1. 定期（10mins）執行工作
-    if (time - this._lastSyncTime > this._syncInterval || force) {
-      this.logger.log(
-        ` ------------- [${this.constructor.name}] _syncTransactionDetail [START]---------------`
-      );
-      const updateData = await this.exchangeHubService.sync(
-        SupportedExchange.OKEX,
-        { clOrdId: formatOrder?.clOrdId }
-      );
-      this.logger.log(`updateData length`, updateData?.length);
-      if (updateData) {
-        for (const data of updateData) {
-          const memberId = data.memberId,
-            market = data.market,
-            instId = data.instId,
-            updateOrder = data.updateOrder,
-            newTrade = data.newTrade,
-            updateAskAccount = data.updateAskAccount,
-            updateBidAccount = data.updateBidAccount;
-          if (updateOrder && memberId && instId) {
-            if (updateOrder.ordType === "limit") {
-              this._emitUpdateOrder({
-                memberId,
-                instId,
-                market,
-                order: updateOrder,
-              });
-            } else {
-              this._emitUpdateMarketOrder({
-                memberId,
-                instId,
-                market,
-                order: updateOrder,
-              });
-            }
-          }
-          if (newTrade) {
-            this._emitNewTrade({
-              memberId,
-              instId,
-              market,
-              trade: newTrade,
-            });
-          }
-          if (updateAskAccount) {
-            this._emitUpdateAccount({
-              memberId,
-              account: updateAskAccount,
-            });
-          }
-          if (updateBidAccount) {
-            this._emitUpdateAccount({
-              memberId,
-              account: updateBidAccount,
-            });
-          }
-        }
-      }
-      this.logger.log(
-        ` ------------- [${this.constructor.name}] _syncTransactionDetail [END]---------------`
-      );
-    }
-    clearTimeout(this._timer);
-    // 4. 休息
-    this._timer = setTimeout(
-      () => this._syncTransactionDetail(),
-      this._syncInterval + 1000
-    );
   }
 
   _isIncludeTideBitMarket(instId) {
