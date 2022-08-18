@@ -941,12 +941,12 @@ class TibeBitConnector extends ConnectorBase {
     );
     this.logger.log(`[FROM TideBit memberId:${memberId}] orderData`, data);
     let instId = this._findInstId(data.market);
-    // price = data.price;
-    // if (!price) {
-    //   let _order = await this.database.getDoneOrder(data.id);
-    //   this.logger.log(`[FROM DB _order`, _order);
-    //   price = _order?.price;
-    // }
+    let price = data.price;
+    if (!price) {
+      let _order = await this.database.getDoneOrder(data.id);
+      this.logger.log(`[FROM DB _order`, _order);
+      price = _order?.price;
+    }
     const formatOrder = {
       ...data,
       // ordId: data.id,
@@ -955,7 +955,7 @@ class TibeBitConnector extends ConnectorBase {
       ordType: data.price === undefined ? "market" : "limit",
       ts: parseInt(SafeMath.mult(data.at, "1000")),
       at: parseInt(data.at),
-      // price,
+      price,
       // px: data.price,
       // side: data.kind === "bid" ? "buy" : "sell",
       // sz: Utils.removeZeroEnd(
