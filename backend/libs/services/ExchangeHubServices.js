@@ -80,6 +80,7 @@ class ExchangeHubService {
         exchange || SupportedExchange.OKEX,
         clOrdId
       );
+      this._lastSyncTime = Date.now();
       // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
       updateData = await this._processOuterTrades(SupportedExchange.OKEX);
 
