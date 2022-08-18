@@ -316,7 +316,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
 
-    if (memberId === -1) {
+    if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "getAccounts",
         payload: null,
@@ -577,7 +577,7 @@ class ExchangeHub extends Bot {
     this.logger.log(
       `---------- [${this.constructor.name}]  postPlaceOrder  ----------`
     );
-    if (memberId === -1) {
+    if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "member_id not found",
         code: Codes.MEMBER_ID_NOT_FOUND,
@@ -766,12 +766,12 @@ class ExchangeHub extends Bot {
     const instId = this._findInstId(query.market);
     const market = this._findMarket(instId);
     const source = this._findSource(instId);
-    if (memberId !== -1) {
+    if (!memberId || memberId !== -1) {
       let pendingOrders, orderHistories, orders;
       switch (source) {
         case SupportedExchange.OKEX:
           const pendingOrdersRes = await this.okexConnector.router(
-            "getOrderList",
+            "getOrders",
             {
               query: {
                 ...query,
@@ -820,7 +820,7 @@ class ExchangeHub extends Bot {
       }
     }
     return new ResponseFormat({
-      message: "getOrderList",
+      message: "getOrders",
       payload: null,
     });
   }
@@ -899,7 +899,7 @@ class ExchangeHub extends Bot {
   async getOrderHistory({ query, memberId }) {
     const instId = this._findInstId(query.market);
     const market = this._findMarket(instId);
-    if (memberId === -1) {
+    if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "getOrderHistory",
         payload: null,

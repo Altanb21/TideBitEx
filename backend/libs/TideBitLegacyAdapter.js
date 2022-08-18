@@ -69,18 +69,27 @@ class TideBitLegacyAdapter {
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
     console.log(`getMemberId ctx.session`, ctx.session);
-    if (!ctx.session.memberId) {
+    let peatioToken = Utils.peatioToken(ctx.header);
+    if (
+      !ctx.session.memberId ||
+      (ctx.session.memberId && peatioToken !== ctx.session.peatioToken)
+    ) {
       const parsedResult = await TideBitLegacyAdapter.parseMemberId(
         ctx.header,
         redisDomain
       );
       // ctx.session.set("token", parsedResult.peatioToken);
       // ctx.session.set("memberId", parsedResult.memberId);
-      ctx.session.token = parsedResult.peatioToken;
-      ctx.session.memberId = parsedResult.memberId;
       console.log(
         `-----*----- [TideBitLegacyAdapter][FROM API] parseMemberId peatioToken:[${parsedResult.peatioToken}] member:[${parsedResult.memberId}]-----*-----`
       );
+      if (parsedResult.memberId !== -1) {
+        ctx.session.token = parsedResult.peatioToken;
+        ctx.session.memberId = parsedResult.memberId;
+      } else {
+        delete ctx.session.token;
+        delete ctx.session.memberId;
+      }
     }
     return next();
   }
