@@ -133,21 +133,12 @@ class ExchangeHub extends Bot {
           updateAskAccount = data.updateAskAccount,
           updateBidAccount = data.updateBidAccount;
         if (updateOrder && memberId && instId) {
-          if (updateOrder.ordType === this.database.ORD_TYPE.LIMIT) {
-            this._emitUpdateOrder({
-              memberId,
-              instId,
-              market,
-              order: updateOrder,
-            });
-          } else {
-            this._emitUpdateMarketOrder({
-              memberId,
-              instId,
-              market,
-              order: updateOrder,
-            });
-          }
+          this._emitUpdateOrder({
+            memberId,
+            instId,
+            market,
+            order: updateOrder,
+          });
         }
         if (newTrade) {
           this._emitNewTrade({
@@ -1017,21 +1008,12 @@ class ExchangeHub extends Bot {
             at: parseInt(SafeMath.div(Date.now(), "1000")),
             ts: Date.now(),
           };
-          if (updateOrder.ordType === this.database.ORD_TYPE.LIMIT) {
-            this._emitUpdateOrder({
-              memberId,
-              instId: updateOrder.instId,
-              market: updateOrder.market,
-              order: updateOrder,
-            });
-          } else {
-            this._emitUpdateMarketOrder({
-              memberId,
-              instId: updateOrder.instId,
-              market: updateOrder.market,
-              order: updateOrder,
-            });
-          }
+          this._emitUpdateOrder({
+            memberId,
+            instId: updateOrder.instId,
+            market: updateOrder.market,
+            order: updateOrder,
+          });
           updateAccount = {
             balance: SafeMath.plus(account.balance, balance),
             locked: SafeMath.plus(account.locked, locked),
