@@ -1166,8 +1166,6 @@ class ExchangeHubService {
         // }
         if (okexRes.success) {
           outerTrades = okexRes.payload;
-        } else {
-          this.logger.error(`_getOuterTradesFromAPI`, okexRes);
         }
         break;
     }
@@ -1183,7 +1181,7 @@ class ExchangeHubService {
     let index, newRetry;
     if (clOrdId) {
       this.logger.log(`clOrdId`, clOrdId);
-      index = outerTrades.findIndex((trade) => trade.clOrdId === clOrdId);
+      index = outerTrades?.findIndex((trade) => trade.clOrdId === clOrdId);
       if (index === -1 && retry > 0) {
         newRetry = retry - 1;
         this.logger.log(`_getOuterTradesFromAPI recall newRetry`, newRetry);

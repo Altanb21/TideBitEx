@@ -291,6 +291,7 @@ class OkexConnector extends ConnectorBase {
         message: "tradeFills",
         payload: data,
       });
+      this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](data.length:${data.length})`);
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -1460,7 +1461,7 @@ class OkexConnector extends ConnectorBase {
         } else if (data.event === "subscribe") {
           // temp do nothing
         } else if (data.event === "error") {
-          this.logger.log(
+          this.logger.error(
             "!!! _okexWsPrivateEventListener on event error",
             data
           );
