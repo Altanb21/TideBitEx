@@ -624,6 +624,10 @@ class ExchangeHub extends Bot {
           });
           orderId = order[0];
           clOrdId = `${this.okexBrokerId}${memberId}m${orderId}o`.slice(0, 32);
+          // clOrdId = 377bd372412fSCDE60977m247674466o
+          // brokerId = 377bd372412fSCDE
+          // memberId = 60976
+          // orderId = 247674466
           this.logger.error(`clOrdId`, clOrdId);
           // * ~2.~ 3. 根據 order 單內容更新 account locked 與 balance
           // * ~3.~ 4. 新增 account version
@@ -649,10 +653,22 @@ class ExchangeHub extends Bot {
           await t.commit();
           //   * 6. 建立 OKX order 單
           response = await this.okexConnector.router("postPlaceOrder", {
-            clOrdId,
             memberId,
             orderId,
-            body,
+            body: {
+              instId: body.instId,
+              tdMode: body.tdMode,
+              // ccy: body.ccy,
+              clOrdId,
+              tag: this.brokerId,
+              side: body.kind === "bid" ? "buy" : "sell",
+              // posSide: body.posSide,
+              ordType: orderData.ordType,
+              sz: body.volume,
+              px: orderData.price,
+              // reduceOnly: body.reduceOnly,
+              // tgtCcy: body.tgtCcy,
+            },
           });
           this.logger.log("[RESPONSE]", response);
           updateOrder = {
@@ -1697,9 +1713,27 @@ class ExchangeHub extends Bot {
       throw new Error(`ask not found`);
     }
     const currency = market.code;
-    const locked =
+    const type =
       body.kind === "bid"
-        ? SafeMath.mult(body.price, body.volume)
+        ? this.database.TYPE.ORDER_BID
+        : this.database.TYPE.ORDER_ASK;
+    const ordType =
+      body.ordType === this.database.ORD_TYPE.MARKET
+        ? this.database.ORD_TYPE.IOC
+        : body.ordType;
+    const price =
+      ordType === this.database.ORD_TYPE.IOC
+        ? type === this.database.TYPE.ORDER_BID
+          ? body.price
+            ? (parseFloat(body.price) * 1.1).toString()
+            : null
+          : body.price
+          ? (parseFloat(body.price) * 0.9).toString()
+          : null
+        : body.price || null;
+    const locked =
+      type === this.database.TYPE.ORDER_BID
+        ? SafeMath.mult(price, body.volume)
         : body.volume;
     const balance = SafeMath.mult(locked, "-1"); // balanceDiff
     const createdAt = new Date().toISOString();
@@ -1707,24 +1741,18 @@ class ExchangeHub extends Bot {
       bid,
       ask,
       currency,
-      price: body.price || null,
+      price,
       volume: body.volume,
       originVolume: body.volume,
       state: this.database.ORDER_STATE.WAIT,
       doneAt: null,
-      type:
-        body.kind === "bid"
-          ? this.database.TYPE.ORDER_BID
-          : this.database.TYPE.ORDER_ASK,
+      type,
       memberId,
       createdAt,
       updatedAt: createdAt,
       sn: null,
       source: "Web",
-      ordType:
-        body.ordType === this.database.ORD_TYPE.MARKET
-          ? this.database.ORD_TYPE.IOC
-          : body.ordType,
+      ordType,
       locked,
       originLocked: locked,
       fundsReceived: 0,
