@@ -72,9 +72,13 @@ const MobileExchange = (props) => {
         )}
         {storeCtx.activePage === "assets" && (
           <div className="mobole-account__list">
-            {storeCtx.accounts.map((account) => (
-              <AccountMobileTile account={account} />
-            ))}
+            {storeCtx.accounts ? (
+              Object.values(storeCtx.accounts).map((account) => (
+                <AccountMobileTile account={account} />
+              ))
+            ) : (
+              <div></div>
+            )}
           </div>
         )}
         <div className="section__block"></div>

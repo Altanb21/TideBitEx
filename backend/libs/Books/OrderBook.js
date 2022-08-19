@@ -70,6 +70,7 @@ class OrderBook extends BookBase {
   }
 
   updateByDifference(memberId, instId, difference) {
+    this.logger.log(`[${this.constructor.name}] updateByDifference difference`, difference);
     try {
       if (!this._difference[memberId]) this._difference[memberId] = {};
       if (!this._snapshot[memberId]) this._snapshot[memberId] = {};

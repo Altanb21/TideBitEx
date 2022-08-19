@@ -33,6 +33,7 @@ class DBOperator {
   ORD_TYPE = {
     LIMIT: "limit",
     MARKET: "market",
+    IOC: "ioc",
   };
   MODIFIABLE_TYPE = {
     ORDER: "Order",
@@ -116,8 +117,14 @@ class DBOperator {
     });
   }
 
-  async getDoneOrders({ quoteCcy, baseCcy, memberId }) {
-    return this.database.getDoneOrders({ quoteCcy, baseCcy, memberId });
+  async getDoneOrders({ quoteCcy, baseCcy, memberId, state, type }) {
+    return this.database.getDoneOrders({
+      quoteCcy,
+      baseCcy,
+      memberId,
+      state,
+      type,
+    });
   }
 
   async getDoneOrder(orderId) {

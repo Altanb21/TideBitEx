@@ -176,7 +176,7 @@ class mysql {
 	        orders.bid,
 	        orders.ask,
 	        orders.currency,
-	        vouchers.price AS price,
+	        (SUM(vouchers.price * vouchers.volume) / orders.origin_volume) AS price,
 	        orders.volume,
 	        orders.origin_volume,
 	        orders.state,
@@ -196,13 +196,9 @@ class mysql {
           orders
 	        JOIN vouchers ON orders.id = vouchers.order_id
       WHERE
-          orders.id = ?;`
+          orders.id = ?;`;
     try {
-      this.logger.log(
-        "getDoneOrder",
-        query,
-        `[${orderId}]`
-      );
+      this.logger.log("getDoneOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query({
         query,
         values: [orderId],
@@ -214,7 +210,7 @@ class mysql {
     }
   }
 
-  async getDoneOrders({ quoteCcy, baseCcy, memberId }) {
+  async getDoneOrders({ quoteCcy, baseCcy, memberId, state, type }) {
     // const query =
     //   "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?";
     const query = `
@@ -223,7 +219,7 @@ class mysql {
 	        orders.bid,
 	        orders.ask,
 	        orders.currency,
-	        vouchers.price AS price,
+	        (SUM(vouchers.price * vouchers.volume) / orders.origin_volume) AS price,
 	        orders.volume,
 	        orders.origin_volume,
 	        orders.state,
@@ -245,16 +241,21 @@ class mysql {
       WHERE
           orders.member_id = ?
 	        AND orders.bid = ?
-	        AND orders.ask = ?;`
+	        AND orders.ask = ?
+          AND orders.state = ?
+          AND orders.type = ?
+          AND orders.ord_type <> 'limit'
+      GROUP BY
+	        orders.id;`;
     try {
       this.logger.log(
         "getDoneOrders",
         query,
-        `[${memberId}, ${quoteCcy}, ${baseCcy}]`
+        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
       );
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy],
+        values: [memberId, quoteCcy, baseCcy, state, type],
       });
       return orders;
     } catch (error) {
