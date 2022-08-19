@@ -724,7 +724,7 @@ class Utils {
     return token;
   }
 
-  static peatioToken(header) {
+  static peatioSession(header) {
     if (!header.cookie || typeof header.cookie !== "string") return undefined;
     const cookies = header.cookie.split(";");
     const data = cookies.find((v) => {
@@ -764,28 +764,53 @@ class Utils {
     return memberId;
   }
 
-  static async getMemberIdFromRedis(redisDomain, peatioSession) {
+  static async getMemberIdFromRedis({
+    redisDomain,
+    peatioSession,
+    retries = 3,
+    backoff = 300,
+  }) {
+    let requestRetry, value, memberId, error;
     const client = redis.createClient({
       url: redisDomain,
     });
-    client.on("error", (err) => console.error("Redis Client Error", err));
-
-    try {
-      await client.connect(); // 會因為連線不到卡住
-      const value = await client.get(
-        redis.commandOptions({ returnBuffers: true }),
-        peatioSession
-      );
-      await client.quit();
-      const memberId = Utils.decodeMemberId(value);
-      return memberId;
-    } catch (error) {
+    client.on("error", (e) => {
+      error = e;
+      requestRetry = true;
+      console.error("Redis Client Error", e);
+    });
+    if (!requestRetry) {
       try {
+        await client.connect(); // 會因為連線不到卡住
+        value = await client.get(
+          redis.commandOptions({ returnBuffers: true }),
+          peatioSession
+        );
         await client.quit();
-        throw error;
-      } catch (_error) {
-        throw error;
+        memberId = Utils.decodeMemberId(value);
+        return memberId;
+      } catch (e) {
+        error = e;
+        requestRetry = true;
+        try {
+          await client.quit();
+        } catch (_error) {}
       }
+    }
+    if (!requestRetry && memberId > -1) {
+      return memberId;
+    } else if (requestRetry && retries > 0) {
+      console.log("getMemberIdFromRedis retries", retries);
+      setTimeout(() => {
+        return Utils.getMemberIdFromRedis({
+          redisDomain,
+          peatioSession,
+          retries: retries - 1,
+          backoff: backoff * 2,
+        });
+      }, backoff);
+    } else {
+      return Promise.reject(error);
     }
   }
 
