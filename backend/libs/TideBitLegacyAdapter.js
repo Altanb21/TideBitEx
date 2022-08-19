@@ -1,7 +1,6 @@
 const SafeMath = require("./SafeMath");
 const Utils = require("./Utils");
 
-const tokens = {};
 const users = {};
 let userGCInterval = 86400 * 1000;
 
@@ -16,36 +15,14 @@ class TideBitLegacyAdapter {
   }
 
   static async parseMemberId(header, redisDomain) {
-    // if (Math.random() < 0.01) {
-    //   TideBitLegacyAdapter.usersGC();
-    // }
     let peatioSession,
       XSRFToken,
-      // userId,
-      // memberId = -1;
-      // userId = header.userid;
       memberId = header?.memberId > -1 ? header.memberId : -1;
-    // console.log(`[TideBitLegacyAdapter] parseMemberId header`, header);
-    // if (userId) {
-    //   if (tokens[userId]) {
-    //     peatioSession = tokens[userId].peatioSession;
-    //     XSRFToken = Utils.XSRFToken(header) ?? tokens[userId].XSRFToken; // ++TODO XSRFToken 會過期， ws 拿不到 XSRFToken
-    //     // console.log(
-    //     //   `[TideBitLegacyAdapter] parseMemberId tokens[userId:${userId}]`,
-    //     //   tokens[userId]
-    //     // );
-    //   } else {
+
     peatioSession = Utils.peatioSession(header);
     XSRFToken = Utils.XSRFToken(header);
-    // tokens[userId] = {};
-    // tokens[userId]["peatioSession"] = peatioSession;
-    // tokens[userId]["XSRFToken"] = XSRFToken;
-    // }
-    // }
+
     if (peatioSession && memberId === -1) {
-      //   if (users[peatioSession]) {
-      //     memberId = users[peatioSession].memberId;
-      //   } else {
       try {
         console.log(
           `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
@@ -55,15 +32,12 @@ class TideBitLegacyAdapter {
           redisDomain,
           peatioSession,
         });
-        // users[peatioSession] = { memberId, ts: Date.now() };
       } catch (error) {
         console.error(
           `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
           error
         );
-        // users[peatioSession] = { memberId, ts: Date.now() };
       }
-      //   }
     }
     return { peatioSession, memberId, XSRFToken };
   }

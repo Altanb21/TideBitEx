@@ -345,9 +345,6 @@ class Middleman {
       this.isLogin = true;
       this.memberId = options.memberId;
     }
-    await this._getTickers();
-    await this._getAccounts(market);
-    await this.selectMarket(market);
     if (this.isLogin) {
       try {
         const CSRFToken = await this.communicator.CSRFTokenRenew();
@@ -356,12 +353,16 @@ class Middleman {
         this.tbWebSocket.setCurrentUser(market, {
           CSRFToken,
           memberId: this.memberId,
+          // peatioSession: options.peatioSession
           // userId,
         });
       } catch (error) {
         console.error(`tbWebSocket error`, error);
       }
     }
+    await this._getTickers();
+    await this._getAccounts(market);
+    await this.selectMarket(market);
   }
 
   async sync() {

@@ -1313,7 +1313,7 @@ class ExchangeHub extends Bot {
     }
   }
 
-  async getOptions({ query, memberId }) {
+  async getOptions({ query, memberId, token }) {
     this.logger.debug(`*********** [${this.name}] getOptions ************`);
     this.logger.debug(
       `[${this.constructor.name}] getOptions`,
@@ -1325,6 +1325,7 @@ class ExchangeHub extends Bot {
         payload: {
           wsUrl: this.config.websocket.domain,
           memberId: memberId,
+          // peatioSession: token,
         },
       })
     );

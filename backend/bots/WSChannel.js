@@ -167,7 +167,7 @@ class WSChannel extends Bot {
   // ++ CURRENT_USER UNSAVED
   async _onOpStatusUpdate(header, ws, args, redis) {
     const findClient = this._client[ws.id];
-    let { memberId, XSRFToken, peatioToken } = await parseMemberId(
+    let { memberId, XSRFToken, peatioSession } = await parseMemberId(
       {
         ...header,
         memberId: args.memberId,
@@ -176,7 +176,7 @@ class WSChannel extends Bot {
       redis
     );
     console.log(
-      `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioToken:[${peatioToken}] memberId:[${memberId}] -----&-----`
+      `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
     );
     if (memberId !== -1 && args.CSRFToken) {
       findClient.isPrivate = true;
@@ -196,7 +196,7 @@ class WSChannel extends Bot {
         headers: {
           cookie: `XSRF-TOKEN=${decodeURIComponent(
             XSRFToken
-          )};_peatio_session=${peatioToken}`,
+          )};_peatio_session=${peatioSession}`,
           "content-type": "application/json",
           "x-csrf-token": args.CSRFToken,
         },
