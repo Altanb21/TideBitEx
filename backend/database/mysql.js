@@ -176,7 +176,7 @@ class mysql {
 	        orders.bid,
 	        orders.ask,
 	        orders.currency,
-	        vouchers.price AS price,
+	        (SUM(vouchers.price * vouchers.volume) / orders.origin_volume) AS price,
 	        orders.volume,
 	        orders.origin_volume,
 	        orders.state,

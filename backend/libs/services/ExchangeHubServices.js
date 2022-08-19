@@ -717,6 +717,7 @@ class ExchangeHubService {
       state = "wait",
       state_text = "Waiting",
       filled = false,
+      price,
       volume,
       locked,
       updateAt,
@@ -736,10 +737,11 @@ class ExchangeHubService {
         _order?.member_id.toString() === memberId.toString() &&
         _order?.state === this.database.ORDER_STATE.WAIT
       ) {
+        price = Utils.removeZeroEnd(_order.price)
         value = SafeMath.mult(trade.fillPx, trade.fillSz);
         volume = SafeMath.minus(_order.volume, trade.fillSz);
         locked =
-          trade.side === "buy" ? SafeMath.mult(_order.price, volume) : volume;
+          trade.side === "buy" ? SafeMath.mult(price, volume) : volume;
         doneAt = `"${new Date(parseInt(trade.ts))
           .toISOString()
           .slice(0, 19)
@@ -754,6 +756,16 @@ class ExchangeHubService {
             : SafeMath.plus(_order.funds_received, value); //++ TODO to be verify: 使用 TideBit ticker 測試)
         tradesCount = SafeMath.plus(_order.trades_count, "1");
         if (SafeMath.eq(volume, "0")) {
+          let res = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: trade.instId,
+              ordId: trade.ordId,
+            },
+          });
+          if (res.success) {
+            _orderDetails = res.payload;
+            price = _orderDetails.avgPx;
+          }
           stateCode = this.database.ORDER_STATE.DONE;
           state = "done";
           state_text = "Done";
@@ -820,7 +832,7 @@ class ExchangeHubService {
           ts: parseInt(trade.ts),
           market: market.id,
           kind: trade.side === "buy" ? "bid" : "ask",
-          price: Utils.removeZeroEnd(_order.price),
+          price,
           volume,
           origin_volume: Utils.removeZeroEnd(_order.origin_volume),
           state_text,
