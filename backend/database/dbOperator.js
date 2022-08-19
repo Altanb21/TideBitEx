@@ -123,7 +123,7 @@ class DBOperator {
       baseCcy,
       memberId,
       state,
-      type,
+      // type,
     });
   }
 

@@ -243,7 +243,6 @@ class mysql {
 	        AND orders.bid = ?
 	        AND orders.ask = ?
           AND orders.state = ?
-          AND orders.type = ?
           AND orders.ord_type <> 'limit'
       GROUP BY
 	        orders.id;`;
@@ -251,11 +250,11 @@ class mysql {
       this.logger.log(
         "getDoneOrders",
         query,
-        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
+        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}]`
       );
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy, state, type],
+        values: [memberId, quoteCcy, baseCcy, state],
       });
       return orders;
     } catch (error) {

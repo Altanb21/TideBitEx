@@ -220,13 +220,13 @@ class ExchangeHub extends Bot {
       baseCcy: ask,
       memberId: query.memberId,
       state: this.database.ORDER_STATE.DONE,
-      type: this.database.TYPE.ORDER_BID,
+      // type: this.database.TYPE.ORDER_BID,
     });
     _orders = _orders
       .filter(
         (_order) =>
           !(
-            _order.type === this.database.TYPE.ORDER_BID &&
+            // _order.type === this.database.TYPE.ORDER_BID &&
             _order.state === this.database.ORDER_STATE.DONE &&
             _order.ord_type !== this.database.ORD_TYPE.LIMIT
           )
@@ -265,16 +265,17 @@ class ExchangeHub extends Bot {
         ordType: _order.ord_type,
         filled: _order.volume !== _order.origin_volume,
       };
-      if (
-        order.state_code === this.database.ORDER_STATE.DONE &&
-        order.ordType !== this.database.ORD_TYPE.LIMIT &&
-        _order.type === this.database.TYPE.ORDER_ASK
-      ) {
-        orders.push({
-          ...order,
-          price: SafeMath.div(_order.funds_received, _order.origin_volume),
-        });
-      } else if (
+      // if (
+      //   order.state_code === this.database.ORDER_STATE.DONE &&
+      //   order.ordType !== this.database.ORD_TYPE.LIMIT &&
+      //   _order.type === this.database.TYPE.ORDER_ASK
+      // ) {
+      //   orders.push({
+      //     ...order,
+      //     price: SafeMath.div(_order.funds_received, _order.origin_volume),
+      //   });
+      // } else
+       if (
         (order.state_code === this.database.ORDER_STATE.WAIT &&
           order.ordType === this.database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
         order.state_code === this.database.ORDER_STATE.CANCEL || // canceled 單
