@@ -178,31 +178,34 @@ const TradeForm = (props) => {
   };
 
   useEffect(() => {
-    if (
-      (storeCtx.selectedTicker && !selectedTicker) ||
-      (storeCtx.selectedTicker &&
-        storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
-      quoteCcyAvailable !==
-        storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
-          ?.balance ||
-      baseCcyAvailable !==
-        storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
-          ?.balance
-    ) {
-      let quoteCcyAccount =
-        storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
+    if (storeCtx.accounts) {
+      if (
+        (storeCtx.selectedTicker && !selectedTicker) ||
+        (storeCtx.selectedTicker &&
+          storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
+        quoteCcyAvailable !==
+          storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
+            ?.balance ||
+        baseCcyAvailable !==
+          storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
+            ?.balance
+      ) {
+        // setMemberId(storeCtx.memberId);
+        let quoteCcyAccount =
+          storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
 
-      if (quoteCcyAccount) {
-        setQuoteCcyAvailable(quoteCcyAccount?.balance);
+        if (quoteCcyAccount) {
+          setQuoteCcyAvailable(quoteCcyAccount?.balance);
+        }
+        let baseCcyAccount =
+          storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
+        if (baseCcyAccount) {
+          setBaseCcyAvailable(baseCcyAccount?.balance);
+        }
+        setSelectedTicker(storeCtx.selectedTicker);
+        if (price) formatPrice(price);
+        if (volume) formatSize(volume);
       }
-      let baseCcyAccount =
-        storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
-      if (baseCcyAccount) {
-        setBaseCcyAvailable(baseCcyAccount?.balance);
-      }
-      setSelectedTicker(storeCtx.selectedTicker);
-      if (price) formatPrice(price);
-      if (volume) formatSize(volume);
     }
   }, [
     storeCtx.selectedTicker,
