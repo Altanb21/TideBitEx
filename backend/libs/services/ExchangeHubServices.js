@@ -88,7 +88,6 @@ class ExchangeHubService {
       clearTimeout(this.timer);
       this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
     }
-    this.logger.log(`upateData`, updateData);
     this.logger.log(
       `------------- [${this.constructor.name}] sync [END] -------------`
     );

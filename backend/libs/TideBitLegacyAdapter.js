@@ -24,7 +24,7 @@ class TideBitLegacyAdapter {
       // userId,
       // memberId = -1;
       // userId = header.userid;
-      memberId = header?.memberId !== undefined ? header.memberId : -1;
+      memberId = header?.memberId > -1 ? header.memberId : -1;
     // console.log(`[TideBitLegacyAdapter] parseMemberId header`, header);
     // if (userId) {
     //   if (tokens[userId]) {
@@ -42,29 +42,29 @@ class TideBitLegacyAdapter {
     // tokens[userId]["XSRFToken"] = XSRFToken;
     // }
     // }
-    // if (peatioSession && memberId === -1) {
-    //   if (users[peatioSession]) {
-    //     memberId = users[peatioSession].memberId;
-    //   } else {
-    try {
-      console.log(
-        `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
-        redisDomain
-      );
-      memberId = await Utils.getMemberIdFromRedis({
-        redisDomain,
-        peatioSession,
-      });
-      // users[peatioSession] = { memberId, ts: Date.now() };
-    } catch (error) {
-      console.error(
-        `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
-        error
-      );
-      // users[peatioSession] = { memberId, ts: Date.now() };
+    if (peatioSession && memberId === -1) {
+      //   if (users[peatioSession]) {
+      //     memberId = users[peatioSession].memberId;
+      //   } else {
+      try {
+        console.log(
+          `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
+          redisDomain
+        );
+        memberId = await Utils.getMemberIdFromRedis({
+          redisDomain,
+          peatioSession,
+        });
+        // users[peatioSession] = { memberId, ts: Date.now() };
+      } catch (error) {
+        console.error(
+          `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
+          error
+        );
+        // users[peatioSession] = { memberId, ts: Date.now() };
+      }
+      //   }
     }
-    //   }
-    // }
     return { peatioSession, memberId, XSRFToken };
   }
 

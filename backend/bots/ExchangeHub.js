@@ -107,7 +107,7 @@ class ExchangeHub extends Bot {
           systemMemberId: this.config.peatio.systemMemberId,
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
-          emitUpdateData: this.emitUpdateData,
+          emitUpdateData: () => this.emitUpdateData(),
           logger,
         });
         return this;
@@ -123,6 +123,7 @@ class ExchangeHub extends Bot {
   }
 
   emitUpdateData(updateData) {
+    this.logger.log(`upateData`, updateData);
     if (updateData) {
       for (const data of updateData) {
         const memberId = data.memberId,
@@ -1799,6 +1800,7 @@ class ExchangeHub extends Bot {
    * @param {Object} order
    */
   _emitUpdateOrder({ memberId, instId, market, order }) {
+    this.logger.log(`_emitUpdateOrder difference`, order);
     this.orderBook.updateByDifference(memberId, instId, {
       add: [order],
     });
@@ -1806,7 +1808,6 @@ class ExchangeHub extends Bot {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    this.logger.log(`difference`, order);
     this.logger.log(
       `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] _emitUpdateOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
       this.orderBook.getDifference(memberId, instId)
