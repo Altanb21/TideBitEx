@@ -99,7 +99,7 @@ class TideBitLegacyAdapter {
     }
     if (
       ctx.url === "/signout" ||
-      (ctx.url === "/signin" && peatioSession !== ctx.session.token)
+      (ctx.url === "/signin" && peatioSession !== ctx.session.token) // -- redirect
     ) {
       console.log(
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`

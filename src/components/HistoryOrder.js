@@ -88,7 +88,7 @@ export const OrderTile = (props) => {
 };
 
 const AccountTile = (props) => {
-  return (
+  return props.acccount ? (
     <ul className="d-flex justify-content-between market-order-item market-balance">
       {/* <li>{dateFormatter(parseInt(props.account.uTime)).text}</li> */}
       <li>{props.account.currency || "--"}</li>
@@ -100,6 +100,8 @@ const AccountTile = (props) => {
       {/* -- TODO: check api return object */}
       {/* <li>{props.account.interest || "--"}</li> */}
     </ul>
+  ) : (
+    <div></div>
   );
 };
 
