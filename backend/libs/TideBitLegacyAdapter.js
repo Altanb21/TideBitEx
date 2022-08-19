@@ -1,7 +1,6 @@
 const SafeMath = require("./SafeMath");
 const Utils = require("./Utils");
 
-const tokens = {};
 const users = {};
 let userGCInterval = 86400 * 1000;
 
@@ -15,74 +14,75 @@ class TideBitLegacyAdapter {
     });
   }
 
-  static async parseMemberId(header, radisDomain) {
-    if (Math.random() < 0.01) {
-      TideBitLegacyAdapter.usersGC();
-    }
-    let peatioToken,
+  static async parseMemberId(header, redisDomain) {
+    let peatioSession,
       XSRFToken,
-      // userId,
-      // memberId = -1;
-      // userId = header.userid;
-      memberId = header?.memberId !== undefined ? header.memberId : -1;
-    // console.log(`[TideBitLegacyAdapter] parseMemberId header`, header);
-    // if (userId) {
-    //   if (tokens[userId]) {
-    //     peatioToken = tokens[userId].peatioToken;
-    //     XSRFToken = Utils.XSRFToken(header) ?? tokens[userId].XSRFToken; // ++TODO XSRFToken 會過期， ws 拿不到 XSRFToken
-    //     // console.log(
-    //     //   `[TideBitLegacyAdapter] parseMemberId tokens[userId:${userId}]`,
-    //     //   tokens[userId]
-    //     // );
-    //   } else {
-    peatioToken = Utils.peatioToken(header);
+      memberId = header?.memberId > -1 ? header.memberId : -1;
+
+    peatioSession = Utils.peatioSession(header);
     XSRFToken = Utils.XSRFToken(header);
-    // tokens[userId] = {};
-    // tokens[userId]["peatioToken"] = peatioToken;
-    // tokens[userId]["XSRFToken"] = XSRFToken;
-    // }
-    // }
-    if (peatioToken && memberId === -1) {
-      if (users[peatioToken]) {
-        memberId = users[peatioToken].memberId;
-      } else {
-        try {
-          console.log(
-            `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
-            radisDomain
-          );
-          memberId = await Utils.getMemberIdFromRedis(radisDomain, peatioToken);
-          users[peatioToken] = { memberId, ts: Date.now() };
-        } catch (error) {
-          console.error(
-            `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
-            error
-          );
-          // users[peatioToken] = { memberId, ts: Date.now() };
-        }
+
+    if (peatioSession && memberId === -1) {
+      try {
+        console.log(
+          `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
+          redisDomain
+        );
+        memberId = await Utils.getMemberIdFromRedis({
+          redisDomain,
+          peatioSession,
+        });
+      } catch (error) {
+        console.error(
+          `[TideBitLegacyAdapter] parseMemberId getMemberIdFromRedis error`,
+          error
+        );
       }
     }
-    console.log(
-      `[TideBitLegacyAdapter] parseMemberId users[${peatioToken}]`,
-      users[peatioToken],
-      `memberId:${memberId}`
-    );
-    return { peatioToken, memberId, XSRFToken };
+    return { peatioSession, memberId, XSRFToken };
   }
 
   // ++ middleware
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
-    // console.log(
-    //   `-----*----- [TideBitLegacyAdapter][FROM API] getMemberId userId -----*-----`,
-    //   userId
-    // );
-    const parsedResult = await TideBitLegacyAdapter.parseMemberId(
-      ctx.header,
-      redisDomain
-    );
-    ctx.token = parsedResult.peatioToken;
-    ctx.memberId = parsedResult.memberId;
+    let peatioSession = Utils.peatioSession(ctx.header);
+    console.log(`getMemberId ctx.url`, ctx.url);
+    // console.log(`getMemberId ctx`, ctx);
+    // if (
+    //   ctx.url === "/auth/identity/callback" ||
+    //   ctx.url === "/auth/identity/register"
+    // ) {
+    if (
+      (ctx.url === "/accounts" || ctx.url === "/settings") &&
+      peatioSession !== ctx.session.token
+    ) {
+      console.log(
+        `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
+      );
+      const parsedResult = await TideBitLegacyAdapter.parseMemberId(
+        ctx.header,
+        redisDomain
+      );
+      console.log(
+        `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
+      );
+      if (parsedResult.memberId !== -1) {
+        ctx.session.token = parsedResult.peatioSession;
+        ctx.session.memberId = parsedResult.memberId;
+      }
+    }
+    if (
+      ctx.url === "/signout" ||
+      (ctx.url === "/signin" && peatioSession !== ctx.session.token) // -- redirect
+    ) {
+      console.log(
+        `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
+      );
+      delete ctx.session.token;
+      delete ctx.session.memberId;
+    }
+    // rediret
+    console.log(`getMemberId ctx.session`, ctx.session);
     return next();
   }
 

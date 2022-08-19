@@ -9,7 +9,7 @@ const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
 const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
-const { getBar } = require("../Utils");
+const { getBar, convertExponentialToDecimal } = require("../Utils");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {
@@ -336,81 +336,108 @@ class TibeBitConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   async getDepthBooks({ query }) {
     const { instId, market, lotSz } = query;
-    if (!this.fetchedBook[instId]) {
-      try {
-        const tbBooksRes = await axios.get(
-          `${this.peatio}/api/v2/order_book?market=${market}`
-        );
-        if (!tbBooksRes || !tbBooksRes.data) {
-          return new ResponseFormat({
-            message: "Something went wrong",
-            code: Codes.API_UNKNOWN_ERROR,
-          });
-        }
-        const tbBooks = tbBooksRes.data;
-        const asks = [];
-        const bids = [];
-        // this.logger.log(`tbBooks market`, market);
-        tbBooks.asks.forEach((ask) => {
-          if (
-            ask.market === market &&
-            ask.ord_type === "limit" &&
-            ask.state === "wait"
-          ) {
-            let index;
-            index = asks.findIndex((_ask) =>
-              SafeMath.eq(_ask[0], ask.price.toString())
-            );
-            if (index !== -1) {
-              let updateAsk = asks[index];
-              updateAsk[1] = SafeMath.plus(updateAsk[1], ask.remaining_volume);
-              asks[index] = updateAsk;
-            } else {
-              let newAsk = [ask.price.toString(), ask.remaining_volume]; // [價格, volume]
-              asks.push(newAsk);
-            }
-          }
-        });
-        tbBooks.bids.forEach((bid) => {
-          if (
-            bid.market === market &&
-            bid.ord_type === "limit" &&
-            bid.state === "wait"
-          ) {
-            let index;
-            index = bids.findIndex((_bid) =>
-              SafeMath.eq(_bid[0], bid.price.toString())
-            );
-            if (index !== -1) {
-              let updateBid = bids[index];
-              updateBid[1] = SafeMath.plus(updateBid[1], bid.remaining_volume);
-              bids[index] = updateBid;
-            } else {
-              let newBid = [bid.price.toString(), bid.remaining_volume]; // [價格, volume]
-              bids.push(newBid);
-            }
-          }
-        });
-        const books = { asks, bids, market: market };
-
-        // this.logger.log(`[FROM TideBit] Response books`, books);
-        // this.logger.log(
-        //   `---------- [${this.constructor.name}]  DepthBook market: ${market} [END] ----------`
-        // );
-        this.depthBook.updateAll(instId, lotSz, books);
-      } catch (error) {
-        this.logger.error(error);
-        const message = error.message;
+    // if (!this.fetchedBook[instId]) {
+    try {
+      const tbBooksRes = await axios.get(
+        `${this.peatio}/api/v2/order_book?market=${market}`
+      );
+      if (!tbBooksRes || !tbBooksRes.data) {
         return new ResponseFormat({
-          message,
+          message: "Something went wrong",
           code: Codes.API_UNKNOWN_ERROR,
         });
       }
+      const tbBooks = tbBooksRes.data;
+      let total,
+        sumAskAmount = "0",
+        sumBidAmount = "0",
+        asks = [],
+        bids = [];
+      // this.logger.log(`tbBooks market`, market);
+      tbBooks.asks.forEach((ask) => {
+        if (
+          ask.market === market &&
+          ask.ord_type === "limit" &&
+          ask.state === "wait"
+        ) {
+          let index;
+          index = asks.findIndex((_ask) => SafeMath.eq(_ask[0], ask.price));
+          if (index !== -1) {
+            let updateAsk = asks[index];
+            updateAsk[1] = SafeMath.plus(updateAsk[1], ask.remaining_volume);
+            asks[index] = updateAsk;
+          } else {
+            let newAsk = [
+              convertExponentialToDecimal(ask.price),
+              convertExponentialToDecimal(ask.remaining_volume),
+            ]; // [價格, volume]
+            asks.push(newAsk);
+          }
+        }
+      });
+      tbBooks.bids.forEach((bid) => {
+        if (
+          bid.market === market &&
+          bid.ord_type === "limit" &&
+          bid.state === "wait"
+        ) {
+          let index;
+          index = bids.findIndex((_bid) => SafeMath.eq(_bid[0], bid.price));
+          if (index !== -1) {
+            let updateBid = bids[index];
+            updateBid[1] = SafeMath.plus(updateBid[1], bid.remaining_volume);
+            bids[index] = updateBid;
+          } else {
+            let newBid = [
+              convertExponentialToDecimal(bid.price),
+              convertExponentialToDecimal(bid.remaining_volume),
+            ]; // [價格, volume]
+            bids.push(newBid);
+          }
+        }
+      });
+      asks = asks
+        .filter((v) => SafeMath.gte(v[1], lotSz))
+        .sort((a, b) => +a[0] - +b[0])
+        .slice(0, 50)
+        .map((v) => {
+          sumAskAmount = SafeMath.plus(v[1], sumAskAmount);
+          return [v[0], v[1], sumAskAmount];
+        });
+      bids = bids
+        .filter((v) => SafeMath.gte(v[1], lotSz))
+        .sort((a, b) => +b[0] - +a[0])
+        .slice(0, 50)
+        .map((v) => {
+          sumBidAmount = SafeMath.plus(v[1], sumBidAmount);
+          return [v[0], v[1], sumBidAmount];
+        });
+      total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
+      asks = asks.map((v) => [...v, SafeMath.div(v[2], total)]);
+      bids = bids.map((v) => [...v, SafeMath.div(v[2], total)]);
+      const books = { asks, bids, market: market };
+      // this.logger.log(`[FROM TideBit] Response books`, books);
+      // this.logger.log(
+      //   `---------- [${this.constructor.name}]  DepthBook market: ${market} [END] ----------`
+      // );
+      // this.depthBook.updateAll(instId, lotSz, books);
+      return new ResponseFormat({
+        message: "DepthBook",
+        payload: books,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      const message = error.message;
+      return new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
     }
-    return new ResponseFormat({
-      message: "DepthBook",
-      payload: this.depthBook.getSnapshot(instId),
-    });
+    // }
+    // return new ResponseFormat({
+    //   message: "DepthBook",
+    //   payload: this.depthBook.getSnapshot(instId),
+    // });
   }
 
   // ++ TODO: verify function works properly
@@ -427,7 +454,7 @@ class TibeBitConnector extends ConnectorBase {
     //   updateBooks
     // );
     // WORKAROUND
-    if (!updateBooks.asks.length > 0 && !updateBooks.bids.length > 0) return;
+    // if (!updateBooks.asks.length > 0 && !updateBooks.bids.length > 0) return;
     // WORKAROUND
     /**
     {
@@ -891,7 +918,7 @@ class TibeBitConnector extends ConnectorBase {
     });
   }
 
-  _updateOrder(memberId, data) {
+  async _updateOrder(memberId, data) {
     /**
     {
         id: 86, 
@@ -912,9 +939,14 @@ class TibeBitConnector extends ConnectorBase {
     this.logger.log(
       `---------- [${this.constructor.name}]  _updateOrder [START] ----------`
     );
-    this.logger.log(`[FROM TideBit: ${memberId}] orderData`, data);
+    this.logger.log(`[FROM TideBit memberId:${memberId}] orderData`, data);
     let instId = this._findInstId(data.market);
-
+    let price = data.price;
+    if (!price) {
+      let _order = await this.database.getDoneOrder(data.id);
+      this.logger.log(`[FROM DB _order`, _order);
+      price = _order?.price;
+    }
     const formatOrder = {
       ...data,
       // ordId: data.id,
@@ -923,6 +955,7 @@ class TibeBitConnector extends ConnectorBase {
       ordType: data.price === undefined ? "market" : "limit",
       ts: parseInt(SafeMath.mult(data.at, "1000")),
       at: parseInt(data.at),
+      price,
       // px: data.price,
       // side: data.kind === "bid" ? "buy" : "sell",
       // sz: Utils.removeZeroEnd(
@@ -1218,7 +1251,7 @@ class TibeBitConnector extends ConnectorBase {
           },
         }
       );
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:subscribe",
           data: {
@@ -1243,7 +1276,7 @@ class TibeBitConnector extends ConnectorBase {
     try {
       // client["channel"]?.unbind();
       // client["pusher"]?.unsubscribe(`private-${client["sn"]}`);
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:unsubscribe",
           data: {
@@ -1274,7 +1307,7 @@ class TibeBitConnector extends ConnectorBase {
         //     this._updateTrades(market, data);
         //   }
         // );
-        this.websocket.ws.send(
+        this.websocket.send(
           JSON.stringify({
             event: "pusher:subscribe",
             data: {
@@ -1322,7 +1355,7 @@ class TibeBitConnector extends ConnectorBase {
       ) {
         // this.market_channel[`market-${market}-global`]["channel"]?.unbind();
         // this.public_pusher?.unsubscribe(`market-${market}-global`);
-        this.websocket.ws.send(
+        this.websocket.send(
           JSON.stringify({
             event: "pusher:unsubscribe",
             data: {
@@ -1352,7 +1385,7 @@ class TibeBitConnector extends ConnectorBase {
     try {
       // this.global_channel = this.public_pusher.subscribe("market-global");
       // this.global_channel.bind("tickers", (data) => this._updateTickers(data));
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:subscribe",
           data: {
@@ -1371,7 +1404,7 @@ class TibeBitConnector extends ConnectorBase {
     try {
       // this.global_channel?.unbind();
       // this.public_pusher?.unsubscribe("market-global");
-      this.websocket.ws.send(
+      this.websocket.send(
         JSON.stringify({
           event: "pusher:unsubscribe",
           data: {

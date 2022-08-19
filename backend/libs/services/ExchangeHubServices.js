@@ -17,6 +17,7 @@ class ExchangeHubService {
     systemMemberId,
     okexConnector,
     tidebitMarkets,
+    emitUpdateData,
     logger,
   }) {
     this.database = database;
@@ -26,6 +27,7 @@ class ExchangeHubService {
     this.okexConnector = okexConnector;
     this.logger = logger;
     this.name = "ExchangeHubService";
+    this.emitUpdateData = emitUpdateData;
     return this;
   }
 
@@ -58,13 +60,13 @@ class ExchangeHubService {
   //   await this.sync();
   // }
 
-  async sync(exchange, force = false, data) {
+  async sync(exchange, data, force = false) {
     this.logger.log(
       `------------- [${this.constructor.name}] sync -------------`
     );
     this.logger.log(`data`, data);
     let time = Date.now(),
-      upateData,
+      updateData,
       result,
       clOrdId = data?.clOrdId;
     // 1. 定期（10mins）執行工作
@@ -78,22 +80,18 @@ class ExchangeHubService {
         exchange || SupportedExchange.OKEX,
         clOrdId
       );
-      // if (result) {
       this._lastSyncTime = Date.now();
       // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-      upateData = await this._processOuterTrades(SupportedExchange.OKEX);
-      // } else {
-      //   // ++ TODO
-      // }
-      clearTimeout(this.timer);
+      updateData = await this._processOuterTrades(SupportedExchange.OKEX);
+
       // 4. 休息
+      clearTimeout(this.timer);
       this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
     }
-    this.logger.log(`upateData`, upateData);
     this.logger.log(
       `------------- [${this.constructor.name}] sync [END] -------------`
     );
-    return upateData;
+    this.emitUpdateData(updateData);
   }
 
   // ++ TODO
@@ -168,6 +166,7 @@ class ExchangeHubService {
 
   async _updateAccByAskTrade({
     memberId,
+    order,
     askCurr,
     bidCurr,
     askFeeRate,
@@ -180,8 +179,10 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _updateAccByAskTrade -------------`
     );
     let askAccBalDiff,
+      _askAccBalDiff,
       askAccBal,
       askLocDiff,
+      _askLocDiff,
       askLoc,
       bidAccBalDiff,
       bidAccBal,
@@ -258,6 +259,28 @@ class ExchangeHubService {
         fun: this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
         dbTransaction,
       });
+      if (
+        order.state_code === this.database.ORDER_STATE.CANCEL &&
+        order.volume > 0
+      ) {
+        _askAccBalDiff = order.volume;
+        askAccBal = SafeMath.plus(askAccBal, _askAccBalDiff);
+        _askLocDiff = SafeMath.mult(_askAccBalDiff, "-1");
+        askLoc = SafeMath.plus(askLoc, _askLocDiff);
+        await this._updateAccountsRecord({
+          account: askAccount,
+          accBalDiff: _askAccBalDiff,
+          accBal: askAccBal,
+          accLocDiff: _askLocDiff,
+          accLoc: askLoc,
+          reason: this.database.REASON.ORDER_CANCEL,
+          fee: 0,
+          modifiableId: trade.id,
+          updateAt: new Date(parseInt(trade.ts)).toISOString(),
+          fun: this.database.FUNC.UNLOCK_FUNDS,
+          dbTransaction,
+        });
+      }
       // 4. calculate bidAccount balance change
       // 4.1 bidAccount: balanceDiff = SafeMath.minus(SafeMath.mult(trade.fillPx, trade.fillSz), trade.fee)
       bidAccBalDiff = SafeMath.minus(
@@ -452,8 +475,13 @@ class ExchangeHubService {
         fun: this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
         dbTransaction,
       });
+      this.logger.log(`order.state_code`, order.state_code);
+      this.logger.log(
+        `order.price[${order.price}] > trade.fillPx[${trade.fillPx}]`,
+        order.price > trade.fillPx
+      );
       if (
-        order.state === this.database.ORDER_STATE.DONE &&
+        order.state_code === this.database.ORDER_STATE.DONE &&
         order.price > trade.fillPx
       ) {
         _bidAccBalDiff = SafeMath.mult(
@@ -461,7 +489,7 @@ class ExchangeHubService {
           trade.fillSz
         );
         bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
-        _bidLocDiff = SafeMath.mult(bidAccBalDiff, "-1");
+        _bidLocDiff = SafeMath.mult(_bidAccBalDiff, "-1");
         bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
         await this._updateAccountsRecord({
           account: bidAccount,
@@ -470,6 +498,28 @@ class ExchangeHubService {
           accLocDiff: _bidLocDiff,
           accLoc: bidLoc,
           reason: this.database.REASON.ORDER_FULLFILLED,
+          fee: 0,
+          modifiableId: trade.id,
+          updateAt: new Date(parseInt(trade.ts)).toISOString(),
+          fun: this.database.FUNC.UNLOCK_FUNDS,
+          dbTransaction,
+        });
+      }
+      if (
+        order.state_code === this.database.ORDER_STATE.CANCEL &&
+        order.volume > 0
+      ) {
+        _bidAccBalDiff = SafeMath.mult(order.price, order.volume);
+        bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
+        _bidLocDiff = SafeMath.mult(_bidAccBalDiff, "-1");
+        bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
+        await this._updateAccountsRecord({
+          account: bidAccount,
+          accBalDiff: _bidAccBalDiff,
+          accBal: bidAccBal,
+          accLocDiff: _bidLocDiff,
+          accLoc: bidLoc,
+          reason: this.database.REASON.ORDER_CANCEL,
           fee: 0,
           modifiableId: trade.id,
           updateAt: new Date(parseInt(trade.ts)).toISOString(),
@@ -667,29 +717,31 @@ class ExchangeHubService {
       state = "wait",
       state_text = "Waiting",
       filled = false,
+      price,
       volume,
       locked,
       updateAt,
       doneAt,
       fundsReceived,
       tradesCount,
-      value;
+      value,
+      _orderDetails;
     // get _order data from table
     this.logger.log(`orderId`, orderId);
     _order = await this.database.getOrder(orderId, { dbTransaction });
     this.logger.log(`_order`, _order);
+    this.logger.log(`memberId`, memberId);
     try {
       if (
         _order &&
-        _order?.member_id.toString() === memberId &&
+        _order?.member_id.toString() === memberId.toString() &&
         _order?.state === this.database.ORDER_STATE.WAIT
       ) {
+        price = Utils.removeZeroEnd(_order.price)
         value = SafeMath.mult(trade.fillPx, trade.fillSz);
         volume = SafeMath.minus(_order.volume, trade.fillSz);
         locked =
-          trade.side === "buy"
-            ? SafeMath.minus(_order.locked, SafeMath.mult(_order.price, volume))
-            : SafeMath.minus(_order.locked, volume);
+          trade.side === "buy" ? SafeMath.mult(price, volume) : volume;
         doneAt = `"${new Date(parseInt(trade.ts))
           .toISOString()
           .slice(0, 19)
@@ -704,11 +756,57 @@ class ExchangeHubService {
             : SafeMath.plus(_order.funds_received, value); //++ TODO to be verify: 使用 TideBit ticker 測試)
         tradesCount = SafeMath.plus(_order.trades_count, "1");
         if (SafeMath.eq(volume, "0")) {
+          let res = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: trade.instId,
+              ordId: trade.ordId,
+            },
+          });
+          if (res.success) {
+            _orderDetails = res.payload;
+            price = _orderDetails.avgPx;
+          }
           stateCode = this.database.ORDER_STATE.DONE;
           state = "done";
           state_text = "Done";
           filled = true;
           locked = "0"; //++ TODO to be verify: 使用 TideBit ticker 測試)
+        } else {
+          let res = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: trade.instId,
+              ordId: trade.ordId,
+            },
+          });
+          if (res.success) {
+            _orderDetails = res.payload;
+            this.logger.log(`for _orderDetails`, _orderDetails);
+            state =
+              _orderDetails.state === "canceled"
+                ? _orderDetails.state
+                : _orderDetails.state === "filled"
+                ? "done"
+                : _orderDetails.state === "live"
+                ? "wait"
+                : "Unknown";
+            stateCode =
+              _orderDetails.state === "canceled"
+                ? this.database.ORDER_STATE.CANCEL
+                : _orderDetails.state === "filled"
+                ? this.database.ORDER_STATE.DONE
+                : _orderDetails.state === "live"
+                ? this.database.ORDER_STATE.WAIT
+                : "unknown";
+            state_text =
+              _orderDetails.state === "canceled"
+                ? "Canceled"
+                : _orderDetails.state === "filled"
+                ? "Done"
+                : _orderDetails.state === "live"
+                ? "Waiting"
+                : "Unknown";
+          }
+          locked = "0";
         }
         _updateOrder = {
           id: _order.id,
@@ -727,18 +825,20 @@ class ExchangeHubService {
         _updateOrder = {
           instId: trade.instId,
           ordType: _order.ord_type,
-          id: trade.ordId,
+          id: _order.id,
+          ordId: trade.ordId,
           clOrdId: trade.clOrdId,
           at: parseInt(SafeMath.div(trade.ts, "1000")),
           ts: parseInt(trade.ts),
           market: market.id,
           kind: trade.side === "buy" ? "bid" : "ask",
-          price: _order.price,
+          price,
           volume,
-          origin_volume: _order.origin_volume,
+          origin_volume: Utils.removeZeroEnd(_order.origin_volume),
           state_text,
           filled,
           state,
+          state_code: stateCode,
         };
         this.logger.log("_updateOrder for [FRONTEND]", _updateOrder);
       } else {
@@ -914,6 +1014,7 @@ class ExchangeHubService {
                   memberId,
                   askFeeRate,
                   market,
+                  order: updateOrder,
                   askCurr: order.ask,
                   bidCurr: order.bid,
                   trade: { ...trade, id: newTrade.id },
@@ -1054,31 +1155,29 @@ class ExchangeHubService {
       case SupportedExchange.OKEX:
       default:
         let okexRes;
-        if (!this._isStarted) {
-          this.logger.log(`fetchTradeFillsHistoryRecords`);
-          okexRes = await this.okexConnector.router(
-            "fetchTradeFillsHistoryRecords",
-            {
-              query: {
-                instType: "SPOT",
-                before: Date.now() - this._interval,
-              },
-            }
-          );
-          this._isStarted = true;
-        } else {
-          this.logger.log(`fetchTradeFillsRecords`);
-          okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
+        // if (!this._isStarted) {
+        this.logger.log(`fetchTradeFillsHistoryRecords`);
+        okexRes = await this.okexConnector.router(
+          "fetchTradeFillsHistoryRecords",
+          {
             query: {
               instType: "SPOT",
-              before: Date.now() - this._minInterval,
+              // before: Date.now() - this._interval,
             },
-          });
-        }
+          }
+        );
+        //   this._isStarted = true;
+        // } else {
+        //   this.logger.log(`fetchTradeFillsRecords`);
+        //   okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
+        //     query: {
+        //       instType: "SPOT",
+        //       before: Date.now() - this._minInterval,
+        //     },
+        //   });
+        // }
         if (okexRes.success) {
           outerTrades = okexRes.payload;
-        } else {
-          this.logger.error(`_getOuterTradesFromAPI`, okexRes);
         }
         break;
     }
@@ -1094,7 +1193,7 @@ class ExchangeHubService {
     let index, newRetry;
     if (clOrdId) {
       this.logger.log(`clOrdId`, clOrdId);
-      index = outerTrades.findIndex((trade) => trade.clOrdId === clOrdId);
+      index = outerTrades?.findIndex((trade) => trade.clOrdId === clOrdId);
       if (index === -1 && retry > 0) {
         newRetry = retry - 1;
         this.logger.log(`_getOuterTradesFromAPI recall newRetry`, newRetry);
@@ -1113,7 +1212,8 @@ class ExchangeHubService {
     this.logger.log(`[${this.constructor.name}] _syncOuterTrades`);
     const _outerTrades = await this.database.getOuterTradesByDayAfter(
       this.database.EXCHANGE[exchange.toUpperCase()],
-      !this._isStarted ? 180 : 1
+      // !this._isStarted ? 180 : 1
+      180
     );
     let outerTrades = await this._getTransactionsDetail(exchange, clOrdId);
     // this.logger.log(`outerTrades`, outerTrades);

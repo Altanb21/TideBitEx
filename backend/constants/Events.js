@@ -11,6 +11,7 @@ module.exports = {
   trades: "trades",
   account: "account",
   order: "order",
+  marketOrder: "marketOrder",
   trade: "trade",
   candleOnUpdate: "candleOnUpdate",
   orderDetailUpdate: "orderDetailUpdate",

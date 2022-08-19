@@ -15,8 +15,11 @@ class AccountBook extends BookBase {
   getSnapshot(instId) {
     try {
       if (instId)
-        return instId.split("-").map((currency) => this._snapshot[currency]);
-      return Object.values(this._snapshot);
+        return instId.split("-").reduce((prev, currency) => {
+          prev[currency] = this._snapshot[currency];
+          return prev;
+        }, {});
+      return this._snapshot;
     } catch (error) {
       console.error(`[AccountBook getSnapshot]`, error);
       return false;

@@ -208,6 +208,50 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
+  async getOrderDetails({ query }) {
+    const { instId, ordId } = query;
+    this.logger.log(`[${this.constructor.name}] getOrderDetails`);
+    let result,
+      arr = [];
+    const method = "GET";
+    if (instId) arr.push(`instId=${instId}`);
+    if (ordId) arr.push(`ordId=${ordId}`);
+    const path = "/api/v5/trade/order";
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
+    const timeString = new Date().toISOString();
+    const okAccessSign = await this.okAccessSign({
+      timeString,
+      method,
+      path: `${path}${qs}`,
+    });
+    try {
+      const res = await axios({
+        method: method.toLocaleLowerCase(),
+        url: `${this.domain}${path}${qs}`,
+        headers: this.getHeaders(true, { timeString, okAccessSign }),
+      });
+      if (res.data && res.data.code !== "0") {
+        const message = JSON.stringify(res.data);
+        this.logger.trace(message);
+      }
+      const [data] = res.data.data;
+      result = new ResponseFormat({
+        message: "orderDetails",
+        payload: data,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      result = new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+    return result;
+  }
+
   async fetchTradeFillsHistoryRecords({ query }) {
     const { instType, before } = query;
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
@@ -247,6 +291,7 @@ class OkexConnector extends ConnectorBase {
         message: "tradeFills",
         payload: data,
       });
+      this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](data.length:${data.length})`);
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -646,7 +691,6 @@ class OkexConnector extends ConnectorBase {
     });
   }
 
-
   async getTradingViewHistory({ query }) {
     const method = "GET";
     const path = "/api/v5/market/candles";
@@ -997,46 +1041,19 @@ class OkexConnector extends ConnectorBase {
 
   // market api end
   // trade api
-  async postPlaceOrder({ clOrdId, body, memberId, orderId }) {
+  async postPlaceOrder({ body}) {
     const method = "POST";
     const path = "/api/v5/trade/order";
 
     const timeString = new Date().toISOString();
-    if (!clOrdId)
-      clOrdId = `${this.brokerId}${memberId}m${orderId}o`.slice(0, 32);
-    // clOrdId = 377bd372412fSCDE60977m247674466o
-    // brokerId = 377bd372412fSCDE
-    // memberId = 60976
-    // orderId = 247674466
 
-    this.logger.log("clOrdId:", clOrdId);
-
-    const filterBody = {
-      instId: body.instId,
-      tdMode: body.tdMode,
-      // ccy: body.ccy,
-      clOrdId,
-      tag: this.brokerId,
-      side: body.kind === "bid" ? "buy" : "sell",
-      // posSide: body.posSide,
-      ordType: body.ordType === "market" ? "ioc" : body.ordType,
-      sz: body.volume,
-      px:
-        body.ordType === "market"
-          ? body.kind === "bid"
-            ? (parseFloat(body.price) * 1.1).toString()
-            : (parseFloat(body.price) * 0.9).toString()
-          : body.price,
-      // reduceOnly: body.reduceOnly,
-      // tgtCcy: body.tgtCcy,
-    };
-    this.logger.log("filterBody:", filterBody);
+    this.logger.log("postPlaceOrder body:", body);
 
     const okAccessSign = await this.okAccessSign({
       timeString,
       method,
       path: path,
-      body: filterBody,
+      body: body,
     });
 
     try {
@@ -1044,7 +1061,7 @@ class OkexConnector extends ConnectorBase {
         method: method.toLocaleLowerCase(),
         url: `${this.domain}${path}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
-        data: filterBody,
+        data: body,
       });
       const [payload] = res.data.data;
       if (res.data && res.data.code !== "0") {
@@ -1137,7 +1154,7 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
-
+    let orders;
     try {
       const res = await axios({
         method: method.toLocaleLowerCase(),
@@ -1153,36 +1170,38 @@ class OkexConnector extends ConnectorBase {
         });
       }
 
-      const orders = res.data.data.map((data) => {
-        return {
-          instId,
-          market: instId.replace("-", "").toLowerCase(),
-          id: parseClOrdId(data.clOrdId)?.orderId,
-          clOrdId: data.clOrdId,
-          ordId: data.ordId,
-          ordType: data.ordType,
-          price: data.px,
-          kind: data.side === "buy" ? "bid" : "ask",
-          volume: SafeMath.minus(data.sz, data.fillSz),
-          origin_volume: data.sz,
-          filled: data.state === "filled",
-          state:
-            data.state === "canceled"
-              ? "canceled"
-              : state === "filled"
-              ? "done"
-              : "wait",
-          state_text:
-            data.state === "canceled"
-              ? "Canceled"
-              : state === "filled"
-              ? "Done"
-              : "Waiting",
-          at: parseInt(SafeMath.div(data.uTime, "1000")),
-          ts: parseInt(data.uTime),
-        };
-      });
-      this.orderBook.updateAll(memberId, instId, orders);
+      orders = res.data.data
+        .filter((data) => data.clOrdId.includes(`${memberId}m`)) // 可能發生與brokerId, randomId碰撞
+        .map((data) => {
+          return {
+            instId,
+            market: instId.replace("-", "").toLowerCase(),
+            id: parseClOrdId(data.clOrdId)?.orderId,
+            clOrdId: data.clOrdId,
+            ordId: data.ordId,
+            ordType: data.ordType,
+            price: data.px,
+            kind: data.side === "buy" ? "bid" : "ask",
+            volume: SafeMath.minus(data.sz, data.fillSz),
+            origin_volume: data.sz,
+            filled: data.state === "filled",
+            state:
+              data.state === "canceled"
+                ? "canceled"
+                : state === "filled"
+                ? "done"
+                : "wait",
+            state_text:
+              data.state === "canceled"
+                ? "Canceled"
+                : state === "filled"
+                ? "Done"
+                : "Waiting",
+            at: parseInt(SafeMath.div(data.uTime, "1000")),
+            ts: parseInt(data.uTime),
+          };
+        });
+      // this.orderBook.updateAll(memberId, instId, orders);
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -1196,7 +1215,8 @@ class OkexConnector extends ConnectorBase {
 
     return new ResponseFormat({
       message: "getOrderList",
-      payload: this.orderBook.getSnapshot(memberId, instId, "pending"),
+      // payload: this.orderBook.getSnapshot(memberId, instId, "pending"),
+      payload: orders,
     });
   }
 
@@ -1414,7 +1434,7 @@ class OkexConnector extends ConnectorBase {
         } else if (data.event === "subscribe") {
           // temp do nothing
         } else if (data.event === "error") {
-          this.logger.log(
+          this.logger.error(
             "!!! _okexWsPrivateEventListener on event error",
             data
           );

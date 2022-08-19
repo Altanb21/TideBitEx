@@ -167,13 +167,7 @@ class WSChannel extends Bot {
   // ++ CURRENT_USER UNSAVED
   async _onOpStatusUpdate(header, ws, args, redis) {
     const findClient = this._client[ws.id];
-    this.logger.log(
-      `-----&----- [WSChabbel][FROM WS] _onOpStatusUpdate userId -----&-----`,
-      args,
-      `ws.id`,
-      ws.id
-    );
-    let { memberId, XSRFToken, peatioToken } = await parseMemberId(
+    let { memberId, XSRFToken, peatioSession } = await parseMemberId(
       {
         ...header,
         memberId: args.memberId,
@@ -181,20 +175,8 @@ class WSChannel extends Bot {
       },
       redis
     );
-    if (!findClient.isStart) {
-      findClient.channel = args.market;
-      findClient.isStart = true;
-      if (!this._channelClients[args.market]) {
-        this._channelClients[args.market] = {};
-      }
-      if (Object.values(this._channelClients[args.market]).length === 0) {
-        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id, args.lotSz);
-      }
-      this._channelClients[args.market][ws.id] = ws;
-    }
-    this.logger.log(
-      `[${this.constructor.name} _onOpStatusUpdate] memberId`,
-      memberId
+    console.log(
+      `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
     );
     if (memberId !== -1 && args.CSRFToken) {
       findClient.isPrivate = true;
@@ -214,7 +196,7 @@ class WSChannel extends Bot {
         headers: {
           cookie: `XSRF-TOKEN=${decodeURIComponent(
             XSRFToken
-          )};_peatio_session=${peatioToken}`,
+          )};_peatio_session=${peatioSession}`,
           "content-type": "application/json",
           "x-csrf-token": args.CSRFToken,
         },
