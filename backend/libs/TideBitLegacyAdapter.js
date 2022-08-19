@@ -73,7 +73,7 @@ class TideBitLegacyAdapter {
     // let userId = ctx.header.userid;
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
-    console.log(`getMemberId ctx`, ctx);
+    // console.log(`getMemberId ctx`, ctx);
     // if (
     //   ctx.url === "/auth/identity/callback" ||
     //   ctx.url === "/auth/identity/register"
