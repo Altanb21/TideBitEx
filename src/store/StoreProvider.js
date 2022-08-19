@@ -33,7 +33,7 @@ const StoreProvider = (props) => {
   const [pendingOrders, setPendingOrders] = useState([]);
   const [closeOrders, setCloseOrders] = useState([]);
   // const [orderHistories, setOrderHistories] = useState([]);
-  const [accounts, setAccounts] = useState([]);
+  const [accounts, setAccounts] = useState(null);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [tickSz, setTickSz] = useState(null);
@@ -340,7 +340,7 @@ const StoreProvider = (props) => {
           //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
           //   middleman.accountBook.getSnapshot()
           // );
-          const accounts = middleman.getAccounts(selectedTicker?.instId);
+          const accounts = middleman.getAccounts();
           // console.log(`middleman.accounts`, accounts);
           // setIsLogin(middleman.isLogin);
           setAccounts(accounts);

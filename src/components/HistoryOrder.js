@@ -67,7 +67,10 @@ export const OrderTile = (props) => {
               : props.order.origin_volume
           ),
           {
-            decimalLength: SafeMath.mult(storeCtx.tickSz || 0, storeCtx.lotSz || 0),
+            decimalLength: SafeMath.mult(
+              storeCtx.tickSz || 0,
+              storeCtx.lotSz || 0
+            ),
           }
         )}
       </li>
@@ -144,16 +147,13 @@ export const AccountList = (props) => {
               </span>
             )} */}
       <ul className="order-list scrollbar-custom">
-        {!!storeCtx.accounts?.length &&
-          storeCtx.accounts
-            .filter(
-              (account) =>
-                storeCtx.selectedTicker?.base_unit?.toUpperCase() ===
-                  account.currency ||
-                storeCtx.selectedTicker?.quote_unit?.toUpperCase() ===
-                  account.currency
-            )
-            .map((account) => <AccountTile account={account} />)}
+        {storeCtx.selectedTicker && storeCtx.accounts ? (
+          storeCtx.selectedTicker.instId
+            ?.split("-")
+            ?.map((account) => <AccountTile account={account} />)
+        ) : (
+          <div></div>
+        )}
       </ul>
     </div>
   );
