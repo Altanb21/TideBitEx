@@ -150,7 +150,7 @@ export const AccountList = (props) => {
         {storeCtx.selectedTicker && storeCtx.accounts ? (
           storeCtx.selectedTicker.instId
             ?.split("-")
-            ?.map((account) => <AccountTile account={account} />)
+            ?.map((ccy) => <AccountTile account={storeCtx.accounts[ccy]} />)
         ) : (
           <div></div>
         )}
