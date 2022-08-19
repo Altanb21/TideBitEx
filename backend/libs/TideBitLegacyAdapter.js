@@ -68,29 +68,37 @@ class TideBitLegacyAdapter {
   // ++ middleware
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
-    console.log(`getMemberId ctx.session`, ctx.session);
-    let peatioToken = Utils.peatioToken(ctx.header);
+    // let peatioToken = Utils.peatioToken(ctx.header);
+    console.log(`getMemberId ctx.url`, ctx.url);
+    console.log(`getMemberId ctx`, ctx);
     if (
-      !ctx.session.memberId ||
-      (ctx.session.memberId && peatioToken !== ctx.session.peatioToken)
+      ctx.url === "/auth/identity/callback" ||
+      ctx.url === "/auth/identity/register"
     ) {
+      console.log(
+        `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
+      );
       const parsedResult = await TideBitLegacyAdapter.parseMemberId(
         ctx.header,
         redisDomain
       );
-      // ctx.session.set("token", parsedResult.peatioToken);
-      // ctx.session.set("memberId", parsedResult.memberId);
       console.log(
-        `-----*----- [TideBitLegacyAdapter][FROM API] parseMemberId peatioToken:[${parsedResult.peatioToken}] member:[${parsedResult.memberId}]-----*-----`
+        `-----*----- [TideBitLegacyAdapter] peatioToken:[${parsedResult.peatioToken}] member:[${parsedResult.memberId}]-----*-----`
       );
       if (parsedResult.memberId !== -1) {
         ctx.session.token = parsedResult.peatioToken;
         ctx.session.memberId = parsedResult.memberId;
-      } else {
-        delete ctx.session.token;
-        delete ctx.session.memberId;
       }
     }
+    if (ctx.url === "/signout" ) {
+      console.log(
+        `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
+      );
+      delete ctx.session.token;
+      delete ctx.session.memberId;
+    }
+    // rediret
+    console.log(`getMemberId ctx.session`, ctx.session);
     return next();
   }
 
