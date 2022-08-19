@@ -88,20 +88,32 @@ export const OrderTile = (props) => {
 };
 
 const AccountTile = (props) => {
-  return props.acccount ? (
+  // const storeCtx = useContext(StoreContext);
+  // console.log(`storeCtx.accounts`, storeCtx.accounts);
+  // console.log(
+  //   `storeCtx.selectedTicker.instId
+  // ?.split("-")`,
+  //   storeCtx.selectedTicker.instId?.split("-")
+  // );
+  // console.log(
+  //   `storeCtx.selectedTicker.instId
+  // ?.split("-").map(ccy =>storeCtx.accounts[ccy] )`,
+  //   storeCtx.selectedTicker.instId
+  //     ?.split("-")
+  //     .map((ccy) => storeCtx.accounts[ccy])
+  // );
+  return (
     <ul className="d-flex justify-content-between market-order-item market-balance">
       {/* <li>{dateFormatter(parseInt(props.account.uTime)).text}</li> */}
-      <li>{props.account.currency || "--"}</li>
+      <li>{props.account?.currency || "--"}</li>
       {/* <li>{props.account.eq || "--"}</li>
       <li>{props.account.cashBal || "--"}</li>*/}
-      <li>{formateDecimal(props.account.total, { decimalLength: 8 })}</li>
-      <li>{formateDecimal(props.account.balance, { decimalLength: 8 })}</li>
-      <li>{formateDecimal(props.account.locked, { decimalLength: 8 })}</li>
+      <li>{formateDecimal(props.account?.total, { decimalLength: 8 })}</li>
+      <li>{formateDecimal(props.account?.balance, { decimalLength: 8 })}</li>
+      <li>{formateDecimal(props.account?.locked, { decimalLength: 8 })}</li>
       {/* -- TODO: check api return object */}
       {/* <li>{props.account.interest || "--"}</li> */}
     </ul>
-  ) : (
-    <div></div>
   );
 };
 
@@ -115,7 +127,7 @@ export const AccountMobileTile = (props) => {
             alt={props.account?.currency.toLowerCase()}
           />
         </div>
-        <div>{props.account.currency}</div>
+        <div>{props.account?.currency}</div>
       </div>
       <div className="mobile-account__subtitle">
         <div className="mobile-account__balance">
@@ -149,9 +161,9 @@ export const AccountList = (props) => {
               </span>
             )} */}
       <ul className="order-list scrollbar-custom">
-        {storeCtx.selectedTicker && storeCtx.accounts ? (
+        {storeCtx.selectedTicker?.instId && storeCtx.accounts ? (
           storeCtx.selectedTicker.instId
-            ?.split("-")
+            .split("-")
             ?.map((ccy) => <AccountTile account={storeCtx.accounts[ccy]} />)
         ) : (
           <div></div>

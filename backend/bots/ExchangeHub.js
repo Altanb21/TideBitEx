@@ -222,7 +222,16 @@ class ExchangeHub extends Bot {
       state: this.database.ORDER_STATE.DONE,
       type: this.database.TYPE.ORDER_BID,
     });
-    _orders = _orders.concat(_doneMarketBidOrders);
+    _orders = _orders
+      .filter(
+        (_order) =>
+          !(
+            _order.type === this.database.TYPE.ORDER_BID &&
+            _order.state === this.database.ORDER_STATE.DONE &&
+            _order.ord_type !== this.database.ORD_TYPE.LIMIT
+          )
+      )
+      .concat(_doneMarketBidOrders);
     for (let _order of _orders) {
       let order;
       order = {
