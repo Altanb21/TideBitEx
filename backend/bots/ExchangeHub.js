@@ -762,7 +762,7 @@ class ExchangeHub extends Bot {
       switch (source) {
         case SupportedExchange.OKEX:
           const pendingOrdersRes = await this.okexConnector.router(
-            "getOrders",
+            "getOrderList",
             {
               query: {
                 ...query,
@@ -772,7 +772,10 @@ class ExchangeHub extends Bot {
               },
             }
           );
-          pendingOrders = pendingOrdersRes.payload;
+          this.logger.log(`pendingOrdersRes`, pendingOrdersRes);
+          pendingOrders = pendingOrdersRes.success
+            ? pendingOrdersRes.payload
+            : [];
           orderHistories = await this.getOrdersFromDb({
             ...query,
             memberId,
@@ -1284,7 +1287,7 @@ class ExchangeHub extends Bot {
     }
   }
 
-  async getOptions({ query }) {
+  async getOptions({ query, memberId }) {
     this.logger.debug(`*********** [${this.name}] getOptions ************`);
     this.logger.debug(
       `[${this.constructor.name}] getOptions`,
@@ -1295,6 +1298,7 @@ class ExchangeHub extends Bot {
         message: "getOptions",
         payload: {
           wsUrl: this.config.websocket.domain,
+          memberId: memberId,
         },
       })
     );

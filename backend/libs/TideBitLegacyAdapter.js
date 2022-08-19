@@ -71,10 +71,11 @@ class TideBitLegacyAdapter {
     // let peatioToken = Utils.peatioToken(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
     console.log(`getMemberId ctx`, ctx);
-    if (
-      ctx.url === "/auth/identity/callback" ||
-      ctx.url === "/auth/identity/register"
-    ) {
+    // if (
+    //   ctx.url === "/auth/identity/callback" ||
+    //   ctx.url === "/auth/identity/register"
+    // ) {
+    if (ctx.url === "/accounts" || ctx.url === "/settings") {
       console.log(
         `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
       );
@@ -90,7 +91,7 @@ class TideBitLegacyAdapter {
         ctx.session.memberId = parsedResult.memberId;
       }
     }
-    if (ctx.url === "/signout" ) {
+    if (ctx.url === "/signout") {
       console.log(
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
       );
