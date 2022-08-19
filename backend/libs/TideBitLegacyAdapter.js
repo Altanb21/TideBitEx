@@ -71,7 +71,7 @@ class TideBitLegacyAdapter {
   // ++ middleware
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
-    let peatioToken = Utils.peatioToken(ctx.header);
+    let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
     console.log(`getMemberId ctx`, ctx);
     // if (
@@ -80,7 +80,7 @@ class TideBitLegacyAdapter {
     // ) {
     if (
       (ctx.url === "/accounts" || ctx.url === "/settings") &&
-      peatioToken !== ctx.session.token
+      peatioSession !== ctx.session.token
     ) {
       console.log(
         `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
@@ -90,16 +90,16 @@ class TideBitLegacyAdapter {
         redisDomain
       );
       console.log(
-        `-----*----- [TideBitLegacyAdapter] peatioToken:[${parsedResult.peatioToken}] member:[${parsedResult.memberId}]-----*-----`
+        `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
       );
       if (parsedResult.memberId !== -1) {
-        ctx.session.token = parsedResult.peatioToken;
+        ctx.session.token = parsedResult.peatioSession;
         ctx.session.memberId = parsedResult.memberId;
       }
     }
     if (
       ctx.url === "/signout" ||
-      (ctx.url === "/signin" && peatioToken !== ctx.session.token)
+      (ctx.url === "/signin" && peatioSession !== ctx.session.token)
     ) {
       console.log(
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
