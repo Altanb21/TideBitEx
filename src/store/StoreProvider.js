@@ -132,46 +132,46 @@ const StoreProvider = (props) => {
       };
       try {
         const result = await middleman.postOrder(_order);
-        let index, updateQuoteAccount, updateBaseAccount;
-        if (order.kind === "bid") {
-          index = accounts.findIndex(
-            (account) => account.ccy === selectedTicker?.quote_unit
-          );
-          if (index !== -1) {
-            updateQuoteAccount = accounts[index];
-            updateQuoteAccount.availBal = SafeMath.minus(
-              accounts[index].availBal,
-              SafeMath.mult(order.price, order.volume)
-            );
-            updateQuoteAccount.frozenBal = SafeMath.plus(
-              accounts[index].frozenBal,
-              SafeMath.mult(order.price, order.volume)
-            );
-            const updateAccounts = accounts.map((account) => ({ ...account }));
-            updateAccounts[index] = updateQuoteAccount;
-            middleman.updateAccounts(updateQuoteAccount);
-            setAccounts(updateAccounts);
-          }
-        } else {
-          index = accounts.findIndex(
-            (account) => account.ccy === selectedTicker?.base_unit
-          );
-          if (index !== -1) {
-            updateBaseAccount = accounts[index];
-            updateBaseAccount.availBal = SafeMath.minus(
-              accounts[index].availBal,
-              order.volume
-            );
-            updateBaseAccount.frozenBal = SafeMath.plus(
-              accounts[index].frozenBal,
-              order.volume
-            );
-            const updateAccounts = accounts.map((account) => ({ ...account }));
-            updateAccounts[index] = updateBaseAccount;
-            middleman.updateAccounts(updateBaseAccount);
-            setAccounts(updateAccounts);
-          }
-        }
+        // let index, updateQuoteAccount, updateBaseAccount;
+        // if (order.kind === "bid") {
+        //   index = accounts.findIndex(
+        //     (account) => account.ccy === selectedTicker?.quote_unit
+        //   );
+        //   if (index !== -1) {
+        //     updateQuoteAccount = accounts[index];
+        //     updateQuoteAccount.availBal = SafeMath.minus(
+        //       accounts[index].availBal,
+        //       SafeMath.mult(order.price, order.volume)
+        //     );
+        //     updateQuoteAccount.frozenBal = SafeMath.plus(
+        //       accounts[index].frozenBal,
+        //       SafeMath.mult(order.price, order.volume)
+        //     );
+        //     const updateAccounts = accounts.map((account) => ({ ...account }));
+        //     updateAccounts[index] = updateQuoteAccount;
+        //     middleman.updateAccounts(updateQuoteAccount);
+        //     setAccounts(updateAccounts);
+        //   }
+        // } else {
+        //   index = accounts.findIndex(
+        //     (account) => account.ccy === selectedTicker?.base_unit
+        //   );
+        //   if (index !== -1) {
+        //     updateBaseAccount = accounts[index];
+        //     updateBaseAccount.availBal = SafeMath.minus(
+        //       accounts[index].availBal,
+        //       order.volume
+        //     );
+        //     updateBaseAccount.frozenBal = SafeMath.plus(
+        //       accounts[index].frozenBal,
+        //       order.volume
+        //     );
+        //     const updateAccounts = accounts.map((account) => ({ ...account }));
+        //     updateAccounts[index] = updateBaseAccount;
+        //     middleman.updateAccounts(updateBaseAccount);
+        //     setAccounts(updateAccounts);
+        //   }
+        // }
         enqueueSnackbar(
           `${order.kind === "bid" ? "Bid" : "Ask"} ${order.volume} ${
             order.instId.split("-")[0]
@@ -199,14 +199,7 @@ const StoreProvider = (props) => {
         );
       }
     },
-    [
-      accounts,
-      action,
-      enqueueSnackbar,
-      middleman,
-      selectedTicker?.base_unit,
-      selectedTicker?.quote_unit,
-    ]
+    [action, enqueueSnackbar, middleman]
   );
 
   // TODO get latest snapshot of orders, trades, accounts
@@ -347,7 +340,7 @@ const StoreProvider = (props) => {
           //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
           //   middleman.accountBook.getSnapshot()
           // );
-          const accounts = middleman.getAccounts();
+          const accounts = middleman.getAccounts(selectedTicker?.instId);
           // console.log(`middleman.accounts`, accounts);
           // setIsLogin(middleman.isLogin);
           setAccounts(accounts);

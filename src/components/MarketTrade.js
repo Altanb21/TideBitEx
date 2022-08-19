@@ -26,9 +26,6 @@ const TradeForm = (props) => {
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [quoteCcyAvailable, setQuoteCcyAvailable] = useState("0");
   const [baseCcyAvailable, setBaseCcyAvailable] = useState("0");
-  const [refresh, setRefresh] = useState(false);
-  const [memberId, setMemberId] = useState(null);
-
   const formatPrice = useCallback(
     (value) => {
       setErrorMessage(null);
@@ -175,7 +172,6 @@ const TradeForm = (props) => {
           } ${order.instId.split("-")[1]} per ${order.instId.split("-")[0]}`);
     if (confirm) {
       await storeCtx.postOrder(order);
-      setRefresh(true);
     }
     setVolume("");
     setSelectedPct(null);
@@ -183,28 +179,24 @@ const TradeForm = (props) => {
 
   useEffect(() => {
     if (
-      (storeCtx.accounts?.length > 0 &&
-        ((storeCtx.selectedTicker && !selectedTicker) ||
-          (storeCtx.selectedTicker &&
-            storeCtx.selectedTicker.instId !== selectedTicker?.instId))) ||
-      refresh ||
-      memberId !== storeCtx.memberId
+      (storeCtx.selectedTicker && !selectedTicker) ||
+      (storeCtx.selectedTicker &&
+        storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
+      quoteCcyAvailable !==
+        storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
+          ?.balance ||
+      baseCcyAvailable !==
+        storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
+          ?.balance
     ) {
-      setMemberId(storeCtx.memberId);
-      let quoteCcyAccount = storeCtx.accounts?.find((account) => {
-        return (
-          account.currency ===
-          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-        );
-      });
+      let quoteCcyAccount =
+        storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
 
       if (quoteCcyAccount) {
         setQuoteCcyAvailable(quoteCcyAccount?.balance);
       }
-      let baseCcyAccount = storeCtx.accounts?.find(
-        (account) =>
-          account.currency === storeCtx.selectedTicker?.base_unit?.toUpperCase()
-      );
+      let baseCcyAccount =
+        storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
       if (baseCcyAccount) {
         setBaseCcyAvailable(baseCcyAccount?.balance);
       }
@@ -216,13 +208,12 @@ const TradeForm = (props) => {
     storeCtx.selectedTicker,
     storeCtx.accounts,
     selectedTicker,
-    refresh,
     formatPrice,
     price,
     formatSize,
     volume,
-    storeCtx.memberId,
-    memberId,
+    quoteCcyAvailable,
+    baseCcyAvailable,
   ]);
 
   useEffect(() => {

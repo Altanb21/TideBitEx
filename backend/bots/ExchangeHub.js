@@ -107,7 +107,7 @@ class ExchangeHub extends Bot {
           systemMemberId: this.config.peatio.systemMemberId,
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
-          emitUpdateData: () => this.emitUpdateData(),
+          emitUpdateData: (updateData) => this.emitUpdateData(updateData),
           logger,
         });
         return this;
