@@ -757,7 +757,7 @@ class ExchangeHub extends Bot {
     const instId = this._findInstId(query.market);
     const market = this._findMarket(instId);
     const source = this._findSource(instId);
-    if (!memberId || memberId !== -1) {
+    if (memberId || memberId !== -1) {
       let pendingOrders, orderHistories, orders;
       switch (source) {
         case SupportedExchange.OKEX:
