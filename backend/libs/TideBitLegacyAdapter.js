@@ -71,7 +71,7 @@ class TideBitLegacyAdapter {
   // ++ middleware
   static async getMemberId(ctx, next, redisDomain) {
     // let userId = ctx.header.userid;
-    // let peatioToken = Utils.peatioToken(ctx.header);
+    let peatioToken = Utils.peatioToken(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
     console.log(`getMemberId ctx`, ctx);
     // if (
@@ -94,7 +94,7 @@ class TideBitLegacyAdapter {
         ctx.session.memberId = parsedResult.memberId;
       }
     }
-    if (ctx.url === "/signout") {
+    if (ctx.url === "/signout" || (ctx.url === '/signin' && peatioToken !== ctx.session.token)) {
       console.log(
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
       );
