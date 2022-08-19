@@ -78,7 +78,10 @@ class TideBitLegacyAdapter {
     //   ctx.url === "/auth/identity/callback" ||
     //   ctx.url === "/auth/identity/register"
     // ) {
-    if (ctx.url === "/accounts" || ctx.url === "/settings") {
+    if (
+      (ctx.url === "/accounts" || ctx.url === "/settings") &&
+      peatioToken !== ctx.session.token
+    ) {
       console.log(
         `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
       );
@@ -94,7 +97,10 @@ class TideBitLegacyAdapter {
         ctx.session.memberId = parsedResult.memberId;
       }
     }
-    if (ctx.url === "/signout" || (ctx.url === '/signin' && peatioToken !== ctx.session.token)) {
+    if (
+      ctx.url === "/signout" ||
+      (ctx.url === "/signin" && peatioToken !== ctx.session.token)
+    ) {
       console.log(
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
       );
