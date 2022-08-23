@@ -155,7 +155,7 @@ const DesktopTickers = (props) => {
           onChange={filterTickers}
         />
       </div>
-      <Tabs defaultActiveKey={storeCtx.selectedTicker?.group}>
+      <Tabs defaultActiveKey={defaultActiveKey}>
         {Object.keys(quoteCcies).map((quoteCcy) => (
           <Tab
             eventKey={quoteCcy.toLowerCase()}
