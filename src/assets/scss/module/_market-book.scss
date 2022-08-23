@@ -11,7 +11,7 @@
     display: flex;
     justify-content: flex-end;
   }
-  &__range-options{
+  &__range-options {
     max-width: 100px;
   }
   &__range-options > .header-dropdown__button {
@@ -50,17 +50,28 @@
     flex: 1;
   }
   &__tile {
+    display: flex;
+    justify-content: center;
+  }
+
+  &__tile--bid,
+  &__tile--ask {
     position: relative;
     font-size: 12px;
     cursor: pointer;
+    flex: 1;
   }
-
   &__header--bids > *,
   &__header--asks > *,
-  &__tile > * {
+  &__tile--bid > *,
+  &__tile--ask > * {
     flex: 1;
     text-indent: 2px;
     width: 80px;
+  }
+  &__tile--bid,
+  &__tile--ask {
+    display: flex;
   }
   &__header--bids,
   &__tile--bid {
@@ -142,7 +153,8 @@
 
     &__header--bids > *,
     &__header--asks > *,
-    &__tile > * {
+    &__tile--bid > *,
+    &__tile--ask > * {
       width: 54px !important;
     }
   }

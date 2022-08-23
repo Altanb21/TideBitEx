@@ -170,7 +170,7 @@ const DepthBook = (props) => {
             itemCount={storeCtx.books?.bids ? storeCtx.books.bids.length : 0}
             itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
             itemSize={18}
-            width={width <= breakpoint ? `fit-content` : 584}
+            width={width <= breakpoint ? `100%` : 584}
           >
             {({ index, style }) => (
               <BookTile
