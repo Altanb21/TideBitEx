@@ -2,7 +2,6 @@ import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 import { dateFormatter, formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
-import { FixedSizeList as List } from "react-window";
 
 const TradeTile = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -12,7 +11,6 @@ const TradeTile = (props) => {
       ${props.trade.update ? "++TODO" : ""}
       `}
       trade-id={props.trade.id}
-      style={props.style}
     >
       <div className="market-history__tile--time">
         <span>{dateFormatter(parseInt(props.trade.ts)).time}</span>
@@ -55,22 +53,11 @@ const MarketHistory = (props) => {
         })`}</li>
       </ul>
       <ul className="market-history__list scrollbar-custom">
-        <List
-          innerElementType="ul"
-          height={393}
-          itemCount={storeCtx.trades ? storeCtx.trades.length : 0}
-          itemData={storeCtx.trades ? storeCtx.trades : []}
-          itemSize={31}
-          width={293}
-        >
-          {({ data, index, style }) => (
-            <TradeTile
-              key={`${data[index].market}-${data[index].id}`}
-              trade={data[index]}
-              style={style}
-            />
-          )}
-        </List>
+        {storeCtx.trades &&
+          storeCtx.trades
+            .map((trade) => (
+              <TradeTile key={`${trade.market}-${trade.id}`} trade={trade} />
+            ))}
       </ul>
     </div>
   );
