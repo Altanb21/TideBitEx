@@ -71,11 +71,11 @@ const TickerList = (props) => {
     <ul className="ticker-list">
       <List
         innerElementType="ul"
-        height={405}
+        height={`100%`}
         itemCount={props.tickers ? props.tickers.length : 0}
         itemData={props.tickers ? props.tickers : []}
         itemSize={31}
-        width={585}
+        width={`100%`}
       >
         {({ data, index, style }) => (
           <TickerTile

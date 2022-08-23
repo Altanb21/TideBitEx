@@ -91,14 +91,14 @@
         & .market-tile {
           cursor: pointer;
         }
-        & > .market-tile.active {
+        & .market-tile.active {
           color: #fff;
           background-color: #333;
         }
-        & > .market-tile:hover {
+        & .market-tile:hover {
           background-color: #a0a0a0;
         }
-        & > .market-tile > * {
+        & .market-tile > * {
           flex: 1;
         }
       }
@@ -125,7 +125,7 @@
 //   // The query above will trigger only for screens that are 600-400px wide. This can be used to target specific devices with known widths.
 // }
 // iphone XR
-@media only screen and (max-width:$mobile-width) {
+@media only screen and (max-width: $mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .market-tickers {
     height: 60vh;
