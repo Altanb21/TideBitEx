@@ -81,7 +81,7 @@ const TickerList = (props) => {
           <TickerTile
             key={`${data[index].market}`}
             ticker={data[index]}
-            active={data[index].active}
+            active={data[index].market === storeCtx.selectedTicker.market}
             update={data[index].update}
             onClick={() => {
               storeCtx.selectMarket(data[index].market);
@@ -119,11 +119,10 @@ const quoteCcies = {
 const DesktopTickers = (props) => {
   const storeCtx = useContext(StoreContext);
   const inputRef = useRef();
-  const [selectedTicker, setSelectedTicker] = useState(null);
-  const [defaultActiveKey, setDefaultActiveKey] = useState("hkd");
   const [filteredTickers, setFilteredTickers] = useState([]);
 
   const filterTickers = useCallback(() => {
+    console.log(storeCtx.tickers)
     const tickers = storeCtx.tickers.filter(
       (ticker) =>
         !inputRef.current ||
@@ -138,17 +137,6 @@ const DesktopTickers = (props) => {
     filterTickers();
     return () => {};
   }, [filterTickers]);
-
-  useEffect(() => {
-    if (
-      (storeCtx.selectedTicker && !selectedTicker) ||
-      (storeCtx.selectedTicker &&
-        storeCtx.selectedTicker?.instId !== selectedTicker?.instId)
-    ) {
-      setSelectedTicker(storeCtx.selectedTicker);
-      setDefaultActiveKey(storeCtx.selectedTicker?.group);
-    }
-  }, [selectedTicker, storeCtx.selectedTicker]);
 
   return (
     <div className="market-tickers">
@@ -167,7 +155,7 @@ const DesktopTickers = (props) => {
           onChange={filterTickers}
         />
       </div>
-      <Tabs defaultActiveKey={defaultActiveKey}>
+      <Tabs defaultActiveKey={storeCtx.selectedTicker?.group}>
         {Object.keys(quoteCcies).map((quoteCcy) => (
           <Tab
             eventKey={quoteCcy.toLowerCase()}
