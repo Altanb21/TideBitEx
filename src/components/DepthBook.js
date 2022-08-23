@@ -15,77 +15,74 @@ const BookTile = (props) => {
         props.book.update ? "" : "" /** TODO animation temporary removed */
         // props.book.update ? "update" : ""
       }`}
-      data-width={props.dataWidth}
-      onClick={props.onClick}
       style={props.style}
     >
-      {props.type === "asks" ? (
-        <>
-          <div>
-            {formateDecimal(props.book.price, {
-              // decimalLength: 2,
-              decimalLength: storeCtx.tickSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div>
-            {formateDecimal(props.book.amount, {
-              // decimalLength: 4,
-              decimalLength: storeCtx.lotSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div>
-            {formateDecimal(
-              SafeMath.mult(props.book.price, props.book.amount),
-              {
-                decimalLength: Math.min(
-                  storeCtx.tickSz || 0,
-                  storeCtx.lotSz || 0
-                ),
-                pad: true,
-              }
-            )}
-          </div>
-          <div
-            className="order-book__tile--cover"
-            style={{ width: props.dataWidth }}
-          ></div>
-        </>
-      ) : (
-        <>
-          <div>
-            {formateDecimal(
-              SafeMath.mult(props.book.price, props.book.amount),
-              {
-                decimalLength: Math.min(
-                  storeCtx.tickSz || 0,
-                  storeCtx.lotSz || 0
-                ),
-                pad: true,
-              }
-            )}
-          </div>
-          <div>
-            {formateDecimal(props.book.amount, {
-              // decimalLength: 4,
-              decimalLength: storeCtx.lotSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div>
-            {formateDecimal(props.book.price, {
-              // decimalLength: 2,
-              decimalLength: storeCtx.tickSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div
-            className="order-book__tile--cover"
-            style={{ width: props.dataWidth }}
-          ></div>
-        </>
-      )}
+      <div
+        className="order-book__tile--bid"
+        onClick={() => {
+          storeCtx.depthBookHandler(props.bid.price, props.bid.amount);
+        }}
+      >
+        <div>
+          {formateDecimal(props.bid.price, {
+            // decimalLength: 2,
+            decimalLength: storeCtx.tickSz || 0,
+            pad: true,
+          })}
+        </div>
+        <div>
+          {formateDecimal(props.bid.amount, {
+            // decimalLength: 4,
+            decimalLength: storeCtx.lotSz || 0,
+            pad: true,
+          })}
+        </div>
+        <div>
+          {formateDecimal(SafeMath.mult(props.bid.price, props.bid.amount), {
+            decimalLength: Math.min(storeCtx.tickSz || 0, storeCtx.lotSz || 0),
+            pad: true,
+          })}
+        </div>
+        <div
+          className="order-book__tile--cover"
+          style={{
+            width: `${(parseFloat(props.bid.depth) * 100).toFixed(2)}%`,
+          }}
+        ></div>
+      </div>
+      <div
+        className="order-book__tile--ask"
+        onClick={() => {
+          storeCtx.depthBookHandler(props.ask.price, props.ask.amount);
+        }}
+      >
+        <div>
+          {formateDecimal(SafeMath.mult(props.ask.price, props.ask.amount), {
+            decimalLength: Math.min(storeCtx.tickSz || 0, storeCtx.lotSz || 0),
+            pad: true,
+          })}
+        </div>
+        <div>
+          {formateDecimal(props.ask.amount, {
+            // decimalLength: 4,
+            decimalLength: storeCtx.lotSz || 0,
+            pad: true,
+          })}
+        </div>
+        <div>
+          {formateDecimal(props.ask.price, {
+            // decimalLength: 2,
+            decimalLength: storeCtx.tickSz || 0,
+            pad: true,
+          })}
+        </div>
+        <div
+          className="order-book__tile--cover"
+          style={{
+            width: `${(parseFloat(props.ask.depth) * 100).toFixed(2)}%`,
+          }}
+        ></div>
+      </div>
     </li>
   );
 };
@@ -138,18 +135,6 @@ const DepthBook = (props) => {
     }
   }, [selectedTicker, storeCtx, storeCtx.selectedTicker]);
 
-  useEffect(() => {
-    if (!isStarted) {
-      if (storeCtx.books?.bids?.length > 0) {
-        console.log(
-          `asks[${storeCtx.books.asks.length}] bids[${storeCtx.books.bids.length}]`,
-          storeCtx.books
-        );
-        setIsStarted(true);
-      }
-    }
-  }, [isStarted, storeCtx.books]);
-
   return (
     <section className="order-book">
       {/* <div className="order-book__tool-bar">
@@ -175,60 +160,22 @@ const DepthBook = (props) => {
           <li>{t("amount")}</li>
         </ul>
       </ul>
-
       <div className="order-book__table scrollbar-custom">
-        <ul className="order-book__panel order-book__panel--bids">
+        <ul className="order-book__panel">
           <List
             innerElementType="ul"
             height={426}
             itemCount={storeCtx.books?.bids ? storeCtx.books.bids.length : 0}
             itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
             itemSize={18}
-            width={292}
+            width={584}
           >
-            {({ data, index, style }) => (
+            {({ index, style }) => (
               <BookTile
                 style={style}
-                onClick={() => {
-                  storeCtx.depthBookHandler(
-                    data[index].price,
-                    data[index].amount
-                  );
-                }}
-                type="bids"
-                book={data[index]}
-                key={`bids-${storeCtx.selectedTicker.instId}-${data[index].price}`}
-                dataWidth={`${(parseFloat(data[index].depth) * 100).toFixed(
-                  2
-                )}%`}
-              />
-            )}
-          </List>
-        </ul>
-        <ul className="order-book__panel order-book__panel--asks">
-          <List
-            innerElementType="ul"
-            height={426}
-            itemCount={storeCtx.books?.asks ? storeCtx.books.asks.length : 0}
-            itemData={storeCtx.books?.asks ? storeCtx.books.asks : []}
-            itemSize={18}
-            width={292}
-          >
-            {({ data, index, style }) => (
-              <BookTile
-                style={style}
-                onClick={() => {
-                  storeCtx.depthBookHandler(
-                    data[index].price,
-                    data[index].amount
-                  );
-                }}
-                type="asks"
-                book={data[index]}
-                key={`asks-${storeCtx.selectedTicker.instId}-${data[index].price}`}
-                dataWidth={`${(parseFloat(data[index].depth) * 100).toFixed(
-                  2
-                )}%`}
+                bid={storeCtx.books.bids[index]}
+                ask={storeCtx.books.asks[index]}
+                key={`${storeCtx.selectedTicker.instId}-depthbbook-${index}`}
               />
             )}
           </List>
