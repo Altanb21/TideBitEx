@@ -11,15 +11,12 @@ const BookTile = (props) => {
   const storeCtx = useContext(StoreContext);
 
   return (
-    <li
-      className={`order-book__tile flex-row ${
-        props.book.update ? "" : "" /** TODO animation temporary removed */
-        // props.book.update ? "update" : ""
-      }`}
-      style={props.style}
-    >
+    <li className={`order-book__tile flex-row`} style={props.style}>
       <div
-        className="order-book__tile--bid"
+        className={`order-book__tile--bid  ${
+          props.bid.update ? "" : "" /** TODO animation temporary removed */
+          // props.book.update ? "update" : ""
+        }`}
         onClick={() => {
           storeCtx.depthBookHandler(props.bid.price, props.bid.amount);
         }}
@@ -52,7 +49,10 @@ const BookTile = (props) => {
         ></div>
       </div>
       <div
-        className="order-book__tile--ask"
+        className={`order-book__tile--ask  ${
+          props.ask.update ? "" : "" /** TODO animation temporary removed */
+          // props.book.update ? "update" : ""
+        }`}
         onClick={() => {
           storeCtx.depthBookHandler(props.ask.price, props.ask.amount);
         }}
