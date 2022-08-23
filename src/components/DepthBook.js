@@ -4,6 +4,7 @@ import SafeMath from "../utils/SafeMath";
 import { FixedSizeList as List } from "react-window";
 import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
+import { useViewport } from "../store/ViewportProvider";
 import DropDown from "./DropDown";
 
 const BookTile = (props) => {
@@ -102,7 +103,8 @@ const DepthBook = (props) => {
   const [range, setRange] = useState("");
   const [rangeOptions, setRangeOptions] = useState([]);
   const [selectedTicker, setSelectedTicker] = useState(null);
-  const [isStarted, setIsStarted] = useState(false);
+  const { width } = useViewport();
+  const breakpoint = 428;
 
   const changeRange = (range) => {
     setRange(range);
@@ -168,7 +170,7 @@ const DepthBook = (props) => {
             itemCount={storeCtx.books?.bids ? storeCtx.books.bids.length : 0}
             itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
             itemSize={18}
-            width={584}
+            width={width <= breakpoint ? `fit-content` : 584}
           >
             {({ index, style }) => (
               <BookTile
