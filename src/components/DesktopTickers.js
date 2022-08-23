@@ -71,7 +71,7 @@ const TickerList = (props) => {
         <TickerTile
           key={`${ticker.market}`}
           ticker={ticker}
-          active={ticker.active}
+          active={ticker.market === storeCtx.selectedTicker.market}
           update={ticker.update}
           onClick={() => {
             storeCtx.selectMarket(ticker.market);
@@ -155,7 +155,7 @@ const DesktopTickers = (props) => {
           onChange={filterTickers}
         />
       </div>
-      <Tabs defaultActiveKey={defaultActiveKey}>
+      <Tabs defaultActiveKey={storeCtx.selectedTicker?.group}>
         {Object.keys(quoteCcies).map((quoteCcy) => (
           <Tab
             eventKey={quoteCcy.toLowerCase()}
