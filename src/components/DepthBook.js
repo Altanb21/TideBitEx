@@ -1,3 +1,4 @@
+import { FixedSizeList as List } from "react-window";
 import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
@@ -7,6 +8,7 @@ import DropDown from "./DropDown";
 
 const BookTile = (props) => {
   const storeCtx = useContext(StoreContext);
+
   return (
     <li
       className={`order-book__tile flex-row ${
@@ -15,6 +17,7 @@ const BookTile = (props) => {
       }`}
       data-width={props.dataWidth}
       onClick={props.onClick}
+      style={props.style}
     >
       {props.type === "asks" ? (
         <>
@@ -102,6 +105,7 @@ const DepthBook = (props) => {
   const [range, setRange] = useState("");
   const [rangeOptions, setRangeOptions] = useState([]);
   const [selectedTicker, setSelectedTicker] = useState(null);
+  const [isStarted, setIsStarted] = useState(false);
 
   const changeRange = (range) => {
     setRange(range);
@@ -134,6 +138,18 @@ const DepthBook = (props) => {
     }
   }, [selectedTicker, storeCtx, storeCtx.selectedTicker]);
 
+  useEffect(() => {
+    if (!isStarted) {
+      if (storeCtx.books?.bids?.length > 0) {
+        console.log(
+          `asks[${storeCtx.books.asks.length}] bids[${storeCtx.books.bids.length}]`,
+          storeCtx.books
+        );
+        setIsStarted(true);
+      }
+    }
+  }, [isStarted, storeCtx.books]);
+
   return (
     <section className="order-book">
       {/* <div className="order-book__tool-bar">
@@ -159,36 +175,65 @@ const DepthBook = (props) => {
           <li>{t("amount")}</li>
         </ul>
       </ul>
+
       <div className="order-book__table scrollbar-custom">
         <ul className="order-book__panel order-book__panel--bids">
-          {storeCtx?.selectedTicker &&
-            storeCtx.books?.bids &&
-            storeCtx.books.bids.map((book) => (
-              <BookTile
-                onClick={() => {
-                  storeCtx.depthBookHandler(book.price, book.amount);
-                }}
-                type="bids"
-                book={book}
-                key={`bids-${storeCtx.selectedTicker.instId}-${book.price}`}
-                dataWidth={`${(parseFloat(book.depth) * 100).toFixed(2)}%`}
-              />
-            ))}
+          <List
+            innerElementType="ul"
+            height={426}
+            itemCount={storeCtx.books?.bids ? storeCtx.books.bids.length : 0}
+            itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
+            itemSize={18}
+            width={292}
+          >
+            {({ data, index, style }) => {
+              return (
+                <BookTile
+                  style={style}
+                  onClick={() => {
+                    storeCtx.depthBookHandler(
+                      data[index].price,
+                      data[index].amount
+                    );
+                  }}
+                  type="bids"
+                  book={data[index]}
+                  key={`bids-${storeCtx.selectedTicker.instId}-${data[index].price}`}
+                  dataWidth={`${(parseFloat(data[index].depth) * 100).toFixed(
+                    2
+                  )}%`}
+                />
+              );
+            }}
+          </List>
         </ul>
         <ul className="order-book__panel order-book__panel--asks">
-          {storeCtx?.selectedTicker &&
-            storeCtx.books?.asks &&
-            storeCtx.books.asks.map((book) => (
+          <List
+            innerElementType="ul"
+            height={426}
+            itemCount={storeCtx.books?.asks ? storeCtx.books.asks.length : 0}
+            itemData={storeCtx.books?.asks ? storeCtx.books.asks : []}
+            itemSize={18}
+            width={292}
+          >
+            {({ data, index, style }) => (
               <BookTile
-                type="asks"
+                style={style}
                 onClick={() => {
-                  storeCtx.depthBookHandler(book.price, book.amount);
+                  storeCtx.depthBookHandler(
+                    data[index].price,
+                    data[index].amount
+                  );
                 }}
-                book={book}
-                key={`asks-${storeCtx.selectedTicker.instId}-${book.price}`}
-                dataWidth={`${(parseFloat(book.depth) * 100).toFixed(2)}%`}
+                type="asks"
+                book={data[index]}
+                key={`asks-${storeCtx.selectedTicker.instId}-${data[index].price}`}
+                dataWidth={`${(parseFloat(data[index].depth) * 100).toFixed(
+                  2
+                )}%`}
               />
-            ))}
+            )}
+          </List>
         </ul>
       </div>
     </section>
