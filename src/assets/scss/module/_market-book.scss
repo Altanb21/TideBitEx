@@ -63,21 +63,21 @@
     width: 80px;
   }
   &__header--bids,
-  &__panel--bids > &__tile {
+  &__panel--bids  &__tile {
     text-align: right;
     justify-content: flex-end;
     padding-right: 2px;
   }
   &__header--asks,
-  &__panel--asks > &__tile {
+  &__panel--asks  &__tile {
     text-align: left;
     padding-left: 2px;
   }
-  &__panel--bids > &__tile > *:nth-child(3) {
+  &__panel--bids  &__tile > *:nth-child(3) {
     color: #03a363;
     font-weight: 500;
   }
-  &__panel--asks > &__tile > *:nth-child(1) {
+  &__panel--asks  &__tile > *:nth-child(1) {
     color: #d0021b;
     font-weight: 500;
   }

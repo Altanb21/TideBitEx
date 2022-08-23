@@ -1,149 +1,125 @@
-.order-book {
+.no-data {
+  position: absolute;
+  right: 48%;
+  top: 48%;
+  text-align: center;
+  color: #b9c2ca;
+}
+.no-data i {
+  font-size: 100px;
+  display: block;
+  line-height: 0px;
+  color: #dce1e5;
+}
+.market-order-item {
+  color: #758696;
+  padding: 8px 15px;
+}
+.pending-orders,
+.closed-orders {
+  overflow: hidden;
+  flex: auto;
+  display: flex;
+  flex-direction: column;
+}
+// .market-order-item > li {
+//   // width: 12%;
+//   text-align: right;
+// }
+.market-order-item > li {
+  min-width: 75px;
+  text-align: right;
+}
+.market-order-item > li:first-child {
+  text-align: left;
+}
+.market-order-item > li:last-child {
+  text-align: center;
+}
+
+.market-order-item.market-balance > li {
+  width: 24%;
+  text-align: right;
+}
+.market-order-item.market-balance > li:first-child {
+  width: 20%;
+  text-align: left;
+}
+
+.market-order {
+  height: calc(50vh - 57px);
+  border-top: 0;
+  border: 1px solid #333;
+  overflow: hidden;
+  min-height: 400px;
   display: flex;
   flex-direction: column;
   flex: auto;
-  height: 100%;
-  border: 1px solid #333;
-  min-width: 587px;
-  &__tool-bar {
-    background-color: #4597e6;
-    border-bottom: 1px solid #333;
+  min-width: 470px;
+  & > nav.nav-tabs > a.nav-link.active,
+  & > nav.nav-tabs > a.nav-link:hover {
+    color: #007bff;
+  }
+  & > nav.nav-tabs > a.nav-link {
+    color: #4a4a4a;
+    padding-bottom: 0px;
+    padding-top: 10px;
+    margin-top: 2px;
+  }
+  & > .tab-content {
     display: flex;
-    justify-content: flex-end;
-  }
-  &__range-options{
-    max-width: 100px;
-  }
-  &__range-options > .header-dropdown__button {
-    background-color: transparent;
-    border: none;
+    flex-direction: column;
+    flex: auto;
+    overflow: hidden;
+    & > [aria-hidden="false"] {
+      display: flex;
+      flex-direction: column;
+      flex: auto;
+      overflow: hidden;
+      & > .order-list {
+        flex: auto;
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+      }
+    }
   }
 
   &__header {
-    // border-bottom: 1px solid #dee2e6;
-    color: #555;
+    border-bottom: 1px solid #333;
+    background-color: #4597e6;
+    color: white;
     font-weight: 700;
     font-size: 14px;
-    padding: 8px 0px;
-    padding-right: 5px;
-    background-color: #4597e6;
-    border-bottom: 1px solid #333;
-    color: white;
-  }
-  &__table {
-    display: flex;
-    flex-direction: row;
-    flex: auto;
-    height: calc(50vh - 135px);
-    min-height: 350px;
-    position: relative;
-    // overflow: auto;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-
-  &__header--bids,
-  &__header--asks,
-  &__panel {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-  }
-  &__tile {
-    position: relative;
-    font-size: 12px;
-    cursor: pointer;
-  }
-
-  &__header--bids > *,
-  &__header--asks > *,
-  &__tile > * {
-    flex: 1;
-    text-indent: 2px;
-    width: 80px;
-  }
-  &__header--bids,
-  &__panel--bids  &__tile {
-    text-align: right;
-    justify-content: flex-end;
-    padding-right: 2px;
-  }
-  &__header--asks,
-  &__panel--asks  &__tile {
-    text-align: left;
-    padding-left: 2px;
-  }
-  &__panel--bids  &__tile > *:nth-child(3) {
-    color: #03a363;
-    font-weight: 500;
-  }
-  &__panel--asks  &__tile > *:nth-child(1) {
-    color: #d0021b;
-    font-weight: 500;
-  }
-  &__tile--cover {
-    position: absolute;
-    top: 0;
-    // height: -webkit-fill-available;
-    height: 18px;
-  }
-  &__panel--bids &__tile--cover {
-    background: #26de8225;
-    right: 0;
-  }
-  &__panel--asks &__tile--cover {
-    background: #de262625;
-    left: 0;
+    padding: 8px 5px;
   }
 }
 
-// @media only screen and (min-width: 820px) {
-//   // If [device width] is greater than or equal to 820px,
-//   .order-book {
-//     &__header > *,
-//     &__tile > * {
-//     }
-//   }
-// }
+@media only screen and (max-width: 776px) {
+  .main-chart {
+    min-width: 587px;
+  }
+}
 
-// // ipad air & ipad mini
-// @media only screen and (max-width: 820px) and (min-width: 428px) {
-//   // The query above will trigger only for screens that are 600-400px wide. This can be used to target specific devices with known widths.
-//   .order-book {
-//     &__header > *,
-//     &__tile > * {
-//     }
-//   }
-// }
-
-// iphone 12&13 pro
 @media only screen and (max-width: $mobile-width) {
-  // If [device width] is less than or equal to 600px, then do
-  .order-book {
-    border: 1px solid #ddd;
+  .market-order {
+    border: none;
     min-width: unset;
-    &--mobile {
-      margin: 0 10px 10px;
-      flex: auto;
-      overflow: auto;
-    }
-    .tab-content & {
-      border: none;
-    }
-    .tab-content &__table {
-      height: calc(50vh - 59px);
-    }
-    &__table {
-      height: 100%;
-    }
     &__header {
-      border-bottom: 1px solid #ddd;
+      display: none;
+    }
+    &__title {
+      border-bottom: 1px solid #333;
+      background-color: #4597e6;
+      color: white;
+      font-weight: 700;
+      font-size: 14px;
+      padding: 8px 5px;
     }
 
-    &__header--bids > *,
-    &__header--asks > *,
-    &__tile > * {
-      width: 54px;
+    & > .nav.nav-tabs > [role="tab"][data-rb-event-key="balance"],
+    & > .tab-content > [role="tabpanel"]:last-child {
+      display: none;
     }
   }
 }
