@@ -11,6 +11,7 @@ import SafeMath from "../utils/SafeMath";
 import { IoSearch } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { formateDecimal, getPrecision } from "../utils/Utils";
+import { FixedSizeList as List } from "react-window";
 
 const TickerTile = (props) => {
   // const storeCtx = useContext(StoreContext);
@@ -20,6 +21,7 @@ const TickerTile = (props) => {
       className={`market-tile ${props.active ? "active" : ""} ${
         props.update ? "" : ""
       }`}
+      style={props.style}
     >
       <div>{props.ticker.name}</div>
       <div>
@@ -67,18 +69,28 @@ const TickerList = (props) => {
   const storeCtx = useContext(StoreContext);
   return (
     <ul className="ticker-list">
-      {props.tickers.map((ticker) => (
-        <TickerTile
-          key={`${ticker.market}`}
-          ticker={ticker}
-          active={ticker.active}
-          update={ticker.update}
-          onClick={() => {
-            storeCtx.selectMarket(ticker.market);
-            props.openTickerListHandler(false);
-          }}
-        />
-      ))}
+      <List
+        innerElementType="ul"
+        height={405}
+        itemCount={props.tickers ? props.tickers.length : 0}
+        itemData={props.tickers ? props.tickers : []}
+        itemSize={31}
+        width={585}
+      >
+        {({ data, index, style }) => (
+          <TickerTile
+            key={`${data[index].market}`}
+            ticker={data[index]}
+            active={data[index].active}
+            update={data[index].update}
+            onClick={() => {
+              storeCtx.selectMarket(data[index].market);
+              props.openTickerListHandler(false);
+            }}
+            style={style}
+          />
+        )}
+      </List>
     </ul>
   );
 };

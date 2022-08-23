@@ -1,7 +1,7 @@
-import { FixedSizeList as List } from "react-window";
 import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
+import { FixedSizeList as List } from "react-window";
 import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import DropDown from "./DropDown";
@@ -186,25 +186,23 @@ const DepthBook = (props) => {
             itemSize={18}
             width={292}
           >
-            {({ data, index, style }) => {
-              return (
-                <BookTile
-                  style={style}
-                  onClick={() => {
-                    storeCtx.depthBookHandler(
-                      data[index].price,
-                      data[index].amount
-                    );
-                  }}
-                  type="bids"
-                  book={data[index]}
-                  key={`bids-${storeCtx.selectedTicker.instId}-${data[index].price}`}
-                  dataWidth={`${(parseFloat(data[index].depth) * 100).toFixed(
-                    2
-                  )}%`}
-                />
-              );
-            }}
+            {({ data, index, style }) => (
+              <BookTile
+                style={style}
+                onClick={() => {
+                  storeCtx.depthBookHandler(
+                    data[index].price,
+                    data[index].amount
+                  );
+                }}
+                type="bids"
+                book={data[index]}
+                key={`bids-${storeCtx.selectedTicker.instId}-${data[index].price}`}
+                dataWidth={`${(parseFloat(data[index].depth) * 100).toFixed(
+                  2
+                )}%`}
+              />
+            )}
           </List>
         </ul>
         <ul className="order-book__panel order-book__panel--asks">
