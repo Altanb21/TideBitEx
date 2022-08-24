@@ -26,7 +26,11 @@ const Vouchers = () => {
   const getVouchers = useCallback(
     async (exchange) => {
       const trades = await storeCtx.getOuterTradeFills(exchange);
-      setTrades((prev) => ({ ...prev, exchange: trades }));
+      setTrades((prev) => {
+        let _trades = { ...prev };
+        _trades[exchange] = trades;
+        return prev;
+      });
       return trades;
     },
     [storeCtx]
