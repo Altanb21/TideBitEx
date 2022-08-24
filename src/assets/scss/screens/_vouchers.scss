@@ -8,10 +8,17 @@
   &__text.negative {
     color: #dc484e;
   }
+  &__text.screen__table-ite:nth-child(2){
+    min-width: 180px;
+    flex-direction: column;
+  }
   & .admin-dropdown__label {
     justify-content: start;
   }
   & .admin-dropdown__options {
     top: 40px;
+  }
+  & .screen__table-header{
+    min-width: 180px;
   }
 }

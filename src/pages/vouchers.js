@@ -184,7 +184,8 @@ const Vouchers = () => {
                   {dateFormatter(trade.ts).text}
                 </div>
                 <div className="vouchers__text screen__table-item">
-                  {`${trade.email}/${trade.memberId}`}
+                  <div>{`${trade.email}/`}</div>
+                  <div>{trade.memberId}</div>
                 </div>
                 <div className="vouchers__text screen__table-item">
                   {trade.orderId}
@@ -193,22 +194,22 @@ const Vouchers = () => {
                   {trade.exchange}
                 </div>
                 <div className="vouchers__text screen__table-item positive">
-                  {trade.fee ? `${trade.fee} ${trade.feeCcy}` : "-"}
+                  {trade.fee ? `${trade.fee} ${trade.feeCcy}` : "--"}
                 </div>
                 <div className="vouchers__text screen__table-item negative">
                   {trade.externalFee
                     ? `${trade.externalFee} ${trade.feeCcy}`
-                    : "-"}
+                    : "--"}
                 </div>
                 <div className="vouchers__text screen__table-item negative">
-                  {trade.referral ? `${trade.referral} ${trade.feeCcy}` : "-"}
+                  {trade.referral ? `${trade.referral} ${trade.feeCcy}` : "--"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
                     trade.revenue > 0 ? " positive" : " negative"
                   }`}
                 >
-                  {trade.revenue ? `${trade.revenue} ${trade.feeCcy}` : "-"}
+                  {trade.revenue ? `${trade.revenue} ${trade.feeCcy}` : "--"}
                 </div>
               </div>
             ))}

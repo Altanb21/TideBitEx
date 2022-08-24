@@ -560,7 +560,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterTradeFills ************`,
       query
     );
-    let outerTrades = {},
+    let outerTrades = [],
       members = await this.database.getMembers(),
       orders = await this.database.getOrders();
     switch (query.exchange) {
@@ -578,14 +578,13 @@ class ExchangeHub extends Bot {
               orderId = parsedClOrdId.orderId,
               order = orders.find(
                 (_order) =>
-                  _order.member_id === memberId && _order.id === orderId
+                  _order.member_id.toString() === memberId.toString() && _order.id.toString() === orderId.toString()
               );
             if (order) {
               let askFeeRate,
                 bidFeeRate,
-                instId = this._findInstId(query.market),
-                market = this._findMarket(instId),
-                member = members.find((member) => member.id === memberId);
+                market = this._findMarket(trade.instId),
+                member = members.find((member) => member.id.toString() === memberId.toString());
               if (member) {
                 let memberTag = member.member_tag;
                 if (memberTag) {
@@ -612,18 +611,23 @@ class ExchangeHub extends Bot {
                   ...trade,
                   orderId,
                   email: member.email,
-                  outerFee: trade.fee,
+                  memberId,
+                  externalFee: Math.abs(trade.fee),
                   fee,
                   revenue: SafeMath.minus(fee, trade.fee),
-                  exchange: query.exchange
+                  exchange: query.exchange,
+                  ts: parseInt(trade.ts)
                 };
-                outerTrades = { ...outerTrades };
-                outerTrades[orderId] = processTrade;
+                this.logger.log(`processTrade`,processTrade)
+                outerTrades = [...outerTrades, processTrade];
               }
             }
           }
         }
-        return outerTrades;
+        return new ResponseFormat({
+          message: "getOuterTradeFills",
+          payload: outerTrades,
+        });;
       default:
         return new ResponseFormat({
           message: "getOuterTradeFills",
