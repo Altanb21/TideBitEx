@@ -339,7 +339,11 @@ class Communicator {
     async getOuterTradeFills(exchange) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
-      const res = await this._request(`/trade/fill-history?exchange=${exchange}`);
+      const url = `/trade/fill-history?exchange=${exchange}`;
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
       if (res.success) {
         return res.data;
       }
