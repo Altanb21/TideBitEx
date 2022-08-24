@@ -37,7 +37,7 @@ const CurrentOrders = () => {
         _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         _orders = filterOrders || orders[_exchange],
-        _ticker = filterTicker || ticker,
+        _ticker = ticker || filterTicker,
         tickers = { ticker: t("ticker") };
 
       if (ticker) setFilterTicker(ticker);
@@ -215,10 +215,10 @@ const CurrentOrders = () => {
                   {t(order.side)}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {order.exchange}
+                  {order.instId}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {order.instId}
+                  {order.exchange}
                 </div>
                 <div className="current-orders__text screen__table-item">
                   {`${order.accFillSz} / ${order.sz}`}

@@ -42,7 +42,7 @@ const Vouchers = () => {
           timeInterval === "month"
             ? 30 * 24 * 60 * 60 * 1000
             : 12 * 30 * 24 * 60 * 60 * 1000,
-        _ticker = filterTicker || ticker,
+        _ticker = ticker || filterTicker,
         tickers = { ticker: t("ticker") };
       if (ticker) setFilterTicker(ticker);
       if (timeInterval) setFilterOption(timeInterval);
@@ -53,8 +53,8 @@ const Vouchers = () => {
       }
       if (_trades) {
         _trades = _trades.filter((trade) => {
-          console.log(`trade.instId`,trade.instId)
-          console.log(`tickers`,tickers)
+          console.log(`trade.instId`, trade.instId);
+          console.log(`tickers`, tickers);
           if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
           let condition =
             (trade.orderId.includes(_keyword) ||
@@ -70,7 +70,7 @@ const Vouchers = () => {
           return condition;
         });
         setFilterTrades(_trades);
-        setTickers(tickers)
+        setTickers(tickers);
         // ++ TODO addSum
         let profits = _trades.reduce((prev, trade) => {
           console.log(`profits trade`, trade);
