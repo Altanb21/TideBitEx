@@ -642,6 +642,64 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async getOuterPendingOrders({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getOuterPendingOrders ************`,
+      query
+    );
+    let outerOrders = [],
+      members = await this.database.getMembers(),
+      orders = await this.database.getOrders();
+    switch (query.exchange) {
+      case SupportedExchange.OKEX:
+        const res = await this.okexConnector.router("getAllOrders", {
+          query: { ...query, instType: "SPOT" },
+        });
+        if (res.success) {
+          for (let order of res.payload) {
+            let parsedClOrdId = Utils.parseClOrdId(order.clOrdId),
+              memberId = parsedClOrdId.memberId,
+              id = parsedClOrdId.orderId,
+              dbOrder = orders.find(
+                (_order) =>
+                  _order.member_id.toString() === memberId.toString() &&
+                  _order.id.toString() === id.toString()
+              ),
+              member = dbOrder
+                ? members.find(
+                    (member) => member.id.toString() === memberId.toString()
+                  )
+                : null,
+              fundsReceived =
+                order.side === "buy"
+                  ? SafeMath.mult(order.avgPx, order.accFillSz)
+                  : order.accFillSz,
+              processOrder;
+            processOrder = {
+              ...order,
+              id,
+              email: member?.email || null,
+              memberId,
+              exchange: query.exchange,
+              fundsReceived,
+              ts: parseInt(order.uTime),
+            };
+            this.logger.log(`processOrder`, processOrder);
+            outerOrders = [...outerOrders, processOrder];
+          }
+        }
+        return new ResponseFormat({
+          message: "getOuterPendingOrders",
+          payload: outerOrders,
+        });
+      default:
+        return new ResponseFormat({
+          message: "getOuterPendingOrders",
+          payload: null,
+        });
+    }
+  }
+
   // market api end
   // trade api
   /**

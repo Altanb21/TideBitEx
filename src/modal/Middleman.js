@@ -51,6 +51,14 @@ class Middleman {
     }
   }
 
+  async getOuterPendingOrders(exchange) {
+    try {
+      return await this.communicator.getOuterPendingOrders(exchange);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }

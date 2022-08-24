@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
-const exchanges = ["OKEx"];
+const exchanges = Object.values(SupportedExchange);
 
 const Vouchers = () => {
   const storeCtx = useContext(StoreContext);
@@ -34,10 +34,10 @@ const Vouchers = () => {
     async ({ keyword, timeInterval, exchange, filterTrades }) => {
       if (timeInterval) setFilterOption(timeInterval);
       if (exchange) setFilterExchange(exchange);
-      let _trades =
-          filterTrades || trades[exchange] || (await getVouchers(exchange)),
-        _keyword = keyword === undefined ? filterKey : keyword,
+      let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
+        _trades =
+          filterTrades || trades[_exchange] || (await getVouchers(exchange)),
         ts = Date.now(),
         _timeInterval =
           timeInterval === "month"
@@ -69,6 +69,7 @@ const Vouchers = () => {
         setFilterTrades(_trades);
         // ++ TODO addSum
         let profits = _trades.reduce((prev, trade) => {
+          console.log(`profits trade`, trade);
           if (trade.revenue) {
             if (!prev[trade.feeCcy]) {
               prev[trade.feeCcy] = {
@@ -81,6 +82,7 @@ const Vouchers = () => {
               trade.revenue
             );
           }
+          console.log(`profits prev`, prev);
           return prev;
         }, {});
         setProfits(profits);
@@ -187,6 +189,7 @@ const Vouchers = () => {
           <li className="screen__table-header">{t("orderId")}</li>
           <li className="screen__table-header">{t("ticker")}</li>
           <li className="screen__table-header">{t("exchange")}</li>
+          <li className="screen__table-header">{t("transaction-side")}</li>
           <li className="screen__table-header">{t("match-fee")}</li>
           <li className="screen__table-header">{t("external-fee")}</li>
           <li className="screen__table-header">{t("referral")}</li>
@@ -215,6 +218,13 @@ const Vouchers = () => {
                 <div className="vouchers__text screen__table-item">
                   {trade.exchange}
                 </div>
+                <div
+                  className={`vouchers__textt screen__table-item${
+                    trade.side === "buy" ? " positive" : " negative"
+                  }`}
+                >
+                  {t(trade.side)}
+                </div>
                 <div className="vouchers__text screen__table-item positive">
                   {trade.fee ? `${trade.fee} ${trade.feeCcy}` : "Unknown"}
                 </div>
@@ -231,7 +241,9 @@ const Vouchers = () => {
                     trade.revenue > 0 ? " positive" : " negative"
                   }`}
                 >
-                  {trade.revenue ? `${trade.revenue} ${trade.feeCcy}` : "Unknown"}
+                  {trade.revenue
+                    ? `${trade.revenue} ${trade.feeCcy}`
+                    : "Unknown"}
                 </div>
               </div>
             ))}

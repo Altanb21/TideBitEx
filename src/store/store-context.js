@@ -239,6 +239,7 @@ const StoreContext = React.createContext({
   getExAccounts: async (exchange) => {},
   getUsersAccounts: async () => {},
   getOuterTradeFills: async (exchange) => {},
+  getOuterPendingOrders: async (exchange) => {},
   setFocusEl: () => {},
   changeRange: () => {},
 });

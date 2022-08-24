@@ -1,42 +1,62 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import { dateFormatter } from "../utils/Utils";
+import SupportedExchange from "../constant/SupportedExchange";
+import SafeMath from "../utils/SafeMath";
 
-const exchanges = ["ALL", "OKEx", "TideBit"];
+const exchanges = Object.values(SupportedExchange);
 
 const CurrentOrders = () => {
+  const storeCtx = useContext(StoreContext);
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [orders, setOrders] = useState(null);
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
-  const [filterExchange, setFilterExchange] = useState("ALL");
+  const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
 
+  const getCurrentOrders = useCallback(
+    async (exchange) => {
+      const orders = await storeCtx.getOuterPendingOrders(exchange);
+      setOrders((prev) => ({ ...prev, exchange: orders }));
+      return orders;
+    },
+    [storeCtx]
+  );
+
   const filter = useCallback(
-    ({ keyword, side, exchange, filterOrders }) => {
+    async ({ keyword, side, exchange, filterOrders }) => {
       if (side) setFilterOption(side);
       if (exchange) setFilterExchange(exchange);
-      let _orders = filterOrders || orders,
-        _option = side || filterOption,
+      let _option = side || filterOption,
         _keyword = keyword === undefined ? filterKey : keyword,
-        _exchange = exchange || filterExchange;
+        _exchange = exchange || filterExchange,
+        _orders =
+          filterOrders ||
+          orders[_exchange] ||
+          (await getCurrentOrders(exchange));
       if (_orders) {
-        _orders = Object.values(_orders).filter((order) => {
+        _orders = _orders.filter((order) => {
           if (_exchange === "ALL")
             if (_option === "all")
               return (
                 order.orderId.includes(_keyword) ||
                 order.memberId.includes(_keyword) ||
+                order.instId.includes(_keyword) ||
+                order.email.includes(_keyword) ||
                 order.exchange.includes(_keyword)
               );
             else
               return (
                 (order.orderId.includes(_keyword) ||
                   order.memberId.includes(_keyword) ||
+                  order.instId.includes(_keyword) ||
+                  order.email.includes(_keyword) ||
                   order.exchange.includes(_keyword)) &&
                 order.side === _option
               );
@@ -45,6 +65,8 @@ const CurrentOrders = () => {
               order.exchange === _exchange &&
               (order.orderId.includes(_keyword) ||
                 order.memberId.includes(_keyword) ||
+                order.instId.includes(_keyword) ||
+                order.email.includes(_keyword) ||
                 order.exchange.includes(_keyword))
             );
           else
@@ -52,6 +74,8 @@ const CurrentOrders = () => {
               order.exchange === _exchange &&
               (order.orderId.includes(_keyword) ||
                 order.memberId.includes(_keyword) ||
+                order.instId.includes(_keyword) ||
+                order.email.includes(_keyword) ||
                 order.exchange.includes(_keyword)) &&
               order.side === _option
             );
@@ -59,65 +83,8 @@ const CurrentOrders = () => {
         setFilterOrders(_orders);
       }
     },
-    [filterExchange, filterKey, filterOption, orders]
+    [filterExchange, filterKey, filterOption, getCurrentOrders, orders]
   );
-
-  const getCurrentOrders = useCallback(async () => {
-    return Promise.resolve({
-      38491204: {
-        orderId: "38491204",
-        memberId: "38491204",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        side: "bid",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-      38491205: {
-        orderId: "38491205",
-        memberId: "38491205",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        side: "bid",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-      38491206: {
-        orderId: "38491206",
-        memberId: "38491206",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "TideBit",
-        side: "ask",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-      38491207: {
-        orderId: "38491207",
-        memberId: "38491207",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        side: "bid",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-    });
-  }, []);
 
   const sorting = () => {
     setAscending((prev) => {
@@ -134,8 +101,6 @@ const CurrentOrders = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         const orders = await getCurrentOrders();
-        setOrders(orders);
-        console.log(orders);
         filter({ filterOrders: orders });
         return !prev;
       } else return prev;
@@ -177,7 +142,7 @@ const CurrentOrders = () => {
       </div>
       <div className="screen__tool-bar">
         <div className="screen__display">
-          <div className="screen__display-title">{`${t("show")}：`}</div>
+          <div className="screen__display-title">{`${t("show")}:`}</div>
           <ul className="screen__display-options">
             <li
               className={`screen__display-option${
@@ -205,7 +170,7 @@ const CurrentOrders = () => {
             </li>
           </ul>
         </div>
-        <div className="screen__sorting">
+        <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
         </div>
       </div>
@@ -243,17 +208,15 @@ const CurrentOrders = () => {
                   {order.exchange}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.originVolume - order.volume} / ${
-                    order.originVolume
+                  {`${order.accFillSz} / ${order.sz}`}
+                </div>
+                <div className="current-orders__text screen__table-item">
+                  {`${SafeMath.minus(order.sz - order.accFillSz)} / ${
+                    order.sz
                   }`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.volume} / ${order.originVolume}`}
-                </div>
-                <div className="current-orders__text screen__table-item">
-                  {`${(order.originVolume - order.volume) * order.price} / ${
-                    order.originVolume * order.price
-                  }`}
+                  {`${order.fundsReceived} / ${SafeMath(order.sz, order.px)}`}
                 </div>
               </div>
             ))}

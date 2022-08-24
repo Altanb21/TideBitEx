@@ -134,6 +134,19 @@ const StoreProvider = (props) => {
     [middleman]
   );
 
+  const getOuterPendingOrders = useCallback(
+    async (exchange) => {
+      let exAccounts = {};
+      try {
+        exAccounts = await middleman.getOuterPendingOrders(exchange);
+      } catch (error) {
+        console.log(error);
+      }
+      return exAccounts;
+    },
+    [middleman]
+  );
+
   // TODO get latest snapshot of orders, trades, accounts
   const postOrder = useCallback(
     async (order) => {
@@ -461,6 +474,7 @@ const StoreProvider = (props) => {
         getExAccounts,
         getUsersAccounts,
         getOuterTradeFills,
+        getOuterPendingOrders,
         setFocusEl,
         changeRange,
       }}
