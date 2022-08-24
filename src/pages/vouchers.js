@@ -14,7 +14,6 @@ const Vouchers = () => {
   const [isInit, setIsInit] = useState(null);
   const [trades, setTrades] = useState(null);
   const [profits, setProfits] = useState(null);
-  const [filterTicker, setFilterTicker] = useState(null);
   const [filterTrades, setFilterTrades] = useState(null);
   const [filterOption, setFilterOption] = useState("month"); //'month','year'
   const [filterKey, setFilterKey] = useState("");
@@ -22,6 +21,7 @@ const Vouchers = () => {
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
   const [tickers, setTickers] = useState({ ticker: t("ticker") });
+  const [filterTicker, setFilterTicker] = useState(t("ticker"));
 
   const getVouchers = useCallback(
     async (exchange) => {
@@ -53,6 +53,8 @@ const Vouchers = () => {
       }
       if (_trades) {
         _trades = _trades.filter((trade) => {
+          console.log(`trade.instId`,trade.instId)
+          console.log(`tickers`,tickers)
           if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
           let condition =
             (trade.orderId.includes(_keyword) ||

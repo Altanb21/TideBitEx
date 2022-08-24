@@ -16,11 +16,11 @@ const CurrentOrders = () => {
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
-  const [filterTicker, setFilterTicker] = useState(null);
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
   const [tickers, setTickers] = useState({ ticker: t("ticker") });
+  const [filterTicker, setFilterTicker] = useState(t("ticker"));
 
   const getCurrentOrders = useCallback(
     async (exchange) => {
@@ -39,6 +39,8 @@ const CurrentOrders = () => {
         _orders = filterOrders || orders[_exchange],
         _ticker = filterTicker || ticker,
         tickers = { ticker: t("ticker") };
+        console.log(`_ticker`, _ticker)
+        console.log(`filterTicker`, filterTicker)
       if (ticker) setFilterTicker(ticker);
       if (side) setFilterOption(side);
       if (exchange) {
@@ -48,6 +50,8 @@ const CurrentOrders = () => {
       }
       if (_orders) {
         _orders = _orders.filter((order) => {
+          console.log(`order.instId`,order.instId)
+          console.log(`tickers`,tickers)
           if (!tickers[_orders.instId])
             tickers[_orders.instId] = _orders.instId;
           let condition =
@@ -56,12 +60,14 @@ const CurrentOrders = () => {
             order.instId.includes(_keyword) ||
             order.email.includes(_keyword) ||
             order.exchange.includes(_keyword);
+            console.log(`condition1`,condition)
           if (_ticker !== t("ticker"))
             condition = condition && order.instId === ticker;
           if (_option !== "all")
             condition = condition && order.side === _option;
           if (_exchange !== "ALL")
             condition = condition && order.exchange === _exchange;
+            console.log(`condition2`,condition)
           return condition;
         });
         setFilterOrders(_orders);
