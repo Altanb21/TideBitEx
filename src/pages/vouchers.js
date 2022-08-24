@@ -4,6 +4,7 @@ import TableDropdown from "../components/TableDropdown";
 import { dateFormatter } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import SupportedExchange from "../constant/SupportedExchange";
+import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
 
@@ -55,7 +56,7 @@ const Vouchers = () => {
         // ++ TODO addSum
         let sum = 0;
         _trades.forEach((order) => {
-          sum += parseFloat(order.revenue);
+          sum = SafeMath.plus(sum, order.revenue);
           console.log(order.revenue);
         });
         setProfit(sum);
