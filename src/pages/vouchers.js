@@ -194,7 +194,7 @@ const Vouchers = () => {
           <TableDropdown
             className="screen__table-header"
             selectHandler={(option) => filter({ ticker: option })}
-            options={tickers}
+            options={Object.values(tickers)}
             selected={filterTicker}
           />
           <li className="screen__table-header">{t("exchange")}</li>
