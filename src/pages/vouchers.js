@@ -70,6 +70,7 @@ const Vouchers = () => {
           return condition;
         });
         setFilterTrades(_trades);
+        setTickers(tickers)
         // ++ TODO addSum
         let profits = _trades.reduce((prev, trade) => {
           console.log(`profits trade`, trade);
