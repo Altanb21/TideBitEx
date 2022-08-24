@@ -223,7 +223,7 @@ const CurrentOrders = () => {
                   }`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.fundsReceived} / ${SafeMath(order.sz, order.px)}`}
+                  {`${order.fundsReceived} / ${SafeMath.mult(order.sz, order.px)}`}
                 </div>
               </div>
             ))}
