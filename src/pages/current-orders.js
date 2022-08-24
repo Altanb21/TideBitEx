@@ -6,7 +6,7 @@ import { dateFormatter } from "../utils/Utils";
 import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
-const exchanges = Object.values(SupportedExchange);
+const exchanges = ["OKEx"];
 
 const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);

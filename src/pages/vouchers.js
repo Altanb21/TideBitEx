@@ -177,7 +177,7 @@ const Vouchers = () => {
       </div>
       <div className="screen__table--overivew">
         <div className="screen__table-title">{`${t("current-profit")}:`}</div>
-        {filterTrades &&
+        {profits &&
           Object.values(profits).map((profit) => (
             <div
               className={`screen__table-value${
