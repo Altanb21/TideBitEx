@@ -13,7 +13,7 @@ const Vouchers = () => {
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [trades, setTrades] = useState(null);
-  const [profit, setProfit] = useState(null);
+  const [profits, setProfits] = useState(null);
   const [filterTrades, setFilterTrades] = useState(null);
   const [filterOption, setFilterOption] = useState("month"); //'month','year'
   const [filterKey, setFilterKey] = useState("");
@@ -21,11 +21,21 @@ const Vouchers = () => {
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
 
+  const getVouchers = useCallback(
+    async (exchange) => {
+      const trades = await storeCtx.getOuterTradeFills(exchange);
+      setTrades((prev) => ({ ...prev, exchange: trades }));
+      return trades;
+    },
+    [storeCtx]
+  );
+
   const filter = useCallback(
-    ({ keyword, timeInterval, exchange, filterTrades }) => {
+    async ({ keyword, timeInterval, exchange, filterTrades }) => {
       if (timeInterval) setFilterOption(timeInterval);
       if (exchange) setFilterExchange(exchange);
-      let _trades = filterTrades || trades,
+      let _trades =
+          filterTrades || trades[exchange] || (await getVouchers(exchange)),
         _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         ts = Date.now(),
@@ -35,40 +45,49 @@ const Vouchers = () => {
             : 12 * 30 * 24 * 60 * 60 * 1000;
 
       if (_trades) {
-        _trades = _trades.filter((order) => {
+        _trades = _trades.filter((trade) => {
           if (_exchange === "ALL")
             return (
-              (order.orderId.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.exchange.includes(_keyword)) &&
-              ts - order.ts < _timeInterval
+              (trade.orderId.includes(_keyword) ||
+                trade.instId.includes(_keyword) ||
+                trade.email.includes(_keyword) ||
+                trade.memberId.includes(_keyword) ||
+                trade.exchange.includes(_keyword)) &&
+              ts - trade.ts < _timeInterval
             );
           else
             return (
-              order.exchange === _exchange &&
-              (order.orderId.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.exchange.includes(_keyword)) &&
-              ts - order.ts < _timeInterval
+              trade.exchange === _exchange &&
+              (trade.orderId.includes(_keyword) ||
+                trade.instId.includes(_keyword) ||
+                trade.email.includes(_keyword) ||
+                trade.memberId.includes(_keyword) ||
+                trade.exchange.includes(_keyword)) &&
+              ts - trade.ts < _timeInterval
             );
         });
         setFilterTrades(_trades);
         // ++ TODO addSum
-        let sum = 0;
-        _trades.forEach((order) => {
-          sum = SafeMath.plus(sum, order.revenue);
-          console.log(order.revenue);
-        });
-        setProfit(sum);
+        let profits = _trades.reduce((prev, trade) => {
+          if (trade.revenue) {
+            if (!prev[trade.feeCcy]) {
+              prev[trade.feeCcy] = {
+                sum: 0,
+                currency: trade.feeCcy,
+              };
+            }
+            prev[trade.feeCcy].sum = SafeMath.plus(
+              prev[trade.feeCcy].sum,
+              trade.revenue
+            );
+          }
+          return prev;
+        }, {});
+        setProfits(profits);
       }
     },
-    [filterExchange, filterKey, trades]
+    [filterExchange, filterKey, getVouchers, trades]
   );
-
-  const getVouchers = useCallback(async () => {
-    const trades = await storeCtx.getOuterTradeFills(SupportedExchange.OKEX);
-    return trades;
-  }, [storeCtx]);
 
   const sorting = () => {
     setAscending((prev) => {
@@ -84,8 +103,7 @@ const Vouchers = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const trades = await getVouchers();
-        setTrades(trades);
+        const trades = await getVouchers(exchanges[0]);
         filter({ filterTrades: trades });
         return !prev;
       } else return prev;
@@ -153,13 +171,14 @@ const Vouchers = () => {
       </div>
       <div className="screen__table--overivew">
         <div className="screen__table-title">{`${t("current-profit")}:`}</div>
-        {filterTrades && (
-          <div
-            className={`screen__table-value${
-              profit > 0 ? " positive" : " negative"
-            }`}
-          >{`${profit} ${filterTrades[0]?.feeCcy || "--"}`}</div>
-        )}
+        {filterTrades &&
+          Object.values(profits).map((profit) => (
+            <div
+              className={`screen__table-value${
+                profit?.sum > 0 ? " positive" : " negative"
+              }`}
+            >{`${profit?.sum || "--"} ${profit?.currency || "--"}`}</div>
+          ))}
       </div>
       <div className={`screen__table${showMore ? " show" : ""}`}>
         <ul className="screen__table-headers">

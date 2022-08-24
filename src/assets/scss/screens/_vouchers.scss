@@ -8,9 +8,17 @@
   &__text.negative {
     color: #dc484e;
   }
-  &__text.screen__table-item:nth-child(2){
+  & .screen__table-header:nth-child(1),
+  &__text.screen__table-item:nth-child(1) {
+    max-width: 100px;
+  }
+  & .screen__table-header:nth-child(2) {
+    min-width: 180px;
+  }
+  &__text.screen__table-item:nth-child(2) {
     min-width: 180px;
     flex-direction: column;
+    align-items: flex-start;
   }
   & .admin-dropdown__label {
     justify-content: start;
@@ -18,7 +26,11 @@
   & .admin-dropdown__options {
     top: 40px;
   }
-  & .screen__table-header:nth-child(2){
-    min-width: 180px;
+  & .screen__table {
+    min-height: 520px;
+  }
+  & .screen__table-value{
+    display: flex;
+    flex-direction: column;
   }
 }
