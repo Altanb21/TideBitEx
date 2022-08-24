@@ -101,12 +101,18 @@ const CurrentOrders = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const orders = await getCurrentOrders();
+        const orders = await getCurrentOrders(exchanges[0]);
         filter({ filterOrders: orders });
         return !prev;
       } else return prev;
     });
   }, [getCurrentOrders, filter]);
+
+  useEffect(() => {
+    if (!isInit) {
+      init();
+    }
+  }, [init, isInit]);
 
   useEffect(() => {
     if (!isInit) {
