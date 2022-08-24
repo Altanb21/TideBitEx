@@ -14,12 +14,14 @@ const Vouchers = () => {
   const [isInit, setIsInit] = useState(null);
   const [trades, setTrades] = useState(null);
   const [profits, setProfits] = useState(null);
+  const [filterTicker, setFilterTicker] = useState(null);
   const [filterTrades, setFilterTrades] = useState(null);
   const [filterOption, setFilterOption] = useState("month"); //'month','year'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
+  const [tickers, setTickers] = useState({ ticker: t("ticker") });
 
   const getVouchers = useCallback(
     async (exchange) => {
@@ -31,7 +33,7 @@ const Vouchers = () => {
   );
 
   const filter = useCallback(
-    async ({ keyword, timeInterval, exchange, filterTrades }) => {
+    async ({ keyword, timeInterval, exchange, filterTrades, ticker }) => {
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         _trades = filterTrades || trades[_exchange],
@@ -39,34 +41,31 @@ const Vouchers = () => {
         _timeInterval =
           timeInterval === "month"
             ? 30 * 24 * 60 * 60 * 1000
-            : 12 * 30 * 24 * 60 * 60 * 1000;
+            : 12 * 30 * 24 * 60 * 60 * 1000,
+        _ticker = filterTicker || ticker,
+        tickers = { ticker: t("ticker") };
+      if (ticker) setFilterTicker(ticker);
       if (timeInterval) setFilterOption(timeInterval);
       if (exchange) {
         setFilterExchange(exchange);
-        if(trades[exchange]) _trades =trades[exchange];
-        else _trades = await getVouchers(exchange)
+        if (trades[exchange]) _trades = trades[exchange];
+        else _trades = await getVouchers(exchange);
       }
       if (_trades) {
         _trades = _trades.filter((trade) => {
-          if (_exchange === "ALL")
-            return (
-              (trade.orderId.includes(_keyword) ||
-                trade.instId.includes(_keyword) ||
-                trade.email.includes(_keyword) ||
-                trade.memberId.includes(_keyword) ||
-                trade.exchange.includes(_keyword)) &&
-              ts - trade.ts < _timeInterval
-            );
-          else
-            return (
-              trade.exchange === _exchange &&
-              (trade.orderId.includes(_keyword) ||
-                trade.instId.includes(_keyword) ||
-                trade.email.includes(_keyword) ||
-                trade.memberId.includes(_keyword) ||
-                trade.exchange.includes(_keyword)) &&
-              ts - trade.ts < _timeInterval
-            );
+          if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
+          let condition =
+            (trade.orderId.includes(_keyword) ||
+              trade.instId.includes(_keyword) ||
+              trade.email.includes(_keyword) ||
+              trade.memberId.includes(_keyword) ||
+              trade.exchange.includes(_keyword)) &&
+            ts - trade.ts < _timeInterval;
+          if (_exchange !== "ALL")
+            condition = condition && trade.exchange === _exchange;
+          if (_ticker !== t("ticker"))
+            condition = condition && trade.instId === ticker;
+          return condition;
         });
         setFilterTrades(_trades);
         // ++ TODO addSum
@@ -90,7 +89,7 @@ const Vouchers = () => {
         setProfits(profits);
       }
     },
-    [filterExchange, filterKey, getVouchers, trades]
+    [filterExchange, filterKey, filterTicker, getVouchers, t, trades]
   );
 
   const sorting = () => {
@@ -191,7 +190,13 @@ const Vouchers = () => {
           <li className="screen__table-header">{t("date")}</li>
           <li className="screen__table-header">{t("memberId_email")}</li>
           <li className="screen__table-header">{t("orderId")}</li>
-          <li className="screen__table-header">{t("ticker")}</li>
+          {/* <li className="screen__table-header">{t("ticker")}</li> */}
+          <TableDropdown
+            className="screen__table-header"
+            selectHandler={(option) => filter({ ticker: option })}
+            options={tickers}
+            selected={filterTicker}
+          />
           <li className="screen__table-header">{t("exchange")}</li>
           <li className="screen__table-header">{t("transaction-side")}</li>
           <li className="screen__table-header">{t("match-fee")}</li>
@@ -223,26 +228,50 @@ const Vouchers = () => {
                   {trade.exchange}
                 </div>
                 <div
-                  className={`vouchers__textt screen__table-item${
+                  className={`vouchers__text screen__table-item${
                     trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
                   {t(trade.side)}
                 </div>
-                <div className="vouchers__text screen__table-item positive">
+                <div
+                  className={`vouchers__text screen__table-item${
+                    trade.fee ? (trade.fee > 0 ? " positive" : " negative") : ""
+                  }`}
+                >
                   {trade.fee ? `${trade.fee} ${trade.feeCcy}` : "Unknown"}
                 </div>
-                <div className="vouchers__text screen__table-item negative">
+                <div
+                  className={`vouchers__text screen__table-item${
+                    trade.externalFee
+                      ? trade.externalFee > 0
+                        ? " positive"
+                        : " negative"
+                      : ""
+                  }`}
+                >
                   {trade.externalFee
                     ? `${trade.externalFee} ${trade.feeCcy}`
                     : "--"}
                 </div>
-                <div className="vouchers__text screen__table-item negative">
+                <div
+                  className={`vouchers__text screen__table-item${
+                    trade.referral
+                      ? trade.referral > 0
+                        ? " positive"
+                        : " negative"
+                      : ""
+                  }`}
+                >
                   {trade.referral ? `${trade.referral} ${trade.feeCcy}` : "--"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
-                    trade.revenue > 0 ? " positive" : " negative"
+                    trade.revenue
+                      ? trade.revenue > 0
+                        ? " positive"
+                        : " negative"
+                      : ""
                   }`}
                 >
                   {trade.revenue

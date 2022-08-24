@@ -16,9 +16,11 @@ const CurrentOrders = () => {
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
+  const [filterTicker, setFilterTicker] = useState(null);
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
+  const [tickers, setTickers] = useState({ ticker: t("ticker") });
 
   const getCurrentOrders = useCallback(
     async (exchange) => {
@@ -30,11 +32,14 @@ const CurrentOrders = () => {
   );
 
   const filter = useCallback(
-    async ({ keyword, side, exchange, filterOrders }) => {
+    async ({ keyword, side, exchange, filterOrders, ticker }) => {
       let _option = side || filterOption,
         _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _orders = filterOrders || orders[_exchange];
+        _orders = filterOrders || orders[_exchange],
+        _ticker = filterTicker || ticker,
+        tickers = { ticker: t("ticker") };
+      if (ticker) setFilterTicker(ticker);
       if (side) setFilterOption(side);
       if (exchange) {
         setFilterExchange(exchange);
@@ -43,48 +48,35 @@ const CurrentOrders = () => {
       }
       if (_orders) {
         _orders = _orders.filter((order) => {
-          if (_exchange === "ALL")
-            if (_option === "all")
-              return (
-                order.id.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.instId.includes(_keyword) ||
-                order.email.includes(_keyword) ||
-                order.exchange.includes(_keyword)
-              );
-            else
-              return (
-                (order.id.includes(_keyword) ||
-                  order.memberId.includes(_keyword) ||
-                  order.instId.includes(_keyword) ||
-                  order.email.includes(_keyword) ||
-                  order.exchange.includes(_keyword)) &&
-                order.side === _option
-              );
-          else if (_option === "all")
-            return (
-              order.exchange === _exchange &&
-              (order.id.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.instId.includes(_keyword) ||
-                order.email.includes(_keyword) ||
-                order.exchange.includes(_keyword))
-            );
-          else
-            return (
-              order.exchange === _exchange &&
-              (order.id.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.instId.includes(_keyword) ||
-                order.email.includes(_keyword) ||
-                order.exchange.includes(_keyword)) &&
-              order.side === _option
-            );
+          if (!tickers[_orders.instId])
+            tickers[_orders.instId] = _orders.instId;
+          let condition =
+            order.id.includes(_keyword) ||
+            order.memberId.includes(_keyword) ||
+            order.instId.includes(_keyword) ||
+            order.email.includes(_keyword) ||
+            order.exchange.includes(_keyword);
+          if (_ticker !== t("ticker"))
+            condition = condition && order.instId === ticker;
+          if (_option !== "all")
+            condition = condition && order.side === _option;
+          if (_exchange !== "ALL")
+            condition = condition && order.exchange === _exchange;
+          return condition;
         });
         setFilterOrders(_orders);
+        setTickers(tickers);
       }
     },
-    [filterExchange, filterKey, filterOption, getCurrentOrders, orders]
+    [
+      filterExchange,
+      filterKey,
+      filterOption,
+      filterTicker,
+      getCurrentOrders,
+      orders,
+      t,
+    ]
   );
 
   const sorting = () => {
@@ -163,7 +155,7 @@ const CurrentOrders = () => {
               className={`screen__display-option${
                 filterOption === "ask" ? " active" : ""
               }`}
-              onClick={() => filter({ side: "ask" })}
+              onClick={() => filter({ side: "sell" })}
             >
               {t("bid")}
             </li>
@@ -171,7 +163,7 @@ const CurrentOrders = () => {
               className={`screen__display-option${
                 filterOption === "bid" ? " active" : ""
               }`}
-              onClick={() => filter({ side: "bid" })}
+              onClick={() => filter({ side: "buy" })}
             >
               {t("ask")}
             </li>
@@ -186,7 +178,13 @@ const CurrentOrders = () => {
           <li className="screen__table-header">{t("date")}</li>
           <li className="screen__table-header">{t("memberId_email")}</li>
           <li className="screen__table-header">{t("transaction-side")}</li>
-          <li className="screen__table-header">{t("exchange")}</li>
+          {/* <li className="screen__table-header">{t("exchange")}</li> */}
+          <TableDropdown
+            className="screen__table-header"
+            selectHandler={(option) => filter({ ticker: option })}
+            options={tickers}
+            selected={filterTicker}
+          />
           <li className="screen__table-header">{t("match-volume")}</li>
           <li className="screen__table-header">{t("unmatch-volume")}</li>
           <li className="screen__table-header">{t("turnover")}</li>
@@ -207,7 +205,7 @@ const CurrentOrders = () => {
                 </div>
                 <div
                   className={`current-orders__text screen__table-item${
-                    order.side === "bid" ? " positive" : " negative"
+                    order.side === "buy" ? " positive" : " negative"
                   }`}
                 >
                   {t(order.side)}
