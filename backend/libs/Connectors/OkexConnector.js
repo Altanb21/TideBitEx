@@ -1102,6 +1102,7 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
+    this.logger.log(`getAllOrders query`, query);
 
     try {
       const res = await axios({
@@ -1117,7 +1118,10 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      return res.data.data;
+      return new ResponseFormat({
+        message: "getAllOrders",
+        payload: res.data.data,
+      });
     } catch (err) {
       return [];
     }

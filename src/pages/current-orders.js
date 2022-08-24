@@ -46,7 +46,7 @@ const CurrentOrders = () => {
           if (_exchange === "ALL")
             if (_option === "all")
               return (
-                order.orderId.includes(_keyword) ||
+                order.id.includes(_keyword) ||
                 order.memberId.includes(_keyword) ||
                 order.instId.includes(_keyword) ||
                 order.email.includes(_keyword) ||
@@ -54,7 +54,7 @@ const CurrentOrders = () => {
               );
             else
               return (
-                (order.orderId.includes(_keyword) ||
+                (order.id.includes(_keyword) ||
                   order.memberId.includes(_keyword) ||
                   order.instId.includes(_keyword) ||
                   order.email.includes(_keyword) ||
@@ -64,7 +64,7 @@ const CurrentOrders = () => {
           else if (_option === "all")
             return (
               order.exchange === _exchange &&
-              (order.orderId.includes(_keyword) ||
+              (order.id.includes(_keyword) ||
                 order.memberId.includes(_keyword) ||
                 order.instId.includes(_keyword) ||
                 order.email.includes(_keyword) ||
@@ -73,7 +73,7 @@ const CurrentOrders = () => {
           else
             return (
               order.exchange === _exchange &&
-              (order.orderId.includes(_keyword) ||
+              (order.id.includes(_keyword) ||
                 order.memberId.includes(_keyword) ||
                 order.instId.includes(_keyword) ||
                 order.email.includes(_keyword) ||
@@ -196,7 +196,7 @@ const CurrentOrders = () => {
             filterOrders.map((order) => (
               <div
                 className={`current-orders__tile screen__table-row`}
-                key={order.orderId}
+                key={order.id}
               >
                 <div className="current-orders__text screen__table-item">
                   {dateFormatter(order.ts).text}
