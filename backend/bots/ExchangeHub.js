@@ -614,7 +614,7 @@ class ExchangeHub extends Bot {
                   memberId,
                   externalFee: Math.abs(trade.fee),
                   fee,
-                  revenue: SafeMath.minus(fee, trade.fee),
+                  revenue: SafeMath.minus(fee, Math.abs(trade.fee)),
                   exchange: query.exchange,
                   ts: parseInt(trade.ts)
                 };
