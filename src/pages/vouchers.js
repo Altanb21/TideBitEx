@@ -66,7 +66,7 @@ const Vouchers = () => {
 
   const getVouchers = useCallback(async () => {
     const trades = await storeCtx.getOuterTradeFills(SupportedExchange.OKEX);
-    return trades
+    return trades;
   }, [storeCtx]);
 
   const sorting = () => {
@@ -158,7 +158,7 @@ const Vouchers = () => {
             className={`screen__table-value${
               profit > 0 ? " positive" : " negative"
             }`}
-          >{`${profit} ${filterTrades[0]?.feeCcy}`}</div>
+          >{`${profit} ${filterTrades[0]?.feeCcy || "--"}`}</div>
         )}
       </div>
       <div className={`screen__table${showMore ? " show" : ""}`}>
