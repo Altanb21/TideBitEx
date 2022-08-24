@@ -305,7 +305,7 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
-  async _getOrderHistory(options) {
+  async getOrderHistory(options) {
     const { instType, instId, after, limit } = options;
     const method = "GET";
     const path = "/api/v5/trade/orders-history";

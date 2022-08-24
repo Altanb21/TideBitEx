@@ -274,8 +274,7 @@ class ExchangeHub extends Bot {
           ...order,
           price: SafeMath.div(_order.funds_received, _order.origin_volume),
         });
-      } else
-       if (
+      } else if (
         (order.state_code === this.database.ORDER_STATE.WAIT &&
           order.ordType === this.database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
         order.state_code === this.database.ORDER_STATE.CANCEL || // canceled 單
@@ -555,6 +554,84 @@ class ExchangeHub extends Bot {
         });
     }
   }
+
+  async getOuterTradeFills({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getOuterTradeFills ************`,
+      query
+    );
+    let outerTrades = {},
+      members = await this.database.getMembers(),
+      orders = await this.database.getOrders();
+    switch (query.exchange) {
+      case SupportedExchange.OKEX:
+        const res = await this.okexConnector.router(
+          "fetchTradeFillsHistoryRecords",
+          {
+            query: { ...query, instType: "SPOT" },
+          }
+        );
+        if (res.success) {
+          for (let trade of res.payload) {
+            let parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
+              memberId = parsedClOrdId.memberId,
+              orderId = parsedClOrdId.orderId,
+              order = orders.find(
+                (_order) =>
+                  _order.member_id === memberId && _order.id === orderId
+              );
+            if (order) {
+              let askFeeRate,
+                bidFeeRate,
+                instId = this._findInstId(query.market),
+                market = this._findMarket(instId),
+                member = members.find((member) => member.id === memberId);
+              if (member) {
+                let memberTag = member.member_tag;
+                if (memberTag) {
+                  if (memberTag.toString() === "1") {
+                    askFeeRate = market.ask.vip_fee;
+                    bidFeeRate = market.bid.vip_fee;
+                  }
+                  if (memberTag.toString() === "2") {
+                    askFeeRate = market.ask.hero_fee;
+                    bidFeeRate = market.bid.hero_fee;
+                  }
+                } else {
+                  askFeeRate = market.ask.fee;
+                  bidFeeRate = market.bid.fee;
+                }
+                let fee =
+                  trade.side === "sell"
+                    ? SafeMath.mult(
+                        SafeMath.mult(trade.fillPx, trade.fillSz),
+                        askFeeRate
+                      )
+                    : SafeMath.mult(trade.fillSz, bidFeeRate);
+                let processTrade = {
+                  ...trade,
+                  orderId,
+                  email: member.email,
+                  outerFee: trade.fee,
+                  fee,
+                  revenue: SafeMath.minus(fee, trade.fee),
+                  exchange: query.exchange
+                };
+                outerTrades = { ...outerTrades };
+                outerTrades[orderId] = processTrade;
+              }
+            }
+          }
+        }
+        return outerTrades;
+      default:
+        return new ResponseFormat({
+          message: "getOuterTradeFills",
+          payload: null,
+        });
+    }
+  }
+
   // market api end
   // trade api
   /**

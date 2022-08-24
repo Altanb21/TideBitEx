@@ -238,6 +238,7 @@ const StoreContext = React.createContext({
   activePageHandler: () => {},
   getExAccounts: async (exchange) => {},
   getUsersAccounts: async () => {},
+  getOuterTradeFills: async (exchange) => {},
   setFocusEl: () => {},
   changeRange: () => {},
 });

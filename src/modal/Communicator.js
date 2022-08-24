@@ -90,6 +90,19 @@ class Communicator {
     }
   }
 
+  async getOuterTradeFills(exchange) {
+    try {
+      if (!exchange) return { message: "exchange cannot be null" };
+      const res = await this._get(`/trade/fill-history?exchange=${exchange}`);
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
   // Market
   async ticker(id) {
     try {

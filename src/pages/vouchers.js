@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import StoreContext from "../store/store-context";
 import TableDropdown from "../components/TableDropdown";
 import { dateFormatter } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
+import SupportedExchange from "../constant/SupportedExchange";
 
-const exchanges = ["ALL", "OKEx", "TideBit"];
+const exchanges = ["OKEx"];
 
-const MatchOrders = () => {
+const Vouchers = () => {
+  const storeCtx = useContext(StoreContext);
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
-  const [orders, setOrders] = useState(null);
+  const [trades, setTrades] = useState(null);
   const [profit, setProfit] = useState(null);
-  const [filterOrders, setFilterOrders] = useState(null);
+  const [filterTrades, setFilterTrades] = useState(null);
   const [filterOption, setFilterOption] = useState("month"); //'month','year'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState("ALL");
@@ -18,10 +21,10 @@ const MatchOrders = () => {
   const { t } = useTranslation();
 
   const filter = useCallback(
-    ({ keyword, timeInterval, exchange, filterOrders }) => {
+    ({ keyword, timeInterval, exchange, filterTrades }) => {
       if (timeInterval) setFilterOption(timeInterval);
       if (exchange) setFilterExchange(exchange);
-      let _orders = filterOrders || orders,
+      let _trades = filterTrades || trades,
         _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         ts = Date.now(),
@@ -30,8 +33,8 @@ const MatchOrders = () => {
             ? 30 * 24 * 60 * 60 * 1000
             : 12 * 30 * 24 * 60 * 60 * 1000;
 
-      if (_orders) {
-        _orders = Object.values(_orders).filter((order) => {
+      if (_trades) {
+        _trades = Object.values(_trades).filter((order) => {
           if (_exchange === "ALL")
             return (
               (order.orderId.includes(_keyword) ||
@@ -48,82 +51,30 @@ const MatchOrders = () => {
               ts - order.ts < _timeInterval
             );
         });
-        setFilterOrders(_orders);
+        setFilterTrades(_trades);
         // ++ TODO addSum
         let sum = 0;
-        _orders.forEach((order) => {
+        _trades.forEach((order) => {
           sum += parseFloat(order.revenue);
           console.log(order.revenue);
         });
         setProfit(sum);
       }
     },
-    [filterExchange, filterKey, orders]
+    [filterExchange, filterKey, trades]
   );
 
-  const getMatchOrders = useCallback(async () => {
-    return Promise.resolve({
-      38491204: {
-        orderId: "38491204",
-        memberId: "38491204",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        fee: "0.000001",
-        externalFee: "0.000003",
-        referral: null,
-        revenue: "0.000007",
-        ts: 1655796586422,
-      },
-      38491205: {
-        orderId: "38491205",
-        memberId: "38491205",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        fee: "0.000001",
-        externalFee: "0.000003",
-        referral: "0.000003",
-        revenue: "-0.000002",
-        ts: 1655796586422,
-      },
-      38491206: {
-        orderId: "38491206",
-        memberId: "38491206",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "TideBit",
-        fee: "0.000001",
-        externalFee: null,
-        referral: null,
-        revenue: "0.000001",
-        ts: 1655796586422,
-      },
-      38491207: {
-        orderId: "38491207",
-        memberId: "38491207",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        fee: "0.000001",
-        externalFee: "0.000003",
-        referral: null,
-        revenue: "0.000007",
-        ts: 1655796586422,
-      },
-    });
-  }, []);
+  const getVouchers = useCallback(async () => {
+    const trades = await storeCtx.getOuterTradeFills(SupportedExchange.OKEX);
+    return trades
+  }, [storeCtx]);
 
   const sorting = () => {
     setAscending((prev) => {
-      setFilterOrders((prevOrders) =>
+      setFilterTrades((prevTrades) =>
         !prev
-          ? prevOrders.sort((a, b) => a.ts - b.ts)
-          : prevOrders.sort((a, b) => b.ts - a.ts)
+          ? prevTrades.sort((a, b) => a.ts - b.ts)
+          : prevTrades.sort((a, b) => b.ts - a.ts)
       );
       return !prev;
     });
@@ -132,14 +83,14 @@ const MatchOrders = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const orders = await getMatchOrders();
-        setOrders(orders);
-        console.log(orders);
-        filter({ filterOrders: orders });
+        const trades = await getVouchers();
+        setTrades(trades);
+        console.log(trades);
+        filter({ filterTrades: trades });
         return !prev;
       } else return prev;
     });
-  }, [getMatchOrders, filter]);
+  }, [getVouchers, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -148,7 +99,7 @@ const MatchOrders = () => {
   }, [init, isInit]);
 
   return (
-    <section className="screen__section match-orders">
+    <section className="screen__section vouchers">
       <div className="screen__header">{t("match-orders")}</div>
       <div className="screen__search-bar">
         <TableDropdown
@@ -196,25 +147,26 @@ const MatchOrders = () => {
             </li>
           </ul>
         </div>
-        <div className="screen__sorting">
+        <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
         </div>
       </div>
       <div className="screen__table--overivew">
         <div className="screen__table-title">{`${t("current-profit")}：`}</div>
-        {filterOrders && (
+        {filterTrades && (
           <div
             className={`screen__table-value${
               profit > 0 ? " positive" : " negative"
             }`}
-          >{`${profit} ${filterOrders[0].baseUnit}`}</div>
+          >{`${profit} ${filterTrades[0]?.feeCcy}`}</div>
         )}
       </div>
       <div className={`screen__table${showMore ? " show" : ""}`}>
         <ul className="screen__table-headers">
           <li className="screen__table-header">{t("date")}</li>
-          <li className="screen__table-header">{t("memberId")}</li>
+          <li className="screen__table-header">{t("memberId_email")}</li>
           <li className="screen__table-header">{t("orderId")}</li>
+          <li className="screen__table-header">{t("ticker")}</li>
           <li className="screen__table-header">{t("exchange")}</li>
           <li className="screen__table-header">{t("fee")}</li>
           <li className="screen__table-header">{t("external-fee")}</li>
@@ -222,41 +174,41 @@ const MatchOrders = () => {
           <li className="screen__table-header">{t("revenue")}</li>
         </ul>
         <ul className="screen__table-rows">
-          {filterOrders &&
-            filterOrders.map((order) => (
+          {filterTrades &&
+            filterTrades.map((trade) => (
               <div
-                className={`match-orders__tile screen__table-row`}
-                key={order.orderId}
+                className={`vouchers__tile screen__table-row`}
+                key={trade.orderId}
               >
-                <div className="match-orders__text screen__table-item">
-                  {dateFormatter(order.ts).text}
+                <div className="vouchers__text screen__table-item">
+                  {dateFormatter(trade.ts).text}
                 </div>
-                <div className="match-orders__text screen__table-item">
-                  {order.memberId}
+                <div className="vouchers__text screen__table-item">
+                  {`${trade.email}/${trade.memberId}`}
                 </div>
-                <div className="match-orders__text screen__table-item">
-                  {order.orderId}
+                <div className="vouchers__text screen__table-item">
+                  {trade.orderId}
                 </div>
-                <div className="match-orders__text screen__table-item">
-                  {order.exchange}
+                <div className="vouchers__text screen__table-item">
+                  {trade.exchange}
                 </div>
-                <div className="match-orders__text screen__table-item positive">
-                  {order.fee ? `${order.fee} ${order.baseUnit}` : "-"}
+                <div className="vouchers__text screen__table-item positive">
+                  {trade.fee ? `${trade.fee} ${trade.feeCcy}` : "-"}
                 </div>
-                <div className="match-orders__text screen__table-item negative">
-                  {order.externalFee
-                    ? `${order.externalFee} ${order.baseUnit}`
+                <div className="vouchers__text screen__table-item negative">
+                  {trade.externalFee
+                    ? `${trade.externalFee} ${trade.feeCcy}`
                     : "-"}
                 </div>
-                <div className="match-orders__text screen__table-item negative">
-                  {order.referral ? `${order.referral} ${order.baseUnit}` : "-"}
+                <div className="vouchers__text screen__table-item negative">
+                  {trade.referral ? `${trade.referral} ${trade.feeCcy}` : "-"}
                 </div>
                 <div
-                  className={`match-orders__text screen__table-item${
-                    order.revenue > 0 ? " positive" : " negative"
+                  className={`vouchers__text screen__table-item${
+                    trade.revenue > 0 ? " positive" : " negative"
                   }`}
                 >
-                  {order.revenue ? `${order.revenue} ${order.baseUnit}` : "-"}
+                  {trade.revenue ? `${trade.revenue} ${trade.feeCcy}` : "-"}
                 </div>
               </div>
             ))}
@@ -285,4 +237,4 @@ const MatchOrders = () => {
   );
 };
 
-export default MatchOrders;
+export default Vouchers;

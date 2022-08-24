@@ -43,6 +43,14 @@ class Middleman {
     }
   }
 
+  async getOuterTradeFills(exchange) {
+    try {
+      return await this.communicator.getOuterTradeFills(exchange);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }
