@@ -152,7 +152,7 @@ const Vouchers = () => {
         </div>
       </div>
       <div className="screen__table--overivew">
-        <div className="screen__table-title">{`${t("current-profit")}：`}</div>
+        <div className="screen__table-title">{`${t("current-profit")}:`}</div>
         {filterTrades && (
           <div
             className={`screen__table-value${
@@ -168,7 +168,7 @@ const Vouchers = () => {
           <li className="screen__table-header">{t("orderId")}</li>
           <li className="screen__table-header">{t("ticker")}</li>
           <li className="screen__table-header">{t("exchange")}</li>
-          <li className="screen__table-header">{t("fee")}</li>
+          <li className="screen__table-header">{t("match-fee")}</li>
           <li className="screen__table-header">{t("external-fee")}</li>
           <li className="screen__table-header">{t("referral")}</li>
           <li className="screen__table-header">{t("revenue")}</li>
