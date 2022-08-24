@@ -16,7 +16,7 @@ const Vouchers = () => {
   const [filterTrades, setFilterTrades] = useState(null);
   const [filterOption, setFilterOption] = useState("month"); //'month','year'
   const [filterKey, setFilterKey] = useState("");
-  const [filterExchange, setFilterExchange] = useState("ALL");
+  const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
 
@@ -127,7 +127,7 @@ const Vouchers = () => {
       </div>
       <div className="screen__tool-bar">
         <div className="screen__display">
-          <div className="screen__display-title">{`${t("show")}：`}</div>
+          <div className="screen__display-title">{`${t("show")}:`}</div>
           <ul className="screen__display-options">
             <li
               className={`screen__display-option${
