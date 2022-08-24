@@ -184,7 +184,7 @@ const CurrentOrders = () => {
       <div className={`screen__table${showMore ? " show" : ""}`}>
         <ul className="screen__table-headers">
           <li className="screen__table-header">{t("date")}</li>
-          <li className="screen__table-header">{t("memberId")}</li>
+          <li className="screen__table-header">{t("memberId_email")}</li>
           <li className="screen__table-header">{t("transaction-side")}</li>
           <li className="screen__table-header">{t("exchange")}</li>
           <li className="screen__table-header">{t("match-volume")}</li>
@@ -202,7 +202,8 @@ const CurrentOrders = () => {
                   {dateFormatter(order.ts).text}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {order.memberId}
+                  <div>{`${order.email || "Unknown"}/`}</div>
+                  <div>{order.memberId}</div>
                 </div>
                 <div
                   className={`current-orders__text screen__table-item${
@@ -218,12 +219,13 @@ const CurrentOrders = () => {
                   {`${order.accFillSz} / ${order.sz}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${SafeMath.minus(order.sz - order.accFillSz)} / ${
-                    order.sz
-                  }`}
+                  {`${SafeMath.minus(order.sz, order.accFillSz)} / ${order.sz}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.fundsReceived} / ${SafeMath.mult(order.sz, order.px)}`}
+                  {`${order.fundsReceived} / ${SafeMath.mult(
+                    order.sz,
+                    order.px
+                  )}`}
                 </div>
               </div>
             ))}
