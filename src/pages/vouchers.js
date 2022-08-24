@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
-const exchanges = Object.values(SupportedExchange);
+const exchanges = ["OKEx"];
 
 const Vouchers = () => {
   const storeCtx = useContext(StoreContext);
@@ -32,18 +32,20 @@ const Vouchers = () => {
 
   const filter = useCallback(
     async ({ keyword, timeInterval, exchange, filterTrades }) => {
-      if (timeInterval) setFilterOption(timeInterval);
-      if (exchange) setFilterExchange(exchange);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _trades =
-          filterTrades || trades[_exchange] || (await getVouchers(exchange)),
+        _trades = filterTrades || trades[_exchange],
         ts = Date.now(),
         _timeInterval =
           timeInterval === "month"
             ? 30 * 24 * 60 * 60 * 1000
             : 12 * 30 * 24 * 60 * 60 * 1000;
-
+      if (timeInterval) setFilterOption(timeInterval);
+      if (exchange) {
+        setFilterExchange(exchange);
+        if(trades[exchange]) _trades =trades[exchange];
+        else _trades = await getVouchers(exchange)
+      }
       if (_trades) {
         _trades = _trades.filter((trade) => {
           if (_exchange === "ALL")
@@ -124,7 +126,9 @@ const Vouchers = () => {
       <div className="screen__search-bar">
         <TableDropdown
           className="screen__filter"
-          selectHandler={(option) => filter({ exchange: option })}
+          selectHandler={(option) => {
+            filter({ exchange: option });
+          }}
           options={exchanges}
           selected={filterExchange}
         />

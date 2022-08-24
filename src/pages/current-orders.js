@@ -31,15 +31,16 @@ const CurrentOrders = () => {
 
   const filter = useCallback(
     async ({ keyword, side, exchange, filterOrders }) => {
-      if (side) setFilterOption(side);
-      if (exchange) setFilterExchange(exchange);
       let _option = side || filterOption,
         _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _orders =
-          filterOrders ||
-          orders[_exchange] ||
-          (await getCurrentOrders(exchange));
+        _orders = filterOrders || orders[_exchange];
+      if (side) setFilterOption(side);
+      if (exchange) {
+        setFilterExchange(exchange);
+        if (orders[exchange]) _orders = orders[exchange];
+        else _orders = await getCurrentOrders(exchange);
+      }
       if (_orders) {
         _orders = _orders.filter((order) => {
           if (_exchange === "ALL")
