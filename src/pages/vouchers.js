@@ -34,7 +34,7 @@ const Vouchers = () => {
             : 12 * 30 * 24 * 60 * 60 * 1000;
 
       if (_trades) {
-        _trades = Object.values(_trades).filter((order) => {
+        _trades = _trades.filter((order) => {
           if (_exchange === "ALL")
             return (
               (order.orderId.includes(_keyword) ||
@@ -85,7 +85,6 @@ const Vouchers = () => {
       if (!prev) {
         const trades = await getVouchers();
         setTrades(trades);
-        console.log(trades);
         filter({ filterTrades: trades });
         return !prev;
       } else return prev;
@@ -189,6 +188,9 @@ const Vouchers = () => {
                 </div>
                 <div className="vouchers__text screen__table-item">
                   {trade.orderId}
+                </div>
+                <div className="vouchers__text screen__table-item">
+                  {trade.instId}
                 </div>
                 <div className="vouchers__text screen__table-item">
                   {trade.exchange}
