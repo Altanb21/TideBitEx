@@ -578,56 +578,62 @@ class ExchangeHub extends Bot {
               orderId = parsedClOrdId.orderId,
               order = orders.find(
                 (_order) =>
-                  _order.member_id.toString() === memberId.toString() && _order.id.toString() === orderId.toString()
-              );
-            if (order) {
-              let askFeeRate,
-                bidFeeRate,
-                market = this._findMarket(trade.instId),
-                member = members.find((member) => member.id.toString() === memberId.toString());
-              if (member) {
-                let memberTag = member.member_tag;
-                if (memberTag) {
-                  if (memberTag.toString() === "1") {
-                    askFeeRate = market.ask.vip_fee;
-                    bidFeeRate = market.bid.vip_fee;
-                  }
-                  if (memberTag.toString() === "2") {
-                    askFeeRate = market.ask.hero_fee;
-                    bidFeeRate = market.bid.hero_fee;
-                  }
-                } else {
-                  askFeeRate = market.ask.fee;
-                  bidFeeRate = market.bid.fee;
-                }
-                let fee =
-                  trade.side === "sell"
-                    ? SafeMath.mult(
-                        SafeMath.mult(trade.fillPx, trade.fillSz),
-                        askFeeRate
-                      )
-                    : SafeMath.mult(trade.fillSz, bidFeeRate);
-                let processTrade = {
-                  ...trade,
-                  orderId,
-                  email: member.email,
-                  memberId,
-                  externalFee: Math.abs(trade.fee),
-                  fee,
-                  revenue: SafeMath.minus(fee, Math.abs(trade.fee)),
-                  exchange: query.exchange,
-                  ts: parseInt(trade.ts)
-                };
-                this.logger.log(`processTrade`,processTrade)
-                outerTrades = [...outerTrades, processTrade];
+                  _order.member_id.toString() === memberId.toString() &&
+                  _order.id.toString() === orderId.toString()
+              ),
+              askFeeRate,
+              bidFeeRate,
+              market = this._findMarket(trade.instId),
+              member = order
+                ? members.find(
+                    (member) => member.id.toString() === memberId.toString()
+                  )
+                : null,
+              memberTag = member?.member_tag,
+              fee,
+              processTrade,
+              revenue;
+            if (memberTag) {
+              if (memberTag.toString() === "1") {
+                askFeeRate = market.ask.vip_fee;
+                bidFeeRate = market.bid.vip_fee;
               }
+              if (memberTag.toString() === "2") {
+                askFeeRate = market.ask.hero_fee;
+                bidFeeRate = market.bid.hero_fee;
+              }
+            } else {
+              askFeeRate = market.ask.fee;
+              bidFeeRate = market.bid.fee;
             }
+            fee = order
+              ? trade.side === "sell"
+                ? SafeMath.mult(
+                    SafeMath.mult(trade.fillPx, trade.fillSz),
+                    askFeeRate
+                  )
+                : SafeMath.mult(trade.fillSz, bidFeeRate)
+              : null;
+            revenue = order ? SafeMath.minus(fee, Math.abs(trade.fee)) : null;
+            processTrade = {
+              ...trade,
+              orderId,
+              email: member?.email || null,
+              memberId,
+              externalFee: Math.abs(trade.fee),
+              fee,
+              revenue: revenue,
+              exchange: query.exchange,
+              ts: parseInt(trade.ts),
+            };
+            this.logger.log(`processTrade`, processTrade);
+            outerTrades = [...outerTrades, processTrade];
           }
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
           payload: outerTrades,
-        });;
+        });
       default:
         return new ResponseFormat({
           message: "getOuterTradeFills",
