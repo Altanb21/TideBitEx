@@ -29,8 +29,9 @@
   & .screen__table {
     min-height: 520px;
   }
-  & .screen__table-value{
+  & .screen__table-values {
     display: flex;
     flex-direction: column;
+    gap: 5px;
   }
 }

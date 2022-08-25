@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from "react";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
-import { dateFormatter } from "../utils/Utils";
+import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
@@ -225,15 +225,20 @@ const CurrentOrders = () => {
                   {order.exchange}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.accFillSz} / ${order.sz}`}
+                  {`${convertExponentialToDecimal(
+                    order.accFillSz
+                  )} / ${convertExponentialToDecimal(order.sz)}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${SafeMath.minus(order.sz, order.accFillSz)} / ${order.sz}`}
+                  {`${convertExponentialToDecimal(
+                    SafeMath.minus(order.sz, order.accFillSz)
+                  )} / ${convertExponentialToDecimal(order.sz)}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.fundsReceived} / ${SafeMath.mult(
-                    order.sz,
-                    order.px
+                  {`${convertExponentialToDecimal(
+                    order.fundsReceived
+                  )} / ${convertExponentialToDecimal(
+                    SafeMath.mult(order.sz, order.px)
                   )}`}
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import StoreContext from "../store/store-context";
 import TableDropdown from "../components/TableDropdown";
-import { dateFormatter } from "../utils/Utils";
+import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
@@ -29,7 +29,7 @@ const Vouchers = () => {
       setTrades((prev) => {
         let _trades = { ...prev };
         _trades[exchange] = trades;
-        return prev;
+        return _trades;
       });
       return trades;
     },
@@ -77,8 +77,7 @@ const Vouchers = () => {
         setTickers(tickers);
         // ++ TODO addSum
         let profits = _trades.reduce((prev, trade) => {
-          console.log(`profits trade`, trade);
-          if (trade.revenue) {
+          if (trade.fee) {
             if (!prev[trade.feeCcy]) {
               prev[trade.feeCcy] = {
                 sum: 0,
@@ -87,10 +86,9 @@ const Vouchers = () => {
             }
             prev[trade.feeCcy].sum = SafeMath.plus(
               prev[trade.feeCcy].sum,
-              trade.revenue
+              trade.fee
             );
           }
-          console.log(`profits prev`, prev);
           return prev;
         }, {});
         setProfits(profits);
@@ -183,14 +181,18 @@ const Vouchers = () => {
       </div>
       <div className="screen__table--overivew">
         <div className="screen__table-title">{`${t("current-profit")}:`}</div>
-        {profits &&
-          Object.values(profits).map((profit) => (
-            <div
-              className={`screen__table-value${
-                profit?.sum > 0 ? " positive" : " negative"
-              }`}
-            >{`${profit?.sum || "--"} ${profit?.currency || "--"}`}</div>
-          ))}
+        <div className="screen__table--values">
+          {profits &&
+            Object.values(profits).map((profit) => (
+              <div
+                className={`screen__table-value${
+                  profit?.sum > 0 ? " positive" : " negative"
+                }`}
+              >{`${convertExponentialToDecimal(profit?.sum) || "--"} ${
+                profit?.currency || "--"
+              }`}</div>
+            ))}
+        </div>
       </div>
       <div className={`screen__table${showMore ? " show" : ""}`}>
         <ul className="screen__table-headers">
@@ -243,22 +245,24 @@ const Vouchers = () => {
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
-                    trade.fee ? (trade.fee > 0 ? " positive" : " negative") : ""
+                    trade.fee ? " positive" : ""
                   }`}
                 >
-                  {trade.fee ? `${trade.fee} ${trade.feeCcy}` : "Unknown"}
+                  {trade.fee
+                    ? `${convertExponentialToDecimal(trade.fee)} ${
+                        trade.feeCcy
+                      }`
+                    : "Unknown"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
-                    trade.externalFee
-                      ? trade.externalFee > 0
-                        ? " positive"
-                        : " negative"
-                      : ""
+                    trade.externalFee ? " negative" : ""
                   }`}
                 >
                   {trade.externalFee
-                    ? `${trade.externalFee} ${trade.feeCcy}`
+                    ? `${convertExponentialToDecimal(trade.externalFee)} ${
+                        trade.feeCcy
+                      }`
                     : "--"}
                 </div>
                 <div
@@ -270,7 +274,11 @@ const Vouchers = () => {
                       : ""
                   }`}
                 >
-                  {trade.referral ? `${trade.referral} ${trade.feeCcy}` : "--"}
+                  {trade.referral
+                    ? `${convertExponentialToDecimal(trade.referral)} ${
+                        trade.feeCcy
+                      }`
+                    : "--"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
@@ -282,7 +290,9 @@ const Vouchers = () => {
                   }`}
                 >
                   {trade.revenue
-                    ? `${trade.revenue} ${trade.feeCcy}`
+                    ? `${convertExponentialToDecimal(trade.revenue)} ${
+                        trade.feeCcy
+                      }`
                     : "Unknown"}
                 </div>
               </div>
