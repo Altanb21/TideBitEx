@@ -1,154 +1,80 @@
-.toggle-button-cover {
-  display: table-cell;
-  position: relative;
-  width: 200px;
-  height: 140px;
-  box-sizing: border-box;
-}
-
-.button-cover {
-  height: 100px;
-  margin: 20px;
-  background-color: #fff;
-  box-shadow: 0 10px 20px -8px #c5d6d6;
-  border-radius: 4px;
-}
-
-.button-cover:before {
-  counter-increment: button-counter;
-  content: counter(button-counter);
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  color: #d7e3e3;
-  font-size: 12px;
-  line-height: 1;
-  padding: 5px;
-}
-
-.button-cover,
-.knobs,
-.layer {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}
-
-.button {
-  position: relative;
-  top: 50%;
-  width: 74px;
-  height: 36px;
-  margin: -20px auto 0 auto;
-  overflow: hidden;
-}
-
-.button.r,
-.button.r .layer {
-  border-radius: 100px;
-}
-
-.button.b2 {
-  border-radius: 2px;
-}
-
-.checkbox {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-  z-index: 3;
-}
-
-.knobs {
-  z-index: 2;
-}
-
-.layer {
-  width: 100%;
-  background-color: rgba(0, 206, 125, 0.8);
-  transition: 0.3s ease all;
-  z-index: 1;
-}
-
-/* Button 12 */
-#button-12 .knobs:before,
-#button-12 .knobs:after,
-#button-12 .knobs span,
-#button-12 .knobs span:before,
-#button-12 .knobs span:after {
-  position: absolute;
-  top: 4px;
-  font-size: 10px;
-  font-weight: bold;
-  text-align: center;
-  line-height: 1;
-  border-radius: 2px;
-  transition: 0.3s ease all;
-}
-
-#button-12 .knobs:before {
-  content: "YES";
-  left: 4px;
-}
-
-#button-12 .knobs:after {
-  content: "NO";
-  right: 4px;
-}
-
-#button-12 .knobs:before,
-#button-12 .knobs:after {
-  width: 27px;
-  height: 10px;
-  color: #4e4e4e;
-  padding: 9px 3px;
-  z-index: 1;
-}
-
-#button-12 .knobs span {
+.toggle-btn {
+  min-width: 71px;
   display: inline-block;
-  z-index: 2;
-}
-
-#button-12 .knobs span,
-#button-12 .knobs span:before,
-#button-12 .knobs span:after {
-  width: 20px;
-  height: 10px;
-  padding: 9px 4px;
-}
-
-#button-12 .knobs span:before,
-#button-12 .knobs span:after {
-  content: "";
-  top: 0;
-  color: #ffffff80;
-}
-
-#button-12 .knobs span:before {
-  left: -28px;
-  background-color: #333;
-}
-
-#button-12 .knobs span:after {
-  right: -42px;
-  background-color: #333;
-}
-
-#button-12 .checkbox:checked + .knobs span:before {
-  left: 4px;
-}
-
-#button-12 .checkbox:checked + .knobs span:after {
-  right: -74px;
-}
-
-#button-12 .checkbox:checked ~ .layer {
-  background-color: rgba(208, 2, 27, 0.8);
+  cursor: pointer;
+  border-radius: 4px;
+  position: relative;
+  text-align: left;
+  overflow: hidden;
+  line-height: 8px;
+  user-select: none;
+  vertical-align: middle;
+  min-width: 100px;
+  -webkit-transition: border-color ease-in-out 0.15s,
+    box-shadow ease-in-out 0.15s;
+  transition: border-color ease-in-out 0.15s, box-shadow ease-in-out 0.15s;
+  &.off > &__container {
+    margin-left: -50%;
+  }
+  &__container {
+    transition: margin-left 0.5s;
+    display: inline-block;
+    width: 150%;
+    top: 0;
+    border-radius: 4px;
+    transform: translate3d(0, 0, 0);
+  }
+  &__handle-on {
+    padding: 6px 2px;
+    font-size: 12px;
+    color: white !important;
+    background-color: rgba(0, 206, 125, 0.8);
+    line-height: 9px;
+    border-bottom-left-radius: 3px;
+    border-top-left-radius: 3px;
+    text-align: center;
+    z-index: 1;
+    width: 33.33333333%;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-block !important;
+    height: 100%;
+  }
+  &__handle-off {
+    padding: 6px 2px;
+    font-size: 12px;
+    color: white !important;
+    background-color: rgba(208, 2, 27, 0.8);
+    line-height: 9px;
+    border-bottom-right-radius: 3px;
+    border-top-right-radius: 3px;
+    text-align: center;
+    z-index: 1;
+    width: 33.33333333%;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-block !important;
+    height: 100%;
+  }
+  &__label {
+    color: rgba(255, 255, 255, 0.5);
+    padding: 6px 2px;
+    font-size: 12px;
+    background-color: #333;
+    line-height: 9px;
+    width: 33.33333333%;
+    z-index: 100;
+    box-sizing: border-box;
+    cursor: pointer;
+    display: inline-block !important;
+    height: 100%;
+  }
+  &.off &__labe {
+    border-bottom-left-radius: 3px;
+    border-top-left-radius: 3px;
+  }
+  &.on &__labe {
+    border-bottom-right-radius: 3px;
+    border-top-right-radius: 3px;
+  }
 }

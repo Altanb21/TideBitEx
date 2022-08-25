@@ -6,28 +6,16 @@ import { AccountMobileTile } from "./HistoryOrder";
 
 const ToggleButton = (props) => {
   return (
-    // <div class="toggle-button-cover" onClick={props.onClick}>
-    //   <div class="button-cover">
-    //     <div class="button b2" id="button-12">
-    //       <input type="checkbox" class="checkbox" checked={props.status} />
-    //       <div class="knobs">
-    //         <span>{props.option}</span>
-    //       </div>
-    //       <div class="layer"></div>
-    //     </div>
-    //   </div>
-    // </div>
-    <div class="bootstrap-switch bootstrap-switch-wrapper bootstrap-switch-off bootstrap-switch-mini bootstrap-switch-animate">
-      <div class="bootstrap-switch-container">
-        <span class="bootstrap-switch-handle-on bootstrap-switch-success">
+    <div class={`toggle-btn${props.status? ` on`: ` off`}`}>
+      <div class="toggle-btn__container">
+        <span class="toggle-btn__handle-on">
           ON
         </span>
-        <label class="bootstrap-switch-label">{props.option}</label>
-        <span class="bootstrap-switch-handle-off bootstrap-switch-default">
+        <label class="toggle-btn__label">{props.option}</label>
+        <span class="toggle-btn__handle-off">
           OFF
         </span>
         <input
-          data-on-color="success"
           data-size="mini"
           name="sound-checkbox"
           type="checkbox"
