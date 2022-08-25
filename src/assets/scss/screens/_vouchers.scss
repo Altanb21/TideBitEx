@@ -12,6 +12,16 @@
   &__text.screen__table-item:nth-child(1) {
     max-width: 100px;
   }
+  & .screen__table-header:nth-child(7),
+  &__text.screen__table-item:nth-child(7),
+  & .screen__table-header:nth-child(8),
+  &__text.screen__table-item:nth-child(8),
+  & .screen__table-header:nth-child(9),
+  &__text.screen__table-item:nth-child(9),
+  & .screen__table-header:nth-child(10),
+  &__text.screen__table-item:nth-child(10) {
+    max-width: 135px;
+  }
   & .screen__table-header:nth-child(2) {
     min-width: 180px;
   }

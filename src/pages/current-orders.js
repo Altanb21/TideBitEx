@@ -3,7 +3,6 @@ import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
-import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
@@ -65,7 +64,6 @@ const CurrentOrders = () => {
             condition = condition && order.side === _option;
           if (_exchange !== "ALL")
             condition = condition && order.exchange === _exchange;
-          console.log(`condition2`, condition);
           return condition;
         });
         setFilterOrders(_orders);
@@ -253,7 +251,6 @@ const CurrentOrders = () => {
           onClick={() => {
             const screenSection =
               window.document.querySelector(".screen__section");
-            // console.log(screenSection.scrollTop)
             screenSection.scroll(0, 0);
           }}
         >

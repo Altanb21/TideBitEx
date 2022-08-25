@@ -3,7 +3,6 @@ import StoreContext from "../store/store-context";
 import TableDropdown from "../components/TableDropdown";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
-import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
@@ -71,12 +70,8 @@ const Vouchers = () => {
             condition = condition && trade.instId === _ticker;
           return condition;
         });
-        console.log(`_trades`,_trades)
-        console.log(`ticker`,ticker)
-        console.log(`_ticker`,_ticker)
         setFilterTrades(_trades);
         setTickers(tickers);
-        // ++ TODO addSum
         let profits = _trades.reduce((prev, trade) => {
           if (trade.fee) {
             if (!prev[trade.feeCcy]) {
@@ -216,10 +211,10 @@ const Vouchers = () => {
         </ul>
         <ul className="screen__table-rows">
           {filterTrades &&
-            filterTrades.map((trade) => (
+            filterTrades.map((trade, i) => (
               <div
                 className={`vouchers__tile screen__table-row`}
-                key={trade.orderId}
+                key={`${i}-${trade.orderId}`}
               >
                 <div className="vouchers__text screen__table-item">
                   {dateFormatter(trade.ts).text}
@@ -312,7 +307,6 @@ const Vouchers = () => {
           onClick={() => {
             const screenSection =
               window.document.querySelector(".screen__section");
-            // console.log(screenSection.scrollTop)
             screenSection.scroll(0, 0);
           }}
         >
