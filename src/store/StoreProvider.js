@@ -430,6 +430,7 @@ const StoreProvider = (props) => {
       setTrades(middleman.getTrades());
       setBooks(middleman.getDepthBooks());
       setIsLogin(middleman.isLogin);
+      setMemberEmail(middleman.email);
       setMemberId(middleman.memberId);
       setAccounts(middleman.getAccounts());
       const orders = middleman.getMyOrders();
