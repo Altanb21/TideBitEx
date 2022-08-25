@@ -23,6 +23,7 @@ const StoreProvider = (props) => {
   const history = useHistory();
   const [isLogin, setIsLogin] = useState(false);
   const [memberId, setMemberId] = useState(false);
+  const [memberEmail, setMemberEmail] = useState(false);
   const [tickers, setTickers] = useState([]);
   const [books, setBooks] = useState(null);
   const [trades, setTrades] = useState([]);
@@ -119,7 +120,6 @@ const StoreProvider = (props) => {
     }
     return usersAccounts;
   }, [middleman]);
-  
 
   const getOuterTradeFills = useCallback(
     async (exchange) => {
@@ -361,8 +361,8 @@ const StoreProvider = (props) => {
           middleman.depthBook.updateAll(metaData.data.market, metaData.data);
           // let time = new Date();
           // if (time - depthBookLastTimeSync > depthBookSyncInterval) {
-            // depthBookLastTimeSync = time;
-            setBooks(middleman.getDepthBooks());
+          // depthBookLastTimeSync = time;
+          setBooks(middleman.getDepthBooks());
           // }
           break;
         case Events.order:
@@ -404,6 +404,7 @@ const StoreProvider = (props) => {
     await middleman.sync();
     setIsLogin(middleman.isLogin);
     setMemberId(middleman.memberId);
+    setMemberEmail(middleman.email);
     setAccounts(middleman.getAccounts());
     const orders = middleman.getMyOrders();
     setPendingOrders(orders.pendingOrders);
@@ -460,6 +461,7 @@ const StoreProvider = (props) => {
         focusEl,
         tickSz,
         lotSz,
+        memberEmail,
         setIsLogin,
         // sync,
         start,

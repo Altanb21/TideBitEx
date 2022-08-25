@@ -12,6 +12,7 @@ import { wait } from "../utils/Utils";
 
 class Middleman {
   // _userId;
+  email;
   memberId;
   isLogin = false;
   constructor() {
@@ -245,8 +246,10 @@ class Middleman {
           // this.selectedTicker?.instId?.replace("-", ",")
           ();
         // console.log(`_getAccounts res`, res);
-        if (res?.accounts) {
+        if(res){
           this.accountBook.updateAll(res.accounts);
+          this.memberId = res.memberId;
+          this.email = res.email;
         }
       } catch (error) {
         console.error(`_getAccounts error`, error);

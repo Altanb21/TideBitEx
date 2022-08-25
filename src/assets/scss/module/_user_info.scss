@@ -1,0 +1,21 @@
+.user-info {
+    position: absolute;
+    top: 70px;
+    right: 10px;
+    display: flex;
+  &__navs {
+    display: flex;
+    flex-direction: column;
+  }
+  &__navs > li > a {
+    display: block;
+    padding: 3px 10px;
+    color: #ccc;
+  }
+  &__navs > li > a:hover {
+    color: #000;
+  }
+  &__navs > li > a > i.fa {
+    font-size: 14px;
+  }
+}
