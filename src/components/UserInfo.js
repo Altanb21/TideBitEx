@@ -101,7 +101,7 @@ const UserInfo = (props) => {
             className="user-info__accounts--dropdown-btn"
             onClick={() => setAccountsShowMore((prev) => !prev)}
           >
-            {accountsShowMore ? t("check-all") : t("hide")}
+            {!accountsShowMore ? t("check-all") : t("hide")}
           </div>
         </div>
       </div>
