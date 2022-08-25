@@ -21,32 +21,42 @@ const BookTile = (props) => {
           storeCtx.depthBookHandler(props.bid.price, props.bid.amount);
         }}
       >
-        <div>
-          {formateDecimal(props.bid.price, {
-            // decimalLength: 2,
-            decimalLength: storeCtx.tickSz || 0,
-            pad: true,
-          })}
-        </div>
-        <div>
-          {formateDecimal(props.bid.amount, {
-            // decimalLength: 4,
-            decimalLength: storeCtx.lotSz || 0,
-            pad: true,
-          })}
-        </div>
-        <div>
-          {formateDecimal(SafeMath.mult(props.bid.price, props.bid.amount), {
-            decimalLength: Math.min(storeCtx.tickSz || 0, storeCtx.lotSz || 0),
-            pad: true,
-          })}
-        </div>
-        <div
-          className="order-book__tile--cover"
-          style={{
-            width: `${(parseFloat(props.bid.depth) * 100).toFixed(2)}%`,
-          }}
-        ></div>
+        {props.bid && (
+          <>
+            <div>
+              {formateDecimal(props.bid.price, {
+                // decimalLength: 2,
+                decimalLength: storeCtx.tickSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.bid.amount, {
+                // decimalLength: 4,
+                decimalLength: storeCtx.lotSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(
+                SafeMath.mult(props.bid.price, props.bid.amount),
+                {
+                  decimalLength: Math.min(
+                    storeCtx.tickSz || 0,
+                    storeCtx.lotSz || 0
+                  ),
+                  pad: true,
+                }
+              )}
+            </div>
+            <div
+              className="order-book__tile--cover"
+              style={{
+                width: `${(parseFloat(props.bid.depth) * 100).toFixed(2)}%`,
+              }}
+            ></div>
+          </>
+        )}
       </div>
       <div
         className={`order-book__tile--ask  ${
@@ -57,32 +67,42 @@ const BookTile = (props) => {
           storeCtx.depthBookHandler(props.ask.price, props.ask.amount);
         }}
       >
-        <div>
-          {formateDecimal(SafeMath.mult(props.ask.price, props.ask.amount), {
-            decimalLength: Math.min(storeCtx.tickSz || 0, storeCtx.lotSz || 0),
-            pad: true,
-          })}
-        </div>
-        <div>
-          {formateDecimal(props.ask.amount, {
-            // decimalLength: 4,
-            decimalLength: storeCtx.lotSz || 0,
-            pad: true,
-          })}
-        </div>
-        <div>
-          {formateDecimal(props.ask.price, {
-            // decimalLength: 2,
-            decimalLength: storeCtx.tickSz || 0,
-            pad: true,
-          })}
-        </div>
-        <div
-          className="order-book__tile--cover"
-          style={{
-            width: `${(parseFloat(props.ask.depth) * 100).toFixed(2)}%`,
-          }}
-        ></div>
+        {props.ask && (
+          <>
+            <div>
+              {formateDecimal(
+                SafeMath.mult(props.ask.price, props.ask.amount),
+                {
+                  decimalLength: Math.min(
+                    storeCtx.tickSz || 0,
+                    storeCtx.lotSz || 0
+                  ),
+                  pad: true,
+                }
+              )}
+            </div>
+            <div>
+              {formateDecimal(props.ask.amount, {
+                // decimalLength: 4,
+                decimalLength: storeCtx.lotSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.ask.price, {
+                // decimalLength: 2,
+                decimalLength: storeCtx.tickSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div
+              className="order-book__tile--cover"
+              style={{
+                width: `${(parseFloat(props.ask.depth) * 100).toFixed(2)}%`,
+              }}
+            ></div>
+          </>
+        )}
       </div>
     </li>
   );
