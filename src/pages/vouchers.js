@@ -58,11 +58,11 @@ const Vouchers = () => {
         _trades = _trades.filter((trade) => {
           if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
           let condition =
-            (trade.orderId.includes(_keyword) ||
-              trade.instId.includes(_keyword) ||
-              trade.email.includes(_keyword) ||
-              trade.memberId.includes(_keyword) ||
-              trade.exchange.includes(_keyword)) &&
+            (trade.orderId?.includes(_keyword) ||
+              trade.instId?.includes(_keyword) ||
+              trade.email?.includes(_keyword) ||
+              trade.memberId?.includes(_keyword) ||
+              trade.exchange?.includes(_keyword)) &&
             ts - trade.ts < _timeInterval;
           if (_exchange !== "ALL")
             condition = condition && trade.exchange === _exchange;
