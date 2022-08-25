@@ -3,7 +3,6 @@ import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
-import SupportedExchange from "../constant/SupportedExchange";
 import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
@@ -43,7 +42,6 @@ const CurrentOrders = () => {
         _orders = filterOrders || orders[_exchange],
         _ticker = ticker || filterTicker,
         tickers = { ticker: t("ticker") };
-
       if (ticker) setFilterTicker(ticker);
       if (side) setFilterOption(side);
       if (exchange) {
@@ -53,8 +51,6 @@ const CurrentOrders = () => {
       }
       if (_orders) {
         _orders = _orders.filter((order) => {
-          console.log(`order.instId`, order.instId);
-          console.log(`tickers`, tickers);
           if (!tickers[order.instId]) tickers[order.instId] = order.instId;
           let condition =
             order.id.includes(_keyword) ||
@@ -62,14 +58,12 @@ const CurrentOrders = () => {
             order.instId.includes(_keyword) ||
             order.email.includes(_keyword) ||
             order.exchange.includes(_keyword);
-          console.log(`condition1`, condition);
           if (_ticker !== t("ticker"))
-            condition = condition && order.instId === ticker;
+            condition = condition && order.instId === _ticker;
           if (_option !== "all")
             condition = condition && order.side === _option;
           if (_exchange !== "ALL")
             condition = condition && order.exchange === _exchange;
-          console.log(`condition2`, condition);
           return condition;
         });
         setFilterOrders(_orders);
@@ -257,7 +251,6 @@ const CurrentOrders = () => {
           onClick={() => {
             const screenSection =
               window.document.querySelector(".screen__section");
-            // console.log(screenSection.scrollTop)
             screenSection.scroll(0, 0);
           }}
         >
