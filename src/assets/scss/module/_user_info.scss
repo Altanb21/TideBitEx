@@ -1,11 +1,40 @@
 .user-info {
-    position: absolute;
-    top: 70px;
-    right: 10px;
-    display: flex;
+  position: absolute;
+  top: 70px;
+  right: 10px;
+  display: flex;
+  height: 38px;
+  &__accounts {
+    &--dropdown {
+      display: none;
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+      background-color: white;
+      border: 1px solid #333333;
+      box-shadow: 0px 0px 8px #3333;
+    }
+  }
+  &__accounts {
+    &--dropdown.open {
+      display: block;
+    }
+  }
   &__navs {
     display: flex;
     flex-direction: column;
+    &--dropdown {
+      display: none;
+      border-bottom-left-radius: 5px;
+      border-bottom-right-radius: 5px;
+      background-color: white;
+      border: 1px solid #333333;
+      box-shadow: 0px 0px 8px #3333;
+    }
+  }
+  &__navs {
+    &--dropdown.open {
+      display: block;
+    }
   }
   &__navs > li > a {
     display: block;
