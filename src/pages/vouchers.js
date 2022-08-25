@@ -68,11 +68,12 @@ const Vouchers = () => {
           if (_exchange !== "ALL")
             condition = condition && trade.exchange === _exchange;
           if (_ticker !== t("ticker"))
-            condition = condition && trade.instId === ticker;
+            condition = condition && trade.instId === _ticker;
           return condition;
         });
         console.log(`_trades`,_trades)
         console.log(`ticker`,ticker)
+        console.log(`_ticker`,_ticker)
         setFilterTrades(_trades);
         setTickers(tickers);
         // ++ TODO addSum

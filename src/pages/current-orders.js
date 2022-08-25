@@ -60,7 +60,7 @@ const CurrentOrders = () => {
             order.email.includes(_keyword) ||
             order.exchange.includes(_keyword);
           if (_ticker !== t("ticker"))
-            condition = condition && order.instId === ticker;
+            condition = condition && order.instId === _ticker;
           if (_option !== "all")
             condition = condition && order.side === _option;
           if (_exchange !== "ALL")
