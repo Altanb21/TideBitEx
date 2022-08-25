@@ -14,7 +14,7 @@ const BookTile = (props) => {
     <li className={`order-book__tile flex-row`} style={props.style}>
       <div
         className={`order-book__tile--bid  ${
-          props.bid.update ? "" : "" /** TODO animation temporary removed */
+          props.bid?.update ? "" : "" /** TODO animation temporary removed */
           // props.book.update ? "update" : ""
         }`}
         onClick={() => {
@@ -50,7 +50,7 @@ const BookTile = (props) => {
       </div>
       <div
         className={`order-book__tile--ask  ${
-          props.ask.update ? "" : "" /** TODO animation temporary removed */
+          props.ask?.update ? "" : "" /** TODO animation temporary removed */
           // props.book.update ? "update" : ""
         }`}
         onClick={() => {
