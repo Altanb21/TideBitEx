@@ -44,9 +44,9 @@ class Middleman {
     }
   }
 
-  async getOuterTradeFills(exchange) {
+  async getOuterTradeFills(exchange, days) {
     try {
-      return await this.communicator.getOuterTradeFills(exchange);
+      return await this.communicator.getOuterTradeFills(exchange, days);
     } catch (error) {
       throw error;
     }
@@ -246,7 +246,7 @@ class Middleman {
           // this.selectedTicker?.instId?.replace("-", ",")
           ();
         // console.log(`_getAccounts res`, res);
-        if(res){
+        if (res) {
           this.accountBook.updateAll(res.accounts);
           this.memberId = res.memberId;
           this.email = res.email;

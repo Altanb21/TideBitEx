@@ -122,10 +122,10 @@ const StoreProvider = (props) => {
   }, [middleman]);
 
   const getOuterTradeFills = useCallback(
-    async (exchange) => {
+    async (exchange, days) => {
       let exAccounts = {};
       try {
-        exAccounts = await middleman.getOuterTradeFills(exchange);
+        exAccounts = await middleman.getOuterTradeFills(exchange, days);
       } catch (error) {
         console.log(error);
       }

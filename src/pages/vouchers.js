@@ -14,7 +14,7 @@ const Vouchers = () => {
   const [trades, setTrades] = useState(null);
   const [profits, setProfits] = useState(null);
   const [filterTrades, setFilterTrades] = useState(null);
-  const [filterOption, setFilterOption] = useState("month"); //'month','year'
+  const [filterOption, setFilterOption] = useState("30"); //'30','365'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
@@ -24,7 +24,7 @@ const Vouchers = () => {
 
   const getVouchers = useCallback(
     async (exchange) => {
-      const trades = await storeCtx.getOuterTradeFills(exchange);
+      const trades = await storeCtx.getOuterTradeFills(exchange, filterOption);
       setTrades((prev) => {
         let _trades = { ...prev };
         _trades[exchange] = trades;
@@ -32,7 +32,7 @@ const Vouchers = () => {
       });
       return trades;
     },
-    [storeCtx]
+    [filterOption, storeCtx]
   );
 
   const filter = useCallback(
@@ -155,17 +155,17 @@ const Vouchers = () => {
           <ul className="screen__display-options">
             <li
               className={`screen__display-option${
-                filterOption === "month" ? " active" : ""
+                filterOption === "30" ? " active" : ""
               }`}
-              onClick={() => filter({ timeInterval: "month" })}
+              onClick={() => filter({ timeInterval: "30" })}
             >
               {t("recent-month")}
             </li>
             <li
               className={`screen__display-option${
-                filterOption === "year" ? " active" : ""
+                filterOption === "365" ? " active" : ""
               }`}
-              onClick={() => filter({ timeInterval: "year" })}
+              onClick={() => filter({ timeInterval: "365" })}
             >
               {t("recent-year")}
             </li>
