@@ -827,8 +827,8 @@ class Utils {
     const split1 = slice1?.split("m"); // split memberId
     const split2 = split1[1]?.split("o"); // split orderId
     return {
-      memberId: split1[0],
-      orderId: split2[0],
+      memberId: split1 ? split1[0] : null,
+      orderId: split2 ? split2[0] : null,
     };
   }
 
