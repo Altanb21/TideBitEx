@@ -130,7 +130,7 @@ const UserInfo = (props) => {
           />
           <li>
             <a href="/accounts" target="_blank">
-              <RiKey2Line />
+              <RiKey2Line size={28}/>
               {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
               <span>{t("funds")}</span>
             </a>
@@ -138,21 +138,21 @@ const UserInfo = (props) => {
           <li>
             <a href="/settings" target="_blank">
               {/* <i class="fa fa-wrench"></i> */}
-              <FaWrench />
+              <FaWrench size={28}/>
               <span>{t("profile")}</span>
             </a>
           </li>
           <li>
             <a href="/history/orders" target="_blank">
               {/* <i class="fa fa-history"></i> */}
-              <RiHistoryFill />
+              <RiHistoryFill size={28}/>
               <span>{t("_history")}</span>
             </a>
           </li>
           <li>
             <a href="/signout">
               {/* <i class="fa fa-sign-out"></i> */}
-              <FiLogOut />
+              <FiLogOut size={28}/>
               <span>{t("logout")}</span>
             </a>
           </li>
