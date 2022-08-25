@@ -10,8 +10,11 @@
   }
   &__accounts {
     // display: flex;
-    align-self: center;
+    // align-self: center;
     min-width: 262px;
+    max-height: 80vh;
+    overflow: auto;
+    z-index: 100px;
     &--dropdown {
       display: none;
       border-bottom-left-radius: 5px;
@@ -40,7 +43,7 @@
   &__navs {
     // display: flex;
     // flex-direction: column;
-    align-self: center;
+    // align-self: center;
     &--dropdown {
       display: none;
       border-bottom-left-radius: 5px;

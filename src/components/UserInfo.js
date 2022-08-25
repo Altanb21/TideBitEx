@@ -4,23 +4,14 @@ import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import { AccountMobileTile } from "./HistoryOrder";
 
-
 const ToggleButton = (props) => {
   return (
-    <div class={`toggle-btn${props.status? ` on`: ` off`}`}>
+    <div class={`toggle-btn${props.status ? ` on` : ` off`}`}>
       <div class="toggle-btn__container">
-        <span class="toggle-btn__handle-on">
-          ON
-        </span>
+        <span class="toggle-btn__handle-on">ON</span>
         <label class="toggle-btn__label">{props.option}</label>
-        <span class="toggle-btn__handle-off">
-          OFF
-        </span>
-        <input
-          data-size="mini"
-          name="sound-checkbox"
-          type="checkbox"
-        />
+        <span class="toggle-btn__handle-off">OFF</span>
+        <input data-size="mini" name="sound-checkbox" type="checkbox" />
       </div>
     </div>
   );
@@ -124,10 +115,12 @@ const UserInfo = (props) => {
               <span>{t("_history")}</span>
             </a>
           </li>
-          <a href="/signout">
-            <i class="fa fa-sign-out"></i>
-            <span>{t("logout")}</span>
-          </a>
+          <li>
+            <a href="/signout">
+              <i class="fa fa-sign-out"></i>
+              <span>{t("logout")}</span>
+            </a>
+          </li>
         </ul>
       </div>
     </div>
