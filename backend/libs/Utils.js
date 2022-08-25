@@ -823,9 +823,9 @@ class Utils {
     // brokerId = 377bd372412fSCDE
     // memberId = 60976
     // orderId = 247674466
-    const slice1 = clOrdId.slice(16); // slice broker id
-    const split1 = slice1.split("m"); // split memberId
-    const split2 = split1[1].split("o"); // split orderId
+    const slice1 = clOrdId?.slice(16); // slice broker id
+    const split1 = slice1?.split("m"); // split memberId
+    const split2 = split1[1]?.split("o"); // split orderId
     return {
       memberId: split1[0],
       orderId: split2[0],
