@@ -73,7 +73,7 @@ const Vouchers = () => {
         setFilterTrades(_trades);
         setTickers(tickers);
         let profits = _trades.reduce((prev, trade) => {
-          if (trade.fee) {
+          if (trade.revenue) {
             if (!prev[trade.feeCcy]) {
               prev[trade.feeCcy] = {
                 sum: 0,
@@ -82,7 +82,7 @@ const Vouchers = () => {
             }
             prev[trade.feeCcy].sum = SafeMath.plus(
               prev[trade.feeCcy].sum,
-              trade.fee
+              trade.revenue
             );
           }
           return prev;
@@ -206,22 +206,24 @@ const Vouchers = () => {
           <li className="screen__table-header">{t("transaction-side")}</li>
           <li className="screen__table-header">{t("match-fee")}</li>
           <li className="screen__table-header">{t("external-fee")}</li>
-          <li className="screen__table-header">{t("referral")}</li>
+          {/* <li className="screen__table-header">{t("referral")}</li> */}
           <li className="screen__table-header">{t("revenue")}</li>
         </ul>
         <ul className="screen__table-rows">
           {filterTrades &&
             filterTrades.map((trade, i) => (
               <div
-                className={`vouchers__tile screen__table-row`}
+                className={`vouchers__tile screen__table-row${
+                  trade.email ? "" : " unknown"
+                }`}
                 key={`${i}-${trade.orderId}`}
               >
                 <div className="vouchers__text screen__table-item">
                   {dateFormatter(trade.ts).text}
                 </div>
                 <div className="vouchers__text screen__table-item">
-                  <div>{`${trade.email || "Unknown"}/`}</div>
-                  <div>{trade.memberId}</div>
+                  <div>{`${trade.email ? trade.email + "/" : "Unknown"}`}</div>
+                  <div>{`${trade.email ? trade.memberId : ""}`}</div>
                 </div>
                 <div className="vouchers__text screen__table-item">
                   {trade.orderId}
@@ -261,7 +263,7 @@ const Vouchers = () => {
                       }`
                     : "--"}
                 </div>
-                <div
+                {/* <div
                   className={`vouchers__text screen__table-item${
                     trade.referral
                       ? trade.referral > 0
@@ -275,7 +277,7 @@ const Vouchers = () => {
                         trade.feeCcy
                       }`
                     : "--"}
-                </div>
+                </div> */}
                 <div
                   className={`vouchers__text screen__table-item${
                     trade.revenue

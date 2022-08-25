@@ -195,15 +195,17 @@ const CurrentOrders = () => {
           {filterOrders &&
             filterOrders.map((order) => (
               <div
-                className={`current-orders__tile screen__table-row`}
+                className={`current-orders__tile screen__table-row${
+                  order.email ? "" : " unknown"
+                }`}
                 key={order.id}
               >
                 <div className="current-orders__text screen__table-item">
                   {dateFormatter(order.ts).text}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  <div>{`${order.email || "Unknown"}/`}</div>
-                  <div>{order.memberId}</div>
+                <div>{`${order.email ? order.email + "/" : "Unknown"}`}</div>
+                  <div>{`${order.email ? order.memberId : ""}`}</div>
                 </div>
                 <div
                   className={`current-orders__text screen__table-item${
