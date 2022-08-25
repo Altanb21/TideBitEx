@@ -632,10 +632,11 @@ class ExchangeHub extends Bot {
             exchange: query.exchange,
             ts: parseInt(trade.ts),
           };
-          this.logger.log(`processTrade`, processTrade);
+          // this.logger.log(`processTrade`, processTrade);
           outerTrades = [...outerTrades, processTrade];
         }
         // }
+        // this.logger.log(`outerTrades`, outerTrades);
         return new ResponseFormat({
           message: "getOuterTradeFills",
           payload: outerTrades,
