@@ -158,5 +158,7 @@
   "current-orders": "當前掛單記錄",
   "match-orders": "搓合成交紀錄",
   "recent-month": "近30日",
-  "recent-year": "近一年"
+  "recent-year": "近一年",
+  "sound":"聲音",
+  "notification":"提醒"
 }

@@ -159,5 +159,7 @@
   "current-orders": "Current Orders",
   "match-orders": "Match Orders",
   "recent-month": "monthy",
-  "recent-year": "yearly"
+  "recent-year": "yearly",
+  "sound":"Sound",
+  "notification":"Notification"
 }
