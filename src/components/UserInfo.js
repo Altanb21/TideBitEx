@@ -4,6 +4,7 @@ import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import { AccountMobileTile } from "./HistoryOrder";
 
+
 const ToggleButton = (props) => {
   return (
     <div class={`toggle-btn${props.status? ` on`: ` off`}`}>
@@ -107,6 +108,7 @@ const UserInfo = (props) => {
           <li>
             <a href="/accounts" target="_blank">
               <i class="fa fa-key"></i>
+              {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
               <span>{t("funds")}</span>
             </a>
           </li>

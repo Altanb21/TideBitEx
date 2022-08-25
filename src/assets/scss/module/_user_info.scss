@@ -4,10 +4,14 @@
   right: 10px;
   display: flex;
   height: 38px;
-
+  gap: 20px;
+  & li > a {
+    color: #ccc;
+  }
   &__accounts {
-    display: flex;
+    // display: flex;
     align-self: center;
+    min-width: 262px;
     &--dropdown {
       display: none;
       border-bottom-left-radius: 5px;
@@ -19,6 +23,14 @@
     &--label {
       text-align: end;
     }
+    &--dropdown-btn {
+      text-align: center;
+      padding: 8px;
+    }
+  }
+  & .mobile-account__tile {
+    margin: 0;
+    padding: 10px 12px;
   }
   &__accounts {
     &--dropdown.open {
@@ -26,8 +38,8 @@
     }
   }
   &__navs {
-    display: flex;
-    flex-direction: column;
+    // display: flex;
+    // flex-direction: column;
     align-self: center;
     &--dropdown {
       display: none;
@@ -36,6 +48,7 @@
       background-color: white;
       border: 1px solid #333333;
       box-shadow: 0px 0px 8px #3333;
+      flex-direction: column;
     }
     &--label {
       text-align: end;
@@ -43,18 +56,18 @@
   }
   &__navs {
     &--dropdown.open {
-      display: block;
+      display: flex;
     }
   }
-  &__navs > li > a {
+  &__navs li > a {
     display: block;
     padding: 3px 10px;
     color: #ccc;
   }
-  &__navs > li > a:hover {
+  &__navs li > a:hover {
     color: #000;
   }
-  &__navs > li > a > i.fa {
+  &__navs li > a > i.fa {
     font-size: 14px;
   }
 }
