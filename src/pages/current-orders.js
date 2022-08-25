@@ -43,7 +43,6 @@ const CurrentOrders = () => {
         _orders = filterOrders || orders[_exchange],
         _ticker = ticker || filterTicker,
         tickers = { ticker: t("ticker") };
-
       if (ticker) setFilterTicker(ticker);
       if (side) setFilterOption(side);
       if (exchange) {
@@ -53,8 +52,6 @@ const CurrentOrders = () => {
       }
       if (_orders) {
         _orders = _orders.filter((order) => {
-          console.log(`order.instId`, order.instId);
-          console.log(`tickers`, tickers);
           if (!tickers[order.instId]) tickers[order.instId] = order.instId;
           let condition =
             order.id.includes(_keyword) ||
@@ -62,7 +59,6 @@ const CurrentOrders = () => {
             order.instId.includes(_keyword) ||
             order.email.includes(_keyword) ||
             order.exchange.includes(_keyword);
-          console.log(`condition1`, condition);
           if (_ticker !== t("ticker"))
             condition = condition && order.instId === ticker;
           if (_option !== "all")

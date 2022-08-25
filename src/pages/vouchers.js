@@ -57,8 +57,6 @@ const Vouchers = () => {
       }
       if (_trades) {
         _trades = _trades.filter((trade) => {
-          console.log(`trade.instId`, trade.instId);
-          console.log(`tickers`, tickers);
           if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
           let condition =
             (trade.orderId.includes(_keyword) ||
@@ -73,6 +71,8 @@ const Vouchers = () => {
             condition = condition && trade.instId === ticker;
           return condition;
         });
+        console.log(`_trades`,_trades)
+        console.log(`ticker`,ticker)
         setFilterTrades(_trades);
         setTickers(tickers);
         // ++ TODO addSum
