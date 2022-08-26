@@ -459,16 +459,16 @@ const TradeForm = (props) => {
       </ul>
       <div style={{ flex: "auto" }}></div>
       {props.isMobile &&
-        (storeCtx.focusEl.name === "price" ||
-          storeCtx.focusEl.name === "amount") && (
+        (storeCtx.focusEl?.name === "price" ||
+          storeCtx.focusEl?.name === "amount") && (
           <CustomKeyboard
             inputEl={storeCtx.focusEl}
             onInput={(v) => {
-              if (storeCtx.focusEl.name === "price") {
+              if (storeCtx.focusEl?.name === "price") {
                 // props.onPxInput(v);
                 formatPrice(v);
               }
-              if (storeCtx.focusEl.name === "amount") {
+              if (storeCtx.focusEl?.name === "amount") {
                 // props.onSzInput(v);
                 formatSize(v);
               }
