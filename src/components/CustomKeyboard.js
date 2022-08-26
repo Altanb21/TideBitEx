@@ -29,14 +29,14 @@ const CustomKeyboard = (props) => {
   };
   return (
     <div className="custom-keyboard">
-      <div
+      {/* <div
         className="custom-keyboard__close"
         onClick={() => {
           storeCtx.setFocusEl(null);
         }}
       >
         <IoIosCloseCircleOutline size={20}/>
-      </div>
+      </div> */}
       {/* <div className="custom-keyboard__container"> */}
       <div className="custom-keyboard__row">
         <div

@@ -80,7 +80,15 @@ const Layout = ({ children }) => {
   }, [storeCtx]);
 
   return (
-    <div id="layout" className="layout layout--pushable">
+    <div
+      id="layout"
+      className="layout layout--pushable"
+      onClick={(e) => {
+        console.log(e);
+        if (e.target.name !== "price" || e.target.name !== "amount")
+          storeCtx.setFocusEl(null);
+      }}
+    >
       <SideBar
         languages={languages}
         languageKey={storeCtx.languageKey}

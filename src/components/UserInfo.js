@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 // import { BiLock } from "react-icons/bi";
 import { RiKey2Line, RiHistoryFill } from "react-icons/ri";
-import { FaWrench,FaUserAlt } from "react-icons/fa";
+import { FaWrench, FaUserAlt } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 
 const ToggleButton = (props) => {
@@ -116,7 +116,7 @@ const UserInfo = (props) => {
           className="user-info__navs--label"
           onClick={(_) => openNavsHandler()}
         >
-          < FaUserAlt/>
+          <FaUserAlt />
           <div>{storeCtx.memberEmail}</div>
         </div>
         <ul className={`user-info__navs--dropdown${openNav ? " open" : ""}`}>
@@ -131,21 +131,33 @@ const UserInfo = (props) => {
             onClick={() => setOpenNotification((prev) => !prev)}
           />
           <li className="user-info__navs-item">
-            <a href="/accounts" target="_blank" className="user-info__navs-link">
+            <a
+              href="/accounts"
+              target="_blank"
+              className="user-info__navs-link"
+            >
               <RiKey2Line size={20} />
               {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
               <span>{t("funds")}</span>
             </a>
           </li>
           <li className="user-info__navs-item">
-            <a href="/settings" target="_blank" className="user-info__navs-link">
+            <a
+              href="/settings"
+              target="_blank"
+              className="user-info__navs-link"
+            >
               {/* <i class="fa fa-wrench"></i> */}
               <FaWrench size={16} />
               <span>{t("profile")}</span>
             </a>
           </li>
           <li className="user-info__navs-item">
-            <a href="/history/orders" target="_blank" className="user-info__navs-link">
+            <a
+              href="/history/orders"
+              target="_blank"
+              className="user-info__navs-link"
+            >
               {/* <i class="fa fa-history"></i> */}
               <RiHistoryFill size={16} />
               <span>{t("_history")}</span>

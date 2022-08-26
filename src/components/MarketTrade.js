@@ -295,7 +295,7 @@ const TradeForm = (props) => {
           <input
             ref={inputAmount}
             inputMode={props.isMobile ? "none" : "numeric"}
-            name="trade_amount"
+            name="amount"
             type={props.isMobile ? null : "number"}
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}

@@ -55,7 +55,7 @@ const MobileExchange = (props) => {
             </div>
             <div className="section__container section__container--mobile">
               <Tabs defaultActiveKey="market">
-                <Tab eventKey="market" title={t("market")}>
+                <Tab eventKey="market" title={t("navigator_market")}>
                   <DepthBook />
                 </Tab>
                 {storeCtx.isLogin && (

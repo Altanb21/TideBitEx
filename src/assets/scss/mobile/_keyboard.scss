@@ -14,6 +14,10 @@
   box-sizing: border-box;
   overflow: hidden;
   touch-action: manipulation;
+
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   &__close {
     position: absolute;
     top: 10px;
@@ -27,7 +31,7 @@
   }
   &__btn {
     width: 33.3%;
-    height: 56px;
+    height: 50px;
     -webkit-align-items: center;
     align-items: center;
     display: -webkit-flex;
@@ -36,7 +40,7 @@
     justify-content: center;
 
     // box-shadow: 0 0 3px -1px rgb(0 0 0 / 30%);
-    height: 40px;
+    // height: 40px;
     border-radius: 5px;
     box-sizing: border-box;
     padding: 5px;
@@ -51,7 +55,7 @@
   }
   &__btn > span {
     pointer-events: none;
-    font-size: 14px;
+    font-size: 18px;
   }
   &__btn--corner {
     background: unset !important;
