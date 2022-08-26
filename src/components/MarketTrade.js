@@ -268,10 +268,10 @@ const TradeForm = (props) => {
           <input
             // ref={inputPrice}
             // inputMode={props.isMobile ? "none" : "numeric"}
-            inputMode={"numeric"}
+            inputMode="decimal"
             name="price"
             // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
-            type={props.readyOnly ? "text" : "number"}
+            type="text"
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
@@ -302,11 +302,11 @@ const TradeForm = (props) => {
         <div className="market-trade__input-group--box">
           <input
             // ref={inputAmount}
-            inputMode={"numeric"}
+            inputMode="decimal"
             // inputMode={props.isMobile ? "none" : "numeric"}
             name="amount"
             // type={props.isMobile ? null : "number"}
-            type={"number"}
+            type="text"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
