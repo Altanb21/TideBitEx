@@ -44,20 +44,24 @@ class AccountBook extends BookBase {
           exchangeRate:
             currency.toLowerCase() === "try"
               ? this._ratio.try
-              : SafeMath.mult(
+              : this.priceList[currency.toLowerCase()]
+              ? SafeMath.mult(
                   this.priceList[currency.toLowerCase()],
                   this._ratio.usd
-                ) || 0,
+                )
+              : 0,
         }));
       return Object.values(this._snapshot[memberId]).map((account) => ({
         ...account,
         exchangeRate:
           account.currency.toLowerCase() === "try"
             ? this._ratio.try
-            : SafeMath.mult(
+            : this.priceList[account.currency.toLowerCase()]
+            ? SafeMath.mult(
                 this.priceList[account.currency.toLowerCase()],
                 this._ratio.usd
-              ) || 0,
+              )
+            : 0,
       }));
     }
   }
