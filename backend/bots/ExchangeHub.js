@@ -1,4 +1,5 @@
 const path = require("path");
+const axios = require("axios");
 
 const Bot = require(path.resolve(__dirname, "Bot.js"));
 const OkexConnector = require("../libs/Connectors/OkexConnector");
@@ -311,6 +312,23 @@ class ExchangeHub extends Bot {
     return this.tideBitConnector.router("getUsersAccounts", {});
   }
 
+  async getPriceList() {
+    try {
+      const res = await axios({
+        method: `get`,
+        url: `https://cc.isun.one/api/cc/PriceList`,
+      });
+      if (res.data && res.data.code !== "0") {
+        const message = JSON.stringify(res.data);
+        this.logger.trace(message);
+      }
+      this.logger.log(`getPriceList res`, res);
+      return res.data;
+    } catch (e) {
+      this.logger.error(`getPriceList e`, e);
+    }
+  }
+
   // account api
   async getAccounts({ memberId }) {
     this.logger.debug(
@@ -323,7 +341,26 @@ class ExchangeHub extends Bot {
         payload: null,
       });
     }
-    return this.tideBitConnector.router("getAccounts", { memberId });
+    let accounts,
+      priceList = await this.getPriceList(),
+      res = await this.tideBitConnector.router("getAccounts", { memberId });
+    this.logger.log(`getAccounts priceList`, priceList);
+    this.logger.log(`getAccounts res`, res);
+    if (res.success) {
+      accounts = res.payload.accounts.map((account) => {
+        this.logger.log(
+          `getAccounts priceList[${account.currency.toLowerCase()}]`,
+          priceList[account.currency.toLowerCase()]
+        );
+
+        return {
+          ...account,
+          exchangeRate: priceList[account.currency.toLowerCase()],
+        };
+      });
+      res = { ...res, payload: { ...res.payload, accounts } };
+    }
+    return res;
   }
 
   async getTicker({ params, query }) {
