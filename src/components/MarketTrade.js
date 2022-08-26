@@ -267,9 +267,11 @@ const TradeForm = (props) => {
         <div className="market-trade__input-group--box">
           <input
             // ref={inputPrice}
-            inputMode={props.isMobile ? "none" : "numeric"}
+            // inputMode={props.isMobile ? "none" : "numeric"}
+            inputMode={"numeric"}
             name="price"
-            type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            type={props.readyOnly ? "text" : "number"}
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
@@ -300,9 +302,11 @@ const TradeForm = (props) => {
         <div className="market-trade__input-group--box">
           <input
             // ref={inputAmount}
-            inputMode={props.isMobile ? "none" : "numeric"}
+            inputMode={"numeric"}
+            // inputMode={props.isMobile ? "none" : "numeric"}
             name="amount"
-            type={props.isMobile ? null : "number"}
+            // type={props.isMobile ? null : "number"}
+            type={"number"}
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
@@ -458,7 +462,7 @@ const TradeForm = (props) => {
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>
-      {props.isMobile &&
+      {/* {props.isMobile &&
         (storeCtx.focusEl?.name === "price" ||
           storeCtx.focusEl?.name === "amount") && (
           <CustomKeyboard
@@ -474,7 +478,7 @@ const TradeForm = (props) => {
               }
             }}
           />
-        )}
+        )} */}
       <button
         type="submit"
         className="btn market-trade__button"
