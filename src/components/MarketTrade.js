@@ -11,7 +11,7 @@ import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
-import CustomKeyboard from "./CustomKeyboard";
+// import CustomKeyboard from "./CustomKeyboard";
 
 const TradeForm = (props) => {
   const { t } = useTranslation();
@@ -271,7 +271,7 @@ const TradeForm = (props) => {
             inputMode="decimal"
             name="price"
             // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
-            type="text"
+            type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
@@ -306,7 +306,7 @@ const TradeForm = (props) => {
             // inputMode={props.isMobile ? "none" : "numeric"}
             name="amount"
             // type={props.isMobile ? null : "number"}
-            type="text"
+            type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
