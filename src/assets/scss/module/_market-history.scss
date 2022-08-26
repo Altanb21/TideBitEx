@@ -106,12 +106,6 @@
   color: #4a4a4a;
 }
 
-@media only screen and (max-width: 776px) {
-  .main-chart {
-    min-width: 587px;
-  }
-}
-
 @media only screen and (max-width: $mobile-width) {
   // If [device width] is less than or equal to 600px, then do
   .market-history {

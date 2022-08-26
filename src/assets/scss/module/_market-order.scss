@@ -95,12 +95,6 @@
   }
 }
 
-@media only screen and (max-width: 776px) {
-  .main-chart {
-    min-width: 587px;
-  }
-}
-
 @media only screen and (max-width: $mobile-width) {
   .market-order {
     border: none;

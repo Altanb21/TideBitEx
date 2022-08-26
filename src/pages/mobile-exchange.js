@@ -17,7 +17,7 @@ const MobileExchange = (props) => {
   const { t } = useTranslation();
   return (
     <main
-      className="main"
+      className="main scrollbar-custom"
       // onClick={() => {
       //   console.log(`MobileExchange onClick`);
       //   storeCtx.setFocusEl(null);
