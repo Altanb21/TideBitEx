@@ -76,7 +76,11 @@ const UserInfo = (props) => {
         <div
           className="user-info__accounts--label"
           onClick={(_) => openAccountsHandler()}
-        >{`${t("total-assets")}: $${storeCtx.accounts?.sum || ""}`}</div>
+        >{`${t("total-assets")}: $${
+          storeCtx.accounts?.sum
+            ? formateDecimal(storeCtx.accounts?.sum, { decimalLength: 2 })
+            : ""
+        }`}</div>
         <div
           className={`user-info__accounts--dropdown${
             openAccounts ? " open" : ""
