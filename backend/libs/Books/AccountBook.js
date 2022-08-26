@@ -42,22 +42,22 @@ class AccountBook extends BookBase {
         return instId.split("-").map((currency) => ({
           ...this._snapshot[memberId][currency],
           exchangeRate:
-            currency.toLowerCase === "try"
-              ? SafeMath.mult(
-                  SafeMath.div(this._ratio.hkd, this._ratio.try),
+            currency.toLowerCase() === "try"
+              ? this._ratio.try
+              : SafeMath.mult(
+                  this.priceList[currency.toLowerCase()],
                   this._ratio.usd
-                )
-              : this.priceList[currency.toLowerCase()] || 0,
+                ) || 0,
         }));
       return Object.values(this._snapshot[memberId]).map((account) => ({
         ...account,
         exchangeRate:
-          account.currency.toLowerCase === "try"
-            ? SafeMath.mult(
-                SafeMath.div(this._ratio.hkd, this._ratio.try),
+          account.currency.toLowerCase() === "try"
+            ? this._ratio.try
+            : SafeMath.mult(
+                this.priceList[account.currency.toLowerCase()],
                 this._ratio.usd
-              )
-            : this.priceList[account.currency.toLowerCase()] || 0,
+              ) || 0,
       }));
     }
   }

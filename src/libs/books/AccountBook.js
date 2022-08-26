@@ -5,7 +5,7 @@ class AccountBook extends BookBase {
   _currentUser;
   _snapshot = {};
   _difference = {};
-  _fiatCurrency = "usd";
+  _fiatCurrency = "hkd";
   _sum;
   _ratio = {
     hkd: 1,
@@ -37,12 +37,8 @@ class AccountBook extends BookBase {
 
   getAssetsSum() {
     let sum = this._sum;
-    if (!this._fiatCurrency && this._fiatCurrency !== "usd")
-      sum = SafeMath.mult(
-        SafeMath.div(this._ratio.usd, this._sum),
-        this._ratio[this._fiatCurrency]
-      );
-
+    if (!this._fiatCurrency && this._fiatCurrency !== "hkd")
+      sum = SafeMath.mult(this._sum, this._ratio[this._fiatCurrency]);
     return sum;
   }
 
