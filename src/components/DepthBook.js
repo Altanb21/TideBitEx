@@ -187,7 +187,7 @@ const DepthBook = (props) => {
           <List
             innerElementType="ul"
             height={426}
-            itemCount={storeCtx.books?.bids ? storeCtx.books.bids.length : 0}
+            itemCount={storeCtx.books?.bids ? Math.max(storeCtx.books.bids.length, storeCtx.books.asks.length) : 0}
             itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
             itemSize={18}
             width={`100%`}
