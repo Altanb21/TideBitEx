@@ -452,21 +452,23 @@ const TradeForm = (props) => {
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>
-      {(storeCtx.focusEl.name === "price" || storeCtx.focusEl.name === "amount") && (
-        <CustomKeyboard
-          inputEl={storeCtx.focusEl}
-          onInput={(v) => {
-            if (storeCtx.focusEl.name === "price") {
-              // props.onPxInput(v);
-              formatPrice(v);
-            }
-            if (storeCtx.focusEl.name === "amount") {
-              // props.onSzInput(v);
-              formatSize(v);
-            }
-          }}
-        />
-      )}
+      {props.isMobile &&
+        (storeCtx.focusEl.name === "price" ||
+          storeCtx.focusEl.name === "amount") && (
+          <CustomKeyboard
+            inputEl={storeCtx.focusEl}
+            onInput={(v) => {
+              if (storeCtx.focusEl.name === "price") {
+                // props.onPxInput(v);
+                formatPrice(v);
+              }
+              if (storeCtx.focusEl.name === "amount") {
+                // props.onSzInput(v);
+                formatSize(v);
+              }
+            }}
+          />
+        )}
       <button
         type="submit"
         className="btn market-trade__button"
