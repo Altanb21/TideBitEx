@@ -84,9 +84,9 @@ const Layout = ({ children }) => {
       id="layout"
       className="layout layout--pushable"
       onClick={(e) => {
-        console.log(e);
-        if (e.target.name !== "price" || e.target.name !== "amount")
-          storeCtx.setFocusEl(null);
+        let elementClass = e.target.className;
+        if (!elementClass.includes(`custom-keyboard`))
+          storeCtx.setFocusEl(e.target);
       }}
     >
       <SideBar

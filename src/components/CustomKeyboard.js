@@ -1,16 +1,13 @@
-import React, { useContext } from "react";
-import StoreContext from "../store/store-context";
+import React from "react";
 import { BsBackspace } from "react-icons/bs";
-import { IoIosCloseCircleOutline } from "react-icons/io";
 
 const CustomKeyboard = (props) => {
-  const storeCtx = useContext(StoreContext);
   const handleClick = (e, data) => {
     e.preventDefault();
-    console.log(`CustomKeyboard props.inputEl`, props.inputEl);
+    // console.log(`CustomKeyboard props.inputEl`, props.inputEl);
     let v,
-      value = props.inputEl.current.value;
-    console.log(`CustomKeyboard value`, value);
+      value = props.inputEl.value;
+    // console.log(`CustomKeyboard value`, value);
     if (data === "bksp") {
       v = value.substring(0, value.length - 1);
     } else if (data === ".") {
@@ -21,10 +18,10 @@ const CustomKeyboard = (props) => {
     } else {
       v = value + data.toString();
     }
-    if(v.toString().startsWith('0')&& !v.includes(".")){
-      v = v.substring(1)
+    if (v.toString().startsWith("0") && !v.includes(".")) {
+      v = v.substring(1);
     }
-    console.log(`CustomKeyboard v`, v);
+    // console.log(`CustomKeyboard v`, v);
     props.onInput(v);
   };
   return (

@@ -122,4 +122,10 @@
       display: none;
     }
   }
+  .market-order-item {
+    & > li {
+      font-size: 14px;
+      min-width: unset;
+    }
+  }
 }
