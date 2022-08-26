@@ -6,6 +6,7 @@
   height: 38px;
   gap: 20px;
   margin-top: 10px;
+  z-index: 1;
   & .mobile-account__leading {
     flex-direction: column;
     gap: 0px;
@@ -108,5 +109,13 @@
   }
   &__navs-link:hover {
     color: #000;
+  }
+}
+
+@media only screen and (max-width: 908px) {
+  .user-info {
+    color: #fff;
+    top: 14px;
+    left: 87px;
   }
 }

@@ -153,42 +153,52 @@ const StoreProvider = (props) => {
       };
       try {
         const result = await middleman.postOrder(_order);
-        let amount, updateQuoteAccount, updateBaseAccount;
-        if (order.kind === "bid") {
-          updateQuoteAccount = { ...accounts[selectedTicker?.quote_unit] };
-          amount = SafeMath.mult(order.price, order.volume);
-          if (updateQuoteAccount) {
-            updateQuoteAccount.balance = SafeMath.minus(
-              accounts[selectedTicker?.quote_unit].balance,
-              amount
-            );
-            updateQuoteAccount.locked = SafeMath.plus(
-              accounts[selectedTicker?.quote_unit].locked,
-              amount
-            );
-            const updateAccounts = accounts.map((account) => ({ ...account }));
-            updateAccounts[selectedTicker?.quote_unit] = updateQuoteAccount;
-            middleman.updateAccounts(updateQuoteAccount);
-            setAccounts(updateAccounts);
-          }
-        } else {
-          updateBaseAccount = { ...accounts[selectedTicker?.base_unit] };
-          amount = order.volume;
-          if (updateBaseAccount) {
-            updateBaseAccount.balance = SafeMath.minus(
-              accounts[selectedTicker?.base_unit].balance,
-              amount
-            );
-            updateBaseAccount.locked = SafeMath.plus(
-              accounts[selectedTicker?.base_unit].locked,
-              amount
-            );
-            const updateAccounts = accounts.map((account) => ({ ...account }));
-            updateAccounts[selectedTicker?.base_unit] = updateBaseAccount;
-            middleman.updateAccounts(updateBaseAccount);
-            setAccounts(updateAccounts);
-          }
-        }
+        // let amount,
+        //   quoteAccount,
+        //   baseAccount,
+        //   updateQuoteAccount,
+        //   updateBaseAccount;
+        // if (order.kind === "bid") {
+        //   quoteAccount = accounts[selectedTicker?.quote_unit.toUpperCase()];
+        //   if (quoteAccount) {
+        //     updateQuoteAccount = {
+        //       ...quoteAccount,
+        //     };
+        //     amount = SafeMath.mult(order.price, order.volume);
+        //     updateQuoteAccount.balance = SafeMath.minus(
+        //       quoteAccount.balance,
+        //       amount
+        //     );
+        //     updateQuoteAccount.locked = SafeMath.plus(
+        //       quoteAccount.locked,
+        //       amount
+        //     );
+        //     const updateAccounts = {...accounts}
+        //     updateAccounts[selectedTicker?.quote_unit.toUpperCase()] =
+        //       updateQuoteAccount;
+        //     middleman.updateAccounts(updateQuoteAccount);
+        //     setAccounts(updateAccounts);
+        //   }
+        // } else {
+        //   baseAccount = accounts[selectedTicker?.base_unit.toUpperCase()];
+        //   if (baseAccount) {
+        //     updateBaseAccount = { ...baseAccount };
+        //     amount = order.volume;
+        //     updateBaseAccount.balance = SafeMath.minus(
+        //       baseAccount.balance,
+        //       amount
+        //     );
+        //     updateBaseAccount.locked = SafeMath.plus(
+        //       baseAccount.locked,
+        //       amount
+        //     );
+        //     const updateAccounts = {...accounts}
+        //     updateAccounts[selectedTicker?.base_unit.toUpperCase()] =
+        //       updateBaseAccount;
+        //     middleman.updateAccounts(updateBaseAccount);
+        //     setAccounts(updateAccounts);
+        //   }
+        // }
         enqueueSnackbar(
           `${order.kind === "bid" ? "Bid" : "Ask"} ${order.volume} ${
             order.instId.split("-")[0]
