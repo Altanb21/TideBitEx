@@ -331,6 +331,8 @@ class ExchangeHub extends Bot {
 
   // account api
   async getAccounts({ memberId }) {
+    let priceList = await this.getPriceList();
+    this.accountBook.priceList = priceList;
     this.logger.debug(
       `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
@@ -341,26 +343,7 @@ class ExchangeHub extends Bot {
         payload: null,
       });
     }
-    let accounts,
-      priceList = await this.getPriceList(),
-      res = await this.tideBitConnector.router("getAccounts", { memberId });
-    this.logger.log(`getAccounts priceList`, priceList);
-    this.logger.log(`getAccounts res`, res);
-    if (res.success) {
-      accounts = res.payload.accounts.map((account) => {
-        this.logger.log(
-          `getAccounts priceList[${account.currency.toLowerCase()}]`,
-          priceList[account.currency.toLowerCase()]
-        );
-
-        return {
-          ...account,
-          exchangeRate: priceList[account.currency.toLowerCase()],
-        };
-      });
-      res = { ...res, payload: { ...res.payload, accounts } };
-    }
-    return res;
+    return this.tideBitConnector.router("getAccounts", { memberId });
   }
 
   async getTicker({ params, query }) {

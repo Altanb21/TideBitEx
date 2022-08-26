@@ -9,6 +9,18 @@ class AccountBook extends BookBase {
     return this;
   }
 
+  /**
+   * @param {any} data
+   */
+  set priceList(data) {
+    this._priceList = data;
+    // this.logger.log(`[${this.constructor.name}] priceList`, this.priceList);
+  }
+
+  get priceList() {
+    return this._priceList;
+  }
+
   getDifference(memberId) {
     if (!this._difference[memberId]) return null;
     else return Object.values(this._difference[memberId]);
@@ -20,8 +32,14 @@ class AccountBook extends BookBase {
       if (instId)
         return instId
           .split("-")
-          .map((currency) => this._snapshot[memberId][currency]);
-      return Object.values(this._snapshot[memberId]);
+          .map((currency) => ({
+            ...this._snapshot[memberId][currency],
+            exchangeRate: this.priceList[currency.toLowerCase()],
+          }));
+      return Object.values(this._snapshot[memberId]).map((account) => ({
+        ...account,
+        exchangeRate: this.priceList[account.currency.toLowerCase()],
+      }));
     }
   }
 

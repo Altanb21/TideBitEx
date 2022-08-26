@@ -76,23 +76,25 @@ const UserInfo = (props) => {
         <div
           className="user-info__accounts--label"
           onClick={(_) => openAccountsHandler()}
-        >{`${t("total-assets")}: $${""}`}</div>
+        >{`${t("total-assets")}: $${storeCtx.accounts?.sum || ""}`}</div>
         <div
           className={`user-info__accounts--dropdown${
             openAccounts ? " open" : ""
           }`}
         >
           <div className="user-info__accounts--dropdown-box">
-            {storeCtx.accounts ? (
+            {storeCtx.accounts?.accounts ? (
               accountsShowMore ? (
-                Object.values(storeCtx.accounts).map((account) => (
+                Object.values(storeCtx.accounts.accounts).map((account) => (
                   <AccountMobileTile account={account} />
                 ))
               ) : (
                 storeCtx.selectedTicker.instId
                   .split("-")
                   ?.map((ccy) => (
-                    <AccountMobileTile account={storeCtx.accounts[ccy]} />
+                    <AccountMobileTile
+                      account={storeCtx.accounts.accounts[ccy]}
+                    />
                   ))
               )
             ) : (

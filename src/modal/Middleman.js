@@ -8,7 +8,7 @@ import TideBitWS from "../libs/TideBitWS";
 import Communicator from "./Communicator";
 // import Pusher from "pusher-js";
 // import { randomID } from "dvalue";
-import { wait } from "../utils/Utils";
+// import { wait } from "../utils/Utils";
 
 class Middleman {
   // _userId;
@@ -31,6 +31,10 @@ class Middleman {
     window.middleman = this;
     // -- TEST
     return this;
+  }
+
+  setFiatCurrency(fiatCurrency) {
+    this.accountBook.fiatCurrency = fiatCurrency;
   }
 
   async getInstruments(instType) {
@@ -260,7 +264,10 @@ class Middleman {
   }
 
   getAccounts(instId) {
-    return this.accountBook.getSnapshot(instId);
+    return {
+      accounts: this.accountBook.getSnapshot(instId),
+      sum: this.accountBook.getAssetsSum()
+    };
   }
 
   async selectMarket(market) {

@@ -178,27 +178,27 @@ const TradeForm = (props) => {
   };
 
   useEffect(() => {
-    if (storeCtx.accounts) {
+    if (storeCtx.accounts?.accounts) {
       if (
         (storeCtx.selectedTicker && !selectedTicker) ||
         (storeCtx.selectedTicker &&
           storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
         quoteCcyAvailable !==
-          storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
+          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
             ?.balance ||
         baseCcyAvailable !==
-          storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
+          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
             ?.balance
       ) {
         // setMemberId(storeCtx.memberId);
         let quoteCcyAccount =
-          storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
+          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
 
         if (quoteCcyAccount) {
           setQuoteCcyAvailable(quoteCcyAccount?.balance);
         }
         let baseCcyAccount =
-          storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
+          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
         if (baseCcyAccount) {
           setBaseCcyAvailable(baseCcyAccount?.balance);
         }

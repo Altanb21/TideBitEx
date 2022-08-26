@@ -153,18 +153,13 @@ export const AccountList = (props) => {
         <li>{t("availBal")}</li>
         <li>{t("frozenBal")}</li>
       </ul>
-
-      {/* {!storeCtx.accounts?.length && (
-              <span className="no-data">
-                <i className="icon ion-md-document"></i>
-                No data
-              </span>
-            )} */}
       <ul className="order-list scrollbar-custom">
-        {storeCtx.selectedTicker?.instId && storeCtx.accounts ? (
+        {storeCtx.selectedTicker?.instId && storeCtx.accounts?.accounts ? (
           storeCtx.selectedTicker.instId
             .split("-")
-            ?.map((ccy) => <AccountTile account={storeCtx.accounts[ccy]} />)
+            ?.map((ccy) => (
+              <AccountTile account={storeCtx.accounts.accounts[ccy]} />
+            ))
         ) : (
           <div></div>
         )}
