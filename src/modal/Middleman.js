@@ -14,7 +14,7 @@ class Middleman {
   // _userId;
   email;
   memberId;
-  isLogin = false;
+  isLogin = null;
   constructor() {
     this.name = "Middleman";
     this.accountBook = new AccountBook();
@@ -370,6 +370,8 @@ class Middleman {
     if (options.memberId) {
       this.isLogin = true;
       this.memberId = options.memberId;
+    }else{
+      this.isLogin = false;
     }
     if (this.isLogin) {
       try {

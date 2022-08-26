@@ -184,21 +184,27 @@ const TradeForm = (props) => {
         (storeCtx.selectedTicker &&
           storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
         quoteCcyAvailable !==
-          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
-            ?.balance ||
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+          ]?.balance ||
         baseCcyAvailable !==
-          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
-            ?.balance
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          ]?.balance
       ) {
         // setMemberId(storeCtx.memberId);
         let quoteCcyAccount =
-          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+          ];
 
         if (quoteCcyAccount) {
           setQuoteCcyAvailable(quoteCcyAccount?.balance);
         }
         let baseCcyAccount =
-          storeCtx.accounts?.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          ];
         if (baseCcyAccount) {
           setBaseCcyAvailable(baseCcyAccount?.balance);
         }
@@ -554,7 +560,7 @@ const MarketTrade = () => {
           </Tab> */}
         </Tabs>
       </div>
-      {!storeCtx.isLogin && (
+      {storeCtx.isLogin === false && (
         <div className="market-trade__cover flex-row">
           <Nav.Link href="/signin">{t("login")}</Nav.Link>
           <Nav.Link href="/signup">{t("register")}</Nav.Link>

@@ -19,7 +19,7 @@ const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(null);
   const [memberId, setMemberId] = useState(false);
   const [memberEmail, setMemberEmail] = useState(false);
   const [tickers, setTickers] = useState([]);
