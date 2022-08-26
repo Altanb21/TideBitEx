@@ -125,6 +125,21 @@ class mysql {
       return [];
     }
   }
+
+  async getMembers() {
+    const query = "SELECT * FROM `members`;";
+    try {
+      this.logger.log("getMembers", query);
+      const [members] = await this.db.query({
+        query,
+      });
+      return members;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getMemberById(memberId) {
     const query = "SELECT * FROM `members` WHERE `members`.`id` = ?;";
     try {
@@ -299,6 +314,21 @@ class mysql {
         values: [memberId, ask, bid],
       });
       return trades;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
+  async getOrders() {
+    const query =
+      "SELECT * FROM `orders`;";
+    try {
+      this.logger.log("getOrders", query, );
+      const [orders] = await this.db.query({
+        query,
+      });
+      return orders;
     } catch (error) {
       this.logger.log(error);
       return [];

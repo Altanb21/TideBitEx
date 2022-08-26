@@ -97,6 +97,10 @@ class DBOperator {
     return this.database.getCurrencyByKey(currencyKey);
   }
 
+  async getMembers() {
+    return this.database.getMembers();
+  }
+
   async getMemberById(memberId) {
     return this.database.getMemberById(memberId);
   }
@@ -133,6 +137,10 @@ class DBOperator {
 
   async getOrder(orderId, { dbTransaction }) {
     return this.database.getOrder(orderId, { dbTransaction });
+  }
+
+  async getOrders() {
+    return this.database.getOrders();
   }
 
   async getTrades(quoteCcy, baseCcy) {

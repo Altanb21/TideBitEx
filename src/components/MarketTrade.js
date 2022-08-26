@@ -3,7 +3,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useRef,
+  // useRef,
 } from "react";
 import StoreContext from "../store/store-context";
 import { Tabs, Tab, Nav } from "react-bootstrap";
@@ -16,8 +16,8 @@ import CustomKeyboard from "./CustomKeyboard";
 const TradeForm = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
-  const inputPrice = useRef();
-  const inputAmount = useRef();
+  // const inputPrice = useRef();
+  // const inputAmount = useRef();
   const [tdMode, setTdMode] = useState("cash");
   const [price, setPrice] = useState("");
   const [volume, setVolume] = useState("");
@@ -260,17 +260,18 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
+            // ref={inputPrice}
             inputMode={props.isMobile ? "none" : "numeric"}
             name="price"
             type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
-            onClick={() => {
-              if (props.isMobile) {
-                storeCtx.setFocusEl(inputPrice);
-              }
-            }}
+            // onClick={() => {
+            //   if (props.isMobile) {
+            //     storeCtx.setFocusEl(inputPrice);
+            //   }
+            // }}
             onChange={(e) => {
               // props.onPxInput(e.target.value);
               formatPrice(e.target.value);
@@ -292,17 +293,18 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
+            // ref={inputAmount}
             inputMode={props.isMobile ? "none" : "numeric"}
-            name="trade_amount"
+            name="amount"
             type={props.isMobile ? null : "number"}
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
-            onClick={() => {
-              if (props.isMobile) {
-                storeCtx.setFocusEl(inputAmount);
-              }
-            }}
+            // onClick={() => {
+            //   if (props.isMobile) {
+            //     storeCtx.setFocusEl(inputAmount);
+            //   }
+            // }}
             onChange={(e) => {
               // props.onSzInput(e.target.value);
               formatSize(e.target.value);
@@ -450,21 +452,23 @@ const TradeForm = (props) => {
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>
-      {storeCtx.focusEl && (
-        <CustomKeyboard
-          inputEl={storeCtx.focusEl}
-          onInput={(v) => {
-            if (storeCtx.focusEl === inputPrice) {
-              // props.onPxInput(v);
-              formatPrice(v);
-            }
-            if (storeCtx.focusEl === inputAmount) {
-              // props.onSzInput(v);
-              formatSize(v);
-            }
-          }}
-        />
-      )}
+      {props.isMobile &&
+        (storeCtx.focusEl.name === "price" ||
+          storeCtx.focusEl.name === "amount") && (
+          <CustomKeyboard
+            inputEl={storeCtx.focusEl}
+            onInput={(v) => {
+              if (storeCtx.focusEl.name === "price") {
+                // props.onPxInput(v);
+                formatPrice(v);
+              }
+              if (storeCtx.focusEl.name === "amount") {
+                // props.onSzInput(v);
+                formatSize(v);
+              }
+            }}
+          />
+        )}
       <button
         type="submit"
         className="btn market-trade__button"

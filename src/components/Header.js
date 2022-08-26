@@ -16,6 +16,7 @@ const Header = (props) => {
           className="d-inline-block align-top"
           alt="TideBit"
           width="125px"
+          height="44px"
         />
       </Navbar.Brand>
       <button

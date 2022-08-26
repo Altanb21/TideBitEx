@@ -291,7 +291,9 @@ class OkexConnector extends ConnectorBase {
         message: "tradeFills",
         payload: data,
       });
-      this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](data.length:${data.length})`);
+      this.logger.log(
+        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](data.length:${data.length})`
+      );
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -305,7 +307,7 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
-  async _getOrderHistory(options) {
+  async getOrderHistory(options) {
     const { instType, instId, after, limit } = options;
     const method = "GET";
     const path = "/api/v5/trade/orders-history";
@@ -1041,7 +1043,7 @@ class OkexConnector extends ConnectorBase {
 
   // market api end
   // trade api
-  async postPlaceOrder({ body}) {
+  async postPlaceOrder({ body }) {
     const method = "POST";
     const path = "/api/v5/trade/order";
 
@@ -1088,17 +1090,19 @@ class OkexConnector extends ConnectorBase {
     }
   }
 
-  async getAllOrders() {
+  async getAllOrders({ query }) {
     const method = "GET";
     const path = "/api/v5/trade/orders-pending";
     const arr = [];
-    const qs = "";
+    if (query.instType) arr.push(`instType=${query.instType}`);
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
     const okAccessSign = await this.okAccessSign({
       timeString,
       method,
       path: `${path}${qs}`,
     });
+    this.logger.log(`getAllOrders query`, query);
 
     try {
       const res = await axios({
@@ -1114,7 +1118,10 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      return res.data.data;
+      return new ResponseFormat({
+        message: "getAllOrders",
+        payload: res.data.data,
+      });
     } catch (err) {
       return [];
     }

@@ -1,0 +1,48 @@
+.vouchers {
+  & .screen__search-bar {
+    justify-content: space-between;
+  }
+  &__text.positive {
+    color: #5ad998;
+  }
+  &__text.negative {
+    color: #dc484e;
+  }
+  & .screen__table-header:nth-child(1),
+  &__text.screen__table-item:nth-child(1) {
+    max-width: 100px;
+  }
+  & .screen__table-header:nth-child(7),
+  &__text.screen__table-item:nth-child(7),
+  & .screen__table-header:nth-child(8),
+  &__text.screen__table-item:nth-child(8),
+  & .screen__table-header:nth-child(9),
+  &__text.screen__table-item:nth-child(9),
+  & .screen__table-header:nth-child(10),
+  &__text.screen__table-item:nth-child(10) {
+    max-width: 135px;
+  }
+  & .screen__table-header:nth-child(2) {
+    min-width: 180px;
+  }
+  &__text.screen__table-item:nth-child(2) {
+    min-width: 180px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  & .admin-dropdown__label {
+    justify-content: start;
+  }
+  & .admin-dropdown__options {
+    top: 40px;
+  }
+  & .screen__table {
+    min-height: 520px;
+  }
+  & .screen__table--values {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: flex-end;
+  }
+}

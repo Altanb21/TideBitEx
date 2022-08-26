@@ -1,15 +1,13 @@
-import React, { useContext } from "react";
-import StoreContext from "../store/store-context";
+import React from "react";
+import { BsBackspace } from "react-icons/bs";
 
 const CustomKeyboard = (props) => {
-  const storeCtx = useContext(StoreContext);
   const handleClick = (e, data) => {
-    // e.preventDefault();
-    console.log(`CustomKeyboard props.inputEl`, props.inputEl);
-    storeCtx.setFocusEl(props.inputEl);
+    e.preventDefault();
+    // console.log(`CustomKeyboard props.inputEl`, props.inputEl);
     let v,
-      value = props.inputEl.current.value;
-    console.log(`CustomKeyboard value`, value);
+      value = props.inputEl.value;
+    // console.log(`CustomKeyboard value`, value);
     if (data === "bksp") {
       v = value.substring(0, value.length - 1);
     } else if (data === ".") {
@@ -20,22 +18,22 @@ const CustomKeyboard = (props) => {
     } else {
       v = value + data.toString();
     }
-    if(v.toString().startsWith('0')&& !v.includes(".")){
-      v = v.substring(1)
+    if (v.toString().startsWith("0") && !v.includes(".")) {
+      v = v.substring(1);
     }
-    console.log(`CustomKeyboard v`, v);
+    // console.log(`CustomKeyboard v`, v);
     props.onInput(v);
   };
   return (
     <div className="custom-keyboard">
-      <div
+      {/* <div
         className="custom-keyboard__close"
         onClick={() => {
           storeCtx.setFocusEl(null);
         }}
       >
-        x
-      </div>
+        <IoIosCloseCircleOutline size={20}/>
+      </div> */}
       {/* <div className="custom-keyboard__container"> */}
       <div className="custom-keyboard__row">
         <div
@@ -127,7 +125,7 @@ const CustomKeyboard = (props) => {
           onClick={(e) => handleClick(e, "bksp")}
         >
           <span>
-            <img src="/img/backspace.svg" alt="Backspace"></img>
+            <BsBackspace />
           </span>
         </div>
       </div>

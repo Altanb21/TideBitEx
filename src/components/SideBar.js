@@ -11,7 +11,7 @@ import {
   FaInfoCircle,
 } from "react-icons/fa";
 import { BiLineChart, BiShare } from "react-icons/bi";
-import { GrAnnounce } from "react-icons/gr";
+// import { GrAnnounce } from "react-icons/gr";
 import { IoSettingsSharp } from "react-icons/io5";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";

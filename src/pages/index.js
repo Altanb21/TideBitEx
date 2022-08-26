@@ -2,18 +2,18 @@ import React from "react";
 import { Switch, Route } from "react-router-dom";
 import Exchange from "../pages/exchange";
 // import Markets from "../pages/markets";
-import Profile from "./profile";
-import Wallet from "./wallet";
-import Settings from "./settings";
-import Login from "./login";
-import Reset from "./reset";
-import OtpVerify from "./otp-verify";
-import OtpNumber from "./otp-number";
-import Lock from "./lock";
-import TermsAndConditions from "./terms-and-conditions";
-import NewsDetails from "./news-details";
-import Signup from "./signup";
-import Notfound from "./notfound";
+// import Profile from "./profile";
+// import Wallet from "./wallet";
+// import Settings from "./settings";
+// import Login from "./login";
+// import Reset from "./reset";
+// import OtpVerify from "./otp-verify";
+// import OtpNumber from "./otp-number";
+// import Lock from "./lock";
+// import TermsAndConditions from "./terms-and-conditions";
+// import NewsDetails from "./news-details";
+// import Signup from "./signup";
+// import Notfound from "./notfound";
 // import Analysis from "./analysis";s
 import Admin from "./admin";
 
@@ -30,7 +30,7 @@ export default function index() {
         {/* <Analysis /> */}
         <Admin/>
       </Route>
-      <Route path="/profile">
+      {/* <Route path="/profile">
         <Profile />
       </Route>
       <Route path="/wallet">
@@ -65,7 +65,7 @@ export default function index() {
       </Route>
       <Route path="/notfound">
         <Notfound />
-      </Route>
+      </Route> */}
     </Switch>
   );
 }

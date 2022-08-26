@@ -131,7 +131,7 @@
     border-bottom-left-radius: 0px;
   }
   // &__error-message--container {
-    // height: 27px;
+  // height: 27px;
   // }
   &__error-message {
     margin-bottom: 6px;
@@ -258,6 +258,9 @@
       > a.nav-link.active {
       background-color: #f0b90b;
       color: white;
+    }
+    &__form {
+      min-height: 280px;
     }
   }
 }

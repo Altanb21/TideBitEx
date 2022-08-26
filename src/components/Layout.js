@@ -80,7 +80,15 @@ const Layout = ({ children }) => {
   }, [storeCtx]);
 
   return (
-    <div id="layout" className="layout layout--pushable">
+    <div
+      id="layout"
+      className="layout layout--pushable"
+      onClick={(e) => {
+        let elementClass = e.target.className;
+        if (elementClass && !elementClass.includes(`custom-keyboard`))
+          storeCtx.setFocusEl(e.target);
+      }}
+    >
       <SideBar
         languages={languages}
         languageKey={storeCtx.languageKey}

@@ -1,88 +1,109 @@
 import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
+import { FixedSizeList as List } from "react-window";
 import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
+import { useViewport } from "../store/ViewportProvider";
 import DropDown from "./DropDown";
 
 const BookTile = (props) => {
   const storeCtx = useContext(StoreContext);
+
   return (
-    <li
-      className={`order-book__tile flex-row ${
-        props.book.update ? "" : "" /** TODO animation temporary removed */
-        // props.book.update ? "update" : ""
-      }`}
-      data-width={props.dataWidth}
-      onClick={props.onClick}
-    >
-      {props.type === "asks" ? (
-        <>
-          <div>
-            {formateDecimal(props.book.price, {
-              // decimalLength: 2,
-              decimalLength: storeCtx.tickSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div>
-            {formateDecimal(props.book.amount, {
-              // decimalLength: 4,
-              decimalLength: storeCtx.lotSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div>
-            {formateDecimal(
-              SafeMath.mult(props.book.price, props.book.amount),
-              {
-                decimalLength: Math.min(
-                  storeCtx.tickSz || 0,
-                  storeCtx.lotSz || 0
-                ),
+    <li className={`order-book__tile flex-row`} style={props.style}>
+      <div
+        className={`order-book__tile--bid  ${
+          props.bid?.update ? "" : "" /** TODO animation temporary removed */
+          // props.book.update ? "update" : ""
+        }`}
+        onClick={() => {
+          storeCtx.depthBookHandler(props.bid.price, props.bid.amount);
+        }}
+      >
+        {props.bid && (
+          <>
+            <div>
+              {formateDecimal(
+                SafeMath.mult(props.bid.price, props.bid.amount),
+                {
+                  decimalLength: Math.min(
+                    storeCtx.tickSz || 0,
+                    storeCtx.lotSz || 0
+                  ),
+                  pad: true,
+                }
+              )}
+            </div>
+            <div>
+              {formateDecimal(props.bid.amount, {
+                // decimalLength: 4,
+                decimalLength: storeCtx.lotSz || 0,
                 pad: true,
-              }
-            )}
-          </div>
-          <div
-            className="order-book__tile--cover"
-            style={{ width: props.dataWidth }}
-          ></div>
-        </>
-      ) : (
-        <>
-          <div>
-            {formateDecimal(
-              SafeMath.mult(props.book.price, props.book.amount),
-              {
-                decimalLength: Math.min(
-                  storeCtx.tickSz || 0,
-                  storeCtx.lotSz || 0
-                ),
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.bid.price, {
+                // decimalLength: 2,
+                decimalLength: storeCtx.tickSz || 0,
                 pad: true,
-              }
-            )}
-          </div>
-          <div>
-            {formateDecimal(props.book.amount, {
-              // decimalLength: 4,
-              decimalLength: storeCtx.lotSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div>
-            {formateDecimal(props.book.price, {
-              // decimalLength: 2,
-              decimalLength: storeCtx.tickSz || 0,
-              pad: true,
-            })}
-          </div>
-          <div
-            className="order-book__tile--cover"
-            style={{ width: props.dataWidth }}
-          ></div>
-        </>
-      )}
+              })}
+            </div>
+            <div
+              className="order-book__tile--cover"
+              style={{
+                width: `${(parseFloat(props.bid.depth) * 100).toFixed(2)}%`,
+              }}
+            ></div>
+          </>
+        )}
+      </div>
+      <div
+        className={`order-book__tile--ask  ${
+          props.ask?.update ? "" : "" /** TODO animation temporary removed */
+          // props.book.update ? "update" : ""
+        }`}
+        onClick={() => {
+          storeCtx.depthBookHandler(props.ask.price, props.ask.amount);
+        }}
+      >
+        {props.ask && (
+          <>
+            <div>
+              {formateDecimal(props.ask.price, {
+                // decimalLength: 2,
+                decimalLength: storeCtx.tickSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.ask.amount, {
+                // decimalLength: 4,
+                decimalLength: storeCtx.lotSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(
+                SafeMath.mult(props.ask.price, props.ask.amount),
+                {
+                  decimalLength: Math.min(
+                    storeCtx.tickSz || 0,
+                    storeCtx.lotSz || 0
+                  ),
+                  pad: true,
+                }
+              )}
+            </div>
+            <div
+              className="order-book__tile--cover"
+              style={{
+                width: `${(parseFloat(props.ask.depth) * 100).toFixed(2)}%`,
+              }}
+            ></div>
+          </>
+        )}
+      </div>
     </li>
   );
 };
@@ -102,6 +123,8 @@ const DepthBook = (props) => {
   const [range, setRange] = useState("");
   const [rangeOptions, setRangeOptions] = useState([]);
   const [selectedTicker, setSelectedTicker] = useState(null);
+  const { width } = useViewport();
+  const breakpoint = 428;
 
   const changeRange = (range) => {
     setRange(range);
@@ -160,35 +183,24 @@ const DepthBook = (props) => {
         </ul>
       </ul>
       <div className="order-book__table scrollbar-custom">
-        <ul className="order-book__panel order-book__panel--bids">
-          {storeCtx?.selectedTicker &&
-            storeCtx.books?.bids &&
-            storeCtx.books.bids.map((book) => (
+        <ul className="order-book__panel">
+          <List
+            innerElementType="ul"
+            height={426}
+            itemCount={storeCtx.books?.bids ? Math.max(storeCtx.books.bids.length, storeCtx.books.asks.length) : 0}
+            itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
+            itemSize={18}
+            width={`100%`}
+          >
+            {({ index, style }) => (
               <BookTile
-                onClick={() => {
-                  storeCtx.depthBookHandler(book.price, book.amount);
-                }}
-                type="bids"
-                book={book}
-                key={`bids-${storeCtx.selectedTicker.instId}-${book.price}`}
-                dataWidth={`${(parseFloat(book.depth) * 100).toFixed(2)}%`}
+                style={style}
+                bid={storeCtx.books.bids[index]}
+                ask={storeCtx.books.asks[index]}
+                key={`${storeCtx.selectedTicker.instId}-depthbbook-${index}`}
               />
-            ))}
-        </ul>
-        <ul className="order-book__panel order-book__panel--asks">
-          {storeCtx?.selectedTicker &&
-            storeCtx.books?.asks &&
-            storeCtx.books.asks.map((book) => (
-              <BookTile
-                type="asks"
-                onClick={() => {
-                  storeCtx.depthBookHandler(book.price, book.amount);
-                }}
-                book={book}
-                key={`asks-${storeCtx.selectedTicker.instId}-${book.price}`}
-                dataWidth={`${(parseFloat(book.depth) * 100).toFixed(2)}%`}
-              />
-            ))}
+            )}
+          </List>
         </ul>
       </div>
     </section>

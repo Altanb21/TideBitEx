@@ -274,8 +274,7 @@ class ExchangeHub extends Bot {
           ...order,
           price: SafeMath.div(_order.funds_received, _order.origin_volume),
         });
-      } else
-       if (
+      } else if (
         (order.state_code === this.database.ORDER_STATE.WAIT &&
           order.ordType === this.database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
         order.state_code === this.database.ORDER_STATE.CANCEL || // canceled 單
@@ -555,6 +554,159 @@ class ExchangeHub extends Bot {
         });
     }
   }
+
+  async getOuterTradeFills({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getOuterTradeFills ************`,
+      query
+    );
+    let outerTrades = [],
+      members = await this.database.getMembers(),
+      orders = await this.database.getOrders();
+    switch (query.exchange) {
+      case SupportedExchange.OKEX:
+        const _outerTrades = await this.database.getOuterTradesByDayAfter(
+          this.database.EXCHANGE[query.exchange.toUpperCase()],
+          query.days // 30 || 365
+        );
+        // const res = await this.okexConnector.router(
+        //   "fetchTradeFillsHistoryRecords",
+        //   {
+        //     query: { ...query, instType: "SPOT" },
+        //   }
+        // );
+        // if (res.success) {
+        // for (let trade of res.payload) {
+        for (let _trade of _outerTrades) {
+          let trade = JSON.parse(_trade.data),
+            parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
+            memberId = parsedClOrdId.memberId,
+            orderId = parsedClOrdId.orderId,
+            order = orders.find(
+              (_order) =>
+                _order.member_id.toString() === memberId.toString() &&
+                _order.id.toString() === orderId.toString()
+            ),
+            askFeeRate,
+            bidFeeRate,
+            market = this._findMarket(trade.instId),
+            member = order
+              ? members.find(
+                  (member) => member.id.toString() === memberId.toString()
+                )
+              : null,
+            memberTag = member?.member_tag,
+            fee,
+            processTrade,
+            revenue;
+          if (memberTag) {
+            if (memberTag.toString() === "1") {
+              askFeeRate = market.ask.vip_fee;
+              bidFeeRate = market.bid.vip_fee;
+            }
+            if (memberTag.toString() === "2") {
+              askFeeRate = market.ask.hero_fee;
+              bidFeeRate = market.bid.hero_fee;
+            }
+          } else {
+            askFeeRate = market.ask.fee;
+            bidFeeRate = market.bid.fee;
+          }
+          fee = order
+            ? trade.side === "sell"
+              ? SafeMath.mult(
+                  SafeMath.mult(trade.fillPx, trade.fillSz),
+                  askFeeRate
+                )
+              : SafeMath.mult(trade.fillSz, bidFeeRate)
+            : null;
+          revenue = order ? SafeMath.minus(fee, Math.abs(trade.fee)) : null;
+          processTrade = {
+            ...trade,
+            orderId,
+            email: member?.email || null,
+            memberId,
+            externalFee: Math.abs(trade.fee),
+            fee,
+            revenue: revenue,
+            exchange: query.exchange,
+            ts: parseInt(trade.ts),
+          };
+          // this.logger.log(`processTrade`, processTrade);
+          outerTrades = [...outerTrades, processTrade];
+        }
+        // }
+        // this.logger.log(`outerTrades`, outerTrades);
+        return new ResponseFormat({
+          message: "getOuterTradeFills",
+          payload: outerTrades,
+        });
+      default:
+        return new ResponseFormat({
+          message: "getOuterTradeFills",
+          payload: null,
+        });
+    }
+  }
+
+  async getOuterPendingOrders({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getOuterPendingOrders ************`,
+      query
+    );
+    let outerOrders = [],
+      members = await this.database.getMembers(),
+      orders = await this.database.getOrders();
+    switch (query.exchange) {
+      case SupportedExchange.OKEX:
+        const res = await this.okexConnector.router("getAllOrders", {
+          query: { ...query, instType: "SPOT" },
+        });
+        if (res.success) {
+          for (let order of res.payload) {
+            let parsedClOrdId = Utils.parseClOrdId(order.clOrdId),
+              memberId = parsedClOrdId.memberId,
+              id = parsedClOrdId.orderId,
+              dbOrder = orders.find(
+                (_order) =>
+                  _order.member_id.toString() === memberId.toString() &&
+                  _order.id.toString() === id.toString()
+              ),
+              member = dbOrder
+                ? members.find(
+                    (member) => member.id.toString() === memberId.toString()
+                  )
+                : null,
+              fundsReceived =
+                order.side === "buy"
+                  ? SafeMath.mult(order.avgPx, order.accFillSz)
+                  : order.accFillSz,
+              processOrder;
+            processOrder = {
+              ...order,
+              id,
+              email: member?.email || null,
+              memberId,
+              exchange: query.exchange,
+              fundsReceived,
+              ts: parseInt(order.uTime),
+            };
+            this.logger.log(`processOrder`, processOrder);
+            outerOrders = [...outerOrders, processOrder];
+          }
+        }
+        return new ResponseFormat({
+          message: "getOuterPendingOrders",
+          payload: outerOrders,
+        });
+      default:
+        return new ResponseFormat({
+          message: "getOuterPendingOrders",
+          payload: null,
+        });
+    }
+  }
+
   // market api end
   // trade api
   /**

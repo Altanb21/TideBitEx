@@ -7,7 +7,7 @@ import PlatformAssets from "./platform-assets";
 import UserAssets from "./user-assets";
 import SubAccounts from "./sub-accounts";
 import TickerSetting from "./ticker-setting";
-import MatchOrders from "./match-orders";
+import Vouchers from "./vouchers";
 import CurrentOrders from "./current-orders";
 
 const Manager = () => {
@@ -24,7 +24,7 @@ const Manager = () => {
       {activePage === "platform-assets" && <PlatformAssets />}
       {activePage === "user-assets" && <UserAssets />}
       {activePage === "info-setting" && <InfoSetting />}
-      {activePage === "match-orders" && <MatchOrders />}
+      {activePage === "match-orders" && <Vouchers />}
       {activePage === "current-orders" && <CurrentOrders />}
 
   </div>;

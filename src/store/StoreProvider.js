@@ -8,18 +8,12 @@ import { wait } from "../utils/Utils";
 import Events from "../constant/Events";
 
 let interval,
-  accountInterval = 500,
-  accountTs = 0,
-  depthInterval = 300,
-  depthTs = 0,
-  orderInterval = 500,
-  orderTs = 0,
-  tradeInterval = 500,
-  tradeTs = 0,
-  tickerInterval = 300,
-  tickerTs = 0,
-  tickersInterval = 1000,
-  tickersTs = 0;
+  depthBookSyncInterval = 500,
+  depthBookLastTimeSync = 0,
+  tradesSyncInterval = 500,
+  tradesLastTimeSync = 0,
+  tickersSyncInterval = 500,
+  tickersLastTimeSync = 0;
 
 const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
@@ -27,6 +21,7 @@ const StoreProvider = (props) => {
   const history = useHistory();
   const [isLogin, setIsLogin] = useState(false);
   const [memberId, setMemberId] = useState(false);
+  const [memberEmail, setMemberEmail] = useState(false);
   const [tickers, setTickers] = useState([]);
   const [books, setBooks] = useState(null);
   const [trades, setTrades] = useState([]);
@@ -124,6 +119,32 @@ const StoreProvider = (props) => {
     return usersAccounts;
   }, [middleman]);
 
+  const getOuterTradeFills = useCallback(
+    async (exchange, days) => {
+      let exAccounts = {};
+      try {
+        exAccounts = await middleman.getOuterTradeFills(exchange, days);
+      } catch (error) {
+        console.log(error);
+      }
+      return exAccounts;
+    },
+    [middleman]
+  );
+
+  const getOuterPendingOrders = useCallback(
+    async (exchange) => {
+      let exAccounts = {};
+      try {
+        exAccounts = await middleman.getOuterPendingOrders(exchange);
+      } catch (error) {
+        console.log(error);
+      }
+      return exAccounts;
+    },
+    [middleman]
+  );
+
   // TODO get latest snapshot of orders, trades, accounts
   const postOrder = useCallback(
     async (order) => {
@@ -132,42 +153,48 @@ const StoreProvider = (props) => {
       };
       try {
         const result = await middleman.postOrder(_order);
-        // let index, updateQuoteAccount, updateBaseAccount;
+        // let amount,
+        //   quoteAccount,
+        //   baseAccount,
+        //   updateQuoteAccount,
+        //   updateBaseAccount;
         // if (order.kind === "bid") {
-        //   index = accounts.findIndex(
-        //     (account) => account.ccy === selectedTicker?.quote_unit
-        //   );
-        //   if (index !== -1) {
-        //     updateQuoteAccount = accounts[index];
-        //     updateQuoteAccount.availBal = SafeMath.minus(
-        //       accounts[index].availBal,
-        //       SafeMath.mult(order.price, order.volume)
+        //   quoteAccount = accounts[selectedTicker?.quote_unit.toUpperCase()];
+        //   if (quoteAccount) {
+        //     updateQuoteAccount = {
+        //       ...quoteAccount,
+        //     };
+        //     amount = SafeMath.mult(order.price, order.volume);
+        //     updateQuoteAccount.balance = SafeMath.minus(
+        //       quoteAccount.balance,
+        //       amount
         //     );
-        //     updateQuoteAccount.frozenBal = SafeMath.plus(
-        //       accounts[index].frozenBal,
-        //       SafeMath.mult(order.price, order.volume)
+        //     updateQuoteAccount.locked = SafeMath.plus(
+        //       quoteAccount.locked,
+        //       amount
         //     );
-        //     const updateAccounts = accounts.map((account) => ({ ...account }));
-        //     updateAccounts[index] = updateQuoteAccount;
+        //     const updateAccounts = {...accounts}
+        //     updateAccounts[selectedTicker?.quote_unit.toUpperCase()] =
+        //       updateQuoteAccount;
         //     middleman.updateAccounts(updateQuoteAccount);
         //     setAccounts(updateAccounts);
         //   }
         // } else {
-        //   index = accounts.findIndex(
-        //     (account) => account.ccy === selectedTicker?.base_unit
-        //   );
-        //   if (index !== -1) {
-        //     updateBaseAccount = accounts[index];
-        //     updateBaseAccount.availBal = SafeMath.minus(
-        //       accounts[index].availBal,
-        //       order.volume
+        //   baseAccount = accounts[selectedTicker?.base_unit.toUpperCase()];
+        //   if (baseAccount) {
+        //     updateBaseAccount = { ...baseAccount };
+        //     amount = order.volume;
+        //     updateBaseAccount.balance = SafeMath.minus(
+        //       baseAccount.balance,
+        //       amount
         //     );
-        //     updateBaseAccount.frozenBal = SafeMath.plus(
-        //       accounts[index].frozenBal,
-        //       order.volume
+        //     updateBaseAccount.locked = SafeMath.plus(
+        //       baseAccount.locked,
+        //       amount
         //     );
-        //     const updateAccounts = accounts.map((account) => ({ ...account }));
-        //     updateAccounts[index] = updateBaseAccount;
+        //     const updateAccounts = {...accounts}
+        //     updateAccounts[selectedTicker?.base_unit.toUpperCase()] =
+        //       updateBaseAccount;
         //     middleman.updateAccounts(updateBaseAccount);
         //     setAccounts(updateAccounts);
         //   }
@@ -199,7 +226,14 @@ const StoreProvider = (props) => {
         );
       }
     },
-    [action, enqueueSnackbar, middleman]
+    [
+      accounts,
+      action,
+      enqueueSnackbar,
+      middleman,
+      selectedTicker?.base_unit,
+      selectedTicker?.quote_unit,
+    ]
   );
 
   // TODO get latest snapshot of orders, trades, accounts
@@ -328,64 +362,53 @@ const StoreProvider = (props) => {
     middleman.tbWebSocket.onmessage = (msg) => {
       let metaData = JSON.parse(msg.data);
       // console.log(metaData);
+      const time = Date.now();
       switch (metaData.type) {
         case Events.account:
-          // console.log(`_tbWSEventListener Events.account`, metaData);
-          // console.log(
-          //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
-          //   middleman.accountBook.getSnapshot()
-          // );
           middleman.accountBook.updateByDifference(metaData.data);
-          // console.log(
-          //   `_tbWSEventListener middleman.accountBook.getSnapshot`,
-          //   middleman.accountBook.getSnapshot()
-          // );
           const accounts = middleman.getAccounts();
-          // console.log(`middleman.accounts`, accounts);
-          // setIsLogin(middleman.isLogin);
           setAccounts(accounts);
           break;
         case Events.update:
           middleman.depthBook.updateAll(metaData.data.market, metaData.data);
-          setBooks(middleman.getDepthBooks());
+          // console.log(
+          //   `~~ time[${time}] - depthBookLastTimeSync[${depthBookLastTimeSync}] > depthBookSyncInterval[${depthBookSyncInterval}]`,
+          //   time - depthBookLastTimeSync > depthBookSyncInterval
+          // );
+          if (time - depthBookLastTimeSync > depthBookSyncInterval) {
+            // console.log(`sync depthbook`);
+            setBooks(middleman.getDepthBooks());
+            depthBookLastTimeSync = time;
+          }
           break;
         case Events.order:
-          // console.log(`_tbWSEventListener Events.order`, metaData);
-          // console.log(
-          //   `_tbWSEventListener middleman.orderBook.getSnapshot`,
-          //   middleman.orderBook.getSnapshot(metaData.data.market)
-          // );
           middleman.orderBook.updateByDifference(
             metaData.data.market,
             metaData.data.difference
           );
-          // console.log(
-          //   `_tbWSEventListener middleman.orderBook.getSnapshot`,
-          //   middleman.orderBook.getSnapshot(metaData.data.market)
-          // );
           const orders = middleman.getMyOrders();
           setPendingOrders(orders.pendingOrders);
           setCloseOrders(orders.closedOrders);
           break;
         case Events.tickers:
-          // if (metaData.data["BTC-USDT"])
-          //   console.log(
-          //     `middleman metaData.data["BTC-USDT"].last`,
-          //     metaData.data["BTC-USDT"]?.last
-          //   );
           middleman.tickerBook.updateByDifference(metaData.data);
           let ticker = middleman.getTicker();
           if (ticker) setPrecision(ticker);
-          setSelectedTicker(middleman.getTicker());
-          setTickers(middleman.getTickers());
+          if (time - tickersLastTimeSync > tickersSyncInterval) {
+            setSelectedTicker(middleman.getTicker());
+            setTickers(middleman.getTickers());
+            tickersLastTimeSync = time;
+          }
           break;
         case Events.trades:
-          // console.log(`middleman metaData.data.trades`, metaData.data.trades);
           middleman.tradeBook.updateAll(
             metaData.data.market,
             metaData.data.trades
           );
-          setTrades(middleman.getTrades());
+          if (time - tradesLastTimeSync > tradesSyncInterval) {
+            setTrades(middleman.getTrades());
+            tradesLastTimeSync = time;
+          }
           break;
         case Events.trade:
           middleman.tradeBook.updateByDifference(
@@ -393,6 +416,7 @@ const StoreProvider = (props) => {
             metaData.data.difference
           );
           setTrades(middleman.getTrades());
+          tradesLastTimeSync = time;
           break;
         default:
       }
@@ -403,6 +427,7 @@ const StoreProvider = (props) => {
     await middleman.sync();
     setIsLogin(middleman.isLogin);
     setMemberId(middleman.memberId);
+    setMemberEmail(middleman.email);
     setAccounts(middleman.getAccounts());
     const orders = middleman.getMyOrders();
     setPendingOrders(orders.pendingOrders);
@@ -428,6 +453,7 @@ const StoreProvider = (props) => {
       setTrades(middleman.getTrades());
       setBooks(middleman.getDepthBooks());
       setIsLogin(middleman.isLogin);
+      setMemberEmail(middleman.email);
       setMemberId(middleman.memberId);
       setAccounts(middleman.getAccounts());
       const orders = middleman.getMyOrders();
@@ -459,6 +485,7 @@ const StoreProvider = (props) => {
         focusEl,
         tickSz,
         lotSz,
+        memberEmail,
         setIsLogin,
         // sync,
         start,
@@ -472,6 +499,8 @@ const StoreProvider = (props) => {
         activePageHandler,
         getExAccounts,
         getUsersAccounts,
+        getOuterTradeFills,
+        getOuterPendingOrders,
         setFocusEl,
         changeRange,
       }}
