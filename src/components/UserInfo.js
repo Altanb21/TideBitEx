@@ -89,7 +89,7 @@ const UserInfo = (props) => {
           <div className="user-info__accounts--dropdown-box">
             {storeCtx.accounts?.accounts ? (
               accountsShowMore ? (
-                Object.values(storeCtx.accounts.accounts).map((account) => (
+                Object.values(storeCtx.accounts?.accounts).map((account) => (
                   <AccountMobileTile account={account} />
                 ))
               ) : (
@@ -97,7 +97,7 @@ const UserInfo = (props) => {
                   .split("-")
                   ?.map((ccy) => (
                     <AccountMobileTile
-                      account={storeCtx.accounts.accounts[ccy]}
+                      account={storeCtx.accounts?.accounts[ccy]}
                     />
                   ))
               )
