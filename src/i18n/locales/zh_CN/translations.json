@@ -25,6 +25,7 @@
   "bid": "买入",
   "ask": "卖出",
   "amount": "成交值",
+  "locked": "锁定",
   "chart": "K线图",
   "spot": "现货",
   "place_order": "下单",

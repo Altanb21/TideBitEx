@@ -1,12 +1,13 @@
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
+import { BsBackspace } from "react-icons/bs";
+import { IoIosCloseCircleOutline } from "react-icons/io";
 
 const CustomKeyboard = (props) => {
   const storeCtx = useContext(StoreContext);
   const handleClick = (e, data) => {
-    // e.preventDefault();
+    e.preventDefault();
     console.log(`CustomKeyboard props.inputEl`, props.inputEl);
-    storeCtx.setFocusEl(props.inputEl);
     let v,
       value = props.inputEl.current.value;
     console.log(`CustomKeyboard value`, value);
@@ -34,7 +35,7 @@ const CustomKeyboard = (props) => {
           storeCtx.setFocusEl(null);
         }}
       >
-        x
+        <IoIosCloseCircleOutline size={20}/>
       </div>
       {/* <div className="custom-keyboard__container"> */}
       <div className="custom-keyboard__row">
@@ -127,7 +128,7 @@ const CustomKeyboard = (props) => {
           onClick={(e) => handleClick(e, "bksp")}
         >
           <span>
-            <img src="/img/backspace.svg" alt="Backspace"></img>
+            <BsBackspace />
           </span>
         </div>
       </div>

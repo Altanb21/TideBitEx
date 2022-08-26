@@ -8,13 +8,11 @@ import { wait } from "../utils/Utils";
 import Events from "../constant/Events";
 
 let interval,
-  depthBookSyncInterval = 300,
+  depthBookSyncInterval = 500,
   depthBookLastTimeSync = 0,
   tradesSyncInterval = 500,
   tradesLastTimeSync = 0,
-  tickerSyncInterval = 300,
-  tickerLastTimeSync = 0,
-  tickersSyncInterval = 1000,
+  tickersSyncInterval = 500,
   tickersLastTimeSync = 0;
 
 const StoreProvider = (props) => {
@@ -155,46 +153,42 @@ const StoreProvider = (props) => {
       };
       try {
         const result = await middleman.postOrder(_order);
-        // let index, updateQuoteAccount, updateBaseAccount;
-        // if (order.kind === "bid") {
-        //   index = accounts.findIndex(
-        //     (account) => account.ccy === selectedTicker?.quote_unit
-        //   );
-        //   if (index !== -1) {
-        //     updateQuoteAccount = accounts[index];
-        //     updateQuoteAccount.availBal = SafeMath.minus(
-        //       accounts[index].availBal,
-        //       SafeMath.mult(order.price, order.volume)
-        //     );
-        //     updateQuoteAccount.frozenBal = SafeMath.plus(
-        //       accounts[index].frozenBal,
-        //       SafeMath.mult(order.price, order.volume)
-        //     );
-        //     const updateAccounts = accounts.map((account) => ({ ...account }));
-        //     updateAccounts[index] = updateQuoteAccount;
-        //     middleman.updateAccounts(updateQuoteAccount);
-        //     setAccounts(updateAccounts);
-        //   }
-        // } else {
-        //   index = accounts.findIndex(
-        //     (account) => account.ccy === selectedTicker?.base_unit
-        //   );
-        //   if (index !== -1) {
-        //     updateBaseAccount = accounts[index];
-        //     updateBaseAccount.availBal = SafeMath.minus(
-        //       accounts[index].availBal,
-        //       order.volume
-        //     );
-        //     updateBaseAccount.frozenBal = SafeMath.plus(
-        //       accounts[index].frozenBal,
-        //       order.volume
-        //     );
-        //     const updateAccounts = accounts.map((account) => ({ ...account }));
-        //     updateAccounts[index] = updateBaseAccount;
-        //     middleman.updateAccounts(updateBaseAccount);
-        //     setAccounts(updateAccounts);
-        //   }
-        // }
+        let amount, updateQuoteAccount, updateBaseAccount;
+        if (order.kind === "bid") {
+          updateQuoteAccount = { ...accounts[selectedTicker?.quote_unit] };
+          amount = SafeMath.mult(order.price, order.volume);
+          if (updateQuoteAccount) {
+            updateQuoteAccount.balance = SafeMath.minus(
+              accounts[selectedTicker?.quote_unit].balance,
+              amount
+            );
+            updateQuoteAccount.locked = SafeMath.plus(
+              accounts[selectedTicker?.quote_unit].locked,
+              amount
+            );
+            const updateAccounts = accounts.map((account) => ({ ...account }));
+            updateAccounts[selectedTicker?.quote_unit] = updateQuoteAccount;
+            middleman.updateAccounts(updateQuoteAccount);
+            setAccounts(updateAccounts);
+          }
+        } else {
+          updateBaseAccount = { ...accounts[selectedTicker?.base_unit] };
+          amount = order.volume;
+          if (updateBaseAccount) {
+            updateBaseAccount.balance = SafeMath.minus(
+              accounts[selectedTicker?.base_unit].balance,
+              amount
+            );
+            updateBaseAccount.locked = SafeMath.plus(
+              accounts[selectedTicker?.base_unit].locked,
+              amount
+            );
+            const updateAccounts = accounts.map((account) => ({ ...account }));
+            updateAccounts[selectedTicker?.base_unit] = updateBaseAccount;
+            middleman.updateAccounts(updateBaseAccount);
+            setAccounts(updateAccounts);
+          }
+        }
         enqueueSnackbar(
           `${order.kind === "bid" ? "Bid" : "Ask"} ${order.volume} ${
             order.instId.split("-")[0]
@@ -222,7 +216,14 @@ const StoreProvider = (props) => {
         );
       }
     },
-    [action, enqueueSnackbar, middleman]
+    [
+      accounts,
+      action,
+      enqueueSnackbar,
+      middleman,
+      selectedTicker?.base_unit,
+      selectedTicker?.quote_unit,
+    ]
   );
 
   // TODO get latest snapshot of orders, trades, accounts
@@ -351,6 +352,7 @@ const StoreProvider = (props) => {
     middleman.tbWebSocket.onmessage = (msg) => {
       let metaData = JSON.parse(msg.data);
       // console.log(metaData);
+      const time = Date.now();
       switch (metaData.type) {
         case Events.account:
           middleman.accountBook.updateByDifference(metaData.data);
@@ -359,11 +361,15 @@ const StoreProvider = (props) => {
           break;
         case Events.update:
           middleman.depthBook.updateAll(metaData.data.market, metaData.data);
-          // let time = new Date();
-          // if (time - depthBookLastTimeSync > depthBookSyncInterval) {
-          // depthBookLastTimeSync = time;
-          setBooks(middleman.getDepthBooks());
-          // }
+          // console.log(
+          //   `~~ time[${time}] - depthBookLastTimeSync[${depthBookLastTimeSync}] > depthBookSyncInterval[${depthBookSyncInterval}]`,
+          //   time - depthBookLastTimeSync > depthBookSyncInterval
+          // );
+          if (time - depthBookLastTimeSync > depthBookSyncInterval) {
+            // console.log(`sync depthbook`);
+            setBooks(middleman.getDepthBooks());
+            depthBookLastTimeSync = time;
+          }
           break;
         case Events.order:
           middleman.orderBook.updateByDifference(
@@ -378,15 +384,21 @@ const StoreProvider = (props) => {
           middleman.tickerBook.updateByDifference(metaData.data);
           let ticker = middleman.getTicker();
           if (ticker) setPrecision(ticker);
-          setSelectedTicker(middleman.getTicker());
-          setTickers(middleman.getTickers());
+          if (time - tickersLastTimeSync > tickersSyncInterval) {
+            setSelectedTicker(middleman.getTicker());
+            setTickers(middleman.getTickers());
+            tickersLastTimeSync = time;
+          }
           break;
         case Events.trades:
           middleman.tradeBook.updateAll(
             metaData.data.market,
             metaData.data.trades
           );
-          setTrades(middleman.getTrades());
+          if (time - tradesLastTimeSync > tradesSyncInterval) {
+            setTrades(middleman.getTrades());
+            tradesLastTimeSync = time;
+          }
           break;
         case Events.trade:
           middleman.tradeBook.updateByDifference(
@@ -394,6 +406,7 @@ const StoreProvider = (props) => {
             metaData.data.difference
           );
           setTrades(middleman.getTrades());
+          tradesLastTimeSync = time;
           break;
         default:
       }

@@ -3,9 +3,9 @@ import StoreContext from "../store/store-context";
 
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
-import { BiLock } from "react-icons/bi";
+// import { BiLock } from "react-icons/bi";
 import { RiKey2Line, RiHistoryFill } from "react-icons/ri";
-import { FaWrench } from "react-icons/fa";
+import { FaWrench,FaUserAlt } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 
 const ToggleButton = (props) => {
@@ -25,6 +25,7 @@ const ToggleButton = (props) => {
 };
 
 const AccountMobileTile = (props) => {
+  const { t } = useTranslation();
   return (
     <li className="mobile-account__tile">
       <div className="mobile-account__leading">
@@ -38,10 +39,11 @@ const AccountMobileTile = (props) => {
       </div>
       <div className="mobile-account__subtitle">
         <div className="mobile-account__balance">
+          <div>{`${t("amount")}:`}</div>
           {formateDecimal(props.account?.total, { decimalLength: 8 })}
         </div>
         <div className="mobile-account__locked">
-          <BiLock />
+          <div>{`${t("locked")}:`}</div>
           {formateDecimal(props.account?.locked, { decimalLength: 8 })}
         </div>
       </div>
@@ -114,7 +116,7 @@ const UserInfo = (props) => {
           className="user-info__navs--label"
           onClick={(_) => openNavsHandler()}
         >
-          <i class="fa fa-user"></i>
+          < FaUserAlt/>
           <div>{storeCtx.memberEmail}</div>
         </div>
         <ul className={`user-info__navs--dropdown${openNav ? " open" : ""}`}>
@@ -128,31 +130,31 @@ const UserInfo = (props) => {
             status={openNotification}
             onClick={() => setOpenNotification((prev) => !prev)}
           />
-          <li>
-            <a href="/accounts" target="_blank">
-              <RiKey2Line size={28}/>
+          <li className="user-info__navs-item">
+            <a href="/accounts" target="_blank" className="user-info__navs-link">
+              <RiKey2Line size={20} />
               {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
               <span>{t("funds")}</span>
             </a>
           </li>
-          <li>
-            <a href="/settings" target="_blank">
+          <li className="user-info__navs-item">
+            <a href="/settings" target="_blank" className="user-info__navs-link">
               {/* <i class="fa fa-wrench"></i> */}
-              <FaWrench size={28}/>
+              <FaWrench size={16} />
               <span>{t("profile")}</span>
             </a>
           </li>
-          <li>
-            <a href="/history/orders" target="_blank">
+          <li className="user-info__navs-item">
+            <a href="/history/orders" target="_blank" className="user-info__navs-link">
               {/* <i class="fa fa-history"></i> */}
-              <RiHistoryFill size={28}/>
+              <RiHistoryFill size={16} />
               <span>{t("_history")}</span>
             </a>
           </li>
-          <li>
-            <a href="/signout">
+          <li className="user-info__navs-item">
+            <a href="/signout" className="user-info__navs-link">
               {/* <i class="fa fa-sign-out"></i> */}
-              <FiLogOut size={28}/>
+              <FiLogOut size={16} />
               <span>{t("logout")}</span>
             </a>
           </li>

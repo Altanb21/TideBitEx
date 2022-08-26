@@ -260,6 +260,7 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
+            ref={inputPrice}
             inputMode={props.isMobile ? "none" : "numeric"}
             name="price"
             type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
@@ -292,6 +293,7 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
+            ref={inputAmount}
             inputMode={props.isMobile ? "none" : "numeric"}
             name="trade_amount"
             type={props.isMobile ? null : "number"}

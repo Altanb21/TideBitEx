@@ -8,7 +8,7 @@
   right: 0;
   width: 100%;
   z-index: 1051;
-  padding-top: 24px;
+  padding-top: 40px;
 
   user-select: none;
   box-sizing: border-box;
@@ -16,15 +16,11 @@
   touch-action: manipulation;
   &__close {
     position: absolute;
-    top: 4px;
+    top: 10px;
     right: 5px;
-    text-align: left;
-    width: 15px;
-    height: 15px;
-    border-radius: 15px;
-    border: 1px solid;
-    text-align: center;
+    text-align: right;
     line-height: 1;
+    width: 100%;
   }
   &__row {
     display: flex;

@@ -25,6 +25,7 @@
   "bid": "Bid",
   "ask": "Ask",
   "amount": "Amount",
+  "locked": "Locked",
   "chart": "Chart",
   "spot": "Spot",
   "place_order": "Place Order",
