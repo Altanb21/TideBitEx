@@ -92,7 +92,7 @@ const SideBar = (props) => {
           <p>{t("announcement")}</p>
         </a>
       </li>
-      {!storeCtx.isLogin && (
+      {storeCtx.isLogin === false && (
         <>
           <li className="sidebar__item">
             <a className="sidebar__link" href="/signin">

@@ -1,4 +1,5 @@
 const path = require("path");
+const axios = require("axios");
 
 const Bot = require(path.resolve(__dirname, "Bot.js"));
 const OkexConnector = require("../libs/Connectors/OkexConnector");
@@ -311,8 +312,27 @@ class ExchangeHub extends Bot {
     return this.tideBitConnector.router("getUsersAccounts", {});
   }
 
+  async getPriceList() {
+    try {
+      const res = await axios({
+        method: `get`,
+        url: `https://cc.isun.one/api/cc/PriceList`,
+      });
+      if (res.data && res.data.code !== "0") {
+        const message = JSON.stringify(res.data);
+        this.logger.trace(message);
+      }
+      this.logger.log(`getPriceList res`, res);
+      return res.data;
+    } catch (e) {
+      this.logger.error(`getPriceList e`, e);
+    }
+  }
+
   // account api
   async getAccounts({ memberId }) {
+    let priceList = await this.getPriceList();
+    this.accountBook.priceList = priceList;
     this.logger.debug(
       `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );

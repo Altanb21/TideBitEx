@@ -19,7 +19,7 @@ const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
-  const [isLogin, setIsLogin] = useState(false);
+  const [isLogin, setIsLogin] = useState(null);
   const [memberId, setMemberId] = useState(false);
   const [memberEmail, setMemberEmail] = useState(false);
   const [tickers, setTickers] = useState([]);
@@ -37,6 +37,7 @@ const StoreProvider = (props) => {
   const [depthBook, setDepthbook] = useState(null);
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
+  const [fiatCurrency, setFiatCurrency] = useState('usd');
 
   const action = useCallback(
     (key) => (
@@ -226,14 +227,7 @@ const StoreProvider = (props) => {
         );
       }
     },
-    [
-      accounts,
-      action,
-      enqueueSnackbar,
-      middleman,
-      selectedTicker?.base_unit,
-      selectedTicker?.quote_unit,
-    ]
+    [action, enqueueSnackbar, middleman]
   );
 
   // TODO get latest snapshot of orders, trades, accounts
@@ -423,6 +417,11 @@ const StoreProvider = (props) => {
     };
   }, [middleman]);
 
+  const updateFiatCurrency = (fiatCurrency)=>{
+    middleman.setFiatCurrency(fiatCurrency)
+    setFiatCurrency(fiatCurrency);
+  }
+
   const sync = useCallback(async () => {
     await middleman.sync();
     setIsLogin(middleman.isLogin);
@@ -486,6 +485,7 @@ const StoreProvider = (props) => {
         tickSz,
         lotSz,
         memberEmail,
+        fiatCurrency,
         setIsLogin,
         // sync,
         start,
@@ -503,6 +503,7 @@ const StoreProvider = (props) => {
         getOuterPendingOrders,
         setFocusEl,
         changeRange,
+        updateFiatCurrency
       }}
     >
       {props.children}
