@@ -3,13 +3,43 @@ import BookBase from "../BookBase";
 
 class AccountBook extends BookBase {
   _currentUser;
+  _snapshot = {};
+  _difference = {};
+  _fiatCurrency = "hkd";
+  _sum;
+  _ratio = {
+    hkd: 1,
+    twd: 0.2623,
+    jpy: 0.0715,
+    krw: 0.0073,
+    usd: 7.8,
+    eur: 8.9341,
+    try: 1.4637,
+  };
+  //exchangeRate 是對美金
   constructor() {
     super();
     this.name = `AccountBook`;
     this._config = { remove: false, add: false, update: true };
-    this._snapshot = {};
-    this._difference = {};
     return this;
+  }
+
+  /**
+   * @param {String} currency
+   */
+  set fiatCurrency(currency) {
+    this._fiatCurrency = currency;
+  }
+
+  get fiatCurrency() {
+    return this._fiatCurrency;
+  }
+
+  getAssetsSum() {
+    let sum = this._sum;
+    if (!this._fiatCurrency && this._fiatCurrency !== "hkd")
+      sum = SafeMath.mult(this._sum, this._ratio[this._fiatCurrency]);
+    return sum;
   }
 
   getSnapshot(instId) {
@@ -45,6 +75,17 @@ class AccountBook extends BookBase {
     );
   }
 
+  sumUp = () => {
+    let sum = 0;
+    Object.values(this._snapshot).forEach((account) => {
+      sum = SafeMath.plus(
+        sum,
+        SafeMath.mult(account.total, account.exchangeRate)
+      );
+    });
+    this._sum = sum;
+  };
+
   /**
    *
    * @param {String} currency
@@ -58,6 +99,7 @@ class AccountBook extends BookBase {
         this._difference[account.currency] = account;
         this._snapshot[account.currency] = account;
       });
+      this.sumUp();
       return true;
     } catch (error) {
       console.error(`[AccountBook] error`, error);
@@ -80,6 +122,7 @@ class AccountBook extends BookBase {
         // }
         this._snapshot[account.currency] = account;
       });
+      this.sumUp();
       return true;
     } catch (error) {
       console.error(`[AccountBook updateAll]`, error);

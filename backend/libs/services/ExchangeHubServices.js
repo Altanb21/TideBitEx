@@ -1155,27 +1155,27 @@ class ExchangeHubService {
       case SupportedExchange.OKEX:
       default:
         let okexRes;
-        // if (!this._isStarted) {
+        if (!this._isStarted) {
         this.logger.log(`fetchTradeFillsHistoryRecords`);
         okexRes = await this.okexConnector.router(
           "fetchTradeFillsHistoryRecords",
           {
             query: {
               instType: "SPOT",
-              // before: Date.now() - this._interval,
+              before: Date.now() - this._interval,
             },
           }
         );
-        //   this._isStarted = true;
-        // } else {
-        //   this.logger.log(`fetchTradeFillsRecords`);
-        //   okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
-        //     query: {
-        //       instType: "SPOT",
-        //       before: Date.now() - this._minInterval,
-        //     },
-        //   });
-        // }
+          this._isStarted = true;
+        } else {
+          this.logger.log(`fetchTradeFillsRecords`);
+          okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
+            query: {
+              instType: "SPOT",
+              before: Date.now() - this._minInterval,
+            },
+          });
+        }
         if (okexRes.success) {
           outerTrades = okexRes.payload;
         }

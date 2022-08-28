@@ -1,123 +1,85 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
+import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
-import { dateFormatter } from "../utils/Utils";
+import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
+import SafeMath from "../utils/SafeMath";
 
-const exchanges = ["ALL", "OKEx", "TideBit"];
+const exchanges = ["OKEx"];
 
 const CurrentOrders = () => {
+  const storeCtx = useContext(StoreContext);
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [orders, setOrders] = useState(null);
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
-  const [filterExchange, setFilterExchange] = useState("ALL");
+  const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [ascending, setAscending] = useState(false);
   const { t } = useTranslation();
+  const [tickers, setTickers] = useState({ ticker: t("ticker") });
+  const [filterTicker, setFilterTicker] = useState(t("ticker"));
 
-  const filter = useCallback(
-    ({ keyword, side, exchange, filterOrders }) => {
-      if (side) setFilterOption(side);
-      if (exchange) setFilterExchange(exchange);
-      let _orders = filterOrders || orders,
-        _option = side || filterOption,
-        _keyword = keyword === undefined ? filterKey : keyword,
-        _exchange = exchange || filterExchange;
-      if (_orders) {
-        _orders = Object.values(_orders).filter((order) => {
-          if (_exchange === "ALL")
-            if (_option === "all")
-              return (
-                order.orderId.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.exchange.includes(_keyword)
-              );
-            else
-              return (
-                (order.orderId.includes(_keyword) ||
-                  order.memberId.includes(_keyword) ||
-                  order.exchange.includes(_keyword)) &&
-                order.side === _option
-              );
-          else if (_option === "all")
-            return (
-              order.exchange === _exchange &&
-              (order.orderId.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.exchange.includes(_keyword))
-            );
-          else
-            return (
-              order.exchange === _exchange &&
-              (order.orderId.includes(_keyword) ||
-                order.memberId.includes(_keyword) ||
-                order.exchange.includes(_keyword)) &&
-              order.side === _option
-            );
-        });
-        setFilterOrders(_orders);
-      }
+  const getCurrentOrders = useCallback(
+    async (exchange) => {
+      const orders = await storeCtx.getOuterPendingOrders(exchange);
+      setOrders((prev) => {
+        let _orders = { ...prev };
+        _orders[exchange] = orders;
+        return _orders;
+      });
+      return orders;
     },
-    [filterExchange, filterKey, filterOption, orders]
+    [storeCtx]
   );
 
-  const getCurrentOrders = useCallback(async () => {
-    return Promise.resolve({
-      38491204: {
-        orderId: "38491204",
-        memberId: "38491204",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        side: "bid",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-      38491205: {
-        orderId: "38491205",
-        memberId: "38491205",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        side: "bid",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-      38491206: {
-        orderId: "38491206",
-        memberId: "38491206",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "TideBit",
-        side: "ask",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-      38491207: {
-        orderId: "38491207",
-        memberId: "38491207",
-        tickerId: "btcusdt",
-        baseUnit: "BTC",
-        quoteUnit: "USDT",
-        exchange: "OKEx",
-        side: "bid",
-        price: "2134.15",
-        volume: "90",
-        originVolume: "100",
-        ts: 1655796586422,
-      },
-    });
-  }, []);
+  const filter = useCallback(
+    async ({ keyword, side, exchange, filterOrders, ticker }) => {
+      let _option = side || filterOption,
+        _keyword = keyword === undefined ? filterKey : keyword,
+        _exchange = exchange || filterExchange,
+        _orders = filterOrders || orders[_exchange],
+        _ticker = ticker || filterTicker,
+        tickers = { ticker: t("ticker") };
+      if (ticker) setFilterTicker(ticker);
+      if (side) setFilterOption(side);
+      if (exchange) {
+        setFilterExchange(exchange);
+        if (orders[exchange]) _orders = orders[exchange];
+        else _orders = await getCurrentOrders(exchange);
+      }
+      if (_orders) {
+        _orders = _orders.filter((order) => {
+          if (!tickers[order.instId]) tickers[order.instId] = order.instId;
+          let condition =
+            order.id.includes(_keyword) ||
+            order.memberId.includes(_keyword) ||
+            order.instId.includes(_keyword) ||
+            order.email.includes(_keyword) ||
+            order.exchange.includes(_keyword);
+          if (_ticker !== t("ticker"))
+            condition = condition && order.instId === _ticker;
+          if (_option !== "all")
+            condition = condition && order.side === _option;
+          if (_exchange !== "ALL")
+            condition = condition && order.exchange === _exchange;
+          return condition;
+        });
+        setFilterOrders(_orders);
+        setTickers(tickers);
+      }
+    },
+    [
+      filterExchange,
+      filterKey,
+      filterOption,
+      filterTicker,
+      getCurrentOrders,
+      orders,
+      t,
+    ]
+  );
 
   const sorting = () => {
     setAscending((prev) => {
@@ -133,14 +95,18 @@ const CurrentOrders = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const orders = await getCurrentOrders();
-        setOrders(orders);
-        console.log(orders);
+        const orders = await getCurrentOrders(exchanges[0]);
         filter({ filterOrders: orders });
         return !prev;
       } else return prev;
     });
   }, [getCurrentOrders, filter]);
+
+  useEffect(() => {
+    if (!isInit) {
+      init();
+    }
+  }, [init, isInit]);
 
   useEffect(() => {
     if (!isInit) {
@@ -177,7 +143,7 @@ const CurrentOrders = () => {
       </div>
       <div className="screen__tool-bar">
         <div className="screen__display">
-          <div className="screen__display-title">{`${t("show")}：`}</div>
+          <div className="screen__display-title">{`${t("show")}:`}</div>
           <ul className="screen__display-options">
             <li
               className={`screen__display-option${
@@ -191,7 +157,7 @@ const CurrentOrders = () => {
               className={`screen__display-option${
                 filterOption === "ask" ? " active" : ""
               }`}
-              onClick={() => filter({ side: "ask" })}
+              onClick={() => filter({ side: "sell" })}
             >
               {t("bid")}
             </li>
@@ -199,21 +165,27 @@ const CurrentOrders = () => {
               className={`screen__display-option${
                 filterOption === "bid" ? " active" : ""
               }`}
-              onClick={() => filter({ side: "bid" })}
+              onClick={() => filter({ side: "buy" })}
             >
               {t("ask")}
             </li>
           </ul>
         </div>
-        <div className="screen__sorting">
+        <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
         </div>
       </div>
       <div className={`screen__table${showMore ? " show" : ""}`}>
         <ul className="screen__table-headers">
           <li className="screen__table-header">{t("date")}</li>
-          <li className="screen__table-header">{t("memberId")}</li>
+          <li className="screen__table-header">{t("memberId_email")}</li>
           <li className="screen__table-header">{t("transaction-side")}</li>
+          <TableDropdown
+            className="screen__table-header"
+            selectHandler={(option) => filter({ ticker: option })}
+            options={Object.values(tickers)}
+            selected={filterTicker}
+          />
           <li className="screen__table-header">{t("exchange")}</li>
           <li className="screen__table-header">{t("match-volume")}</li>
           <li className="screen__table-header">{t("unmatch-volume")}</li>
@@ -223,37 +195,47 @@ const CurrentOrders = () => {
           {filterOrders &&
             filterOrders.map((order) => (
               <div
-                className={`current-orders__tile screen__table-row`}
-                key={order.orderId}
+                className={`current-orders__tile screen__table-row${
+                  order.email ? "" : " unknown"
+                }`}
+                key={order.id}
               >
                 <div className="current-orders__text screen__table-item">
                   {dateFormatter(order.ts).text}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {order.memberId}
+                <div>{`${order.email ? order.email + "/" : "Unknown"}`}</div>
+                  <div>{`${order.email ? order.memberId : ""}`}</div>
                 </div>
                 <div
                   className={`current-orders__text screen__table-item${
-                    order.side === "bid" ? " positive" : " negative"
+                    order.side === "buy" ? " positive" : " negative"
                   }`}
                 >
                   {t(order.side)}
                 </div>
                 <div className="current-orders__text screen__table-item">
+                  {order.instId}
+                </div>
+                <div className="current-orders__text screen__table-item">
                   {order.exchange}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.originVolume - order.volume} / ${
-                    order.originVolume
-                  }`}
+                  {`${convertExponentialToDecimal(
+                    order.accFillSz
+                  )} / ${convertExponentialToDecimal(order.sz)}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${order.volume} / ${order.originVolume}`}
+                  {`${convertExponentialToDecimal(
+                    SafeMath.minus(order.sz, order.accFillSz)
+                  )} / ${convertExponentialToDecimal(order.sz)}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                  {`${(order.originVolume - order.volume) * order.price} / ${
-                    order.originVolume * order.price
-                  }`}
+                  {`${convertExponentialToDecimal(
+                    order.fundsReceived
+                  )} / ${convertExponentialToDecimal(
+                    SafeMath.mult(order.sz, order.px)
+                  )}`}
                 </div>
               </div>
             ))}
@@ -271,7 +253,6 @@ const CurrentOrders = () => {
           onClick={() => {
             const screenSection =
               window.document.querySelector(".screen__section");
-            // console.log(screenSection.scrollTop)
             screenSection.scroll(0, 0);
           }}
         >

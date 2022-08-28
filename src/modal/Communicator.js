@@ -336,6 +336,40 @@ class Communicator {
     }
   }
 
+  async getOuterTradeFills(exchange, days) {
+    try {
+      if (!exchange) return { message: "exchange cannot be null" };
+      const url = `/trade/fill-history?exchange=${exchange}&days=${days}`;
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getOuterPendingOrders(exchange) {
+    try {
+      if (!exchange) return { message: "exchange cannot be null" };
+      const url = `/trade/pending-orders?exchange=${exchange}`;
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
   // Trade
   async order(order) {
     try {

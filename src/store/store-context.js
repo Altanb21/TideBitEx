@@ -20,6 +20,7 @@ const StoreContext = React.createContext({
   focusEl: null,
   tickSz: null,
   lotSz: null,
+  memberEmail: null,
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},
@@ -238,6 +239,8 @@ const StoreContext = React.createContext({
   activePageHandler: () => {},
   getExAccounts: async (exchange) => {},
   getUsersAccounts: async () => {},
+  getOuterTradeFills: async (exchange, days) => {},
+  getOuterPendingOrders: async (exchange) => {},
   setFocusEl: () => {},
   changeRange: () => {},
 });

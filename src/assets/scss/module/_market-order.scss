@@ -95,12 +95,6 @@
   }
 }
 
-@media only screen and (max-width: 776px) {
-  .main-chart {
-    min-width: 587px;
-  }
-}
-
 @media only screen and (max-width: $mobile-width) {
   .market-order {
     border: none;
@@ -120,6 +114,12 @@
     & > .nav.nav-tabs > [role="tab"][data-rb-event-key="balance"],
     & > .tab-content > [role="tabpanel"]:last-child {
       display: none;
+    }
+  }
+  .market-order-item {
+    & > li {
+      font-size: 14px;
+      min-width: unset;
     }
   }
 }

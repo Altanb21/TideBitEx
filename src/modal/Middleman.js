@@ -8,12 +8,13 @@ import TideBitWS from "../libs/TideBitWS";
 import Communicator from "./Communicator";
 // import Pusher from "pusher-js";
 // import { randomID } from "dvalue";
-import { wait } from "../utils/Utils";
+// import { wait } from "../utils/Utils";
 
 class Middleman {
   // _userId;
+  email;
   memberId;
-  isLogin = false;
+  isLogin = null;
   constructor() {
     this.name = "Middleman";
     this.accountBook = new AccountBook();
@@ -32,6 +33,10 @@ class Middleman {
     return this;
   }
 
+  setFiatCurrency(fiatCurrency) {
+    this.accountBook.fiatCurrency = fiatCurrency;
+  }
+
   async getInstruments(instType) {
     try {
       const instruments = await this.communicator.instruments(instType);
@@ -39,6 +44,22 @@ class Middleman {
       return instruments;
     } catch (error) {
       // this.instruments = [];
+      throw error;
+    }
+  }
+
+  async getOuterTradeFills(exchange, days) {
+    try {
+      return await this.communicator.getOuterTradeFills(exchange, days);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getOuterPendingOrders(exchange) {
+    try {
+      return await this.communicator.getOuterPendingOrders(exchange);
+    } catch (error) {
       throw error;
     }
   }
@@ -229,8 +250,10 @@ class Middleman {
           // this.selectedTicker?.instId?.replace("-", ",")
           ();
         // console.log(`_getAccounts res`, res);
-        if (res?.accounts) {
+        if (res) {
           this.accountBook.updateAll(res.accounts);
+          this.memberId = res.memberId;
+          this.email = res.email;
         }
       } catch (error) {
         console.error(`_getAccounts error`, error);
@@ -241,7 +264,10 @@ class Middleman {
   }
 
   getAccounts(instId) {
-    return this.accountBook.getSnapshot(instId);
+    return {
+      accounts: this.accountBook.getSnapshot(instId),
+      sum: this.accountBook.getAssetsSum()
+    };
   }
 
   async selectMarket(market) {
@@ -344,6 +370,8 @@ class Middleman {
     if (options.memberId) {
       this.isLogin = true;
       this.memberId = options.memberId;
+    }else{
+      this.isLogin = false;
     }
     if (this.isLogin) {
       try {

@@ -11,7 +11,7 @@
     display: flex;
     justify-content: flex-end;
   }
-  &__range-options{
+  &__range-options {
     max-width: 100px;
   }
   &__range-options > .header-dropdown__button {
@@ -50,34 +50,45 @@
     flex: 1;
   }
   &__tile {
+    display: flex;
+    justify-content: center;
+  }
+
+  &__tile--bid,
+  &__tile--ask {
     position: relative;
     font-size: 12px;
     cursor: pointer;
+    flex: 1;
   }
-
   &__header--bids > *,
   &__header--asks > *,
-  &__tile > * {
+  &__tile--bid > *,
+  &__tile--ask > * {
     flex: 1;
     text-indent: 2px;
     width: 80px;
   }
+  &__tile--bid,
+  &__tile--ask {
+    display: flex;
+  }
   &__header--bids,
-  &__panel--bids > &__tile {
+  &__tile--bid {
     text-align: right;
     justify-content: flex-end;
     padding-right: 2px;
   }
   &__header--asks,
-  &__panel--asks > &__tile {
+  &__tile--ask {
     text-align: left;
     padding-left: 2px;
   }
-  &__panel--bids > &__tile > *:nth-child(3) {
+  &__tile--bid > *:nth-child(3) {
     color: #03a363;
     font-weight: 500;
   }
-  &__panel--asks > &__tile > *:nth-child(1) {
+  &__tile--ask > *:nth-child(1) {
     color: #d0021b;
     font-weight: 500;
   }
@@ -87,11 +98,11 @@
     // height: -webkit-fill-available;
     height: 18px;
   }
-  &__panel--bids &__tile--cover {
+  &__tile--bid &__tile--cover {
     background: #26de8225;
     right: 0;
   }
-  &__panel--asks &__tile--cover {
+  &__tile--ask &__tile--cover {
     background: #de262625;
     left: 0;
   }
@@ -142,7 +153,8 @@
 
     &__header--bids > *,
     &__header--asks > *,
-    &__tile > * {
+    &__tile--bid > *,
+    &__tile--ask > * {
       width: 54px;
     }
   }

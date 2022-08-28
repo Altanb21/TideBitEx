@@ -3,9 +3,14 @@ import React from "react";
 const AdminHeader = (props) => {
   return (
     <header className="admin-header">
-      <div className="admin-header__logo-box">
-        <img src="/TideBit_White_hk.png" alt="TideBit" width="125px" />
-      </div>
+      <a className="admin-header__logo-box" href="/">
+        <img
+          src="/TideBit_White_hk.png"
+          alt="TideBit"
+          width="125px"
+          height="44px"
+        />
+      </a>
       <div className="admin-header__button-box">
         <div
           className={`admin-header__button${

@@ -14,4 +14,16 @@
   & .admin-dropdown__options {
     top: 40px;
   }
+  & .screen__table-header:nth-child(1),
+  &__text.screen__table-item:nth-child(1) {
+    max-width: 100px;
+  }
+  & .screen__table-header:nth-child(2) {
+    min-width: 180px;
+  }
+  &__text.screen__table-item:nth-child(2) {
+    min-width: 180px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

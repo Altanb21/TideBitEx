@@ -3,7 +3,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  useRef,
+  // useRef,
 } from "react";
 import StoreContext from "../store/store-context";
 import { Tabs, Tab, Nav } from "react-bootstrap";
@@ -11,13 +11,13 @@ import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
-import CustomKeyboard from "./CustomKeyboard";
+// import CustomKeyboard from "./CustomKeyboard";
 
 const TradeForm = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
-  const inputPrice = useRef();
-  const inputAmount = useRef();
+  // const inputPrice = useRef();
+  // const inputAmount = useRef();
   const [tdMode, setTdMode] = useState("cash");
   const [price, setPrice] = useState("");
   const [volume, setVolume] = useState("");
@@ -178,27 +178,33 @@ const TradeForm = (props) => {
   };
 
   useEffect(() => {
-    if (storeCtx.accounts) {
+    if (storeCtx.accounts?.accounts) {
       if (
         (storeCtx.selectedTicker && !selectedTicker) ||
         (storeCtx.selectedTicker &&
           storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
         quoteCcyAvailable !==
-          storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()]
-            ?.balance ||
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+          ]?.balance ||
         baseCcyAvailable !==
-          storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()]
-            ?.balance
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          ]?.balance
       ) {
         // setMemberId(storeCtx.memberId);
         let quoteCcyAccount =
-          storeCtx.accounts[storeCtx.selectedTicker?.quote_unit?.toUpperCase()];
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+          ];
 
         if (quoteCcyAccount) {
           setQuoteCcyAvailable(quoteCcyAccount?.balance);
         }
         let baseCcyAccount =
-          storeCtx.accounts[storeCtx.selectedTicker?.base_unit?.toUpperCase()];
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          ];
         if (baseCcyAccount) {
           setBaseCcyAvailable(baseCcyAccount?.balance);
         }
@@ -260,17 +266,20 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            inputMode={props.isMobile ? "none" : "numeric"}
+            // ref={inputPrice}
+            // inputMode={props.isMobile ? "none" : "numeric"}
+            inputMode="decimal"
             name="price"
-            type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
-            onClick={() => {
-              if (props.isMobile) {
-                storeCtx.setFocusEl(inputPrice);
-              }
-            }}
+            // onClick={() => {
+            //   if (props.isMobile) {
+            //     storeCtx.setFocusEl(inputPrice);
+            //   }
+            // }}
             onChange={(e) => {
               // props.onPxInput(e.target.value);
               formatPrice(e.target.value);
@@ -292,17 +301,20 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            inputMode={props.isMobile ? "none" : "numeric"}
-            name="trade_amount"
-            type={props.isMobile ? null : "number"}
+            // ref={inputAmount}
+            inputMode="decimal"
+            // inputMode={props.isMobile ? "none" : "numeric"}
+            name="amount"
+            // type={props.isMobile ? null : "number"}
+            type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
-            onClick={() => {
-              if (props.isMobile) {
-                storeCtx.setFocusEl(inputAmount);
-              }
-            }}
+            // onClick={() => {
+            //   if (props.isMobile) {
+            //     storeCtx.setFocusEl(inputAmount);
+            //   }
+            // }}
             onChange={(e) => {
               // props.onSzInput(e.target.value);
               formatSize(e.target.value);
@@ -450,21 +462,23 @@ const TradeForm = (props) => {
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>
-      {storeCtx.focusEl && (
-        <CustomKeyboard
-          inputEl={storeCtx.focusEl}
-          onInput={(v) => {
-            if (storeCtx.focusEl === inputPrice) {
-              // props.onPxInput(v);
-              formatPrice(v);
-            }
-            if (storeCtx.focusEl === inputAmount) {
-              // props.onSzInput(v);
-              formatSize(v);
-            }
-          }}
-        />
-      )}
+      {/* {props.isMobile &&
+        (storeCtx.focusEl?.name === "price" ||
+          storeCtx.focusEl?.name === "amount") && (
+          <CustomKeyboard
+            inputEl={storeCtx.focusEl}
+            onInput={(v) => {
+              if (storeCtx.focusEl?.name === "price") {
+                // props.onPxInput(v);
+                formatPrice(v);
+              }
+              if (storeCtx.focusEl?.name === "amount") {
+                // props.onSzInput(v);
+                formatSize(v);
+              }
+            }}
+          />
+        )} */}
       <button
         type="submit"
         className="btn market-trade__button"
@@ -550,7 +564,7 @@ const MarketTrade = () => {
           </Tab> */}
         </Tabs>
       </div>
-      {!storeCtx.isLogin && (
+      {storeCtx.isLogin === false && (
         <div className="market-trade__cover flex-row">
           <Nav.Link href="/signin">{t("login")}</Nav.Link>
           <Nav.Link href="/signup">{t("register")}</Nav.Link>

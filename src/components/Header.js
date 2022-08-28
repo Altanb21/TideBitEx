@@ -16,6 +16,7 @@ const Header = (props) => {
           className="d-inline-block align-top"
           alt="TideBit"
           width="125px"
+          height="44px"
         />
       </Navbar.Brand>
       <button
@@ -35,7 +36,7 @@ const Header = (props) => {
           {t("digital_staking")}
         </Nav.Link>
         <Nav.Link href="/referral">{t("refer_now")}</Nav.Link>
-        {!storeCtx.isLogin && (
+        {storeCtx.isLogin === false && (
           <React.Fragment>
             <Nav.Link href="/signin">{t("login")}</Nav.Link>
             <Nav.Link href="/signup">{t("register")}</Nav.Link>

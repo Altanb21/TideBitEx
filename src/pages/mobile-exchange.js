@@ -17,7 +17,7 @@ const MobileExchange = (props) => {
   const { t } = useTranslation();
   return (
     <main
-      className="main"
+      className="main scrollbar-custom"
       // onClick={() => {
       //   console.log(`MobileExchange onClick`);
       //   storeCtx.setFocusEl(null);
@@ -55,7 +55,7 @@ const MobileExchange = (props) => {
             </div>
             <div className="section__container section__container--mobile">
               <Tabs defaultActiveKey="market">
-                <Tab eventKey="market" title={t("market")}>
+                <Tab eventKey="market" title={t("navigator_market")}>
                   <DepthBook />
                 </Tab>
                 {storeCtx.isLogin && (
@@ -72,8 +72,8 @@ const MobileExchange = (props) => {
         )}
         {storeCtx.activePage === "assets" && (
           <div className="mobole-account__list">
-            {storeCtx.accounts ? (
-              Object.values(storeCtx.accounts).map((account) => (
+            {storeCtx.accounts?.accounts ? (
+              Object.values(storeCtx.accounts.accounts).map((account) => (
                 <AccountMobileTile account={account} />
               ))
             ) : (

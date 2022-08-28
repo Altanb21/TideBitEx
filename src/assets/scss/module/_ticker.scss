@@ -17,6 +17,7 @@
   // }
   &__button.open > .market-tickers,
   &__button.open > * ~ .market-tickers {
+    display: flex;
     z-index: 1000;
     opacity: 1;
     pointer-events: stroke;
