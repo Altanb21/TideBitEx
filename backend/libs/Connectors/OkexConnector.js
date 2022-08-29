@@ -142,10 +142,11 @@ class OkexConnector extends ConnectorBase {
    */
   async fetchTradeFillsRecords({ query, results = [], requests = 60 }) {
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords`);
-    const { begin, end } = query;
+    const { begin, end, after } = query;
     let result,
       arr = [];
-    if (begin) arr.push(`begin=${begin}`);
+    if (!after && begin) arr.push(`begin=${begin}`);
+    if (after) arr.push(`after=${after}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const method = "GET";
     const path = "/api/v5/trade/fills";
@@ -175,26 +176,27 @@ class OkexConnector extends ConnectorBase {
         data: JSON.stringify(trade),
       }));
       results = results.concat(data);
-      if (data.length === 100 && data[data.length - 1].ts < end) {
+      if (data.length === 100) {
         if (requests > 0)
           return this.fetchTradeFillsRecords({
             query: {
               ...query,
-              begin: data[data.length - 1].ts,
+              after: data[0].billId,
             },
             results,
             requests: requests - 1,
           });
-        else await wait(2000);
-        this.fetchTradeFillsRecords({
-          query: {
-            ...query,
-            begin: data[data.length - 1].ts,
-          },
-          results,
-          requests: 60,
-        });
-        await wait(2000);
+        else {
+          await wait(2000);
+          this.fetchTradeFillsRecords({
+            query: {
+              ...query,
+              after: data[0].billId,
+            },
+            results,
+            requests: 60,
+          });
+        }
       }
       result = new ResponseFormat({
         message: "tradeFills",
@@ -214,13 +216,14 @@ class OkexConnector extends ConnectorBase {
   }
 
   async fetchTradeFillsHistoryRecords({ query, results = [], requests = 10 }) {
-    const { instType, begin, end } = query;
+    const { instType, begin, end, after } = query;
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
     let result,
       arr = [];
     const method = "GET";
     if (instType) arr.push(`instType=${instType}`);
-    if (begin) arr.push(`begin=${begin}`);
+    if (!after && begin) arr.push(`begin=${begin}`);
+    if (after) arr.push(`after=${after}`);
     const path = "/api/v5/trade/fills-history";
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
@@ -253,21 +256,17 @@ class OkexConnector extends ConnectorBase {
         `fetchTradeFillsHistoryRecords begin[${begin}], end[${end}], requests[${requests}]`
       );
       console.log(
-        `fetchTradeFillsHistoryRecords data length[${
-          data.length
-        }], data[0].ts[${data[0].ts}], data[data.length - 1].ts[${
-          data[data.length - 1].ts
-        }]`
+        `fetchTradeFillsHistoryRecords data length[${data.length}], data[0].ts[${data[0].ts}], data[0].ts[${data[0].ts}]`
       );
       console.log(
         `fetchTradeFillsHistoryRecords results length[${results.length}] ,results[0].ts[${results[0].ts}]`
       );
-      if (data.length === 100 && data[data.length - 1].ts < end) {
+      if (data.length === 100) {
         if (requests > 0)
           return this.fetchTradeFillsHistoryRecords({
             query: {
               ...query,
-              begin: data[data.length - 1].ts,
+              after: data[0].billId,
             },
             results,
             requests: requests - 1,
@@ -277,7 +276,7 @@ class OkexConnector extends ConnectorBase {
           return this.fetchTradeFillsHistoryRecords({
             query: {
               ...query,
-              begin: data[data.length - 1].ts,
+              after: data[0].billId,
             },
             results,
             requests: 10,
