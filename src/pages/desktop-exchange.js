@@ -13,8 +13,10 @@ const DesktopExchange = (props) => {
   const storeCtx = useContext(StoreContext);
   return (
     <main className="main">
-      <SelectedTicker />
-      {storeCtx.isLogin && <UserInfo />}
+      <main className="main__summary">
+        <SelectedTicker />
+        {storeCtx.isLogin && <UserInfo />}
+      </main>
       <section className="section">
         <div className="section__container">
           <div className="section__container--left">

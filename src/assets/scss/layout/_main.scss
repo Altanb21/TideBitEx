@@ -7,6 +7,18 @@ main.main {
   background-color: #fff;
   margin-top: 70px;
   overflow: auto;
+  &__summary {
+    display: flex;
+    flex-direction: row;
+  }
+}
+
+@media only screen and (max-width: 908px) {
+  main.main {
+    &__summary {
+      flex-direction: column;
+    }
+  }
 }
 
 @media only screen and (max-width: $mobile-width) {
