@@ -142,11 +142,11 @@ class OkexConnector extends ConnectorBase {
    */
   async fetchTradeFillsRecords({ query, results = [], requests = 60 }) {
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords`);
-    const { begin, end, after } = query;
+    const { begin, end, before } = query;
     let result,
       arr = [];
-    if (!after && begin) arr.push(`begin=${begin}`);
-    if (after) arr.push(`after=${after}`);
+    if (!before && begin) arr.push(`begin=${begin}`);
+    if (before) arr.push(`before=${before}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const method = "GET";
     const path = "/api/v5/trade/fills";
@@ -181,7 +181,7 @@ class OkexConnector extends ConnectorBase {
           return this.fetchTradeFillsRecords({
             query: {
               ...query,
-              after: data[0].billId,
+              before: data[0].billId,
             },
             results,
             requests: requests - 1,
@@ -191,7 +191,7 @@ class OkexConnector extends ConnectorBase {
           this.fetchTradeFillsRecords({
             query: {
               ...query,
-              after: data[0].billId,
+              before: data[0].billId,
             },
             results,
             requests: 60,
@@ -216,14 +216,14 @@ class OkexConnector extends ConnectorBase {
   }
 
   async fetchTradeFillsHistoryRecords({ query, results = [], requests = 10 }) {
-    const { instType, begin, end, after } = query;
+    const { instType, begin, end, before } = query;
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
     let result,
       arr = [];
     const method = "GET";
     if (instType) arr.push(`instType=${instType}`);
-    if (!after && begin) arr.push(`begin=${begin}`);
-    if (after) arr.push(`after=${after}`);
+    if (!before && begin) arr.push(`begin=${begin}`);
+    if (before) arr.push(`before=${before}`);
     const path = "/api/v5/trade/fills-history";
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
@@ -266,7 +266,7 @@ class OkexConnector extends ConnectorBase {
           return this.fetchTradeFillsHistoryRecords({
             query: {
               ...query,
-              after: data[0].billId,
+              before: data[0].billId,
             },
             results,
             requests: requests - 1,
@@ -276,7 +276,7 @@ class OkexConnector extends ConnectorBase {
           return this.fetchTradeFillsHistoryRecords({
             query: {
               ...query,
-              after: data[0].billId,
+              before: data[0].billId,
             },
             results,
             requests: 10,
