@@ -178,20 +178,23 @@ class OkexConnector extends ConnectorBase {
       if (data.length === 100 && data[data.length - 1].ts < end) {
         if (requests > 0)
           return this.fetchTradeFillsRecords({
-            query,
+            query: {
+              ...query,
+              begin: data[data.length - 1].ts,
+            },
             result,
             requests: requests - 1,
           });
-        else
-          return setTimeout(
-            () =>
-              this.fetchTradeFillsRecords({
-                query,
-                result,
-                requests: requests - 1,
-              }),
-            2000
-          );
+        else await wait(2000);
+        this.fetchTradeFillsRecords({
+          query: {
+            ...query,
+            begin: data[data.length - 1].ts,
+          },
+          result,
+          requests: requests - 1,
+        });
+        await wait(2000);
       }
       result = new ResponseFormat({
         message: "tradeFills",
@@ -262,14 +265,20 @@ class OkexConnector extends ConnectorBase {
       if (data.length === 100 && data[data.length - 1].ts < end) {
         if (requests > 0)
           return this.fetchTradeFillsHistoryRecords({
-            query,
+            query: {
+              ...query,
+              begin: data[data.length - 1].ts,
+            },
             result,
             requests: requests - 1,
           });
         else {
           await wait(2000);
           return this.fetchTradeFillsHistoryRecords({
-            query,
+            query: {
+              ...query,
+              begin: data[data.length - 1].ts,
+            },
             result,
             requests: requests - 1,
           });
