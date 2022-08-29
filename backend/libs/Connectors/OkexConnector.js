@@ -182,7 +182,7 @@ class OkexConnector extends ConnectorBase {
               ...query,
               begin: data[data.length - 1].ts,
             },
-            result,
+            results,
             requests: requests - 1,
           });
         else await wait(2000);
@@ -191,8 +191,8 @@ class OkexConnector extends ConnectorBase {
             ...query,
             begin: data[data.length - 1].ts,
           },
-          result,
-          requests: requests - 1,
+          results,
+          requests: 60,
         });
         await wait(2000);
       }
@@ -269,7 +269,7 @@ class OkexConnector extends ConnectorBase {
               ...query,
               begin: data[data.length - 1].ts,
             },
-            result,
+            results,
             requests: requests - 1,
           });
         else {
@@ -279,8 +279,8 @@ class OkexConnector extends ConnectorBase {
               ...query,
               begin: data[data.length - 1].ts,
             },
-            result,
-            requests: requests - 1,
+            results,
+            requests: 10,
           });
         }
       }
