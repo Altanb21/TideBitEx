@@ -119,23 +119,6 @@ class OkexConnector extends ConnectorBase {
     return headers;
   }
 
-  //   {
-  //     "side": "sell",
-  //     "fillSz": "0.002",
-  //     "fillPx": "1195.86",
-  //     "fee": "-0.001913376",
-  //     "ordId": "467755654093094921",
-  //     "instType": "SPOT",
-  //     "instId": "ETH-USDT",
-  //     "clOrdId": "377bd372412fSCDE2m332576077o",
-  //     "posSide": "net",
-  //     "billId": "467871903972212805",
-  //     "tag": "377bd372412fSCDE",
-  //     "execType": "M",
-  //     "tradeId": "225260494",
-  //     "feeCcy": "USDT",
-  //     "ts": "1657821354546"
-  // }
   /**
    * @typedef {Object} Trade
    * @property {string} side "sell"
@@ -157,12 +140,12 @@ class OkexConnector extends ConnectorBase {
   /**
    * @returns {Promise<Trade>}
    */
-  async fetchTradeFillsRecords({ query }) {
+  async fetchTradeFillsRecords({ query, results = [], requests = 60 }) {
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords`);
-    const { before } = query;
+    const { begin, end } = query;
     let result,
       arr = [];
-    if (before) arr.push(`before=${before}`);
+    if (begin) arr.push(`begin=${begin}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const method = "GET";
     const path = "/api/v5/trade/fills";
@@ -191,10 +174,114 @@ class OkexConnector extends ConnectorBase {
         updatedAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
+      results = results.concat(data);
+      if (data.length === 100 && data[data.length - 1].ts < end) {
+        if (requests > 0)
+          return this.fetchTradeFillsRecords({
+            query,
+            result,
+            requests: requests - 1,
+          });
+        else
+          return setTimeout(
+            () =>
+              this.fetchTradeFillsRecords({
+                query,
+                result,
+                requests: requests - 1,
+              }),
+            2000
+          );
+      }
       result = new ResponseFormat({
         message: "tradeFills",
-        payload: data,
+        payload: results,
       });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      result = new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+    return result;
+  }
+
+  async fetchTradeFillsHistoryRecords({ query, results = [], requests = 10 }) {
+    const { instType, begin, end } = query;
+    this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
+    let result,
+      arr = [];
+    const method = "GET";
+    if (instType) arr.push(`instType=${instType}`);
+    if (begin) arr.push(`begin=${begin}`);
+    const path = "/api/v5/trade/fills-history";
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
+    const timeString = new Date().toISOString();
+    const okAccessSign = await this.okAccessSign({
+      timeString,
+      method,
+      path: `${path}${qs}`,
+    });
+    try {
+      const res = await axios({
+        method: method.toLocaleLowerCase(),
+        url: `${this.domain}${path}${qs}`,
+        headers: this.getHeaders(true, { timeString, okAccessSign }),
+      });
+      if (res.data && res.data.code !== "0") {
+        const message = JSON.stringify(res.data);
+        this.logger.trace(message);
+      }
+      const data = res.data.data.map((trade) => ({
+        ...trade,
+        // tradeId: `${this.database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
+        status: this.database.OUTERTRADE_STATUS.UNPROCESS,
+        exchangeCode:
+          this.database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
+        updatedAt: new Date(parseInt(trade.ts)).toISOString(),
+        data: JSON.stringify(trade),
+      }));
+      results = results.concat(data);
+      console.log(`fetchTradeFillsHistoryRecords begin[${begin}], end[${end}], requests[${requests}]`);
+      console.log(
+        `fetchTradeFillsHistoryRecords data length[${
+          data.length
+        }], data[0].ts[${data[0].ts}], data[data.length - 1].ts[${
+          data[data.length - 1].ts
+        }]`
+      );
+      console.log(
+        `fetchTradeFillsHistoryRecords results length[${results.length}] ,results[0].ts[${results[0].ts}]`
+      );
+      if (data.length === 100 && data[data.length - 1].ts < end) {
+        if (requests > 0)
+          return this.fetchTradeFillsHistoryRecords({
+            query,
+            result,
+            requests: requests - 1,
+          });
+        else
+          return setTimeout(
+            () =>
+              this.fetchTradeFillsHistoryRecords({
+                query,
+                result,
+                requests: requests - 1,
+              }),
+            2000
+          );
+      }
+      result = new ResponseFormat({
+        message: "tradeFillsHistory",
+        payload: results,
+      });
+      this.logger.log(
+        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length})`
+      );
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -239,61 +326,6 @@ class OkexConnector extends ConnectorBase {
         message: "orderDetails",
         payload: data,
       });
-    } catch (error) {
-      this.logger.error(error);
-      let message = error.message;
-      if (error.response && error.response.data)
-        message = error.response.data.msg;
-      result = new ResponseFormat({
-        message,
-        code: Codes.API_UNKNOWN_ERROR,
-      });
-    }
-    return result;
-  }
-
-  async fetchTradeFillsHistoryRecords({ query }) {
-    const { instType, before } = query;
-    this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
-    let result,
-      arr = [];
-    const method = "GET";
-    if (instType) arr.push(`instType=${instType}`);
-    if (before) arr.push(`before=${before}`);
-    const path = "/api/v5/trade/fills-history";
-    const qs = !!arr.length ? `?${arr.join("&")}` : "";
-    const timeString = new Date().toISOString();
-    const okAccessSign = await this.okAccessSign({
-      timeString,
-      method,
-      path: `${path}${qs}`,
-    });
-    try {
-      const res = await axios({
-        method: method.toLocaleLowerCase(),
-        url: `${this.domain}${path}${qs}`,
-        headers: this.getHeaders(true, { timeString, okAccessSign }),
-      });
-      if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
-      }
-      const data = res.data.data.map((trade) => ({
-        ...trade,
-        // tradeId: `${this.database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
-        status: this.database.OUTERTRADE_STATUS.UNPROCESS,
-        exchangeCode:
-          this.database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
-        updatedAt: new Date(parseInt(trade.ts)).toISOString(),
-        data: JSON.stringify(trade),
-      }));
-      result = new ResponseFormat({
-        message: "tradeFills",
-        payload: data,
-      });
-      this.logger.log(
-        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](data.length:${data.length})`
-      );
     } catch (error) {
       this.logger.error(error);
       let message = error.message;

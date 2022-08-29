@@ -1150,7 +1150,7 @@ class ExchangeHubService {
     this.logger.log(
       `------------- [${this.constructor.name}] _getOuterTradesFromAPI --------------`
     );
-    let outerTrades;
+    let outerTrades, end = Date.now();
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
@@ -1162,7 +1162,8 @@ class ExchangeHubService {
           {
             query: {
               instType: "SPOT",
-              before: Date.now() - this._interval,
+              begin: end - this._interval,
+              end,
             },
           }
         );
@@ -1172,7 +1173,8 @@ class ExchangeHubService {
           okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
             query: {
               instType: "SPOT",
-              before: Date.now() - this._minInterval,
+              begin: end - this._minInterval,
+              end,
             },
           });
         }
