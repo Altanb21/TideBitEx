@@ -9,7 +9,7 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const { waterfallPromise, getBar, parseClOrdId } = require("../Utils");
+const { waterfallPromise, getBar, parseClOrdId, wait } = require("../Utils");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
@@ -246,7 +246,9 @@ class OkexConnector extends ConnectorBase {
         data: JSON.stringify(trade),
       }));
       results = results.concat(data);
-      console.log(`fetchTradeFillsHistoryRecords begin[${begin}], end[${end}], requests[${requests}]`);
+      console.log(
+        `fetchTradeFillsHistoryRecords begin[${begin}], end[${end}], requests[${requests}]`
+      );
       console.log(
         `fetchTradeFillsHistoryRecords data length[${
           data.length
@@ -264,16 +266,14 @@ class OkexConnector extends ConnectorBase {
             result,
             requests: requests - 1,
           });
-        else
-          return setTimeout(
-            () =>
-              this.fetchTradeFillsHistoryRecords({
-                query,
-                result,
-                requests: requests - 1,
-              }),
-            2000
-          );
+        else {
+          await wait(2000);
+          return this.fetchTradeFillsHistoryRecords({
+            query,
+            result,
+            requests: requests - 1,
+          });
+        }
       }
       result = new ResponseFormat({
         message: "tradeFillsHistory",
