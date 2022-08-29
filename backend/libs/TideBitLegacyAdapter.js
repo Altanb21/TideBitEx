@@ -43,7 +43,7 @@ class TideBitLegacyAdapter {
   }
 
   // ++ middleware
-  static async getMemberId(ctx, next, redisDomain) {
+  static async getMemberId(ctx, next, redisDomain, database) {
     // let userId = ctx.header.userid;
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
@@ -69,6 +69,10 @@ class TideBitLegacyAdapter {
       if (parsedResult.memberId !== -1) {
         ctx.session.token = parsedResult.peatioSession;
         ctx.session.memberId = parsedResult.memberId;
+        ctx.memberId = parsedResult.memberId;
+        try {
+          let email = await database.getMemberById(parsedResult.memberId);
+        } catch (error) {}
       }
     }
     if (
@@ -80,6 +84,7 @@ class TideBitLegacyAdapter {
       );
       delete ctx.session.token;
       delete ctx.session.memberId;
+      delete ctx.memberId;
     }
     // rediret
     console.log(`getMemberId ctx.session`, ctx.session);
