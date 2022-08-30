@@ -64,6 +64,8 @@
   "revenue": "毛利",
   "current-profit": "當前總毛利",
   "transaction-side": "交易類型",
+  "transaction-price":"",
+  "transaction-amount":"",
   "exchange": "交易所",
   "match-volume": "已搓合數量",
   "unmatch-volume": "未搓合數量",

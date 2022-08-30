@@ -147,6 +147,8 @@
   "revenue": "Gross Profit",
   "current-profit": "Total Gross Profit",
   "transaction-side": "Side",
+  "transaction-price":"Price/Filled Price",
+  "transaction-amount":"Filled Amount",
   "exchange": "Exchange",
   "match-volume": "Matched quantity",
   "unmatch-volume": "Unmatched quantity",

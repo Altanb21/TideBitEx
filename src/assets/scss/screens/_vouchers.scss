@@ -8,6 +8,9 @@
   &__text.negative {
     color: #dc484e;
   }
+  &__text.negative--em {
+    font-weight: 600;
+  }
   & .screen__table-header:nth-child(1),
   &__text.screen__table-item:nth-child(1) {
     max-width: 100px;
