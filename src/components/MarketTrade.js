@@ -161,14 +161,13 @@ const TradeForm = (props) => {
     };
     const confirm = window.confirm(`You are going to
           ${order.kind} ${order.volume} ${order.instId.split("-")[0]}
-          ${order.kind === "bid" ? "with" : "for"} ${SafeMath.mult(
-      props.ordType === "market" ? "market price" : order.price,
-      order.volume
-    )} ${order.instId.split("-")[1]}
+          ${order.kind === "bid" ? "with" : "for"} ${
+      props.ordType === "market"
+        ? "market price"
+        : SafeMath.mult(order.price, order.volume)
+    } ${order.instId.split("-")[1]}
           with price ${
-            props.ordType === "market"
-              ? storeCtx.selectedTicker.last
-              : order.price
+            props.ordType === "market" ? "market price" : order.price
           } ${order.instId.split("-")[1]} per ${order.instId.split("-")[0]}`);
     if (confirm) {
       await storeCtx.postOrder(order);
