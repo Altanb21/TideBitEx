@@ -370,6 +370,7 @@ class Middleman {
     if (options.memberId) {
       this.isLogin = true;
       this.memberId = options.memberId;
+      this.email = options.email;
     }else{
       this.isLogin = false;
     }

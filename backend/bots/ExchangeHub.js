@@ -318,7 +318,7 @@ class ExchangeHub extends Bot {
         method: `get`,
         url: `https://cc.isun.one/api/cc/PriceList`,
       });
-      if (res.data && res.data.code !== "0") {
+      if (res.data && res.status !== 200) {
         const message = JSON.stringify(res.data);
         this.logger.trace(message);
       }
@@ -1486,7 +1486,7 @@ class ExchangeHub extends Bot {
     }
   }
 
-  async getOptions({ query, memberId, token }) {
+  async getOptions({ query, memberId, email, token }) {
     this.logger.debug(`*********** [${this.name}] getOptions ************`);
     this.logger.debug(
       `[${this.constructor.name}] getOptions`,
@@ -1498,6 +1498,7 @@ class ExchangeHub extends Bot {
         payload: {
           wsUrl: this.config.websocket.domain,
           memberId: memberId,
+          email: email,
           // peatioSession: token,
         },
       })

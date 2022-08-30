@@ -52,8 +52,8 @@ const AccountMobileTile = (props) => {
 };
 
 const UserInfo = (props) => {
-  const [isInit, setIsInit] = useState(false);
-  const [email, setEmail] = useState(null);
+  // const [isInit, setIsInit] = useState(false);
+  // const [email, setEmail] = useState(null);
   const [openSound, setOpenSound] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
   const [openAccounts, setOpenAccounts] = useState(false);

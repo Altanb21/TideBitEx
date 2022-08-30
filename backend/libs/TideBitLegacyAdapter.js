@@ -79,9 +79,10 @@ class TideBitLegacyAdapter {
         `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
       );
       if (parsedResult.memberId !== -1) {
-        let email;
+        let member, email;
         try {
-          email = await database.getMemberById(parsedResult.memberId);
+          member = await database.getMemberById(parsedResult.memberId);
+          email = member?.email;
         } catch (error) {
           console.error(`database.getMemberById error`, error);
         }
