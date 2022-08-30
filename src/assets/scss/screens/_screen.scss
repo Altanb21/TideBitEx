@@ -8,11 +8,12 @@
     position: relative;
     display: flex;
     font-size: 24px;
-    color: #c6c6c6;
+    color: #2699fb;
     gap: 5px;
     align-items: center;
     cursor: pointer;
-
+    min-width: 170px;
+    position: relative;
     &--icon {
       width: 7px;
       height: 7px;

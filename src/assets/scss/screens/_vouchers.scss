@@ -43,6 +43,8 @@
   }
   & .admin-dropdown__options {
     top: 40px;
+    max-height: 400px;
+    overflow: auto;
   }
   & .screen__table {
     min-height: 520px;

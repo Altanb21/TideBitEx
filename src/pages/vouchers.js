@@ -26,14 +26,14 @@ export const TableHeader = (props) => {
           onClick={() => {
             setAscending(true);
             console.log(`props.sorting(true)`,props.sorting(true))
-            props.sorting(true);
+            props.onClick(true);
           }}
         ></span>
         <span
           className="screen__table-header--btn screen__table-header--btn-down"
           onClick={() => {
             setAscending(false);
-            props.sorting(false);
+            props.onClick(false);
           }}
         ></span>
       </span>
@@ -242,13 +242,13 @@ const Vouchers = () => {
           {/* <li className="screen__table-header">{t("date")}</li> */}
           <TableHeader
             label={t("date")}
-            sorting={(ascending) => sorting("ts", ascending)}
+            onClick={(ascending) => sorting("ts", ascending)}
           />
           <li className="screen__table-header">{t("memberId_email")}</li>
           {/* <li className="screen__table-header">{t("orderId")}</li> */}
           <TableHeader
             label={t("orderId")}
-            sorting={(ascending) => sorting("orderId", ascending)}
+            onClick={(ascending) => sorting("orderId", ascending)}
           />
           {/* <li className="screen__table-header">{t("ticker")}</li> */}
           {/* <TableDropdown
@@ -265,32 +265,32 @@ const Vouchers = () => {
           {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
           <TableHeader
             label={t("transaction-price")}
-            sorting={(ascending) => sorting("price", ascending)}
+            onClick={(ascending) => sorting("price", ascending)}
           />
           {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
           <TableHeader
             label={t("transaction-amount")}
-            sorting={(ascending) => sorting("amount", ascending)}
+            onClick={(ascending) => sorting("amount", ascending)}
           />
           {/* <li className="screen__table-header">{t("match-fee")}</li> */}
           <TableHeader
             label={t("match-fee")}
-            sorting={(ascending) => sorting("fee", ascending)}
+            onClick={(ascending) => sorting("fee", ascending)}
           />
           {/* <li className="screen__table-header">{t("external-fee")}</li> */}
           <TableHeader
             label={t("external-fee")}
-            sorting={(ascending) => sorting("fee", ascending)}
+            onClick={(ascending) => sorting("fee", ascending)}
           />
           {/* <li className="screen__table-header">{t("referral")}</li> */}
           {/* <TableHeader
             label={t("referral")}
-            sorting={(ascending) => sorting("referral", ascending)}
+            onClick={(ascending) => sorting("referral", ascending)}
           /> */}
           {/* <li className="screen__table-header">{t("revenue")}</li> */}
           <TableHeader
             label={t("revenue")}
-            sorting={(ascending) => sorting("revenue", ascending)}
+            onClick={(ascending) => sorting("revenue", ascending)}
           />
         </ul>
         <ul className="screen__table-rows">
