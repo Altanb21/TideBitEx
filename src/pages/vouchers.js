@@ -169,7 +169,7 @@ const Vouchers = () => {
           selectHandler={(ticker) => {
             filter({ ticker });
           }}
-          options={Object.values(tickers)}
+          options={tickers ? Object.values(tickers) : []}
           selected={filterTicker}
         />
         <div className="screen__search-box">
@@ -325,18 +325,14 @@ const Vouchers = () => {
                 >
                   {trade.sz || "--"}
                 </div>
-                <div
-                  className={`vouchers__text screen__table-item`}
-                >
+                <div className={`vouchers__text screen__table-item`}>
                   {trade.fee
                     ? `${convertExponentialToDecimal(trade.fee)} ${
                         trade.feeCcy
                       }`
                     : "Unknown"}
                 </div>
-                <div
-                  className={`vouchers__text screen__table-item}`}
-                >
+                <div className={`vouchers__text screen__table-item}`}>
                   {trade.externalFee
                     ? `${convertExponentialToDecimal(trade.externalFee)} ${
                         trade.feeCcy
