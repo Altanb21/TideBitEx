@@ -683,14 +683,12 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
-  async getAccounts({ memberId }) {
+  async getAccounts({ memberId, email }) {
     this.logger.log(
       `[${this.constructor.name}] getAccounts memberId`,
       memberId
     );
-    let member;
     try {
-      member = await this.database.getMemberById(memberId);
       const _accounts = await this.database.getAccountsByMemberId(memberId);
       const accounts = _accounts.map((account) => ({
         currency: this.currencies.find((curr) => curr.id === account.currency)
@@ -722,7 +720,7 @@ class TibeBitConnector extends ConnectorBase {
       payload: {
         accounts: this.accountBook.getSnapshot(memberId),
         memberId,
-        email: member.email,
+        email,
       },
     });
   }

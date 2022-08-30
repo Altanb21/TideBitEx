@@ -68,23 +68,23 @@ const UserInfo = (props) => {
     setOpenNav((prev) => (open !== undefined ? open : !prev));
   };
 
-  useEffect(() => {
-    // if (!isInit) {
-    console.log(`document.cookie`, document.cookie);
-    const email =
-      document.cookie
-        .split(";")
-        .filter((v) => /email/.test(v))
-        .pop()
-        ?.split("=")[1] || storeCtx.email;
-    setEmail((prev) => (prev !== email ? email : prev));
-    //   setIsInit(true);
-    // }
-  }, [storeCtx.email]);
+  // useEffect(() => {
+  //   // if (!isInit) {
+  //   console.log(`document.cookie`, document.cookie);
+  //   const email =
+  //     document.cookie
+  //       .split(";")
+  //       .filter((v) => /email/.test(v))
+  //       .pop()
+  //       ?.split("=")[1] || storeCtx.email;
+  //   setEmail((prev) => (prev !== email ? email : prev));
+  //   //   setIsInit(true);
+  //   // }
+  // }, [storeCtx.email]);
 
   return (
     <div className="user-info">
-      {storeCtx.isLogin && (
+      {storeCtx.accounts?.sum && (
         <div
           className="user-info__accounts"
           onMouseEnter={() => openAccountsHandler(true)}
@@ -131,7 +131,7 @@ const UserInfo = (props) => {
           </div>
         </div>
       )}
-      {email && (
+      {storeCtx.memberEmail && (
         <div
           className="user-info__navs"
           onMouseEnter={() => openNavsHandler(true)}

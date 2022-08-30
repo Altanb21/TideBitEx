@@ -47,18 +47,18 @@ class TideBitLegacyAdapter {
     // let userId = ctx.header.userid;
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
-    if (
-      ctx.session.member?.id !== ctx?.id ||
-      ctx.session.member?.email !== ctx?.email
-    ) {
-      if (ctx.session.member) {
-        ctx.email = ctx.session.member.id;
-        ctx.id = ctx.session.member.email;
-      } else {
-        delete ctx.email;
-        delete ctx.id;
-      }
-    }
+    // if (
+    //   ctx.session.member?.id !== ctx?.id ||
+    //   ctx.session.member?.email !== ctx?.email
+    // ) {
+    //   if (ctx.session.member) {
+    //     ctx.email = ctx.session.member.id;
+    //     ctx.id = ctx.session.member.email;
+    //   } else {
+    //     delete ctx.email;
+    //     delete ctx.id;
+    //   }
+    // }
     // console.log(`getMemberId ctx`, ctx);
     // if (
     //   ctx.url === "/auth/identity/callback" ||
@@ -87,8 +87,8 @@ class TideBitLegacyAdapter {
         }
         ctx.session.token = parsedResult.peatioSession;
         ctx.session.member = { id: parsedResult.memberId, email };
-        ctx.email = email;
-        ctx.id = parsedResult.memberId;
+        // ctx.email = email;
+        // ctx.id = parsedResult.memberId;
       }
     }
     if (
@@ -100,8 +100,8 @@ class TideBitLegacyAdapter {
       );
       delete ctx.session.token;
       delete ctx.session.member;
-      delete ctx.email;
-      delete ctx.id;
+      // delete ctx.email;
+      // delete ctx.id;
     }
     // rediret
     console.log(`getMemberId ctx.session`, ctx.session);
