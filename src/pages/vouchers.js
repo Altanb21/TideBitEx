@@ -8,7 +8,7 @@ import SafeMath from "../utils/SafeMath";
 const exchanges = ["OKEx"];
 
 export const TableHeader = (props) => {
-  const [ascending, setAscending] = useState(false);
+  const [ascending, setAscending] = useState(null);
   return (
     <li className="screen__table-header">
       <span className="screen__table-header--text">{props.label}</span>
@@ -137,11 +137,17 @@ const Vouchers = () => {
   );
 
   const sorting = (key, ascending) => {
-    setFilterTrades((prevTrades) =>
-      ascending
-        ? prevTrades.sort((a, b) => a[key] - b[key])
-        : prevTrades.sort((a, b) => b[key] - a[key])
-    );
+    console.log(`key`, key);
+    console.log(`ascending`, ascending);
+    setFilterTrades((prevTrades) => {
+      console.log(`prevTrades`, prevTrades);
+      return ascending
+        ? prevTrades.sort((a, b) => {
+          console.log(`a[${key}]`, a[key])
+            return a[key] - b[key];
+          })
+        : prevTrades.sort((a, b) => b[key] - a[key]);
+    });
   };
 
   const init = useCallback(() => {
