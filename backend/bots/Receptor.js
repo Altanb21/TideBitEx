@@ -142,8 +142,8 @@ class Receptor extends Bot {
           query: ctx.query,
           session: ctx.session,
           token: ctx.session.token,
-          memberId: ctx.session.member.id,
-          memberEmail: ctx.session.member.email,
+          memberId: ctx.session.member?.id,
+          memberEmail: ctx.session.member?.email,
         };
         return operation(inputs).then((rs) => {
           if (rs.html) {
