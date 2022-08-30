@@ -316,14 +316,14 @@ const Vouchers = () => {
                     trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
-                  {trade.px || "--"}
+                  {`${trade.px} / ${trade.fillPx}` || "--"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
                     trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
-                  {trade.sz || "--"}
+                  {trade.fillSz || "--"}
                 </div>
                 <div className={`vouchers__text screen__table-item`}>
                   {trade.fee

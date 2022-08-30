@@ -15,6 +15,10 @@
   &__text.screen__table-item:nth-child(1) {
     max-width: 100px;
   }
+  & .screen__table-header:nth-child(5),
+  &__text.screen__table-item:nth-child(5),
+  & .screen__table-header:nth-child(6),
+  &__text.screen__table-item:nth-child(6),
   & .screen__table-header:nth-child(7),
   &__text.screen__table-item:nth-child(7),
   & .screen__table-header:nth-child(8),
