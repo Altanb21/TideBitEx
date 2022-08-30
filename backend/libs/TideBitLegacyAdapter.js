@@ -48,8 +48,8 @@ class TideBitLegacyAdapter {
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
     if (
-      ctx.session.member.id !== ctx.member.id ||
-      ctx.session.member.email !== ctx.member.email
+      ctx.session.member?.id !== ctx.member?.id ||
+      ctx.session.member?.email !== ctx.member?.email
     ) {
       if (ctx.session.member) ctx.member = { ...ctx.session.member };
       else delete ctx.member;
