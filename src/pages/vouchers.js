@@ -25,6 +25,7 @@ export const TableHeader = (props) => {
           className="screen__table-header--btn screen__table-header--btn-up"
           onClick={() => {
             setAscending(true);
+            console.log(`props.sorting(true)`,props.sorting(true))
             props.sorting(true);
           }}
         ></span>
@@ -142,11 +143,11 @@ const Vouchers = () => {
     setFilterTrades((prevTrades) => {
       console.log(`prevTrades`, prevTrades);
       return ascending
-        ? prevTrades.sort((a, b) => {
+        ? prevTrades?.sort((a, b) => {
           console.log(`a[${key}]`, a[key])
             return a[key] - b[key];
           })
-        : prevTrades.sort((a, b) => b[key] - a[key]);
+        : prevTrades?.sort((a, b) => b[key] - a[key]);
     });
   };
 

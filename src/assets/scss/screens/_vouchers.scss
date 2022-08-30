@@ -27,6 +27,7 @@
   &__text.screen__table-item:nth-child(9),
   & .screen__table-header:nth-child(10),
   &__text.screen__table-item:nth-child(10) {
+    min-width: 132px;
     max-width: 135px;
   }
   & .screen__table-header:nth-child(2) {
