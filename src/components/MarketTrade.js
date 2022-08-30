@@ -165,10 +165,14 @@ const TradeForm = (props) => {
       props.ordType === "market"
         ? "market price"
         : SafeMath.mult(order.price, order.volume)
-    } ${order.instId.split("-")[1]}
-          with price ${
-            props.ordType === "market" ? "market price" : order.price
-          } ${order.instId.split("-")[1]} per ${order.instId.split("-")[0]}`);
+    }${
+      props.ordType === "market"
+        ? ""
+        : `${order.instId.split("-")[1]}
+    with price ${order.price} ${order.instId.split("-")[1]} per ${
+            order.instId.split("-")[0]
+          }`
+    } `);
     if (confirm) {
       await storeCtx.postOrder(order);
     }
