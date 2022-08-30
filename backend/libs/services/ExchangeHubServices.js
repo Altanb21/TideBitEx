@@ -7,7 +7,7 @@ class ExchangeHubService {
   _lastSyncTime = 0;
   _syncInterval = 10 * 60 * 1000; // 10mins
   _minInterval = 1 * 24 * 60 * 60 * 1000; // 1天
-  _interval = 30 * 24 * 60 * 60 * 1000; // 15天
+  _interval = 30 * 24 * 60 * 60 * 1000; // 30天
   _maxInterval = 180 * 24 * 60 * 60 * 1000; // 180天
   _isStarted = false;
 

@@ -22,6 +22,11 @@ class OkexConnector extends ConnectorBase {
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
 
+  maxDataLength = 100;
+  tradeFillsMaxRequestTimes = 60;
+  tradeFillsHistoryMaxRequestTimes = 10;
+  restTime = 2 * 1000;
+
   constructor({ logger }) {
     super({ logger });
     this.websocket = new WebSocket({ logger });
@@ -140,11 +145,17 @@ class OkexConnector extends ConnectorBase {
   /**
    * @returns {Promise<Trade>}
    */
-  async fetchTradeFillsRecords({ query, results = [], requests = 60 }) {
+  async fetchTradeFillsRecords({
+    query,
+    results = [],
+    requests = this.tradeFillsMaxRequestTimes,
+  }) {
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords`);
     const { begin, end, before } = query;
     let result,
-      arr = [];
+      arr = [],
+      newBefore,
+      newRequest;
     if (!before && begin) arr.push(`begin=${begin}`);
     if (before) arr.push(`before=${before}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
@@ -176,25 +187,27 @@ class OkexConnector extends ConnectorBase {
         data: JSON.stringify(trade),
       }));
       results = results.concat(data);
-      if (data.length === 100) {
+      if (data.length === this.maxDataLength) {
+        newBefore = data[0].billId;
+        newRequest = requests - 1;
         if (requests > 0)
           return this.fetchTradeFillsRecords({
             query: {
               ...query,
-              before: data[0].billId,
+              before: newBefore,
             },
             results,
-            requests: requests - 1,
+            requests: newRequest,
           });
         else {
-          await wait(2000);
+          await wait(this.restTime);
           this.fetchTradeFillsRecords({
             query: {
               ...query,
-              before: data[0].billId,
+              before: newBefore,
             },
             results,
-            requests: 60,
+            requests: this.tradeFillsMaxRequestTimes,
           });
         }
       }
@@ -215,11 +228,17 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
-  async fetchTradeFillsHistoryRecords({ query, results = [], requests = 10 }) {
+  async fetchTradeFillsHistoryRecords({
+    query,
+    results = [],
+    requests = this.tradeFillsHistoryMaxRequestTimes,
+  }) {
     const { instType, begin, end, before } = query;
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
     let result,
-      arr = [];
+      arr = [],
+      newBefore,
+      newRequest;
     const method = "GET";
     if (instType) arr.push(`instType=${instType}`);
     if (!before && begin) arr.push(`begin=${begin}`);
@@ -252,34 +271,27 @@ class OkexConnector extends ConnectorBase {
         data: JSON.stringify(trade),
       }));
       results = results.concat(data);
-      console.log(
-        `fetchTradeFillsHistoryRecords begin[${begin}], end[${end}], requests[${requests}]`
-      );
-      console.log(
-        `fetchTradeFillsHistoryRecords data length[${data.length}], data[0].ts[${data[0].ts}], data[0].ts[${data[0].ts}]`
-      );
-      console.log(
-        `fetchTradeFillsHistoryRecords results length[${results.length}] ,results[0].ts[${results[0].ts}]`
-      );
-      if (data.length === 100) {
+      if (data.length === this.maxDataLength) {
+        newBefore = data[0].billId;
+        newRequest = requests - 1;
         if (requests > 0)
           return this.fetchTradeFillsHistoryRecords({
             query: {
               ...query,
-              before: data[0].billId,
+              before: newBefore,
             },
             results,
-            requests: requests - 1,
+            requests: newRequest,
           });
         else {
-          await wait(2000);
+          await wait(this.restTime);
           return this.fetchTradeFillsHistoryRecords({
             query: {
               ...query,
-              before: data[0].billId,
+              before: newBefore,
             },
             results,
-            requests: 10,
+            requests: this.tradeFillsHistoryMaxRequestTimes,
           });
         }
       }

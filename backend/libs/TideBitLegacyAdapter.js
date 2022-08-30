@@ -47,6 +47,13 @@ class TideBitLegacyAdapter {
     // let userId = ctx.header.userid;
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
+    if (
+      ctx.session.member.id !== ctx.member.id ||
+      ctx.session.member.email !== ctx.member.email
+    ) {
+      if (ctx.session.member) ctx.member = { ...ctx.session.member };
+      else delete ctx.member;
+    }
     // console.log(`getMemberId ctx`, ctx);
     // if (
     //   ctx.url === "/auth/identity/callback" ||
@@ -67,12 +74,15 @@ class TideBitLegacyAdapter {
         `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
       );
       if (parsedResult.memberId !== -1) {
-        ctx.session.token = parsedResult.peatioSession;
-        ctx.session.memberId = parsedResult.memberId;
-        ctx.memberId = parsedResult.memberId;
+        let email;
         try {
-          let email = await database.getMemberById(parsedResult.memberId);
-        } catch (error) {}
+          email = await database.getMemberById(parsedResult.memberId);
+        } catch (error) {
+          console.error(`database.getMemberById error`, error);
+        }
+        ctx.session.token = parsedResult.peatioSession;
+        ctx.session.member = { id: parsedResult.memberId, email };
+        ctx.member = { ...ctx.session.member };
       }
     }
     if (
@@ -83,8 +93,8 @@ class TideBitLegacyAdapter {
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
       );
       delete ctx.session.token;
-      delete ctx.session.memberId;
-      delete ctx.memberId;
+      delete ctx.session.member;
+      delete ctx.member;
     }
     // rediret
     console.log(`getMemberId ctx.session`, ctx.session);
