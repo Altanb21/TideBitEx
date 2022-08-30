@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import StoreContext from "../store/store-context";
 
 import { useTranslation } from "react-i18next";
@@ -52,6 +52,7 @@ const AccountMobileTile = (props) => {
 };
 
 const UserInfo = (props) => {
+  const [isInit, setIsInit] = useState(false);
   const [openSound, setOpenSound] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
   const [openAccounts, setOpenAccounts] = useState(false);
@@ -65,6 +66,13 @@ const UserInfo = (props) => {
   const openNavsHandler = (open) => {
     setOpenNav((prev) => (open !== undefined ? open : !prev));
   };
+
+  useEffect(() => {
+    if (!isInit) {
+      console.log(`document.cookie`, document.cookie);
+      setIsInit(true);
+    }
+  }, []);
 
   return (
     <div className="user-info">
