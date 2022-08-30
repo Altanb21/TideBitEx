@@ -225,6 +225,7 @@
       background-image: url("../../images/settings-line@2x.png");
       background-position: center;
       background-size: contain;
+      background-repeat: no-repeat;
     }
     &--switch {
       background-image: url("../../images/switch_horizontal@2x.png");
@@ -244,6 +245,7 @@
       height: 10px;
       background-position: center;
       background-size: contain;
+      background-repeat: no-repeat;
     }
     &--btn-up {
       background-image: url("../../images/triangle_up@2x.png");
