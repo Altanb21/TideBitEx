@@ -53,6 +53,7 @@ const AccountMobileTile = (props) => {
 
 const UserInfo = (props) => {
   const [isInit, setIsInit] = useState(false);
+  const [email, setEmail] = useState(null);
   const [openSound, setOpenSound] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
   const [openAccounts, setOpenAccounts] = useState(false);
@@ -68,124 +69,135 @@ const UserInfo = (props) => {
   };
 
   useEffect(() => {
-    if (!isInit) {
-      console.log(`document.cookie`, document.cookie);
-      setIsInit(true);
-    }
-  }, []);
+    // if (!isInit) {
+    console.log(`document.cookie`, document.cookie);
+    const email =
+      document.cookie
+        .split(";")
+        .filter((v) => /email/.test(v))
+        .pop()
+        ?.split("=")[1] || storeCtx.email;
+    setEmail((prev) => (prev !== email ? email : prev));
+    //   setIsInit(true);
+    // }
+  }, [storeCtx.email]);
 
   return (
     <div className="user-info">
-      <div
-        className="user-info__accounts"
-        onMouseEnter={() => openAccountsHandler(true)}
-        onMouseLeave={() => openAccountsHandler(false)}
-      >
+      {storeCtx.isLogin && (
         <div
-          className="user-info__accounts--label"
-          onClick={(_) => openAccountsHandler()}
-        >{`${t("total-assets")}: $${
-          storeCtx.accounts?.sum
-            ? formateDecimal(storeCtx.accounts?.sum, { decimalLength: 2 })
-            : ""
-        }`}</div>
-        <div
-          className={`user-info__accounts--dropdown${
-            openAccounts ? " open" : ""
-          }`}
+          className="user-info__accounts"
+          onMouseEnter={() => openAccountsHandler(true)}
+          onMouseLeave={() => openAccountsHandler(false)}
         >
-          <div className="user-info__accounts--dropdown-box">
-            {storeCtx.accounts?.accounts ? (
-              accountsShowMore ? (
-                Object.values(storeCtx.accounts?.accounts).map((account) => (
-                  <AccountMobileTile account={account} />
-                ))
-              ) : (
-                storeCtx.selectedTicker.instId
-                  .split("-")
-                  ?.map((ccy) => (
-                    <AccountMobileTile
-                      account={storeCtx.accounts?.accounts[ccy]}
-                    />
-                  ))
-              )
-            ) : (
-              <div></div>
-            )}
-          </div>
           <div
-            className="user-info__accounts--dropdown-btn"
-            onClick={() => setAccountsShowMore((prev) => !prev)}
+            className="user-info__accounts--label"
+            onClick={(_) => openAccountsHandler()}
+          >{`${t("total-assets")}: $${
+            storeCtx.accounts?.sum
+              ? formateDecimal(storeCtx.accounts?.sum, { decimalLength: 2 })
+              : ""
+          }`}</div>
+          <div
+            className={`user-info__accounts--dropdown${
+              openAccounts ? " open" : ""
+            }`}
           >
-            {!accountsShowMore ? t("check-all") : t("hide")}
+            <div className="user-info__accounts--dropdown-box">
+              {storeCtx.accounts?.accounts ? (
+                accountsShowMore ? (
+                  Object.values(storeCtx.accounts?.accounts).map((account) => (
+                    <AccountMobileTile account={account} />
+                  ))
+                ) : (
+                  storeCtx.selectedTicker.instId
+                    .split("-")
+                    ?.map((ccy) => (
+                      <AccountMobileTile
+                        account={storeCtx.accounts?.accounts[ccy]}
+                      />
+                    ))
+                )
+              ) : (
+                <div></div>
+              )}
+            </div>
+            <div
+              className="user-info__accounts--dropdown-btn"
+              onClick={() => setAccountsShowMore((prev) => !prev)}
+            >
+              {!accountsShowMore ? t("check-all") : t("hide")}
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        className="user-info__navs"
-        onMouseEnter={() => openNavsHandler(true)}
-        onMouseLeave={() => openNavsHandler(false)}
-      >
+      )}
+      {email && (
         <div
-          className="user-info__navs--label"
-          onClick={(_) => openNavsHandler()}
+          className="user-info__navs"
+          onMouseEnter={() => openNavsHandler(true)}
+          onMouseLeave={() => openNavsHandler(false)}
         >
-          <FaUserAlt />
-          <div>{storeCtx.memberEmail}</div>
+          <div
+            className="user-info__navs--label"
+            onClick={(_) => openNavsHandler()}
+          >
+            <FaUserAlt />
+            <div>{storeCtx.memberEmail}</div>
+          </div>
+          <ul className={`user-info__navs--dropdown${openNav ? " open" : ""}`}>
+            <ToggleButton
+              option={t("sound")}
+              status={openSound}
+              onClick={() => setOpenSound((prev) => !prev)}
+            />
+            <ToggleButton
+              option={t("notification")}
+              status={openNotification}
+              onClick={() => setOpenNotification((prev) => !prev)}
+            />
+            <li className="user-info__navs-item">
+              <a
+                href="/accounts"
+                target="_blank"
+                className="user-info__navs-link"
+              >
+                <RiKey2Line size={20} />
+                {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
+                <span>{t("funds")}</span>
+              </a>
+            </li>
+            <li className="user-info__navs-item">
+              <a
+                href="/settings"
+                target="_blank"
+                className="user-info__navs-link"
+              >
+                {/* <i class="fa fa-wrench"></i> */}
+                <FaWrench size={16} />
+                <span>{t("profile")}</span>
+              </a>
+            </li>
+            <li className="user-info__navs-item">
+              <a
+                href="/history/orders"
+                target="_blank"
+                className="user-info__navs-link"
+              >
+                {/* <i class="fa fa-history"></i> */}
+                <RiHistoryFill size={16} />
+                <span>{t("_history")}</span>
+              </a>
+            </li>
+            <li className="user-info__navs-item">
+              <a href="/signout" className="user-info__navs-link">
+                {/* <i class="fa fa-sign-out"></i> */}
+                <FiLogOut size={16} />
+                <span>{t("logout")}</span>
+              </a>
+            </li>
+          </ul>
         </div>
-        <ul className={`user-info__navs--dropdown${openNav ? " open" : ""}`}>
-          <ToggleButton
-            option={t("sound")}
-            status={openSound}
-            onClick={() => setOpenSound((prev) => !prev)}
-          />
-          <ToggleButton
-            option={t("notification")}
-            status={openNotification}
-            onClick={() => setOpenNotification((prev) => !prev)}
-          />
-          <li className="user-info__navs-item">
-            <a
-              href="/accounts"
-              target="_blank"
-              className="user-info__navs-link"
-            >
-              <RiKey2Line size={20} />
-              {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
-              <span>{t("funds")}</span>
-            </a>
-          </li>
-          <li className="user-info__navs-item">
-            <a
-              href="/settings"
-              target="_blank"
-              className="user-info__navs-link"
-            >
-              {/* <i class="fa fa-wrench"></i> */}
-              <FaWrench size={16} />
-              <span>{t("profile")}</span>
-            </a>
-          </li>
-          <li className="user-info__navs-item">
-            <a
-              href="/history/orders"
-              target="_blank"
-              className="user-info__navs-link"
-            >
-              {/* <i class="fa fa-history"></i> */}
-              <RiHistoryFill size={16} />
-              <span>{t("_history")}</span>
-            </a>
-          </li>
-          <li className="user-info__navs-item">
-            <a href="/signout" className="user-info__navs-link">
-              {/* <i class="fa fa-sign-out"></i> */}
-              <FiLogOut size={16} />
-              <span>{t("logout")}</span>
-            </a>
-          </li>
-        </ul>
-      </div>
+      )}
     </div>
   );
 };

@@ -48,11 +48,16 @@ class TideBitLegacyAdapter {
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
     if (
-      ctx.session.member?.id !== ctx.member?.id ||
-      ctx.session.member?.email !== ctx.member?.email
+      ctx.session.member?.id !== ctx?.id ||
+      ctx.session.member?.email !== ctx?.email
     ) {
-      if (ctx.session.member) ctx.member = { ...ctx.session.member };
-      else delete ctx.member;
+      if (ctx.session.member) {
+        ctx.email = ctx.session.member.id;
+        ctx.id = ctx.session.member.email;
+      } else {
+        delete ctx.email;
+        delete ctx.id;
+      }
     }
     // console.log(`getMemberId ctx`, ctx);
     // if (
@@ -82,7 +87,8 @@ class TideBitLegacyAdapter {
         }
         ctx.session.token = parsedResult.peatioSession;
         ctx.session.member = { id: parsedResult.memberId, email };
-        ctx.member = { ...ctx.session.member };
+        ctx.email = email;
+        ctx.id = parsedResult.memberId;
       }
     }
     if (
@@ -94,7 +100,8 @@ class TideBitLegacyAdapter {
       );
       delete ctx.session.token;
       delete ctx.session.member;
-      delete ctx.member;
+      delete ctx.email;
+      delete ctx.id;
     }
     // rediret
     console.log(`getMemberId ctx.session`, ctx.session);
