@@ -25,7 +25,7 @@ export const TableHeader = (props) => {
           className="screen__table-header--btn screen__table-header--btn-up"
           onClick={() => {
             setAscending(true);
-            console.log(`props.sorting(true)`,props.sorting(true))
+            console.log(`props.sorting(true)`, props.sorting(true));
             props.onClick(true);
           }}
         ></span>
@@ -144,7 +144,7 @@ const Vouchers = () => {
       console.log(`prevTrades`, prevTrades);
       return ascending
         ? prevTrades?.sort((a, b) => {
-          console.log(`a[${key}]`, a[key])
+            console.log(`a[${key}]`, a[key]);
             return a[key] - b[key];
           })
         : prevTrades?.sort((a, b) => b[key] - a[key]);
@@ -323,14 +323,16 @@ const Vouchers = () => {
                     trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
-                  {`${trade.px} / ${trade.fillPx}` || "--"}
+                  {trade.email
+                    ? `${trade.px} / ${trade.fillPx}` || "--"
+                    : "Unknown"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
                     trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
-                  {trade.fillSz || "--"}
+                  {trade.email ? trade.fillSz || "--" : "Unknown"}
                 </div>
                 <div className={`vouchers__text screen__table-item`}>
                   {trade.fee
