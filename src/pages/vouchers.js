@@ -25,7 +25,6 @@ export const TableHeader = (props) => {
           className="screen__table-header--btn screen__table-header--btn-up"
           onClick={() => {
             setAscending(true);
-            console.log(`props.sorting(true)`, props.sorting(true));
             props.onClick(true);
           }}
         ></span>
@@ -143,10 +142,7 @@ const Vouchers = () => {
     setFilterTrades((prevTrades) => {
       console.log(`prevTrades`, prevTrades);
       return ascending
-        ? prevTrades?.sort((a, b) => {
-            console.log(`a[${key}]`, a[key]);
-            return a[key] - b[key];
-          })
+        ? prevTrades?.sort((a, b) => a[key] - b[key])
         : prevTrades?.sort((a, b) => b[key] - a[key]);
     });
   };
@@ -265,12 +261,12 @@ const Vouchers = () => {
           {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
           <TableHeader
             label={t("transaction-price")}
-            onClick={(ascending) => sorting("price", ascending)}
+            onClick={(ascending) => sorting("px", ascending)}
           />
           {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
           <TableHeader
             label={t("transaction-amount")}
-            onClick={(ascending) => sorting("amount", ascending)}
+            onClick={(ascending) => sorting("fillSz", ascending)}
           />
           {/* <li className="screen__table-header">{t("match-fee")}</li> */}
           <TableHeader
@@ -280,7 +276,7 @@ const Vouchers = () => {
           {/* <li className="screen__table-header">{t("external-fee")}</li> */}
           <TableHeader
             label={t("external-fee")}
-            onClick={(ascending) => sorting("fee", ascending)}
+            onClick={(ascending) => sorting("externalFee", ascending)}
           />
           {/* <li className="screen__table-header">{t("referral")}</li> */}
           {/* <TableHeader

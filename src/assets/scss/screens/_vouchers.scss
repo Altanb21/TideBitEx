@@ -14,12 +14,14 @@
   & .screen__table-header:nth-child(1),
   &__text.screen__table-item:nth-child(1) {
     width: 100px;
+    min-width: 100px;
   }
   & .screen__table-header:nth-child(3),
   &__text.screen__table-item:nth-child(3),
   & .screen__table-header:nth-child(4),
   &__text.screen__table-item:nth-child(4) {
     width: 120px;
+    min-width: 120px;
   }
   & .screen__table-header:nth-child(5),
   &__text.screen__table-item:nth-child(5),
@@ -34,12 +36,15 @@
   & .screen__table-header:nth-child(10),
   &__text.screen__table-item:nth-child(10) {
     width: 135px;
+    min-width: 135px;
   }
   & .screen__table-header:nth-child(2) {
     width: 180px;
+    min-width: 180px;
   }
   &__text.screen__table-item:nth-child(2) {
     width: 180px;
+    min-width: 180px;
     flex-direction: column;
     align-items: flex-start;
   }
