@@ -1492,6 +1492,12 @@ class ExchangeHub extends Bot {
       `[${this.constructor.name}] getOptions`,
       this.config.websocket.domain
     );
+    this.logger.debug(
+      `[${this.constructor.name}] memberId`,
+      memberId,
+      `email`,
+      email
+    );
     return Promise.resolve(
       new ResponseFormat({
         message: "getOptions",

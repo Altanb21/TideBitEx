@@ -145,6 +145,7 @@ class Receptor extends Bot {
           memberId: ctx.session.member?.id,
           email: ctx.session.member?.email,
         };
+        this.logger.log(`inputs`, inputs);
         return operation(inputs).then((rs) => {
           if (rs.html) {
             ctx.body = rs.html;
@@ -152,7 +153,6 @@ class Receptor extends Bot {
           } else {
             ctx.body = rs;
           }
-
           // ++ TODO 需新增寫入 session 的功能
           next();
         });

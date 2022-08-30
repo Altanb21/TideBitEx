@@ -79,15 +79,16 @@ class TideBitLegacyAdapter {
         `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
       );
       if (parsedResult.memberId !== -1) {
-        let member, email;
+        let member;
+        // , email;
         try {
           member = await database.getMemberById(parsedResult.memberId);
-          email = member?.email;
+          // email = member?.email;
         } catch (error) {
           console.error(`database.getMemberById error`, error);
         }
         ctx.session.token = parsedResult.peatioSession;
-        ctx.session.member = { id: parsedResult.memberId, email };
+        ctx.session.member = member;
         // ctx.email = email;
         // ctx.id = parsedResult.memberId;
       }
