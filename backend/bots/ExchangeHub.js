@@ -644,6 +644,8 @@ class ExchangeHub extends Bot {
           processTrade = {
             ...trade,
             orderId,
+            px: order?.price,
+            sz: order?.origin_volume,
             email: member?.email || null,
             memberId,
             externalFee: Math.abs(trade.fee),
