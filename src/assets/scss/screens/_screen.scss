@@ -218,6 +218,7 @@
     &--text {
       display: flex;
       padding-right: 5px;
+      cursor: pointer;
     }
     &--switch,
     &--icon {
@@ -227,6 +228,7 @@
       background-position: center;
       background-size: contain;
       background-repeat: no-repeat;
+      cursor: pointer;
     }
     &--switch {
       background-image: url("../../images/switch_horizontal@2x.png");

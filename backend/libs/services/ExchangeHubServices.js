@@ -1161,7 +1161,7 @@ class ExchangeHubService {
     // if (Math.random() < 0.01) {
     //   this.garbageCollection(outerTrades);
     // }
-    this.logger.log(`need processOuterTrade`, outerTrades);
+    this.logger.log(`need processOuterTrade[${outerTrades.length}]`, outerTrades);
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
       tmp = await this._processOuterTrade({
