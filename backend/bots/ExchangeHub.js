@@ -580,9 +580,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterTradeFills ************`,
       query
     );
-    let outerTrades = [],
-      members = await this.database.getMembers(),
-      orders = await this.database.getOrders();
+    let outerTrades = [];
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const _outerTrades = await this.database.getOuterTradesByDayAfter(
@@ -602,20 +600,10 @@ class ExchangeHub extends Bot {
             parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
             memberId = parsedClOrdId.memberId,
             orderId = parsedClOrdId.orderId,
-            order = orders.find(
-              (_order) =>
-                _order.member_id.toString() === memberId.toString() &&
-                _order.id.toString() === orderId.toString()
-            ),
             askFeeRate,
             bidFeeRate,
             market = this._findMarket(trade.instId),
-            member = order
-              ? members.find(
-                  (member) => member.id.toString() === memberId.toString()
-                )
-              : null,
-            memberTag = member?.member_tag,
+            memberTag = _trade.member_tag,
             fee,
             processTrade,
             revenue;
@@ -632,21 +620,31 @@ class ExchangeHub extends Bot {
             askFeeRate = market.ask.fee;
             bidFeeRate = market.bid.fee;
           }
-          fee = order
-            ? trade.side === "sell"
-              ? SafeMath.mult(
-                  SafeMath.mult(trade.fillPx, trade.fillSz),
-                  askFeeRate
-                )
-              : SafeMath.mult(trade.fillSz, bidFeeRate)
-            : null;
-          revenue = order ? SafeMath.minus(fee, Math.abs(trade.fee)) : null;
+          fee =
+            _trade.status === 1
+              ? trade.side === "sell"
+                ? SafeMath.mult(
+                    SafeMath.mult(trade.fillPx, trade.fillSz),
+                    askFeeRate
+                  )
+                : SafeMath.mult(trade.fillSz, bidFeeRate)
+              : null;
+          revenue =
+            _trade.status === 1
+              ? SafeMath.minus(fee, Math.abs(trade.fee))
+              : null;
           processTrade = {
             ...trade,
             orderId,
-            px: order ? Utils.removeZeroEnd(order?.price) : null,
-            sz: order ? Utils.removeZeroEnd(order?.origin_volume) : null,
-            email: member?.email || null,
+            px:
+              _trade.status === 1
+                ? Utils.removeZeroEnd(_trade.order_price)
+                : null,
+            sz:
+              _trade.status === 1
+                ? Utils.removeZeroEnd(_trade.order_origin_volume)
+                : null,
+            email: _trade?.email || null,
             memberId,
             externalFee: Math.abs(trade.fee),
             fee,
@@ -677,8 +675,9 @@ class ExchangeHub extends Bot {
       query
     );
     let outerOrders = [],
-      members = await this.database.getMembers(),
-      orders = await this.database.getOrders();
+      dbOrders = await this.database.getOrdersJoinMemberEmail(
+        this.database.ORDER_STATE.WAIT
+      );
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
@@ -689,16 +688,9 @@ class ExchangeHub extends Bot {
             let parsedClOrdId = Utils.parseClOrdId(order.clOrdId),
               memberId = parsedClOrdId.memberId,
               id = parsedClOrdId.orderId,
-              dbOrder = orders.find(
-                (_order) =>
-                  _order.member_id.toString() === memberId.toString() &&
-                  _order.id.toString() === id.toString()
+              dbOrder = dbOrders.find(
+                (_dbOrder) => _dbOrder.id.toString() === id.toString()
               ),
-              member = dbOrder
-                ? members.find(
-                    (member) => member.id.toString() === memberId.toString()
-                  )
-                : null,
               fundsReceived =
                 order.side === "buy"
                   ? SafeMath.mult(order.avgPx, order.accFillSz)
@@ -707,7 +699,7 @@ class ExchangeHub extends Bot {
             processOrder = {
               ...order,
               id,
-              email: member?.email || null,
+              email: dbOrder?.email || null,
               memberId,
               exchange: query.exchange,
               fundsReceived,

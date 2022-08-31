@@ -350,6 +350,31 @@ class mysql {
     }
   }
 
+  async getOrdersJoinMemberEmail(state) {
+    const query = `
+    SELECT
+	    orders.id,
+	    orders.member_id,
+	    members.email,
+	    members.member_tag
+    FROM
+	    orders
+	    JOIN members ON orders.member_id = members.id
+    WHERE
+	    orders.state = ?;`;
+    try {
+      this.logger.log("getOrdersJoinMemberEmail", query, `[${state}]`);
+      const [orders] = await this.db.query({
+        query,
+        values: [state],
+      });
+      return orders;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getOuterTradesByStatus(exchangeCode, status) {
     const query = `
     SELECT

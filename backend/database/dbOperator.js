@@ -163,6 +163,10 @@ class DBOperator {
     return this.database.getOuterTradesByStatus(exchangeCode, status);
   }
 
+  async getOrdersJoinMemberEmail(state) {
+    return this.database.getOrdersJoinMemberEmail(state);
+  }
+
   async getOuterTradesByDayAfter(exchangeCode, day) {
     return this.database.getOuterTradesByDayAfter(exchangeCode, day);
   }
