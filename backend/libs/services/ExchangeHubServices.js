@@ -972,17 +972,13 @@ class ExchangeHubService {
       result,
       t = await this.database.transaction();
     // 1. parse  memberId, orderId from trade.clOrdId
-    try {
-      tmp = Utils.parseClOrdId(trade.clOrdId);
-    } catch (error) {
-      this.logger.log(`trade`, trade);
-      this.logger.error(`Utils.parseClOrdId error [SKIP]`);
-      tmp = null;
-    }
-    if (tmp) {
-      market = this._findMarket(trade.instId);
-      memberId = tmp.memberId;
-      orderId = tmp.orderId;
+
+    tmp = Utils.parseClOrdId(trade.clOrdId);
+
+    market = this._findMarket(trade.instId);
+    memberId = tmp.memberId;
+    orderId = tmp.orderId;
+    if (memberId && orderId) {
       member = await this.database.getMemberById(memberId);
       if (member) {
         memberTag = member.member_tag;
