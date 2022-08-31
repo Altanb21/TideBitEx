@@ -650,7 +650,7 @@ class ExchangeHub extends Bot {
             fee,
             revenue: revenue,
             exchange: query.exchange,
-            ts: parseInt(_trade.ts),
+            ts: parseInt(trade.ts),
           };
           // this.logger.log(`processTrade`, processTrade);
           outerTrades = [...outerTrades, processTrade];
