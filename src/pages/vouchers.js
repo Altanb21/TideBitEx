@@ -96,7 +96,7 @@ const Vouchers = () => {
         _timeInterval =
           timeInterval === "30"
             ? 30 * 24 * 60 * 60 * 1000
-            : 12 * 30 * 24 * 60 * 60 * 1000,
+            : 12 * 30 * 24 * 60 * 60 * 1000 || filterOption,
         _ticker = ticker || filterTicker,
         res;
       if (ticker) setFilterTicker(ticker);
