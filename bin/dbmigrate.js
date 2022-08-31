@@ -36,7 +36,7 @@ const cfg = path.resolve(__dirname, "../private/config.toml");
           filePath,
         })
     );
-  console.log(`jobs`, jobs);
+  // console.log(`jobs`, jobs);
   const contents = await new Promise(async (resolve, reject) => {
     Utils.waterfallPromise(jobs, 1000).then((contentBuffer) => {
       // console.log(`contentBuffer`, contentBuffer);
@@ -48,9 +48,13 @@ const cfg = path.resolve(__dirname, "../private/config.toml");
       resolve(queries);
     });
   });
+  // console.log(`contents`, contents);
   const queries = contents
     .filter((content) => content.trim().length > 0)
-    .map((content) => () => initDBSequelize.query({ query: `${content};` }));
-  console.log(`queries`, queries);
+    .map(
+      (content) => () =>
+        initDBSequelize.query({ query: `${content};` }).catch(console.log)
+    );
+  // console.log(`queries`, queries);
   await Utils.waterfallPromise(queries, 1000);
 })();
