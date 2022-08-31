@@ -111,6 +111,12 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _updateOuterTradeStatus -------------`
     );
     this.logger.log("data", {
+      order_id,
+      order_price,
+      order_origin_volume,
+      member_id,
+      member_tag,
+      email,
       id,
       status,
       update_at,
@@ -872,7 +878,6 @@ class ExchangeHubService {
           kind: trade.side === "buy" ? "bid" : "ask",
           price,
           volume,
-          origin_price: Utils.removeZeroEnd(_order.price),
           origin_volume: Utils.removeZeroEnd(_order.origin_volume),
           state_text,
           filled,
@@ -893,6 +898,7 @@ class ExchangeHubService {
       throw error;
     }
     this.logger.log(`for [FRONTEND] _updateOrder`, _updateOrder);
+    this.logger.log(`db _order`, _order);
     this.logger.log(
       `------------- [${this.constructor.name}] _updateOrderbyTrade [END] -------------`
     );
@@ -1071,7 +1077,7 @@ class ExchangeHubService {
             await this._updateOuterTradeStatus({
               order_id: orderId,
               member_id: memberId,
-              order_price: order.origin_price,
+              order_price: order.price,
               order_origin_volume: order.origin_volume,
               member_tag: memberTag,
               email: member.email,
