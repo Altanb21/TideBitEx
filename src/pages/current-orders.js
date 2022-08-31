@@ -104,8 +104,8 @@ const CurrentOrders = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const orders = await getCurrentOrders(exchanges[0]);
-        filter({ filterOrders: orders });
+        const res = await getCurrentOrders(exchanges[0]);
+        filter({ filterOrders: res.orders, ticker: res.ticker });
         return !prev;
       } else return prev;
     });
@@ -129,9 +129,11 @@ const CurrentOrders = () => {
       <div className="screen__search-bar">
         <TableDropdown
           className="screen__filter"
-          selectHandler={(option) => filter({ exchange: option })}
-          options={exchanges}
-          selected={filterExchange}
+          selectHandler={(ticker) => {
+            filter({ ticker });
+          }}
+          options={tickers ? Object.values(tickers) : []}
+          selected={filterTicker}
         />
         <div className="screen__search-box">
           <input
