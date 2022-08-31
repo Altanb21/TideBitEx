@@ -864,7 +864,10 @@ class mysql {
       const id = datas.id;
       const where = "`id` = " + id;
       delete datas.id;
-      const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
+      const set = Object.keys(datas).map(
+        (key) =>
+          `\`${key}\` = ${key === "email" ? `"${datas[key]}"` : datas[key]}`
+      );
       let query =
         "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + ";";
       this.logger.log("updateOuterTrade", query);
