@@ -66,7 +66,7 @@ const Vouchers = () => {
 
   const getVouchers = useCallback(
     async (exchange) => {
-      const trades = await storeCtx.getOuterTradeFills(exchange, filterOption);
+      const trades = await storeCtx.getOuterTradeFills(exchange, 365);
       setTrades((prev) => {
         let _trades = { ...prev };
         _trades[exchange] = trades;
@@ -84,7 +84,7 @@ const Vouchers = () => {
       }
       return { trades, tickers, ticker: ticker };
     },
-    [filterOption, storeCtx]
+    [storeCtx]
   );
 
   const filter = useCallback(
@@ -93,10 +93,13 @@ const Vouchers = () => {
         _exchange = exchange || filterExchange,
         _trades = filterTrades || trades[_exchange],
         ts = Date.now(),
-        _timeInterval =
-          timeInterval === "30"
+        _timeInterval = timeInterval
+          ? timeInterval === "30"
             ? 30 * 24 * 60 * 60 * 1000
-            : 12 * 30 * 24 * 60 * 60 * 1000 || filterOption,
+            : 12 * 30 * 24 * 60 * 60 * 1000
+          : filterOption === "30"
+          ? 30 * 24 * 60 * 60 * 1000
+          : 12 * 30 * 24 * 60 * 60 * 1000,
         _ticker = ticker || filterTicker,
         res;
       if (ticker) setFilterTicker(ticker);
@@ -119,6 +122,15 @@ const Vouchers = () => {
               trade.memberId?.includes(_keyword) ||
               trade.exchange?.includes(_keyword)) &&
             ts - trade.ts < _timeInterval;
+          console.log(`timeInterval`, timeInterval);
+          console.log(`filterOption`, filterOption);
+          console.log(
+            `ts[${ts}] - trade.ts[${trade.ts}] = ${
+              ts - trade.ts
+            } < _timeInterval[${_timeInterval}]`,
+            ts - trade.ts < _timeInterval,
+            new Date(trade.ts)
+          );
           if (_exchange !== "ALL")
             condition = condition && trade.exchange === _exchange;
           if (_ticker) condition = condition && trade.instId === _ticker;
@@ -143,7 +155,7 @@ const Vouchers = () => {
         setProfits(profits);
       }
     },
-    [filterExchange, filterKey, filterTicker, getVouchers, trades]
+    [filterExchange, filterKey, filterOption, filterTicker, getVouchers, trades]
   );
 
   const sorting = (key, ascending) => {
