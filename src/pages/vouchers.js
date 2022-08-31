@@ -142,8 +142,8 @@ const Vouchers = () => {
     setFilterTrades((prevTrades) => {
       console.log(`prevTrades`, prevTrades);
       return ascending
-        ? prevTrades?.sort((a, b) => a[key] - b[key])
-        : prevTrades?.sort((a, b) => b[key] - a[key]);
+        ? prevTrades?.sort((a, b) => +a[key] - +b[key])
+        : prevTrades?.sort((a, b) => +b[key] - +a[key]);
     });
   };
 

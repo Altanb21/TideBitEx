@@ -4,9 +4,9 @@ CREATE TABLE IF NOT EXISTS `outer_trades` (
 	`exchange_code` int(11) DEFAULT NULL,
 	`update_at` datetime DEFAULT NULL,
 	`status` tinyint (4) DEFAULT NULL,
-`data` text,
-UNIQUE KEY `index_outer_trades_on_id_and_exchange_code` (`id`, `exchange_code`)
-USING BTREE) ENGINE = InnoDB DEFAULT CHARSET = latin1;
-
+	`data` text,
+	UNIQUE KEY `index_outer_trades_on_id_and_exchange_code` (`id`, `exchange_code`) USING BTREE
+) ENGINE = InnoDB DEFAULT CHARSET = latin1;
 -- add trade_fk column to trades table
-ALTER TABLE `trades` ADD `trade_fk` int(11) DEFAULT NULL;
+ALTER TABLE `trades`
+ADD `trade_fk` int(11) DEFAULT NULL;
