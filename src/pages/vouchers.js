@@ -147,15 +147,15 @@ const Vouchers = () => {
   );
 
   const sorting = (key, ascending) => {
-    console.log(`key`, key);
-    console.log(`ascending`, ascending);
+    // console.log(`key`, key);
+    // console.log(`ascending`, ascending);
     setFilterTrades((prevTrades) => {
-      console.log(`prevTrades`, prevTrades);
+      // console.log(`prevTrades`, prevTrades);
       let sortedTrades = prevTrades.map((trade) => ({ ...trade }));
       sortedTrades = ascending
         ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
         : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
-      console.log(`sortedTrades`, sortedTrades);
+      // console.log(`sortedTrades`, sortedTrades);
       return sortedTrades;
     });
   };

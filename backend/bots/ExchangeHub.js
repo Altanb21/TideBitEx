@@ -698,6 +698,7 @@ class ExchangeHub extends Bot {
               processOrder;
             processOrder = {
               ...order,
+              unFillSz: SafeMath.minus(order.sz, order.accFillSz),
               id,
               email: dbOrder?.email || null,
               memberId,
@@ -705,7 +706,7 @@ class ExchangeHub extends Bot {
               fundsReceived,
               ts: parseInt(order.uTime),
             };
-            this.logger.log(`processOrder`, processOrder);
+            // this.logger.log(`processOrder`, processOrder);
             outerOrders = [...outerOrders, processOrder];
           }
         }
