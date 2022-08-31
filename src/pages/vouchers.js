@@ -94,7 +94,7 @@ const Vouchers = () => {
         _trades = filterTrades || trades[_exchange],
         ts = Date.now(),
         _timeInterval =
-          timeInterval === "month"
+          timeInterval === "30"
             ? 30 * 24 * 60 * 60 * 1000
             : 12 * 30 * 24 * 60 * 60 * 1000,
         _ticker = ticker || filterTicker,
