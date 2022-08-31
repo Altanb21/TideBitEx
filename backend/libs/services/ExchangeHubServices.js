@@ -95,7 +95,18 @@ class ExchangeHubService {
   }
 
   // ++ TODO
-  async _updateOuterTradeStatus({ id, status, update_at, dbTransaction }) {
+  async _updateOuterTradeStatus({
+    order_id,
+    order_price,
+    order_origin_volume,
+    member_id,
+    member_tag,
+    email,
+    id,
+    status,
+    update_at,
+    dbTransaction,
+  }) {
     this.logger.log(
       `------------- [${this.constructor.name}] _updateOuterTradeStatus -------------`
     );
@@ -105,10 +116,38 @@ class ExchangeHubService {
       update_at,
     });
     try {
-      await this.database.updateOuterTrade(
-        { id, status, update_at },
-        { dbTransaction }
-      );
+      switch (status) {
+        case this.database.OUTERTRADE_STATUS.ClORDId_ERROR:
+          await this.database.updateOuterTrade(
+            { id, status, update_at, order_id: 0 },
+            { dbTransaction }
+          );
+          break;
+        case this.database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
+          await this.database.updateOuterTrade(
+            { id, status, update_at, order_id, member_id },
+            { dbTransaction }
+          );
+          break;
+        case this.database.OUTERTRADE_STATUS.DONE:
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at,
+              order_id,
+              order_price,
+              order_origin_volume,
+              member_id,
+              member_tag,
+              email,
+            },
+            { dbTransaction }
+          );
+          break;
+
+        default:
+      }
     } catch (error) {
       throw error;
     }
@@ -737,11 +776,10 @@ class ExchangeHubService {
         _order?.member_id.toString() === memberId.toString() &&
         _order?.state === this.database.ORDER_STATE.WAIT
       ) {
-        price = Utils.removeZeroEnd(_order.price)
+        price = Utils.removeZeroEnd(_order.price);
         value = SafeMath.mult(trade.fillPx, trade.fillSz);
         volume = SafeMath.minus(_order.volume, trade.fillSz);
-        locked =
-          trade.side === "buy" ? SafeMath.mult(price, volume) : volume;
+        locked = trade.side === "buy" ? SafeMath.mult(price, volume) : volume;
         doneAt = `"${new Date(parseInt(trade.ts))
           .toISOString()
           .slice(0, 19)
@@ -834,6 +872,7 @@ class ExchangeHubService {
           kind: trade.side === "buy" ? "bid" : "ask",
           price,
           volume,
+          origin_price: Utils.removeZeroEnd(_order.price),
           origin_volume: Utils.removeZeroEnd(_order.origin_volume),
           state_text,
           filled,
@@ -1034,6 +1073,12 @@ class ExchangeHubService {
              */
             // 4. _updateOuterTradeStatus
             await this._updateOuterTradeStatus({
+              order_id: orderId,
+              member_id: memberId,
+              order_price: order.origin_price,
+              order_origin_volume: order.origin_volume,
+              member_tag: memberTag,
+              email: member.email,
               id: trade.tradeId,
               status: this.database.OUTERTRADE_STATUS.DONE,
               update_at: `"${new Date()
@@ -1045,6 +1090,8 @@ class ExchangeHubService {
             await t.commit();
           } else {
             await this._updateOuterTradeStatus({
+              order_id: orderId,
+              member_id: memberId,
               id: trade.tradeId,
               status: this.database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
               update_at: `"${new Date()
@@ -1073,6 +1120,8 @@ class ExchangeHubService {
         };
       } else {
         await this._updateOuterTradeStatus({
+          order_id: orderId,
+          member_id: memberId,
           id: trade.tradeId,
           status: this.database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
           update_at: `"${new Date()
@@ -1150,23 +1199,24 @@ class ExchangeHubService {
     this.logger.log(
       `------------- [${this.constructor.name}] _getOuterTradesFromAPI --------------`
     );
-    let outerTrades, end = Date.now();
+    let outerTrades,
+      end = Date.now();
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
         let okexRes;
         if (!this._isStarted) {
-        this.logger.log(`fetchTradeFillsHistoryRecords`);
-        okexRes = await this.okexConnector.router(
-          "fetchTradeFillsHistoryRecords",
-          {
-            query: {
-              instType: "SPOT",
-              begin: end - this._interval,
-              end,
-            },
-          }
-        );
+          this.logger.log(`fetchTradeFillsHistoryRecords`);
+          okexRes = await this.okexConnector.router(
+            "fetchTradeFillsHistoryRecords",
+            {
+              query: {
+                instType: "SPOT",
+                begin: end - this._interval,
+                end,
+              },
+            }
+          );
           this._isStarted = true;
         } else {
           this.logger.log(`fetchTradeFillsRecords`);

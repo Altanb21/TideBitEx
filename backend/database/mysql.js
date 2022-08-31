@@ -321,10 +321,9 @@ class mysql {
   }
 
   async getOrders() {
-    const query =
-      "SELECT * FROM `orders`;";
+    const query = "SELECT * FROM `orders`;";
     try {
-      this.logger.log("getOrders", query, );
+      this.logger.log("getOrders", query);
       const [orders] = await this.db.query({
         query,
       });
@@ -352,8 +351,15 @@ class mysql {
   }
 
   async getOuterTradesByStatus(exchangeCode, status) {
-    const query =
-      "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`status` = ?;";
+    const query = `
+    SELECT
+      *
+    FROM
+      outer_trades
+    WHERE
+      outer_trades.exchange_code = ?
+      AND(outer_trades.status = ?
+        OR outer_trades.order_id IS NULL);`;
     try {
       this.logger.log(
         "getOuterTradesByStatus",
