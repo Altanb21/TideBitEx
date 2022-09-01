@@ -167,6 +167,6 @@
   "notification": "Notification",
   "bid-market-order-confirm": "You are going to bid {{totalAmount}} {{baseUnit}} with market price",
   "ask-market-order-confirm": "You are going to ask {{totalAmount}} {{baseUnit}} for market price",
-  "bid-limit-order-confirm": "You are going to bid {{totalAmount}} {{baseUnit}} with {{totalPrice}} {{quoteUnit}} with price {{price}} per {{quoteUnit}}",
-  "ask-limit-order-confirm": "You are going to ask {{totalAmount}} {{baseUnit}} for {{totalPrice}} {{quoteUnit}} with price {{price}} per {{quoteUnit}}"
+  "bid-limit-order-confirm": "You are going to bid {{totalAmount}} {{baseUnit}} with {{totalPrice}} {{quoteUnit}} with price {{price}} {{quoteUnit}} per 1 {{baseUnit}}",
+  "ask-limit-order-confirm": "You are going to ask {{totalAmount}} {{baseUnit}} for {{totalPrice}} {{quoteUnit}} with price {{price}} {{quoteUnit}} per 1 {{baseUnit}}"
 }
