@@ -14,7 +14,7 @@ const Exchange = () => {
   const breakpoint = 428;
 
   useEffect(() => {
-    if (location.pathname.includes("/markets")) {
+    if (location.pathname?.includes("/markets")) {
       if (!isStart) {
         window.storeCtx = storeCtx;
         storeCtx.start();

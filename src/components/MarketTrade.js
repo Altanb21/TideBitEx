@@ -37,7 +37,7 @@ const TradeForm = (props) => {
         if (
           _value.toString().length > 2 &&
           _value.toString().startsWith("0") &&
-          !_value.includes(".")
+          !_value?.includes(".")
         ) {
           _value = _value.substring(1);
         }
@@ -108,7 +108,7 @@ const TradeForm = (props) => {
         if (
           _value.toString().length > 2 &&
           _value.toString().startsWith("0") &&
-          !_value.includes(".")
+          !_value?.includes(".")
         ) {
           _value = _value.substring(1);
         }

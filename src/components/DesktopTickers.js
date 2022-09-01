@@ -117,7 +117,7 @@ const DesktopTickers = (props) => {
         !inputRef.current ||
         ticker.instId
           ?.toLowerCase()
-          .includes(inputRef.current.value.toLowerCase())
+          ?.includes(inputRef.current.value.toLowerCase())
     );
     setFilteredTickers(tickers);
   }, [storeCtx.tickers]);
