@@ -78,14 +78,14 @@ class OkexConnector extends ConnectorBase {
   async start() {
     this._okexWsEventListener();
     Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === "OKEx") {
+      if (this.markets[key] === SupportedExchange.OKEX) {
         const instId = key.replace("tb", "");
         this.instIds.push(instId);
       }
     });
     let instruments,
       instrumentsRes = await this.getInstruments({
-        query: { instType: "SPOT" },
+        query: { instType: this.database.INST_TYPE.SPOT },
       });
     if (instrumentsRes.success) {
       instruments = instrumentsRes.payload.reduce((prev, instrument) => {
@@ -409,22 +409,25 @@ class OkexConnector extends ConnectorBase {
           id: data.ordId,
           ordType: data.ordType,
           price: data.px,
-          kind: data.side === "buy" ? "bid" : "ask",
+          kind:
+            data.side === this.database.ORDER_SIDE.BUY
+              ? this.database.ORDER_KIND.BID
+              : this.database.ORDER_KIND.ASK,
           volume: SafeMath.minus(data.sz, data.fillSz),
           origin_volume: data.sz,
-          filled: data.state === "filled",
+          filled: data.state === this.database.ORDER_STATE.FILLED,
           state:
-            data.state === "canceled"
-              ? "canceled"
-              : data.state === "filled"
-              ? "done"
-              : "wait",
+            data.state === this.database.ORDER_STATE.CANCEL
+              ? this.database.ORDER_STATE.CANCEL
+              : data.state === this.database.ORDER_STATE.FILLED
+              ? this.database.ORDER_STATE.DONE
+              : this.database.ORDER_STATE.WAIT,
           state_text:
-            data.state === "canceled"
-              ? "Canceled"
-              : data.state === "filled"
-              ? "Done"
-              : "Waiting",
+            data.state === this.database.ORDER_STATE.CANCEL
+              ? this.database.ORDER_STATE_TEXT.CANCEL
+              : data.state === this.database.ORDER_STATE.FILLED
+              ? this.database.ORDER_STATE_TEXT.DONE
+              : this.database.ORDER_STATE_TEXT.WAIT,
           at: parseInt(SafeMath.div(data.uTime, "1000")),
           ts: parseInt(data.uTime),
         });
@@ -1240,22 +1243,25 @@ class OkexConnector extends ConnectorBase {
             ordId: data.ordId,
             ordType: data.ordType,
             price: data.px,
-            kind: data.side === "buy" ? "bid" : "ask",
+            kind:
+              data.side === this.database.ORDER_SIDE.BUY
+                ? this.database.ORDER_KIND.BID
+                : this.database.ORDER_KIND.ASK,
             volume: SafeMath.minus(data.sz, data.fillSz),
             origin_volume: data.sz,
-            filled: data.state === "filled",
+            filled: data.state === this.database.ORDER_STATE.FILLED,
             state:
-              data.state === "canceled"
-                ? "canceled"
-                : state === "filled"
-                ? "done"
-                : "wait",
+              data.state === this.database.ORDER_STATE.CANCEL
+                ? this.database.ORDER_STATE.CANCEL
+                : state === this.database.ORDER_STATE.FILLED
+                ? this.database.ORDER_STATE.DONE
+                : this.database.ORDER_STATE.WAIT,
             state_text:
-              data.state === "canceled"
-                ? "Canceled"
-                : state === "filled"
-                ? "Done"
-                : "Waiting",
+              data.state === this.database.ORDER_STATE.CANCEL
+                ? this.database.ORDER_STATE_TEXT.CANCEL
+                : state === this.database.ORDER_STATE.FILLED
+                ? this.database.ORDER_STATE_TEXT.DONE
+                : this.database.ORDER_STATE_TEXT.WAIT,
             at: parseInt(SafeMath.div(data.uTime, "1000")),
             ts: parseInt(data.uTime),
           };
@@ -1644,7 +1650,7 @@ class OkexConnector extends ConnectorBase {
       args: [
         {
           channel: "instruments",
-          instType: "SPOT",
+          instType: this.database.INST_TYPE.SPOT,
         },
       ],
     };
@@ -1801,7 +1807,7 @@ class OkexConnector extends ConnectorBase {
       args: [
         {
           channel: "orders",
-          instType: "SPOT",
+          instType: this.database.INST_TYPE.SPOT,
         },
       ],
     };

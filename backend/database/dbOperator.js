@@ -21,14 +21,40 @@ class DBOperator {
     SUB_FUNDS: 4,
     UNLOCK_AND_SUB_FUNDS: 5,
   };
-  ORDER_STATE = {
+  INST_TYPE = {
+    SPOT: "SPOT",
+  };
+  ORDER_STATE_CODE = {
     CANCEL: 0,
     WAIT: 100,
     DONE: 200,
   };
+  ORDER_STATE_TEXT = {
+    CANCEL: "Canceled",
+    WAIT: "Waiting",
+    DONE: "Done",
+    UNKNOWN: "Unknown",
+  };
+  ORDER_STATE = {
+    CANCEL: "canceled",
+    WAIT: "wait",
+    DONE: "done",
+    FILLED: "filled",
+    LIVE: "live",
+    UNKNOWN: "unknown",
+  };
   TYPE = {
     ORDER_ASK: "OrderAsk",
     ORDER_BID: "OrderBid",
+  };
+  ORDER_SIDE = {
+    SELL: "sell",
+    BUY: "buy",
+  };
+  ORDER_KIND = {
+    ASK: "ask",
+    BID: "bid",
+    ALL: "all",
   };
   ORD_TYPE = {
     LIMIT: "limit",
@@ -41,6 +67,10 @@ class DBOperator {
   };
   EXCHANGE = {
     OKEX: 10,
+  };
+  MEMBER_TAG = {
+    VIP_FEE: 1,
+    HERO_FEE: 2,
   };
   // ++ TODO outerTrades status
   // 0: unproccess

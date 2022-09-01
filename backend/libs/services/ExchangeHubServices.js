@@ -305,7 +305,7 @@ class ExchangeHubService {
         dbTransaction,
       });
       if (
-        order.state_code === this.database.ORDER_STATE.CANCEL &&
+        order.state_code === this.database.ORDER_STATE_CODE.CANCEL &&
         order.volume > 0
       ) {
         _askAccBalDiff = order.volume;
@@ -526,7 +526,7 @@ class ExchangeHubService {
         order.price > trade.fillPx
       );
       if (
-        order.state_code === this.database.ORDER_STATE.DONE &&
+        order.state_code === this.database.ORDER_STATE_CODE.DONE &&
         order.price > trade.fillPx
       ) {
         _bidAccBalDiff = SafeMath.mult(
@@ -551,7 +551,7 @@ class ExchangeHubService {
         });
       }
       if (
-        order.state_code === this.database.ORDER_STATE.CANCEL &&
+        order.state_code === this.database.ORDER_STATE_CODE.CANCEL &&
         order.volume > 0
       ) {
         _bidAccBalDiff = SafeMath.mult(order.price, order.volume);
@@ -631,11 +631,15 @@ class ExchangeHubService {
         trade.fillPx,
         trade.fillSz,
         SafeMath.mult(trade.fillPx, trade.fillSz),
-        trade.side === "sell" ? "ask" : "bid",
-        trade.side === "sell"
+        trade.side === this.database.ORDER_SIDE.BUY
+          ? this.database.ORDER_KIND.BID
+          : this.database.ORDER_KIND.ASK,
+        trade.side === this.database.ORDER_SIDE.SELL
           ? SafeMath.mult(SafeMath.mult(trade.fillPx, trade.fillSz), askFeeRate)
           : "0", //ask_fee
-        trade.side === "buy" ? SafeMath.mult(trade.fillSz, bidFeeRate) : "0", //bid_fee
+        trade.side === this.database.ORDER_SIDE.BUY
+          ? SafeMath.mult(trade.fillSz, bidFeeRate)
+          : "0", //bid_fee
         new Date(parseInt(trade.ts)).toISOString(),
         { dbTransaction }
       );
@@ -661,14 +665,20 @@ class ExchangeHubService {
     _trade = {
       price: trade.fillPx,
       volume: trade.fillSz,
-      ask_id: trade.side === "sell" ? orderId : null,
-      bid_id: trade.side === "buy" ? orderId : null,
+      ask_id: trade.side === this.database.ORDER_SIDE.SELL ? orderId : null,
+      bid_id: trade.side === this.database.ORDER_SIDE.BUY ? orderId : null,
       trend: null,
       currency: market.code,
       created_at: new Date(parseInt(trade.ts)).toISOString(),
       updated_at: new Date(parseInt(trade.ts)).toISOString(),
-      ask_member_id: trade.side === "sell" ? memberId : this.systemMemberId,
-      bid_member_id: trade.side === "buy" ? memberId : this.systemMemberId,
+      ask_member_id:
+        trade.side === this.database.ORDER_SIDE.SELL
+          ? memberId
+          : this.systemMemberId,
+      bid_member_id:
+        trade.side === this.database.ORDER_SIDE.BUY
+          ? memberId
+          : this.systemMemberId,
       funds: SafeMath.mult(trade.fillPx, trade.fillSz),
       trade_fk: trade.tradeId,
     };
@@ -758,9 +768,9 @@ class ExchangeHubService {
     );
     let _order,
       _updateOrder,
-      stateCode = this.database.ORDER_STATE.WAIT,
-      state = "wait",
-      state_text = "Waiting",
+      stateCode = this.database.ORDER_STATE_CODE.WAIT,
+      state = this.database.ORDER_STATE.WAIT,
+      state_text = this.database.ORDER_STATE_TEXT.WAIT,
       filled = false,
       price,
       volume,
@@ -780,12 +790,15 @@ class ExchangeHubService {
       if (
         _order &&
         _order?.member_id.toString() === memberId.toString() &&
-        _order?.state === this.database.ORDER_STATE.WAIT
+        _order?.state === this.database.ORDER_STATE_CODE.WAIT
       ) {
         price = Utils.removeZeroEnd(_order.price);
         value = SafeMath.mult(trade.fillPx, trade.fillSz);
         volume = SafeMath.minus(_order.volume, trade.fillSz);
-        locked = trade.side === "buy" ? SafeMath.mult(price, volume) : volume;
+        locked =
+          trade.side === this.database.ORDER_SIDE.BUY
+            ? SafeMath.mult(price, volume)
+            : volume;
         doneAt = `"${new Date(parseInt(trade.ts))
           .toISOString()
           .slice(0, 19)
@@ -795,7 +808,7 @@ class ExchangeHubService {
           .slice(0, 19)
           .replace("T", " ")}"`;
         fundsReceived =
-          trade.side === "buy"
+          trade.side === this.database.ORDER_SIDE.BUY
             ? SafeMath.plus(_order.funds_received, trade.fillSz)
             : SafeMath.plus(_order.funds_received, value); //++ TODO to be verify: 使用 TideBit ticker 測試)
         tradesCount = SafeMath.plus(_order.trades_count, "1");
@@ -810,9 +823,9 @@ class ExchangeHubService {
             _orderDetails = res.payload;
             price = _orderDetails.avgPx;
           }
-          stateCode = this.database.ORDER_STATE.DONE;
-          state = "done";
-          state_text = "Done";
+          stateCode = this.database.ORDER_STATE_CODE.DONE;
+          state = this.database.ORDER_STATE.DONE;
+          state_text = this.database.ORDER_STATE_TEXT.DONE;
           filled = true;
           locked = "0"; //++ TODO to be verify: 使用 TideBit ticker 測試)
         } else {
@@ -826,29 +839,29 @@ class ExchangeHubService {
             _orderDetails = res.payload;
             this.logger.log(`for _orderDetails`, _orderDetails);
             state =
-              _orderDetails.state === "canceled"
+              _orderDetails.state === this.database.ORDER_STATE.CANCEL
                 ? _orderDetails.state
-                : _orderDetails.state === "filled"
-                ? "done"
-                : _orderDetails.state === "live"
-                ? "wait"
-                : "Unknown";
-            stateCode =
-              _orderDetails.state === "canceled"
-                ? this.database.ORDER_STATE.CANCEL
-                : _orderDetails.state === "filled"
+                : _orderDetails.state === this.database.ORDER_STATE.FILLED
                 ? this.database.ORDER_STATE.DONE
-                : _orderDetails.state === "live"
+                : _orderDetails.state === this.database.ORDER_STATE.LIVE
                 ? this.database.ORDER_STATE.WAIT
-                : "unknown";
+                : this.database.ORDER_STATE.UNKNOWN;
+            stateCode =
+              _orderDetails.state === this.database.ORDER_STATE.CANCEL
+                ? this.database.ORDER_STATE_CODE.CANCEL
+                : _orderDetails.state === this.database.ORDER_STATE.FILLED
+                ? this.database.ORDER_STATE_CODE.DONE
+                : _orderDetails.state === this.database.ORDER_STATE.LIVE
+                ? this.database.ORDER_STATE_CODE.WAIT
+                : this.database.ORDER_STATE.UNKNOWN;
             state_text =
-              _orderDetails.state === "canceled"
-                ? "Canceled"
-                : _orderDetails.state === "filled"
-                ? "Done"
-                : _orderDetails.state === "live"
-                ? "Waiting"
-                : "Unknown";
+              _orderDetails.state === this.database.ORDER_STATE.CANCEL
+                ? this.database.ORDER_STATE_TEXT.CANCEL
+                : _orderDetails.state === this.database.ORDER_STATE.FILLED
+                ? this.database.ORDER_STATE_TEXT.DONE
+                : _orderDetails.state === this.database.ORDER_STATE.LIVE
+                ? this.database.ORDER_STATE_TEXT.WAIT
+                : this.database.ORDER_STATE_TEXT.UNKNOWN;
           }
           locked = "0";
         }
@@ -875,7 +888,10 @@ class ExchangeHubService {
           at: parseInt(SafeMath.div(trade.ts, "1000")),
           ts: parseInt(trade.ts),
           market: market.id,
-          kind: trade.side === "buy" ? "bid" : "ask",
+          kind:
+            trade.side === this.database.ORDER_SIDE.BUY
+              ? this.database.ORDER_KIND.BID
+              : this.database.ORDER_KIND.ASK,
           price,
           volume,
           origin_volume: Utils.removeZeroEnd(_order.origin_volume),
@@ -990,11 +1006,16 @@ class ExchangeHubService {
         memberTag = member.member_tag;
         this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
         if (memberTag) {
-          if (memberTag.toString() === "1") {
+          if (
+            memberTag.toString() === this.database.MEMBER_TAG.VIP_FEE.toString()
+          ) {
             askFeeRate = market.ask.vip_fee;
             bidFeeRate = market.bid.vip_fee;
           }
-          if (memberTag.toString() === "2") {
+          if (
+            memberTag.toString() ===
+            this.database.MEMBER_TAG.HERO_FEE.toString()
+          ) {
             askFeeRate = market.ask.hero_fee;
             bidFeeRate = market.bid.hero_fee;
           }
@@ -1039,7 +1060,7 @@ class ExchangeHubService {
             // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
             // if this trade does need update
             if (newTrade) {
-              if (trade.side === "buy")
+              if (trade.side === this.database.ORDER_SIDE.BUY)
                 resultOnAccUpdate = await this._updateAccByBidTrade({
                   memberId,
                   bidFeeRate,
@@ -1161,7 +1182,10 @@ class ExchangeHubService {
     // if (Math.random() < 0.01) {
     //   this.garbageCollection(outerTrades);
     // }
-    this.logger.log(`need processOuterTrade[${outerTrades.length}]`, outerTrades);
+    this.logger.log(
+      `need processOuterTrade[${outerTrades.length}]`,
+      outerTrades
+    );
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
       tmp = await this._processOuterTrade({
@@ -1213,7 +1237,7 @@ class ExchangeHubService {
             "fetchTradeFillsHistoryRecords",
             {
               query: {
-                instType: "SPOT",
+                instType: this.database.INST_TYPE.SPOT,
                 begin: end - this._interval,
                 end,
               },

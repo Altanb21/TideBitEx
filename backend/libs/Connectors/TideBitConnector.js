@@ -357,8 +357,8 @@ class TibeBitConnector extends ConnectorBase {
       tbBooks.asks.forEach((ask) => {
         if (
           ask.market === market &&
-          ask.ord_type === "limit" &&
-          ask.state === "wait"
+          ask.ord_type === this.database.ORD_TYPE.LIMIT &&
+          ask.state === this.database.ORDER_STATE.WAIT
         ) {
           let index;
           index = asks.findIndex((_ask) => SafeMath.eq(_ask[0], ask.price));
@@ -378,8 +378,8 @@ class TibeBitConnector extends ConnectorBase {
       tbBooks.bids.forEach((bid) => {
         if (
           bid.market === market &&
-          bid.ord_type === "limit" &&
-          bid.state === "wait"
+          bid.ord_type === this.database.ORD_TYPE.LIMIT &&
+          bid.state === this.database.ORDER_STATE.WAIT
         ) {
           let index;
           index = bids.findIndex((_bid) => SafeMath.eq(_bid[0], bid.price));
@@ -793,7 +793,7 @@ class TibeBitConnector extends ConnectorBase {
     // this.logger.log(`tbGetOrderList orderList`, orderList);
     const orders = orderList.map((order) => {
       /*
-      if (order.state === this.database.ORDER_STATE.DONE) {
+      if (order.state === this.database.ORDER_STATE_CODE.DONE) {
         return {
           id: order.id,
           at: parseInt(
@@ -826,24 +826,30 @@ class TibeBitConnector extends ConnectorBase {
           SafeMath.div(new Date(order.updated_at).getTime(), "1000")
         ),
         market: query.instId.replace("-", "").toLowerCase(),
-        kind: order.type === "OrderAsk" ? "ask" : "bid",
+        kind:
+          order.type === this.database.TYPE.ORDER_ASK
+            ? this.database.ORDER_KIND.ASK
+            : this.database.ORDER_KIND.BID,
         price: Utils.removeZeroEnd(order.price),
         origin_volume: Utils.removeZeroEnd(order.origin_volume),
         volume: Utils.removeZeroEnd(order.volume),
-        state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "wait"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "done"
-          : "unkwon",
-        state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "Canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "Waiting"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "Done"
-          : "Unkwon",
+        state: SafeMath.eq(order.state, this.database.ORDER_STATE_CODE.CANCEL)
+          ? this.database.ORDER_STATE.CANCEL
+          : SafeMath.eq(order.state, this.database.ORDER_STATE_CODE.WAIT)
+          ? this.database.ORDER_STATE.WAIT
+          : SafeMath.eq(order.state, this.database.ORDER_STATE_CODE.DONE)
+          ? this.database.ORDER_STATE.DONE
+          : this.database.ORDER_STATE.UNKNOWN,
+        state_text: SafeMath.eq(
+          order.state,
+          this.database.ORDER_STATE_CODE.CANCEL
+        )
+          ? this.database.ORDER_STATE_TEXT.CANCEL
+          : SafeMath.eq(order.state, this.database.ORDER_STATE_CODE.WAIT)
+          ? this.database.ORDER_STATE_TEXT.WAIT
+          : SafeMath.eq(order.state, this.database.ORDER_STATE_CODE.DONE)
+          ? this.database.ORDER_STATE_TEXT.DONE
+          : this.database.ORDER_STATE_TEXT.UNKNOWN,
         clOrdId: order.id,
         instId: query.instId,
         ordType: order.ord_type,
@@ -956,7 +962,10 @@ class TibeBitConnector extends ConnectorBase {
       // ordId: data.id,
       clOrdId: data.id,
       instId,
-      ordType: data.price === undefined ? "market" : "limit",
+      ordType:
+        data.price === undefined
+          ? this.database.ORD_TYPE.MARKET
+          : this.database.ORD_TYPE.LIMIT,
       ts: parseInt(SafeMath.mult(data.at, "1000")),
       at: parseInt(data.at),
       price,
@@ -967,17 +976,17 @@ class TibeBitConnector extends ConnectorBase {
       // ),
       filled: data.volume !== data.origin_volume,
       state:
-        data.state === "wait"
-          ? "wait"
-          : data.state === "done"
-          ? "done"
-          : "canceled",
+        data.state === this.database.ORDER_STATE.WAIT
+          ? this.database.ORDER_STATE.WAIT
+          : data.state === this.database.ORDER_STATE.DONE
+          ? this.database.ORDER_STATE.DONE
+          : this.database.ORDER_STATE.CANCEL,
       state_text:
-        data.state === "wait"
-          ? "Waiting"
-          : data.state === "done"
-          ? "Done"
-          : "Canceled",
+        data.state === this.database.ORDER_STATE.WAIT
+          ? this.database.ORDER_STATE_TEXT.WAIT
+          : data.state === this.database.ORDER_STATE.DONE
+          ? this.database.ORDER_STATE_TEXT.DONE
+          : this.database.ORDER_STATE_TEXT.CANCEL,
     };
     this.logger.log(
       `[TO FRONTEND][OnEvent: ${Events.order}] updateOrder`,
@@ -998,7 +1007,7 @@ class TibeBitConnector extends ConnectorBase {
   async postPlaceOrder({ header, body }) {
     try {
       const url =
-        body.kind === "bid"
+        body.kind === this.database.ORDER_KIND.BID
           ? `${this.peatio}/markets/${body.market.id}/order_bids`
           : `${this.peatio}/markets/${body.market.id}/order_asks`;
       this.logger.debug("postPlaceOrder", url);
@@ -1438,7 +1447,7 @@ class TibeBitConnector extends ConnectorBase {
     this.isStart = true;
     this._registerGlobalChannel();
     Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === "TideBit") {
+      if (this.markets[key] === SupportedExchange.TIDEBIT) {
         const instId = key.replace("tb", "");
         this.instIds.push(instId);
       }
