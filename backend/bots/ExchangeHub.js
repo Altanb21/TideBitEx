@@ -828,7 +828,7 @@ class ExchangeHub extends Bot {
             modifiableType: Database.MODIFIABLE_TYPE.ORDER,
             modifiableId: orderId,
             createdAt: orderData.createdAt,
-            fun: this.database.FUNC.LOCK_FUNDS,
+            fun: Database.FUNC.LOCK_FUNDS,
           });
           //   * 5. commit transaction
           await t.commit();
@@ -1209,7 +1209,7 @@ class ExchangeHub extends Bot {
             modifiableType: Database.MODIFIABLE_TYPE.ORDER,
             modifiableId: orderId,
             createdAt,
-            fun: this.database.FUNC.UNLOCK_FUNDS,
+            fun: Database.FUNC.UNLOCK_FUNDS,
             reason: Database.REASON.ORDER_CANCEL,
           });
           updateOrder = {
@@ -1768,8 +1768,8 @@ class ExchangeHub extends Bot {
         createdAt: created_at,
         fun:
           order.type === Database.TYPE.ORDER_ASK
-            ? this.database.FUNC.UNLOCK_AND_SUB_FUNDS
-            : this.database.FUNC.PLUS_FUNDS,
+            ? Database.FUNC.UNLOCK_AND_SUB_FUNDS
+            : Database.FUNC.PLUS_FUNDS,
       });
       let _updateAcc = {
         balance: SafeMath.plus(accountAsk.balance, balanceA),
@@ -1804,8 +1804,8 @@ class ExchangeHub extends Bot {
         createdAt: created_at,
         fun:
           order.type === Database.TYPE.ORDER_ASK
-            ? this.database.FUNC.PLUS_FUNDS
-            : this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
+            ? Database.FUNC.PLUS_FUNDS
+            : Database.FUNC.UNLOCK_AND_SUB_FUNDS,
       });
       _updateAcc = {
         balance: SafeMath.plus(accountBid.balance, balanceB),
@@ -1845,7 +1845,7 @@ class ExchangeHub extends Bot {
             modifiableType: Database.MODIFIABLE_TYPE.TRADE,
             modifiableId: tradeId,
             createdAt: created_at,
-            fun: this.database.FUNC.UNLOCK_FUNDS,
+            fun: Database.FUNC.UNLOCK_FUNDS,
           });
           _updateAcc = {
             balance: SafeMath.plus(accountAsk.balance, changeLocked),
@@ -1879,7 +1879,7 @@ class ExchangeHub extends Bot {
             modifiableType: Database.MODIFIABLE_TYPE.TRADE,
             modifiableId: tradeId,
             createdAt: created_at,
-            fun: this.database.FUNC.UNLOCK_FUNDS,
+            fun: Database.FUNC.UNLOCK_FUNDS,
           });
           _updateAcc = {
             balance: SafeMath.plus(accountBid.balance, changeLocked),
