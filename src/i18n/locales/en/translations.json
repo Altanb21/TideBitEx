@@ -147,8 +147,8 @@
   "revenue": "Gross Profit",
   "current-profit": "Total Gross Profit",
   "transaction-side": "Side",
-  "transaction-price":"Price/Filled Price",
-  "transaction-amount":"Filled Amount",
+  "transaction-price": "Price/Filled Price",
+  "transaction-amount": "Filled Amount",
   "exchange": "Exchange",
   "match-volume": "Matched quantity",
   "unmatch-volume": "Unmatched quantity",
@@ -163,6 +163,10 @@
   "match-orders": "Match Orders",
   "recent-month": "monthy",
   "recent-year": "yearly",
-  "sound":"Sound",
-  "notification":"Notification"
+  "sound": "Sound",
+  "notification": "Notification",
+  "bid-market-order-confirm": "You are going to bid {{amount}} with {{price}}",
+  "ask-market-order-confirm": "You are going to {{kind}} {{amount}} with",
+  "bid-limit-order-confirm": "You are going to {{kind}} {{amount}} with",
+  "ask-limit-order-confirm": "You are going to {{kind}} {{amount}} with"
 }

@@ -16,19 +16,16 @@ import { useViewport } from "../store/ViewportProvider";
 const TradeForm = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
-  // const inputPrice = useRef();
-  // const inputAmount = useRef();
   const [tdMode, setTdMode] = useState("cash");
   const [price, setPrice] = useState("");
   const [volume, setVolume] = useState("");
   const [selectedPct, setSelectedPct] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
-  const [quoteCcyAvailable, setQuoteCcyAvailable] = useState("0");
-  const [baseCcyAvailable, setBaseCcyAvailable] = useState("0");
+
   const formatPrice = useCallback(
     (value) => {
-      if (!storeCtx.selectedTicker) {
+      if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
         setErrorMessage(null);
         let precision,
           arr = storeCtx.selectedTicker?.tickSz.split(".");
@@ -60,7 +57,10 @@ const TradeForm = (props) => {
           SafeMath.gt(
             volume,
             SafeMath.div(
-              quoteCcyAvailable,
+              storeCtx.accounts?.accounts[
+                storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+              ]?.balance,
+
               props.ordType === "market" ? storeCtx.selectedTicker?.last : price
             )
           )
@@ -69,7 +69,16 @@ const TradeForm = (props) => {
             `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
           );
         }
-        if (props.kind === "ask" && SafeMath.gt(volume, baseCcyAvailable)) {
+
+        if (
+          props.kind === "ask" &&
+          SafeMath.gt(
+            volume,
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.base_unit?.toUpperCase()
+            ]?.balance
+          )
+        ) {
           setErrorMessage(
             `Available ${storeCtx.selectedTicker?.base_unit?.toUpperCase()} is not enough`
           );
@@ -77,10 +86,11 @@ const TradeForm = (props) => {
       }
     },
     [
-      baseCcyAvailable,
       props.kind,
       props.ordType,
-      quoteCcyAvailable,
+
+      storeCtx.accounts?.accounts,
+
       storeCtx.selectedTicker,
       volume,
     ]
@@ -88,7 +98,7 @@ const TradeForm = (props) => {
 
   const formatSize = useCallback(
     (value) => {
-      if (storeCtx.selectedTicker) {
+      if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
         setErrorMessage(null);
         let precision,
           arr = storeCtx.selectedTicker?.lotSz.split("."),
@@ -124,7 +134,14 @@ const TradeForm = (props) => {
         else if (
           SafeMath.gt(
             props.kind === "bid" ? SafeMath.mult(_price, size) : size,
-            props.kind === "bid" ? quoteCcyAvailable : baseCcyAvailable
+
+            props.kind === "bid"
+              ? storeCtx.accounts?.accounts[
+                  storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                ]?.balance
+              : storeCtx.accounts?.accounts[
+                  storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                ]?.balance
           )
         )
           setErrorMessage(
@@ -138,12 +155,12 @@ const TradeForm = (props) => {
       }
     },
     [
-      baseCcyAvailable,
-      price,
-      props.kind,
-      props.ordType,
-      quoteCcyAvailable,
+      storeCtx.accounts?.accounts,
       storeCtx.selectedTicker,
+      props.ordType,
+
+      props.kind,
+      price,
     ]
   );
 
@@ -159,7 +176,7 @@ const TradeForm = (props) => {
       volume,
       market: storeCtx.selectedTicker.market,
     };
-    const confirm = window.confirm(`You are going to
+    const confirm = window.confirm(`${t("post-order-confirm")}
           ${order.kind} ${order.volume} ${order.instId.split("-")[0]}
           ${order.kind === "bid" ? "with" : "for"} ${
       props.ordType === "market"
@@ -181,40 +198,15 @@ const TradeForm = (props) => {
   };
 
   useEffect(() => {
-    if (storeCtx.accounts?.accounts) {
-      if (
-        (storeCtx.selectedTicker && !selectedTicker) ||
-        (storeCtx.selectedTicker &&
-          storeCtx.selectedTicker.instId !== selectedTicker?.instId) ||
-        quoteCcyAvailable !==
-          storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-          ]?.balance ||
-        baseCcyAvailable !==
-          storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.base_unit?.toUpperCase()
-          ]?.balance
-      ) {
-        // setMemberId(storeCtx.memberId);
-        let quoteCcyAccount =
-          storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-          ];
+    if (
+      (storeCtx.selectedTicker && !selectedTicker) ||
+      (storeCtx.selectedTicker &&
+        storeCtx.selectedTicker.instId !== selectedTicker?.instId)
+    ) {
+      setSelectedTicker(storeCtx.selectedTicker);
 
-        if (quoteCcyAccount) {
-          setQuoteCcyAvailable({ ...quoteCcyAccount?.balance });
-        }
-        let baseCcyAccount =
-          storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.base_unit?.toUpperCase()
-          ];
-        if (baseCcyAccount) {
-          setBaseCcyAvailable({ ...baseCcyAccount?.balance });
-        }
-        setSelectedTicker({ ...storeCtx.selectedTicker });
-        if (price) formatPrice(price);
-        if (volume) formatSize(volume);
-      }
+      if (price) formatPrice(price);
+      if (volume) formatSize(volume);
     }
   }, [
     storeCtx.selectedTicker,
@@ -224,8 +216,6 @@ const TradeForm = (props) => {
     price,
     formatSize,
     volume,
-    quoteCcyAvailable,
-    baseCcyAvailable,
   ]);
 
   useEffect(() => {
@@ -253,9 +243,15 @@ const TradeForm = (props) => {
       <p className="market-trade__text">
         {t("available")}:
         <span>
-          {quoteCcyAvailable || baseCcyAvailable
+          {storeCtx.accounts?.accounts && storeCtx.selectedTicker
             ? formateDecimal(
-                props.kind === "bid" ? quoteCcyAvailable : baseCcyAvailable,
+                props.kind === "bid"
+                  ? storeCtx.accounts?.accounts[
+                      storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                    ]?.balance
+                  : storeCtx.accounts?.accounts[
+                      storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                    ]?.balance,
                 { decimalLength: 8 }
               )
             : "--"}
@@ -370,22 +366,28 @@ const TradeForm = (props) => {
         <li className={`${selectedPct === "0.25" ? "active" : ""}`}>
           <span
             onClick={() => {
-              formatSize(
-                formateDecimal(
-                  SafeMath.mult(
-                    "0.25",
-                    props.kind === "bid"
-                      ? quoteCcyAvailable
-                      : SafeMath.div(
-                          baseCcyAvailable,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  ),
-                  {
-                    decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                  }
-                )
-              );
+              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
+                formatSize(
+                  formateDecimal(
+                    SafeMath.mult(
+                      "0.25",
+                      props.kind === "bid"
+                        ? storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          ]?.balance
+                        : SafeMath.div(
+                            storeCtx.accounts?.accounts[
+                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                            ]?.balance,
+                            price || storeCtx.selectedTicker?.last
+                          )
+                    ),
+                    {
+                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
+                    }
+                  )
+                );
+              }
             }}
           >
             25%
@@ -394,22 +396,28 @@ const TradeForm = (props) => {
         <li className={`${selectedPct === "0.5" ? "active" : ""}`}>
           <span
             onClick={() => {
-              formatSize(
-                formateDecimal(
-                  SafeMath.mult(
-                    "0.5",
-                    props.kind === "bid"
-                      ? quoteCcyAvailable
-                      : SafeMath.div(
-                          baseCcyAvailable,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  ),
-                  {
-                    decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                  }
-                )
-              );
+              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
+                formatSize(
+                  formateDecimal(
+                    SafeMath.mult(
+                      "0.5",
+                      props.kind === "bid"
+                        ? storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          ]?.balance
+                        : SafeMath.div(
+                            storeCtx.accounts?.accounts[
+                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                            ]?.balance,
+                            price || storeCtx.selectedTicker?.last
+                          )
+                    ),
+                    {
+                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
+                    }
+                  )
+                );
+              }
             }}
           >
             50%
@@ -418,22 +426,28 @@ const TradeForm = (props) => {
         <li className={`${selectedPct === "0.75" ? "active" : ""}`}>
           <span
             onClick={() => {
-              formatSize(
-                formateDecimal(
-                  SafeMath.mult(
-                    "0.75",
-                    props.kind === "bid"
-                      ? quoteCcyAvailable
-                      : SafeMath.div(
-                          baseCcyAvailable,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  ),
-                  {
-                    decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                  }
-                )
-              );
+              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
+                formatSize(
+                  formateDecimal(
+                    SafeMath.mult(
+                      "0.75",
+                      props.kind === "bid"
+                        ? storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          ]?.balance
+                        : SafeMath.div(
+                            storeCtx.accounts?.accounts[
+                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                            ]?.balance,
+                            price || storeCtx.selectedTicker?.last
+                          )
+                    ),
+                    {
+                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
+                    }
+                  )
+                );
+              }
             }}
           >
             75%
@@ -442,22 +456,30 @@ const TradeForm = (props) => {
         <li className={`${selectedPct === "1.0" ? "active" : ""}`}>
           <span
             onClick={() => {
-              formatSize(
-                formateDecimal(
-                  SafeMath.mult(
-                    "1",
-                    props.kind === "bid"
-                      ? quoteCcyAvailable
-                      : SafeMath.div(
-                          baseCcyAvailable,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  ),
-                  {
-                    decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                  }
-                )
-              );
+              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
+                formatSize(
+                  formateDecimal(
+                    SafeMath.mult(
+                      "1",
+                      props.kind === "bid"
+                        ? storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          ]?.balance
+                        : SafeMath.div(
+                            SafeMath.div(
+                              storeCtx.accounts?.accounts[
+                                storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                              ]?.balance,
+                              price || storeCtx.selectedTicker?.last
+                            )
+                          ),
+                      {
+                        decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
+                      }
+                    )
+                  )
+                );
+              }
             }}
           >
             100%
@@ -486,8 +508,7 @@ const TradeForm = (props) => {
         type="submit"
         className="btn market-trade__button"
         disabled={
-          !quoteCcyAvailable ||
-          !baseCcyAvailable ||
+          !storeCtx.accounts?.accounts ||
           !storeCtx.selectedTicker ||
           !!errorMessage ||
           (props.ordType === "limit" && !price) ||

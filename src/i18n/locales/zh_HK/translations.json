@@ -146,8 +146,8 @@
   "revenue": "毛利",
   "current-profit": "當前總毛利",
   "transaction-side": "交易類型",
-  "transaction-price":"掛單/成交價格",
-  "transaction-amount":"成交數量",
+  "transaction-price": "掛單/成交價格",
+  "transaction-amount": "成交數量",
   "exchange": "交易所",
   "match-volume": "已搓合數量",
   "unmatch-volume": "未搓合數量",
@@ -162,6 +162,10 @@
   "match-orders": "搓合成交紀錄",
   "recent-month": "近30日",
   "recent-year": "近一年",
-  "sound":"聲音",
-  "notification":"提醒"
+  "sound": "聲音",
+  "notification": "提醒",
+  "bid-market-order-confirm": "You are going to bid {{amount}} with {{price}}",
+  "ask-market-order-confirm": "You are going to {{kind}} {{amount}} with",
+  "bid-limit-order-confirm": "You are going to {{kind}} {{amount}} with",
+  "ask-limit-order-confirm": "You are going to {{kind}} {{amount}} with"
 }
