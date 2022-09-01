@@ -165,8 +165,8 @@
   "recent-year": "yearly",
   "sound": "Sound",
   "notification": "Notification",
-  "bid-market-order-confirm": "You are going to bid {{totalAmount}} {{baseUnit}} with market price",
-  "ask-market-order-confirm": "You are going to ask {{totalAmount}} {{baseUnit}} for market price",
+  "bid-market-order-confirm": "You are going to bid {{totalAmount}} {{baseUnit}} with market price {{quoteUnit}}",
+  "ask-market-order-confirm": "You are going to ask {{totalAmount}} {{baseUnit}} for market price {{quoteUnit}}",
   "bid-limit-order-confirm": "You are going to bid {{totalAmount}} {{baseUnit}} with {{totalPrice}} {{quoteUnit}} with price {{price}} {{quoteUnit}} per 1 {{baseUnit}}",
   "ask-limit-order-confirm": "You are going to ask {{totalAmount}} {{baseUnit}} for {{totalPrice}} {{quoteUnit}} with price {{price}} {{quoteUnit}} per 1 {{baseUnit}}"
 }
