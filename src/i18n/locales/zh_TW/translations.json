@@ -167,5 +167,10 @@
   "bid-market-order-confirm": "你將用市場價格買入 {{totalAmount}} {{baseUnit}}",
   "ask-market-order-confirm": "你將用市場價格賣出{{totalAmount}} {{baseUnit}}",
   "bid-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 買入 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 為 {{price}} {{quoteUnit}} 的價格",
-  "ask-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 賣出{{totalAmount}} {{baseUnit}} 以每 1 {{{baseUnit}} 為 {{price}} {{quoteUnit}} 的價格"
+  "ask-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 賣出 {{totalAmount}} {{baseUnit}} 以每 1 {{{baseUnit}} 為 {{price}} {{quoteUnit}} 的價格",
+  "cancel-bid-limit-order-confirm": "你將取消訂單 {{orderId}}: 用 {{totalPrice}} {{quoteUnit}} 買入 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 為 {{price}} {{quoteUnit}} 的價格",
+  "cancel-ask-limit-order-confirm": "你將取消訂單 {{orderId}}: 用 {{totalPrice}} {{quoteUnit}} 賣出 {{totalAmount}} {{baseUnit}} 以每 1 {{{baseUnit}} 為 {{price}} {{quoteUnit}} 的價格",
+  "cancel-all-bids-limit-order-confirm": "你將取消所有買入 {{baseUnit}} 的訂單",
+  "cancel-all-asks-limit-order-confirm": "你將取消所有賣出 {{baseUnit}} 的訂單",
+  "cancel-all-limit-order-confirm": "你將取消所有未完成的訂單"
 }

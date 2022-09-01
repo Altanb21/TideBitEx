@@ -171,23 +171,41 @@ export const AccountList = (props) => {
 export const PendingOrders = (props) => {
   const storeCtx = useContext(StoreContext);
   const cancelOrder = (order) => {
-    const confirm = window.confirm(`You are going to cancel order: ${order.id}
-    ${order.kind} ${order.volume} ${order.instId.split("-")[0]}
-    ${order.kind === "bid" ? "with" : "for"} ${SafeMath.mult(
-      order.price,
-      order.volume
-    )} ${order.volume} ${order.instId.split("-")[1]}
-    with price ${order.price} ${order.instId.split("-")[1]} per ${
-      order.instId.split("-")[0]
-    }`);
+    const text =
+      order.kind === "bid"
+        ? t("cancel-bid-limit-order-confirm", {
+            orderId: order.id,
+            totalAmount: order.volume,
+            baseUnit: order.instId.split("-")[0],
+            totalPrice: SafeMath.mult(order.price, order.volume),
+            price: order.price,
+            quoteUnit: order.instId.split("-")[1],
+          })
+        : t("cancel-ask-limit-order-confirm", {
+            orderId: order.id,
+            totalAmount: order.volume,
+            baseUnit: order.instId.split("-")[0],
+            totalPrice: SafeMath.mult(order.price, order.volume),
+            price: order.price,
+            quoteUnit: order.instId.split("-")[1],
+          });
+    const confirm = window.confirm(text);
     if (confirm) {
       storeCtx.cancelOrder(order);
     }
   };
   const cancelOrders = (instId, type) => {
-    const confirm = window.confirm(
-      `You are going to cancel all ${type === "all" ? "" : type} orders`
-    );
+    const text =
+      type === "all"
+        ? type === "bid"
+          ? t("cancel-all-bids-limit-order-confirm", {
+              baseUnit: storeCtx.selectedTicker.baseUnit.toUpperCase(),
+            })
+          : t("cancel-all-asks-limit-order-confirm", {
+              baseUnit: storeCtx.selectedTicker.baseUnit.toUpperCase(),
+            })
+        : t("cancel-all-limit-order-confirm");
+    const confirm = window.confirm(text);
     if (confirm) {
       storeCtx.cancelOrders(instId, type);
     }
