@@ -164,8 +164,8 @@
   "recent-year": "近一年",
   "sound": "声音",
   "notification": "提醒",
-  "bid-market-order-confirm": "You are going to bid {{amount}} with {{price}}",
-  "ask-market-order-confirm": "You are going to {{kind}} {{amount}} with",
-  "bid-limit-order-confirm": "You are going to {{kind}} {{amount}} with",
-  "ask-limit-order-confirm": "You are going to {{kind}} {{amount}} with"
+  "bid-market-order-confirm": "你將用市場價格買入 {{totalAmount}} {{baseUnit}}",
+  "ask-market-order-confirm": "你將用市場價格賣出{{totalAmount}} {{baseUnit}}",
+  "bid-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 買入 {{totalAmount}} {{baseUnit}} 以每 1 {{quoteUnit}} {{price}} 的價格",
+  "ask-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 賣出{{totalAmount}} {{baseUnit}} 以每 1 {{quoteUnit}} {{price}} 的價格"
 }

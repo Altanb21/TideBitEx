@@ -170,20 +170,33 @@ const TradeForm = (props) => {
       volume,
       market: storeCtx.selectedTicker.market,
     };
-    const confirm = window.confirm(`${t("post-order-confirm")}
-          ${order.kind} ${order.volume} ${order.instId.split("-")[0]}
-          ${order.kind === "bid" ? "with" : "for"} ${
+    const text =
       props.ordType === "market"
-        ? "market price"
-        : SafeMath.mult(order.price, order.volume)
-    }${
-      props.ordType === "market"
-        ? ""
-        : `${order.instId.split("-")[1]}
-    with price ${order.price} ${order.instId.split("-")[1]} per ${
-            order.instId.split("-")[0]
-          }`
-    } `);
+        ? order.kind === "bid"
+          ? t("bid-market-order-confirm", {
+              totalAmount: order.volume,
+              baseUnit: order.instId.split("-")[0],
+            })
+          : t("ask-market-order-confirm", {
+              totalAmount: order.volume,
+              baseUnit: order.instId.split("-")[0],
+            })
+        : order.kind === "bid"
+        ? t("bid-limit-order-confirm", {
+            totalAmount: order.volume,
+            baseUnit: order.instId.split("-")[0],
+            totalPrice: SafeMath.mult(order.price, order.volume),
+            price: order.price,
+            quoteUnit: order.instId.split("-")[1],
+          })
+        : t("ask-limit-order-confirm", {
+            totalAmount: order.volume,
+            baseUnit: order.instId.split("-")[0],
+            totalPrice: SafeMath.mult(order.price, order.volume),
+            price: order.price,
+            quoteUnit: order.instId.split("-")[1],
+          });
+    const confirm = window.confirm(text);
     if (confirm) {
       await storeCtx.postOrder(order);
     }
