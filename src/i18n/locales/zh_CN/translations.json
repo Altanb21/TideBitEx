@@ -167,9 +167,9 @@
   "bid-market-order-confirm": "你将用市场价格买入 {{totalAmount}} {{baseUnit}}",
   "ask-market-order-confirm": "你将用市场价格卖出 {{totalAmount}} {{baseUnit}}",
   "bid-limit-order-confirm": "你将用 {{totalPrice}} {{quoteUnit}} 买入 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
-  "ask-limit-order-confirm": "你将用 {{totalPrice}} {{quoteUnit}} 卖出 {{totalAmount}} {{baseUnit}} 以每 1 {{{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
+  "ask-limit-order-confirm": "你将用 {{totalPrice}} {{quoteUnit}} 卖出 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
   "cancel-bid-limit-order-confirm": "你将取消订单 {{orderId}}: 用 {{totalPrice}} {{quoteUnit}} 买入 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
-  "cancel-ask-limit-order-confirm": "你将取消订单 {{orderId}}: 用 {{totalPrice}} {{quoteUnit}} 卖出 {{totalAmount}} {{baseUnit}} 以每 1 {{{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
+  "cancel-ask-limit-order-confirm": "你将取消订单 {{orderId}}: 用 {{totalPrice}} {{quoteUnit}} 卖出 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
   "cancel-all-bids-limit-order-confirm": "你将取消所有买入 {{baseUnit}} 的订单",
   "cancel-all-asks-limit-order-confirm": "你将取消所有卖出 {{baseUnit}} 的订单",
   "cancel-all-limit-order-confirm": "你将取消所有未完成的订单"
