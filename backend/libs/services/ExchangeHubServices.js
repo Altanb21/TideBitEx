@@ -5,7 +5,7 @@ const Utils = require("../Utils");
 class ExchangeHubService {
   _timer;
   _lastSyncTime = 0;
-  _syncInterval = 10 * 60 * 1000; // 10mins
+  _syncInterval = 1 * 60 * 60 * 1000; // 1 hr
   _minInterval = 1 * 24 * 60 * 60 * 1000; // 1天
   _interval = 30 * 24 * 60 * 60 * 1000; // 30天
   _maxInterval = 180 * 24 * 60 * 60 * 1000; // 180天

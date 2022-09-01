@@ -60,7 +60,6 @@ const TradeForm = (props) => {
               storeCtx.accounts?.accounts[
                 storeCtx.selectedTicker?.quote_unit?.toUpperCase()
               ]?.balance,
-
               props.ordType === "market" ? storeCtx.selectedTicker?.last : price
             )
           )
@@ -69,7 +68,6 @@ const TradeForm = (props) => {
             `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
           );
         }
-
         if (
           props.kind === "ask" &&
           SafeMath.gt(
@@ -88,9 +86,7 @@ const TradeForm = (props) => {
     [
       props.kind,
       props.ordType,
-
       storeCtx.accounts?.accounts,
-
       storeCtx.selectedTicker,
       volume,
     ]
@@ -134,7 +130,6 @@ const TradeForm = (props) => {
         else if (
           SafeMath.gt(
             props.kind === "bid" ? SafeMath.mult(_price, size) : size,
-
             props.kind === "bid"
               ? storeCtx.accounts?.accounts[
                   storeCtx.selectedTicker?.quote_unit?.toUpperCase()
@@ -158,7 +153,6 @@ const TradeForm = (props) => {
       storeCtx.accounts?.accounts,
       storeCtx.selectedTicker,
       props.ordType,
-
       props.kind,
       price,
     ]
