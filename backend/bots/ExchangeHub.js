@@ -17,6 +17,7 @@ const TickerBook = require("../libs/Books/TickerBook");
 const OrderBook = require("../libs/Books/OrderBook");
 const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
+const Database = require("../constants/Database");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -220,16 +221,16 @@ class ExchangeHub extends Bot {
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
-      state: this.database.ORDER_STATE_CODE.DONE,
-      type: this.database.TYPE.ORDER_BID,
+      state: Database.ORDER_STATE_CODE.DONE,
+      type: Database.TYPE.ORDER_BID,
     });
     _orders = _orders
       .filter(
         (_order) =>
           !(
-            _order.type === this.database.TYPE.ORDER_BID &&
-            _order.state === this.database.ORDER_STATE_CODE.DONE &&
-            _order.ord_type !== this.database.ORD_TYPE.LIMIT
+            _order.type === Database.TYPE.ORDER_BID &&
+            _order.state === Database.ORDER_STATE_CODE.DONE &&
+            _order.ord_type !== Database.ORD_TYPE.LIMIT
           )
       )
       .concat(_doneMarketBidOrders);
@@ -243,53 +244,50 @@ class ExchangeHub extends Bot {
         ),
         market: query.instId.replace("-", "").toLowerCase(),
         kind:
-          _order.type === this.database.TYPE.ORDER_ASK
-            ? this.database.ORDER_KIND.ASK
-            : this.database.ORDER_KIND.BID,
+          _order.type === Database.TYPE.ORDER_ASK
+            ? Database.ORDER_KIND.ASK
+            : Database.ORDER_KIND.BID,
         price: _order.price ? Utils.removeZeroEnd(_order.price) : _order.price,
         origin_volume: Utils.removeZeroEnd(_order.origin_volume),
         volume: Utils.removeZeroEnd(_order.volume),
         state_code: _order.state,
-        state: SafeMath.eq(_order.state, this.database.ORDER_STATE_CODE.CANCEL)
-          ? this.database.ORDER_STATE.CANCEL
-          : SafeMath.eq(_order.state, this.database.ORDER_STATE_CODE.WAIT)
-          ? this.database.ORDER_STATE.WAIT
-          : SafeMath.eq(_order.state, this.database.ORDER_STATE_CODE.DONE)
-          ? this.database.ORDER_STATE.DONE
-          : this.database.ORDER_STATE.UNKNOWN,
-        state_text: SafeMath.eq(
-          _order.state,
-          this.database.ORDER_STATE_CODE.CANCEL
-        )
-          ? this.database.ORDER_STATE_TEXT.CANCEL
-          : SafeMath.eq(_order.state, this.database.ORDER_STATE_CODE.WAIT)
-          ? this.database.ORDER_STATE_TEXT.WAIT
-          : SafeMath.eq(_order.state, this.database.ORDER_STATE_CODE.DONE)
-          ? this.database.ORDER_STATE_TEXT.DONE
-          : this.database.ORDER_STATE_TEXT.UNKNOWN,
+        state: SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.CANCEL)
+          ? Database.ORDER_STATE.CANCEL
+          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.WAIT)
+          ? Database.ORDER_STATE.WAIT
+          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.DONE)
+          ? Database.ORDER_STATE.DONE
+          : Database.ORDER_STATE.UNKNOWN,
+        state_text: SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.CANCEL)
+          ? Database.ORDER_STATE_TEXT.CANCEL
+          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.WAIT)
+          ? Database.ORDER_STATE_TEXT.WAIT
+          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.DONE)
+          ? Database.ORDER_STATE_TEXT.DONE
+          : Database.ORDER_STATE_TEXT.UNKNOWN,
         clOrdId: _order.id,
         instId: query.instId,
         ordType: _order.ord_type,
         filled: _order.volume !== _order.origin_volume,
       };
       if (
-        order.state_code === this.database.ORDER_STATE_CODE.DONE &&
-        order.ordType !== this.database.ORD_TYPE.LIMIT &&
-        _order.type === this.database.TYPE.ORDER_ASK
+        order.state_code === Database.ORDER_STATE_CODE.DONE &&
+        order.ordType !== Database.ORD_TYPE.LIMIT &&
+        _order.type === Database.TYPE.ORDER_ASK
       ) {
         orders.push({
           ...order,
           price: SafeMath.div(_order.funds_received, _order.origin_volume),
         });
       } else if (
-        (order.state_code === this.database.ORDER_STATE_CODE.WAIT &&
-          order.ordType === this.database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
-        order.state_code === this.database.ORDER_STATE_CODE.CANCEL || // canceled 單
-        (order.state_code === this.database.ORDER_STATE_CODE.DONE &&
-          order.ordType === this.database.ORD_TYPE.LIMIT) ||
-        (order.state_code === this.database.ORDER_STATE_CODE.DONE &&
-          order.ordType !== this.database.ORD_TYPE.LIMIT &&
-          _order.type === this.database.TYPE.ORDER_BID)
+        (order.state_code === Database.ORDER_STATE_CODE.WAIT &&
+          order.ordType === Database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
+        order.state_code === Database.ORDER_STATE_CODE.CANCEL || // canceled 單
+        (order.state_code === Database.ORDER_STATE_CODE.DONE &&
+          order.ordType === Database.ORD_TYPE.LIMIT) ||
+        (order.state_code === Database.ORDER_STATE_CODE.DONE &&
+          order.ordType !== Database.ORD_TYPE.LIMIT &&
+          _order.type === Database.TYPE.ORDER_BID)
       ) {
         if (order.price) {
           // _canceledOrders.push(order);
@@ -302,8 +300,8 @@ class ExchangeHub extends Bot {
             order
           );
       } else if (
-        order.state_code === this.database.ORDER_STATE_CODE.DONE &&
-        _order.type === this.database.TYPE.ORDER_BID
+        order.state_code === Database.ORDER_STATE_CODE.DONE &&
+        _order.type === Database.TYPE.ORDER_BID
       ) {
       }
     }
@@ -590,13 +588,13 @@ class ExchangeHub extends Bot {
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const _outerTrades = await this.database.getOuterTradesByDayAfter(
-          this.database.EXCHANGE[query.exchange.toUpperCase()],
+          Database.EXCHANGE[query.exchange.toUpperCase()],
           query.days // 30 || 365
         );
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",
         //   {
-        //     query: { ...query, instType: this.database.INST_TYPE.SPOT },
+        //     query: { ...query, instType: Database.INST_TYPE.SPOT },
         //   }
         // );
         // if (res.success) {
@@ -616,14 +614,14 @@ class ExchangeHub extends Bot {
           if (memberTag) {
             if (
               memberTag.toString() ===
-              this.database.MEMBER_TAG.VIP_FEE.toString()
+              Database.MEMBER_TAG.VIP_FEE.toString()
             ) {
               askFeeRate = market.ask.vip_fee;
               bidFeeRate = market.bid.vip_fee;
             }
             if (
               memberTag.toString() ===
-              this.database.MEMBER_TAG.HERO_FEE.toString()
+              Database.MEMBER_TAG.HERO_FEE.toString()
             ) {
               askFeeRate = market.ask.hero_fee;
               bidFeeRate = market.bid.hero_fee;
@@ -633,8 +631,8 @@ class ExchangeHub extends Bot {
             bidFeeRate = market.bid.fee;
           }
           fee =
-            _trade.status === this.database.OUTERTRADE_STATUS.DONE
-              ? trade.side === this.database.ORDER_SIDE.SELL
+            _trade.status === Database.OUTERTRADE_STATUS.DONE
+              ? trade.side === Database.ORDER_SIDE.SELL
                 ? SafeMath.mult(
                     SafeMath.mult(trade.fillPx, trade.fillSz),
                     askFeeRate
@@ -642,18 +640,18 @@ class ExchangeHub extends Bot {
                 : SafeMath.mult(trade.fillSz, bidFeeRate)
               : null;
           revenue =
-            _trade.status === this.database.OUTERTRADE_STATUS.DONE
+            _trade.status === Database.OUTERTRADE_STATUS.DONE
               ? SafeMath.minus(fee, Math.abs(trade.fee))
               : null;
           processTrade = {
             ...trade,
             orderId,
             px:
-              _trade.status === this.database.OUTERTRADE_STATUS.DONE
+              _trade.status === Database.OUTERTRADE_STATUS.DONE
                 ? Utils.removeZeroEnd(_trade.order_price)
                 : null,
             sz:
-              _trade.status === this.database.OUTERTRADE_STATUS.DONE
+              _trade.status === Database.OUTERTRADE_STATUS.DONE
                 ? Utils.removeZeroEnd(_trade.order_origin_volume)
                 : null,
             email: _trade?.email || null,
@@ -688,12 +686,12 @@ class ExchangeHub extends Bot {
     );
     let outerOrders = [],
       dbOrders = await this.database.getOrdersJoinMemberEmail(
-        this.database.ORDER_STATE_CODE.WAIT
+        Database.ORDER_STATE_CODE.WAIT
       );
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
-          query: { ...query, instType: this.database.INST_TYPE.SPOT },
+          query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
         if (res.success) {
           for (let order of res.payload) {
@@ -704,7 +702,7 @@ class ExchangeHub extends Bot {
                 (_dbOrder) => _dbOrder.id.toString() === id.toString()
               ),
               fundsReceived =
-                order.side === this.database.ORDER_SIDE.BUY
+                order.side === Database.ORDER_SIDE.BUY
                   ? SafeMath.mult(order.avgPx, order.accFillSz)
                   : order.accFillSz,
               processOrder;
@@ -812,7 +810,7 @@ class ExchangeHub extends Bot {
           // * ~2.~ 3. 根據 order 單內容更新 account locked 與 balance
           // * ~3.~ 4. 新增 account version
           currencyId =
-            body.kind === this.database.ORDER_KIND.BID
+            body.kind === Database.ORDER_KIND.BID
               ? orderData.bid
               : orderData.ask;
           account = await this.database.getAccountByMemberIdCurrency(
@@ -822,12 +820,12 @@ class ExchangeHub extends Bot {
           );
           await this._updateAccount({
             account,
-            reason: this.database.REASON.ORDER_SUBMIT,
+            reason: Database.REASON.ORDER_SUBMIT,
             dbTransaction: t,
             balance: orderData.balance,
             locked: orderData.locked,
             fee: 0,
-            modifiableType: this.database.MODIFIABLE_TYPE.ORDER,
+            modifiableType: Database.MODIFIABLE_TYPE.ORDER,
             modifiableId: orderId,
             createdAt: orderData.createdAt,
             fun: this.database.FUNC.LOCK_FUNDS,
@@ -845,9 +843,9 @@ class ExchangeHub extends Bot {
               clOrdId,
               tag: this.brokerId,
               side:
-                body.kind === this.database.ORDER_KIND.BID
-                  ? this.database.ORDER_SIDE.BUY
-                  : this.database.ORDER_SIDE.SELL,
+                body.kind === Database.ORDER_KIND.BID
+                  ? Database.ORDER_SIDE.BUY
+                  : Database.ORDER_SIDE.SELL,
               // posSide: body.posSide,
               ordType: orderData.ordType,
               sz: body.volume,
@@ -860,8 +858,8 @@ class ExchangeHub extends Bot {
           updateOrder = {
             instId: body.instId,
             ordType:
-              body.ordType === this.database.ORD_TYPE.MARKET
-                ? this.database.ORD_TYPE.IOC
+              body.ordType === Database.ORD_TYPE.MARKET
+                ? Database.ORD_TYPE.IOC
                 : body.ordType,
             id: orderId,
             clOrdId,
@@ -871,13 +869,13 @@ class ExchangeHub extends Bot {
             kind: body.kind,
             price: body.price,
             origin_volume: body.volume,
-            state: this.database.ORDER_STATE.WAIT,
-            state_text: this.database.ORDER_STATE_TEXT.WAIT,
+            state: Database.ORDER_STATE.WAIT,
+            state_text: Database.ORDER_STATE_TEXT.WAIT,
             volume: body.volume,
           };
           if (response.success) {
             // * 6.1 掛單成功
-            if (body.ordType === this.database.ORD_TYPE.LIMIT) {
+            if (body.ordType === Database.ORD_TYPE.LIMIT) {
               updateOrder = {
                 ...updateOrder,
                 ordId: response.payload.ordId,
@@ -995,7 +993,7 @@ class ExchangeHub extends Bot {
             market,
           });
           orderHistories = orderHistories.filter(
-            (order) => order.state_code !== this.database.ORDER_STATE_CODE.WAIT
+            (order) => order.state_code !== Database.ORDER_STATE_CODE.WAIT
           );
           this.orderBook.updateAll(
             memberId,
@@ -1185,9 +1183,7 @@ class ExchangeHub extends Bot {
       });
       if (order) {
         currencyId =
-          order?.type === this.database.TYPE.ORDER_ASK
-            ? order?.ask
-            : order?.bid;
+          order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
         account = await this.database.getAccountByMemberIdCurrency(
           memberId,
           currencyId,
@@ -1199,7 +1195,7 @@ class ExchangeHub extends Bot {
         if (account) {
           const newOrder = {
             id: orderId,
-            state: this.database.ORDER_STATE_CODE.CANCEL,
+            state: Database.ORDER_STATE_CODE.CANCEL,
           };
           await this.database.updateOrder(newOrder, {
             dbTransaction: transacion,
@@ -1210,16 +1206,16 @@ class ExchangeHub extends Bot {
             balance,
             locked,
             fee,
-            modifiableType: this.database.MODIFIABLE_TYPE.ORDER,
+            modifiableType: Database.MODIFIABLE_TYPE.ORDER,
             modifiableId: orderId,
             createdAt,
             fun: this.database.FUNC.UNLOCK_FUNDS,
-            reason: this.database.REASON.ORDER_CANCEL,
+            reason: Database.REASON.ORDER_CANCEL,
           });
           updateOrder = {
             ...orderData,
-            state: this.database.ORDER_STATE.CANCEL,
-            state_text: this.database.ORDER_STATE_TEXT.CANCEL,
+            state: Database.ORDER_STATE.CANCEL,
+            state_text: Database.ORDER_STATE_TEXT.CANCEL,
             at: parseInt(SafeMath.div(Date.now(), "1000")),
             ts: Date.now(),
           };
@@ -1334,18 +1330,18 @@ class ExchangeHub extends Bot {
             ...body,
             market: this._findMarket(body.instId),
             memberId,
-            // state: this.database.ORDER_STATE_CODE.WAIT,
-            // orderType: this.database.ORD_TYPE.LIMIT,
+            // state: Database.ORDER_STATE_CODE.WAIT,
+            // orderType: Database.ORD_TYPE.LIMIT,
           });
 
           const orders = _orders
             .filter(
               (_order) =>
-                body.type === this.database.ORDER_KIND.ALL ||
-                (body.type === this.database.ORDER_KIND.ASK &&
-                  _order.type === this.database.TYPE.ORDER_ASK) ||
-                (body.type === this.database.ORDER_KIND.BID &&
-                  _order.type === this.database.TYPE.ORDER_BID)
+                body.type === Database.ORDER_KIND.ALL ||
+                (body.type === Database.ORDER_KIND.ASK &&
+                  _order.type === Database.TYPE.ORDER_ASK) ||
+                (body.type === Database.ORDER_KIND.BID &&
+                  _order.type === Database.TYPE.ORDER_BID)
             )
             .map((_order) => {
               return {
@@ -1391,11 +1387,11 @@ class ExchangeHub extends Bot {
         /* !!! HIGH RISK (end) !!! */
         case SupportedExchange.TIDEBIT:
           let functionName =
-            body.type === this.database.ORDER_KIND.ASK
+            body.type === Database.ORDER_KIND.ASK
               ? "cancelAllAsks"
-              : body.type === this.database.ORDER_KIND.BID
+              : body.type === Database.ORDER_KIND.BID
               ? "cancelAllBids"
-              : body.type === this.database.ORDER_KIND.ALL
+              : body.type === Database.ORDER_KIND.ALL
               ? "cancelAllOrders"
               : undefined;
           if (functionName) {
@@ -1479,7 +1475,7 @@ class ExchangeHub extends Bot {
     const { exchange } = query;
     this.logger.debug(`[${this.constructor.name}] getExAccounts`, exchange);
     switch (exchange) {
-      case "OKEx":
+      case SupportedExchange.OKEX:
       default:
         try {
           this.logger.debug(
@@ -1578,12 +1574,12 @@ class ExchangeHub extends Bot {
       // get orderId from formatOrder.clOrdId
       const { memberId, orderId } = Utils.parseClOrdId(clOrdId);
       const order = await this.database.getOrder(orderId, { dbTransaction: t });
-      if (order.state !== this.database.ORDER_STATE_CODE.WAIT) {
+      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
         await t.rollback();
         this.logger.error("order has been closed");
       }
       const currencyId =
-        order.type === this.database.TYPE.ORDER_ASK ? order.ask : order.bid;
+        order.type === Database.TYPE.ORDER_ASK ? order.ask : order.bid;
       const accountAsk = await this.database.getAccountByMemberIdCurrency(
         memberId,
         order.ask,
@@ -1620,56 +1616,56 @@ class ExchangeHub extends Bot {
        * changeLocked: if order is done, euqal to newOrderLocked * -1
        *******************************************/
 
-      let orderState = this.database.ORDER_STATE_CODE.WAIT;
-      if (state === this.database.ORDER_STATE.FILLED) {
-        orderState = this.database.ORDER_STATE_CODE.DONE;
+      let orderState = Database.ORDER_STATE_CODE.WAIT;
+      if (state === Database.ORDER_STATE.FILLED) {
+        orderState = Database.ORDER_STATE_CODE.DONE;
       }
 
       const lockedA =
-        side === this.database.ORDER_SIDE.SELL
+        side === Database.ORDER_SIDE.SELL
           ? SafeMath.mult(fillSz, "-1")
           : "0";
       const totalFee = SafeMath.abs(fee);
       const feeA =
-        side === this.database.ORDER_SIDE.BUY
+        side === Database.ORDER_SIDE.BUY
           ? await this._calculateFee(
               orderId,
-              this.database.ORDER_KIND.ASK,
+              Database.ORDER_KIND.ASK,
               totalFee,
               t
             )
           : "0";
       const balanceA =
-        side === this.database.ORDER_SIDE.BUY
+        side === Database.ORDER_SIDE.BUY
           ? SafeMath.minus(fillSz, feeA)
           : "0";
 
       const value = SafeMath.mult(fillPx, fillSz);
       const lockedB =
-        side === this.database.ORDER_SIDE.BUY
+        side === Database.ORDER_SIDE.BUY
           ? SafeMath.mult(value, "-1")
           : "0";
       const feeB =
-        side === this.database.ORDER_SIDE.SELL
+        side === Database.ORDER_SIDE.SELL
           ? await this._calculateFee(
               orderId,
-              this.database.ORDER_KIND.BID,
+              Database.ORDER_KIND.BID,
               totalFee,
               t
             )
           : "0";
       const balanceB =
-        side === this.database.ORDER_SIDE.SELL
+        side === Database.ORDER_SIDE.SELL
           ? SafeMath.minus(value, feeB)
           : "0";
 
       const newOrderVolume = SafeMath.minus(order.origin_volume, accFillSz);
       const newOrderLocked = SafeMath.plus(
         order.locked,
-        side === this.database.ORDER_SIDE.BUY ? lockedB : lockedA
+        side === Database.ORDER_SIDE.BUY ? lockedB : lockedA
       );
       const newFundReceive =
-        side === this.database.ORDER_SIDE.BUY ? fillSz : value;
+        side === Database.ORDER_SIDE.BUY ? fillSz : value;
 
       const changeBalance = newOrderLocked;
       const changeLocked = SafeMath.mult(newOrderLocked, "-1");
@@ -1709,11 +1705,11 @@ class ExchangeHub extends Bot {
         fillPx,
         fillSz,
         value,
-        order.type === this.database.TYPE.ORDER_ASK
-          ? this.database.ORDER_KIND.ASK
-          : this.database.ORDER_KIND.BID,
-        order.type === this.database.TYPE.ORDER_ASK ? feeB : "0", // get bid, so fee is bid
-        order.type === this.database.TYPE.ORDER_ASK ? "0" : feeA, // get ask, so fee is ask
+        order.type === Database.TYPE.ORDER_ASK
+          ? Database.ORDER_KIND.ASK
+          : Database.ORDER_KIND.BID,
+        order.type === Database.TYPE.ORDER_ASK ? feeB : "0", // get bid, so fee is bid
+        order.type === Database.TYPE.ORDER_ASK ? "0" : feeA, // get ask, so fee is ask
         created_at,
         { dbTransaction: t }
       );
@@ -1726,28 +1722,28 @@ class ExchangeHub extends Bot {
         ts: parseInt(uTime),
         market: instId.replace("-", "").toLowerCase(),
         kind:
-          side === this.database.ORDER_SIDE.BUY
-            ? this.database.ORDER_KIND.BID
-            : this.database.ORDER_KIND.ASK,
+          side === Database.ORDER_SIDE.BUY
+            ? Database.ORDER_KIND.BID
+            : Database.ORDER_KIND.ASK,
         price: null, // market prcie
         origin_volume: sz,
         clOrdId: clOrdId,
         state:
-          state === this.database.ORDER_STATE.CANCEL
-            ? this.database.ORDER_STATE.CANCEL
-            : state === this.database.ORDER_STATE.FILLED
-            ? this.database.ORDER_STATE.DONE
-            : this.database.ORDER_STATE.WAIT,
+          state === Database.ORDER_STATE.CANCEL
+            ? Database.ORDER_STATE.CANCEL
+            : state === Database.ORDER_STATE.FILLED
+            ? Database.ORDER_STATE.DONE
+            : Database.ORDER_STATE.WAIT,
         state_text:
-          state === this.database.ORDER_STATE.CANCEL
-            ? this.database.ORDER_STATE_TEXT.CANCEL
-            : state === this.database.ORDER_STATE.FILLED
-            ? this.database.ORDER_STATE_TEXT.DONE
-            : this.database.ORDER_STATE_TEXT.WAIT,
+          state === Database.ORDER_STATE.CANCEL
+            ? Database.ORDER_STATE_TEXT.CANCEL
+            : state === Database.ORDER_STATE.FILLED
+            ? Database.ORDER_STATE_TEXT.DONE
+            : Database.ORDER_STATE_TEXT.WAIT,
         volume: SafeMath.minus(sz, fillSz),
         instId: instId,
         ordType: ordType,
-        filled: state === this.database.ORDER_STATE.FILLED,
+        filled: state === Database.ORDER_STATE.FILLED,
       };
       this.logger.log(
         `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] updateOrder ln:1092`,
@@ -1767,11 +1763,11 @@ class ExchangeHub extends Bot {
         balance: balanceA,
         locked: lockedA,
         fee: feeA,
-        modifiableType: this.database.MODIFIABLE_TYPE.TRADE,
+        modifiableType: Database.MODIFIABLE_TYPE.TRADE,
         modifiableId: tradeId,
         createdAt: created_at,
         fun:
-          order.type === this.database.TYPE.ORDER_ASK
+          order.type === Database.TYPE.ORDER_ASK
             ? this.database.FUNC.UNLOCK_AND_SUB_FUNDS
             : this.database.FUNC.PLUS_FUNDS,
       });
@@ -1803,11 +1799,11 @@ class ExchangeHub extends Bot {
         balance: balanceB,
         locked: lockedB,
         fee: feeB,
-        modifiableType: this.database.MODIFIABLE_TYPE.TRADE,
+        modifiableType: Database.MODIFIABLE_TYPE.TRADE,
         modifiableId: tradeId,
         createdAt: created_at,
         fun:
-          order.type === this.database.TYPE.ORDER_ASK
+          order.type === Database.TYPE.ORDER_ASK
             ? this.database.FUNC.PLUS_FUNDS
             : this.database.FUNC.UNLOCK_AND_SUB_FUNDS,
       });
@@ -1835,10 +1831,10 @@ class ExchangeHub extends Bot {
       );
       // order 完成，解鎖剩餘沒用完的
       if (
-        orderState === this.database.ORDER_STATE_CODE.DONE &&
+        orderState === Database.ORDER_STATE_CODE.DONE &&
         SafeMath.gt(newOrderLocked, "0")
       ) {
-        if (order.type === this.database.TYPE.ORDER_ASK) {
+        if (order.type === Database.TYPE.ORDER_ASK) {
           // ++ TODO reference step6 trade.id
           await this._updateAccount({
             account: accountAsk,
@@ -1846,7 +1842,7 @@ class ExchangeHub extends Bot {
             balance: changeLocked,
             locked: changeBalance,
             fee: 0,
-            modifiableType: this.database.MODIFIABLE_TYPE.TRADE,
+            modifiableType: Database.MODIFIABLE_TYPE.TRADE,
             modifiableId: tradeId,
             createdAt: created_at,
             fun: this.database.FUNC.UNLOCK_FUNDS,
@@ -1872,7 +1868,7 @@ class ExchangeHub extends Bot {
             `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1120`,
             _updateAcc
           );
-        } else if (order.type === this.database.TYPE.ORDER_BID) {
+        } else if (order.type === Database.TYPE.ORDER_BID) {
           // ++ TODO reference step6 trade.id
           await this._updateAccount({
             account: accountBid,
@@ -1880,7 +1876,7 @@ class ExchangeHub extends Bot {
             balance: changeLocked,
             locked: changeBalance,
             fee: 0,
-            modifiableType: this.database.MODIFIABLE_TYPE.TRADE,
+            modifiableType: Database.MODIFIABLE_TYPE.TRADE,
             modifiableId: tradeId,
             createdAt: created_at,
             fun: this.database.FUNC.UNLOCK_FUNDS,
@@ -1936,16 +1932,16 @@ class ExchangeHub extends Bot {
     }
     const currency = market.code;
     const type =
-      body.kind === this.database.ORDER_KIND.BID
-        ? this.database.TYPE.ORDER_BID
-        : this.database.TYPE.ORDER_ASK;
+      body.kind === Database.ORDER_KIND.BID
+        ? Database.TYPE.ORDER_BID
+        : Database.TYPE.ORDER_ASK;
     const ordType =
-      body.ordType === this.database.ORD_TYPE.MARKET
-        ? this.database.ORD_TYPE.IOC
+      body.ordType === Database.ORD_TYPE.MARKET
+        ? Database.ORD_TYPE.IOC
         : body.ordType;
     const price =
-      ordType === this.database.ORD_TYPE.IOC
-        ? type === this.database.TYPE.ORDER_BID
+      ordType === Database.ORD_TYPE.IOC
+        ? type === Database.TYPE.ORDER_BID
           ? body.price
             ? (parseFloat(body.price) * 1.1).toString()
             : null
@@ -1954,7 +1950,7 @@ class ExchangeHub extends Bot {
           : null
         : body.price || null;
     const locked =
-      type === this.database.TYPE.ORDER_BID
+      type === Database.TYPE.ORDER_BID
         ? SafeMath.mult(price, body.volume)
         : body.volume;
     const balance = SafeMath.mult(locked, "-1"); // balanceDiff
@@ -1966,7 +1962,7 @@ class ExchangeHub extends Bot {
       price,
       volume: body.volume,
       originVolume: body.volume,
-      state: this.database.ORDER_STATE_CODE.WAIT,
+      state: Database.ORDER_STATE_CODE.WAIT,
       doneAt: null,
       type,
       memberId,
@@ -2013,7 +2009,7 @@ class ExchangeHub extends Bot {
       account.member_id,
       account.id,
       reason,
-      // this.database.REASON.ORDER_CANCEL,
+      // Database.REASON.ORDER_CANCEL,
       balance,
       locked,
       fee,
@@ -2039,10 +2035,10 @@ class ExchangeHub extends Bot {
     for (const voucher of vouchers) {
       if (voucher.trend === trend) {
         switch (trend) {
-          case this.database.ORDER_KIND.ASK:
+          case Database.ORDER_KIND.ASK:
             totalVfee = SafeMath.plus(totalVfee, voucher.ask_fee);
             break;
-          case this.database.ORDER_KIND.BID:
+          case Database.ORDER_KIND.BID:
             totalVfee = SafeMath.plus(totalVfee, voucher.bid_fee);
             break;
           default:
@@ -2198,7 +2194,7 @@ class ExchangeHub extends Bot {
     });
 
     EventBus.on(Events.orderDetailUpdate, async (instType, formatOrders) => {
-      if (instType === this.database.INST_TYPE.SPOT) {
+      if (instType === Database.INST_TYPE.SPOT) {
         this.logger.log(
           ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [START]---------------`
         );
@@ -2206,7 +2202,7 @@ class ExchangeHub extends Bot {
         for (const formatOrder of formatOrders) {
           if (
             formatOrder.state !==
-              this.database.ORDER_STATE.CANCEL /* cancel order */ &&
+              Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // await this._updateOrderDetail(formatOrder);

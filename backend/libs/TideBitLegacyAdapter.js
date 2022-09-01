@@ -1,3 +1,4 @@
+const Database = require("../constants/Database");
 const SafeMath = require("./SafeMath");
 const Utils = require("./Utils");
 
@@ -112,17 +113,17 @@ class TideBitLegacyAdapter {
 
   static peatioOrderBody({ header, body }) {
     let obj = {};
-    if (body.kind === "bid") {
+    if (body.kind === Database.ORDER_KIND.BID) {
       obj["order_bid[ord_type]"] = body.ordType;
       obj["order_bid[origin_volume]"] = body.volume;
-      if (body.ordType === "limit") {
+      if (body.ordType === Database.ORD_TYPE.LIMIT) {
         obj["order_bid[price]"] = body.price;
         obj["order_bid[total]"] = SafeMath.mult(body.price, body.volume);
       }
-    } else if (body.kind === "ask") {
+    } else if (body.kind === Database.ORDER_KIND.ASK) {
       obj["order_ask[ord_type]"] = body.ordType;
       obj["order_ask[origin_volume]"] = body.volume;
-      if (body.ordType === "limit") {
+      if (body.ordType === Database.ORD_TYPE.LIMIT) {
         obj["order_ask[price]"] = body.price;
         obj["order_ask[total]"] = SafeMath.mult(body.price, body.volume);
       }
