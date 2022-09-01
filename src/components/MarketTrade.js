@@ -28,109 +28,114 @@ const TradeForm = (props) => {
   const [baseCcyAvailable, setBaseCcyAvailable] = useState("0");
   const formatPrice = useCallback(
     (value) => {
-      setErrorMessage(null);
-      let precision,
-        arr = storeCtx.selectedTicker?.tickSz.split(".");
-      if (arr.length > 1) precision = arr[1].length;
-      else precision = 0;
-      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
-      let price,
-        vArr = _value.toString().split(".");
-      if (
-        _value.toString().length > 2 &&
-        _value.toString().startsWith("0") &&
-        !_value.includes(".")
-      ) {
-        _value = _value.substring(1);
-      }
-      if (vArr.length > 1 && vArr[1].length > precision) {
-        price = parseFloat(_value).toFixed(precision);
-        setErrorMessage(
-          `Price precision is ${storeCtx.selectedTicker?.tickSz}`
-        );
-      } else price = _value;
-      setPrice(price);
-      if (SafeMath.lt(price, storeCtx.selectedTicker?.tickSz))
-        setErrorMessage(
-          `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
-        );
-      if (
-        props.kind === "bid" &&
-        SafeMath.gt(
-          volume,
-          SafeMath.div(
-            quoteCcyAvailable,
-            props.ordType === "market" ? storeCtx.selectedTicker?.last : price
+      if (!storeCtx.selectedTicker) {
+        setErrorMessage(null);
+        let precision,
+          arr = storeCtx.selectedTicker?.tickSz.split(".");
+        if (arr.length > 1) precision = arr[1].length;
+        else precision = 0;
+        let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
+        let price,
+          vArr = _value.toString().split(".");
+        if (
+          _value.toString().length > 2 &&
+          _value.toString().startsWith("0") &&
+          !_value.includes(".")
+        ) {
+          _value = _value.substring(1);
+        }
+        if (vArr.length > 1 && vArr[1].length > precision) {
+          price = parseFloat(_value).toFixed(precision);
+          setErrorMessage(
+            `Price precision is ${storeCtx.selectedTicker?.tickSz}`
+          );
+        } else price = _value;
+        setPrice(price);
+        if (SafeMath.lt(price, storeCtx.selectedTicker?.tickSz))
+          setErrorMessage(
+            `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
+          );
+        if (
+          props.kind === "bid" &&
+          SafeMath.gt(
+            volume,
+            SafeMath.div(
+              quoteCcyAvailable,
+              props.ordType === "market" ? storeCtx.selectedTicker?.last : price
+            )
           )
-        )
-      ) {
-        setErrorMessage(
-          `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
-        );
+        ) {
+          setErrorMessage(
+            `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
+          );
+        }
+        if (props.kind === "ask" && SafeMath.gt(volume, baseCcyAvailable)) {
+          setErrorMessage(
+            `Available ${storeCtx.selectedTicker?.base_unit?.toUpperCase()} is not enough`
+          );
+        } else setErrorMessage(null);
       }
-      if (props.kind === "ask" && SafeMath.gt(volume, baseCcyAvailable)) {
-        setErrorMessage(
-          `Available ${storeCtx.selectedTicker?.base_unit?.toUpperCase()} is not enough`
-        );
-      } else setErrorMessage(null);
     },
     [
       baseCcyAvailable,
       props.kind,
       props.ordType,
       quoteCcyAvailable,
-      storeCtx.selectedTicker?.base_unit,
-      storeCtx.selectedTicker?.last,
-      storeCtx.selectedTicker?.quote_unit,
-      storeCtx.selectedTicker?.tickSz,
+      storeCtx.selectedTicker,
       volume,
     ]
   );
 
   const formatSize = useCallback(
     (value) => {
-      setErrorMessage(null);
-      let precision,
-        arr = storeCtx.selectedTicker?.lotSz.split("."),
-        _price =
-          props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
-      if (arr.length > 1) precision = arr[1].length;
-      else precision = 0;
-      let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
-      let size,
-        vArr = _value.split(".");
-      if (
-        _value.toString().length > 2 &&
-        _value.toString().startsWith("0") &&
-        !_value.includes(".")
-      ) {
-        _value = _value.substring(1);
-      }
-      if (vArr.length > 1 && vArr[1].length > precision) {
-        size = parseFloat(_value).toFixed(precision);
-        setErrorMessage(
-          `Amount precision is ${storeCtx.selectedTicker?.lotSz}`
-        );
-      } else size = _value;
-      setVolume(size);
-      if (SafeMath.lt(size, storeCtx.selectedTicker?.minSz))
-        setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
-      else if (SafeMath.gt(size, storeCtx.selectedTicker?.maxSz))
-        setErrorMessage(`Maximum amount is ${storeCtx.selectedTicker?.maxSz}`);
-      else if (
-        SafeMath.gt(
-          props.kind === "bid" ? SafeMath.mult(_price, size) : size,
-          props.kind === "bid" ? quoteCcyAvailable : baseCcyAvailable
+      if (storeCtx.selectedTicker) {
+        setErrorMessage(null);
+        let precision,
+          arr = storeCtx.selectedTicker?.lotSz.split("."),
+          _price =
+            props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
+        if (arr.length > 1) precision = arr[1].length;
+        else precision = 0;
+        let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
+        let size,
+          vArr = _value.split(".");
+        if (
+          _value.toString().length > 2 &&
+          _value.toString().startsWith("0") &&
+          !_value.includes(".")
+        ) {
+          _value = _value.substring(1);
+        }
+        if (vArr.length > 1 && vArr[1].length > precision) {
+          size = parseFloat(_value).toFixed(precision);
+          setErrorMessage(
+            `Amount precision is ${storeCtx.selectedTicker?.lotSz}`
+          );
+        } else size = _value;
+        setVolume(size);
+        if (SafeMath.lt(size, storeCtx.selectedTicker?.minSz))
+          setErrorMessage(
+            `Minimum amount is ${storeCtx.selectedTicker?.minSz}`
+          );
+        else if (SafeMath.gt(size, storeCtx.selectedTicker?.maxSz))
+          setErrorMessage(
+            `Maximum amount is ${storeCtx.selectedTicker?.maxSz}`
+          );
+        else if (
+          SafeMath.gt(
+            props.kind === "bid" ? SafeMath.mult(_price, size) : size,
+            props.kind === "bid" ? quoteCcyAvailable : baseCcyAvailable
+          )
         )
-      )
-        setErrorMessage(
-          `Available ${
-            props.kind === "bid"
-              ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-              : storeCtx.selectedTicker?.base_unit?.toUpperCase()
-          } is not enough`
-        );
-      else setErrorMessage(null);
+          setErrorMessage(
+            `Available ${
+              props.kind === "bid"
+                ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                : storeCtx.selectedTicker?.base_unit?.toUpperCase()
+            } is not enough`
+          );
+        else setErrorMessage(null);
+      }
     },
     [
       baseCcyAvailable,
@@ -138,12 +143,7 @@ const TradeForm = (props) => {
       props.kind,
       props.ordType,
       quoteCcyAvailable,
-      storeCtx.selectedTicker?.base_unit,
-      storeCtx.selectedTicker?.last,
-      storeCtx.selectedTicker?.lotSz,
-      storeCtx.selectedTicker?.maxSz,
-      storeCtx.selectedTicker?.minSz,
-      storeCtx.selectedTicker?.quote_unit,
+      storeCtx.selectedTicker,
     ]
   );
 
@@ -202,16 +202,16 @@ const TradeForm = (props) => {
           ];
 
         if (quoteCcyAccount) {
-          setQuoteCcyAvailable(quoteCcyAccount?.balance);
+          setQuoteCcyAvailable({ ...quoteCcyAccount?.balance });
         }
         let baseCcyAccount =
           storeCtx.accounts?.accounts[
             storeCtx.selectedTicker?.base_unit?.toUpperCase()
           ];
         if (baseCcyAccount) {
-          setBaseCcyAvailable(baseCcyAccount?.balance);
+          setBaseCcyAvailable({ ...baseCcyAccount?.balance });
         }
-        setSelectedTicker(storeCtx.selectedTicker);
+        setSelectedTicker({ ...storeCtx.selectedTicker });
         if (price) formatPrice(price);
         if (volume) formatSize(volume);
       }
