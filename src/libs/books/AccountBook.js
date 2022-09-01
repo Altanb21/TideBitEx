@@ -37,16 +37,16 @@ class AccountBook extends BookBase {
 
   getAssetsSum() {
     let sum = this._sum;
-    console.log(`[START] getAssetsSum sum`, sum);
-    console.log(
-      `this._fiatCurrency[this._fiatCurrency !== "hkd"?${
-        this._fiatCurrency !== "hkd"
-      }] `,
-      this._fiatCurrency
-    );
+    // console.log(`[START] getAssetsSum sum`, sum);
+    // console.log(
+    //   `this._fiatCurrency[this._fiatCurrency !== "hkd"?${
+    //     this._fiatCurrency !== "hkd"
+    //   }] `,
+    //   this._fiatCurrency
+    // );
     if (!this._fiatCurrency && this._fiatCurrency !== "hkd")
       sum = SafeMath.mult(this._sum, this._ratio[this._fiatCurrency]);
-    console.log(`[END] getAssetsSum sum`, sum);
+    // console.log(`[END] getAssetsSum sum`, sum);
     return sum;
   }
 
@@ -86,14 +86,14 @@ class AccountBook extends BookBase {
   sumUp = () => {
     let sum = 0;
     Object.values(this._snapshot).forEach((account, i) => {
-      console.log(`sumUp forEach account`, account);
+      // console.log(`sumUp forEach account`, account);
       sum = SafeMath.plus(
         sum,
         SafeMath.mult(account.total, account.exchangeRate)
       );
-      console.log(`sumUp forEach sum[${i}]`, sum);
+      // console.log(`sumUp forEach sum[${i}]`, sum);
     });
-    console.log(`sumUp sum`, sum);
+    // console.log(`sumUp sum`, sum);
     this._sum = sum;
   };
 
@@ -104,7 +104,7 @@ class AccountBook extends BookBase {
    * @returns
    */
   updateByDifference(accounts) {
-    console.log(`updateByDifference accounts`, accounts);
+    // console.log(`updateByDifference accounts`, accounts);
     this._difference = {};
     try {
       accounts.forEach((account) => {
