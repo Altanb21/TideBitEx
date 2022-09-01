@@ -166,6 +166,6 @@
   "notification": "提醒",
   "bid-market-order-confirm": "你将用市场价格买入 {{totalAmount}} {{baseUnit}}",
   "ask-market-order-confirm": "你将用市场价格卖出 {{totalAmount}} {{baseUnit}}",
-  "bid-limit-order-confirm": "你将用 {{totalPrice}} {{quoteUnit}} 买入 {{totalAmount}} {{baseUnit}} 以每 1 {{quoteUnit}} {{price}} 的价格",
-  "ask-limit-order-confirm": "你将用 {{totalPrice}} {{quoteUnit}} 卖出 {{totalAmount}} {{baseUnit}} 以每 1 {{quoteUnit}} {{price}} 的价格"
+  "bid-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 买入 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格",
+  "ask-limit-order-confirm": "你將用 {{totalPrice}} {{quoteUnit}} 卖出{{totalAmount}} {{baseUnit}} 以每 1 {{{baseUnit}} 为 {{price}} {{quoteUnit}} 的价格"
 }
