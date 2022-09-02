@@ -613,15 +613,13 @@ class ExchangeHub extends Bot {
             revenue;
           if (memberTag) {
             if (
-              memberTag.toString() ===
-              Database.MEMBER_TAG.VIP_FEE.toString()
+              memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
             ) {
               askFeeRate = market.ask.vip_fee;
               bidFeeRate = market.bid.vip_fee;
             }
             if (
-              memberTag.toString() ===
-              Database.MEMBER_TAG.HERO_FEE.toString()
+              memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
             ) {
               askFeeRate = market.ask.hero_fee;
               bidFeeRate = market.bid.hero_fee;
@@ -641,7 +639,12 @@ class ExchangeHub extends Bot {
               : null;
           revenue =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
-              ? SafeMath.minus(fee, Math.abs(trade.fee))
+              ? _trade.ref_net_fee
+                ? SafeMath.minus(
+                    SafeMath.minus(fee, Math.abs(trade.fee)),
+                    Math.abs(_trade.ref_net_fee)
+                  )
+                : SafeMath.minus(fee, Math.abs(trade.fee))
               : null;
           processTrade = {
             ...trade,
@@ -660,6 +663,9 @@ class ExchangeHub extends Bot {
             fee,
             revenue: revenue,
             exchange: query.exchange,
+            referral: _trade.ref_net_fee
+              ? Utils.removeZeroEnd(_trade.ref_net_fee)
+              : null,
             ts: parseInt(trade.ts),
           };
           // this.logger.log(`processTrade`, processTrade);
@@ -1622,9 +1628,7 @@ class ExchangeHub extends Bot {
       }
 
       const lockedA =
-        side === Database.ORDER_SIDE.SELL
-          ? SafeMath.mult(fillSz, "-1")
-          : "0";
+        side === Database.ORDER_SIDE.SELL ? SafeMath.mult(fillSz, "-1") : "0";
       const totalFee = SafeMath.abs(fee);
       const feeA =
         side === Database.ORDER_SIDE.BUY
@@ -1636,15 +1640,11 @@ class ExchangeHub extends Bot {
             )
           : "0";
       const balanceA =
-        side === Database.ORDER_SIDE.BUY
-          ? SafeMath.minus(fillSz, feeA)
-          : "0";
+        side === Database.ORDER_SIDE.BUY ? SafeMath.minus(fillSz, feeA) : "0";
 
       const value = SafeMath.mult(fillPx, fillSz);
       const lockedB =
-        side === Database.ORDER_SIDE.BUY
-          ? SafeMath.mult(value, "-1")
-          : "0";
+        side === Database.ORDER_SIDE.BUY ? SafeMath.mult(value, "-1") : "0";
       const feeB =
         side === Database.ORDER_SIDE.SELL
           ? await this._calculateFee(
@@ -1655,17 +1655,14 @@ class ExchangeHub extends Bot {
             )
           : "0";
       const balanceB =
-        side === Database.ORDER_SIDE.SELL
-          ? SafeMath.minus(value, feeB)
-          : "0";
+        side === Database.ORDER_SIDE.SELL ? SafeMath.minus(value, feeB) : "0";
 
       const newOrderVolume = SafeMath.minus(order.origin_volume, accFillSz);
       const newOrderLocked = SafeMath.plus(
         order.locked,
         side === Database.ORDER_SIDE.BUY ? lockedB : lockedA
       );
-      const newFundReceive =
-        side === Database.ORDER_SIDE.BUY ? fillSz : value;
+      const newFundReceive = side === Database.ORDER_SIDE.BUY ? fillSz : value;
 
       const changeBalance = newOrderLocked;
       const changeLocked = SafeMath.mult(newOrderLocked, "-1");

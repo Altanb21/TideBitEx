@@ -404,11 +404,23 @@ class mysql {
   }
 
   async getOuterTradesByDayAfter(exchangeCode, day) {
+    /**
     const query = `
     SELECT outer_trades.*,
         referral_commissions.referred_by_member_id,
         referral_commissions.applied_plan_id,
         referral_commissions.applied_policy_id,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state
+    FROM outer_trades
+        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+    WHERE outer_trades.exchange_code = ?
+      AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);`;
+    */
+    const query = `
+    SELECT outer_trades.*,
         referral_commissions.ref_gross_fee,
         referral_commissions.ref_net_fee,
         referral_commissions.amount,

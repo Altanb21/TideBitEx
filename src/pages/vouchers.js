@@ -304,6 +304,10 @@ const Vouchers = () => {
             onClick={(ascending) => sorting("externalFee", ascending)}
           />
           {/* <li className="screen__table-header">{t("referral")}</li> */}
+          <TableHeader
+            label={t("referral")}
+            onClick={(ascending) => sorting("referral", ascending)}
+          />
           {/* <TableHeader
             label={t("referral")}
             onClick={(ascending) => sorting("referral", ascending)}
@@ -369,12 +373,13 @@ const Vouchers = () => {
                       }`
                     : "--"}
                 </div>
-                {/* <div
+                <div
                   className={`vouchers__text screen__table-item${
                     trade.referral
-                      ? trade.referral > 0
-                        ? " positive"
-                        : " negative"
+                      ? // trade.referral > 0
+                        //   ? " positive"
+                        // :
+                        " negative"
                       : ""
                   }`}
                 >
@@ -383,7 +388,7 @@ const Vouchers = () => {
                         trade.feeCcy
                       }`
                     : "--"}
-                </div> */}
+                </div>
                 <div
                   className={`vouchers__text screen__table-item${
                     trade.revenue
