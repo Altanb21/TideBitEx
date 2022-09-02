@@ -104,6 +104,10 @@ class DBOperator {
     return this.database.getVouchersByOrderId(orderId, { dbTransaction });
   }
 
+  async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
+    return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
+  }
+
   async getTradeByTradeFk(tradeFk) {
     return this.database.getTradeByTradeFk(tradeFk);
   }

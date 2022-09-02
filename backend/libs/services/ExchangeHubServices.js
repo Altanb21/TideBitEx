@@ -98,6 +98,9 @@ class ExchangeHubService {
   // ++ TODO
   async _updateOuterTradeStatus({
     order_id,
+    trade_id,
+    voucher_id,
+    create_at,
     order_price,
     order_origin_volume,
     member_id,
@@ -124,23 +127,24 @@ class ExchangeHubService {
     });
     try {
       switch (status) {
-        case Database.ClORDId_ERROR:
+        case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
           await this.database.updateOuterTrade(
-            { id, status, update_at, order_id: 0 },
+            { id, status, create_at, update_at, order_id: 0 },
             { dbTransaction }
           );
           break;
-        case Database.OTHER_SYSTEM_TRADE:
+        case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
           await this.database.updateOuterTrade(
-            { id, status, update_at, order_id, member_id },
+            { id, status, create_at, update_at, order_id, member_id },
             { dbTransaction }
           );
           break;
-        case Database.DONE:
+        case Database.OUTERTRADE_STATUS.DONE:
           await this.database.updateOuterTrade(
             {
               id,
               status,
+              create_at,
               update_at,
               order_id,
               order_price,
@@ -148,6 +152,8 @@ class ExchangeHubService {
               member_id,
               member_tag,
               email,
+              trade_id,
+              voucher_id,
             },
             { dbTransaction }
           );
@@ -607,7 +613,8 @@ class ExchangeHubService {
     this.logger.log(`insertVouchers trade`, trade);
     /* !!! HIGH RISK (start) !!! */
     // 1. insert Vouchers to DB
-    let result,
+    let id,
+      voucher,
       tmp = trade.instId.toLowerCase().split("-"),
       askId = tmp[0],
       bidId = tmp[1];
@@ -622,7 +629,7 @@ class ExchangeHubService {
      * fee 也要根據用戶的等級來收，#672
      */
     try {
-      result = await this.database.insertVouchers(
+      id = await this.database.insertVouchers(
         memberId,
         orderId, // ++TODO check order_id is trade.clOrdId or orderId
         trade.id,
@@ -648,13 +655,32 @@ class ExchangeHubService {
       this.logger.error(`insertVouchers`, error);
       throw error;
     }
+    voucher = {
+      id,
+      orderId,
+      tradeId: trade.id,
+      askId,
+      bidId,
+      price: trade.fillPx,
+      volume: trade.fillSz,
+      value: SafeMath.mult(trade.fillPx, trade.fillSz),
+      kind:
+        trade.side === Database.ORDER_SIDE.BUY
+          ? Database.ORDER_KIND.BID
+          : Database.ORDER_KIND.ASK,
+      fee:
+        trade.side === Database.ORDER_SIDE.SELL
+          ? SafeMath.mult(SafeMath.mult(trade.fillPx, trade.fillSz), askFeeRate)
+          : SafeMath.mult(trade.fillSz, bidFeeRate),
+      feeCcy: trade.feeCcy,
+    };
     this.logger.log(
-      `------------- [${this.constructor.name}] _insertVouchers [END] -------------`
+      `------------- [${this.constructor.name}] _insertVouchers [END] (id:${id})-------------`
     );
-    return result;
+    return voucher;
   }
 
-  async insertTrades({ memberId, orderId, market, trade, dbTransaction }) {
+  async _insertTrades({ memberId, orderId, market, trade, dbTransaction }) {
     this.logger.log(
       `------------- [${this.constructor.name}] insertTrades -------------`
     );
@@ -677,9 +703,7 @@ class ExchangeHubService {
           ? memberId
           : this.systemMemberId,
       bid_member_id:
-        trade.side === Database.ORDER_SIDE.BUY
-          ? memberId
-          : this.systemMemberId,
+        trade.side === Database.ORDER_SIDE.BUY ? memberId : this.systemMemberId,
       funds: SafeMath.mult(trade.fillPx, trade.fillSz),
       trade_fk: trade.tradeId,
     };
@@ -713,7 +737,7 @@ class ExchangeHubService {
     trade,
     dbTransaction,
   }) {
-    let insertTradesResult, insertVouchersResult, newTrade, _trade;
+    let insertTradesResult, insertVouchersResult, newTrade, voucher, _trade;
     this.logger.log(
       `------------- [${this.constructor.name}] _insertTradesRecord -------------`
     );
@@ -725,7 +749,7 @@ class ExchangeHubService {
       // 2. if _trade is not exist
       if (!_trade) {
         // 3. insert trade to DB
-        insertTradesResult = await this.insertTrades({
+        insertTradesResult = await this._insertTrades({
           memberId,
           orderId,
           trade,
@@ -744,8 +768,16 @@ class ExchangeHubService {
           market,
           dbTransaction,
         });
+        voucher = insertVouchersResult;
+        this.logger.log(`newTrade`, newTrade);
+        this.logger.log(`voucher`, voucher);
       } else {
         this.logger.log(`this trade is already exist`);
+        voucher = await this.database.getVoucherByOrderIdAndTradeId(
+          orderId,
+          trade.tradeId
+        );
+        this.logger.log(`voucher`, voucher);
       }
     } catch (error) {
       this.logger.error(`_insertTradesRecord`, error);
@@ -754,7 +786,7 @@ class ExchangeHubService {
     this.logger.log(
       `------------- [${this.constructor.name}] _insertTradesRecord [END]-------------`
     );
-    return newTrade;
+    return { newTrade, voucher, trade: _trade };
   }
 
   async _updateOrderbyTrade({
@@ -989,6 +1021,8 @@ class ExchangeHubService {
       resultOnOrderUpdate,
       updateOrder,
       newTrade,
+      dbTrade,
+      voucher,
       resultOnAccUpdate,
       updateAskAccount,
       updateBidAccount,
@@ -1007,15 +1041,12 @@ class ExchangeHubService {
         memberTag = member.member_tag;
         this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
         if (memberTag) {
-          if (
-            memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
-          ) {
+          if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
             askFeeRate = market.ask.vip_fee;
             bidFeeRate = market.bid.vip_fee;
           }
           if (
-            memberTag.toString() ===
-            Database.MEMBER_TAG.HERO_FEE.toString()
+            memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
           ) {
             askFeeRate = market.ask.hero_fee;
             bidFeeRate = market.bid.hero_fee;
@@ -1049,7 +1080,7 @@ class ExchangeHubService {
           // if this order is in this environment
           if (order) {
             // 2. _insertTrades & _insertVouchers
-            newTrade = await this._insertTradesRecord({
+            let output = await this._insertTradesRecord({
               memberId,
               askFeeRate,
               bidFeeRate,
@@ -1058,6 +1089,9 @@ class ExchangeHubService {
               trade,
               dbTransaction: t,
             });
+            newTrade = output.newTrade;
+            voucher = output.voucher;
+            dbTrade = output.trade;
             // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
             // if this trade does need update
             if (newTrade) {
@@ -1099,12 +1133,18 @@ class ExchangeHubService {
             await this._updateOuterTradeStatus({
               order_id: orderId,
               member_id: memberId,
+              trade_id: newTrade?.id || dbTrade.id,
+              voucher_id: voucher?.id || null,
               order_price: order.price,
               order_origin_volume: order.origin_volume,
               member_tag: memberTag,
               email: member.email,
               id: trade.tradeId,
-              status: Database.DONE,
+              status: Database.OUTERTRADE_STATUS.DONE,
+              create_at: `"${new Date(parseInt(trade.ts))
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}"`,
               update_at: `"${new Date()
                 .toISOString()
                 .slice(0, 19)
@@ -1118,6 +1158,10 @@ class ExchangeHubService {
               member_id: memberId,
               id: trade.tradeId,
               status: Database.OTHER_SYSTEM_TRADE,
+              create_at: `"${new Date(parseInt(trade.ts))
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}"`,
               update_at: `"${new Date()
                 .toISOString()
                 .slice(0, 19)
@@ -1147,7 +1191,11 @@ class ExchangeHubService {
           order_id: orderId,
           member_id: memberId,
           id: trade.tradeId,
-          status: Database.OTHER_SYSTEM_TRADE,
+          status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+          create_at: `"${new Date(parseInt(trade.ts))
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}"`,
           update_at: `"${new Date()
             .toISOString()
             .slice(0, 19)
@@ -1159,7 +1207,11 @@ class ExchangeHubService {
     } else {
       await this._updateOuterTradeStatus({
         id: trade.tradeId,
-        status: Database.ClORDId_ERROR,
+        status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+        create_at: `"${new Date(parseInt(trade.ts))
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ")}"`,
         update_at: `"${new Date()
           .toISOString()
           .slice(0, 19)
