@@ -176,10 +176,12 @@ const TradeForm = (props) => {
           ? t("bid-market-order-confirm", {
               totalAmount: order.volume,
               baseUnit: order.instId.split("-")[0],
+              quoteUnit: order.instId.split("-")[1],
             })
           : t("ask-market-order-confirm", {
               totalAmount: order.volume,
               baseUnit: order.instId.split("-")[0],
+              quoteUnit: order.instId.split("-")[1],
             })
         : order.kind === "bid"
         ? t("bid-limit-order-confirm", {
