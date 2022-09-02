@@ -938,7 +938,9 @@ class ExchangeHubService {
         if (_order?.member_id.toString() === memberId)
           this.logger.error("order has been closed");
         else {
-          this.logger.error("this order is in other environment");
+          this.logger.error(
+            "orderId and memberId is not match, this order is in other environment"
+          );
           _order = null;
         }
       }
@@ -1153,6 +1155,9 @@ class ExchangeHubService {
             });
             await t.commit();
           } else {
+            this.logger.error(
+              "order not exist, this order is in other environment"
+            );
             await this._updateOuterTradeStatus({
               order_id: orderId,
               member_id: memberId,
@@ -1187,6 +1192,9 @@ class ExchangeHubService {
           updateBidAccount,
         };
       } else {
+        this.logger.error(
+          "member not exist, this order is in other environment"
+        );
         await this._updateOuterTradeStatus({
           order_id: orderId,
           member_id: memberId,
