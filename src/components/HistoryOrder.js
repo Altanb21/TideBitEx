@@ -196,13 +196,13 @@ export const PendingOrders = (props) => {
   };
   const cancelOrders = (instId, type) => {
     const text =
-      type === "all"
+      type !== "all"
         ? type === "bid"
           ? t("cancel-all-bids-limit-order-confirm", {
-              baseUnit: storeCtx.selectedTicker.baseUnit.toUpperCase(),
+              baseUnit: storeCtx.selectedTicker?.baseUnit?.toUpperCase(),
             })
           : t("cancel-all-asks-limit-order-confirm", {
-              baseUnit: storeCtx.selectedTicker.baseUnit.toUpperCase(),
+              baseUnit: storeCtx.selectedTicker?.baseUnit?.toUpperCase(),
             })
         : t("cancel-all-limit-order-confirm");
     const confirm = window.confirm(text);
