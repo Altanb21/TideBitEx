@@ -116,6 +116,9 @@ class ExchangeHubService {
     );
     this.logger.log("data", {
       order_id,
+      trade_id,
+      voucher_id,
+      create_at,
       order_price,
       order_origin_volume,
       member_id,
@@ -124,6 +127,7 @@ class ExchangeHubService {
       id,
       status,
       update_at,
+      dbTransaction,
     });
     try {
       switch (status) {
@@ -1162,7 +1166,7 @@ class ExchangeHubService {
               order_id: orderId,
               member_id: memberId,
               id: trade.tradeId,
-              status: Database.OTHER_SYSTEM_TRADE,
+              status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
               create_at: `"${new Date(parseInt(trade.ts))
                 .toISOString()
                 .slice(0, 19)
