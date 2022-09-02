@@ -385,7 +385,7 @@ class mysql {
       outer_trades.exchange_code = ?
       AND(outer_trades.status = ?
         OR outer_trades.order_id IS NULL
-        OR outer_trades.voucher_id IS NULL);`;
+        OR outer_trades.create_at IS NULL);`;
     try {
       this.logger.log(
         "getOuterTradesByStatus",
