@@ -775,7 +775,7 @@ class ExchangeHubService {
         this.logger.log(`this trade is already exist`);
         voucher = await this.database.getVoucherByOrderIdAndTradeId(
           orderId,
-          trade.tradeId
+          _trade.id
         );
         this.logger.log(`voucher`, voucher);
       }
