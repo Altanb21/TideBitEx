@@ -38,6 +38,7 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
+        this.adminUsers = this.getAdminUsers();
         this.currencies = await this.database.getCurrencies();
         this.tickerBook = new TickerBook({
           logger,
@@ -167,13 +168,33 @@ class ExchangeHub extends Bot {
     }
   }
 
+  getAdminUsers() {
+    try {
+      const p = path.join(
+        this.config.base.TideBitLegacyPath,
+        "config/roles.yml"
+      );
+      const users = Utils.fileParser(p);
+      const formatUsers = users.map((user) => {
+        return {
+          ...user,
+        };
+      });
+      this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
+      return formatUsers;
+    } catch (error) {
+      this.logger.error(error);
+      process.exit(1);
+    }
+  }
+
   getTidebitMarkets() {
     try {
       const p = path.join(
         this.config.base.TideBitLegacyPath,
         "config/markets/markets.yml"
       );
-      const markets = Utils.marketParser(p);
+      const markets = Utils.fileParser(p);
       const formatMarket = markets
         .filter((market) => market.visible !== false) // default visible is true, so if visible is undefined still need to show on list.
         .map((market) => {
@@ -1187,7 +1208,7 @@ class ExchangeHub extends Bot {
       order = await this.database.getOrder(orderId, {
         dbTransaction: transacion,
       });
-      if (order) {
+      if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
         account = await this.database.getAccountByMemberIdCurrency(
@@ -2208,6 +2229,45 @@ class ExchangeHub extends Bot {
               formatOrder,
               true
             );
+          } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
+            let result,
+              orderId,
+              memberId,
+              transacion = await this.database.transaction();
+            try {
+              let parsedClOrdId = Utils.parseClOrdId(formatOrder.clOrdId);
+              orderId = parsedClOrdId.orderId;
+              memberId = parsedClOrdId.memberId;
+            } catch (e) {
+              this.logger.error(`ignore`);
+            }
+            if (orderId && memberId) {
+              result = await this.updateOrderStatus({
+                transacion,
+                orderId,
+                memberId,
+                orderData: {
+                  ...formatOrder,
+                  id: orderId,
+                  at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
+                  ts: formatOrder.uTime,
+                  market: formatOrder.instId.replace("-", "").toLowerCase(),
+                  kind: Database.ORDER_SIDE.BUY
+                    ? Database.ORDER_KIND.BID
+                    : Database.ORDER_KIND.ASK,
+                  price: formatOrder.px,
+                  origin_volume: formatOrder.sz,
+                  state: Database.ORDER_STATE.CANCEL,
+                  state_text: Database.ORDER_STATE_TEXT.CANCEL,
+                  volume: SafeMath.minus(formatOrder.sz, formatOrder.fillSz),
+                },
+              });
+              if (result) {
+                await transacion.commit();
+              } else {
+                await transacion.rollback();
+              }
+            }
           }
         }
         this.logger.log(
