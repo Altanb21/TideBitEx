@@ -2252,7 +2252,7 @@ class ExchangeHub extends Bot {
                   at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
                   ts: formatOrder.uTime,
                   market: formatOrder.instId.replace("-", "").toLowerCase(),
-                  kind: Database.ORDER_SIDE.BUY
+                  kind: formatOrder.order.side === Database.ORDER_SIDE.BUY
                     ? Database.ORDER_KIND.BID
                     : Database.ORDER_KIND.ASK,
                   price: formatOrder.px,
