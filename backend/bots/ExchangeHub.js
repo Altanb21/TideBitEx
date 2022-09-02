@@ -1582,7 +1582,7 @@ class ExchangeHub extends Bot {
       const order = await this.database.getOrder(orderId, { dbTransaction: t });
       if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
         await t.rollback();
-        this.logger.error("order has been closed");
+        this.logger.error(`[${this.constructor.name}], order has been closed`);
       }
       const currencyId =
         order.type === Database.TYPE.ORDER_ASK ? order.ask : order.bid;

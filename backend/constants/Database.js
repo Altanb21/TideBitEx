@@ -34,6 +34,7 @@ module.exports = {
     WAIT: "wait",
     DONE: "done",
     FILLED: "filled",
+    PARTIALLY_FILLED: "partially_filled",
     LIVE: "live",
     UNKNOWN: "unknown",
   },

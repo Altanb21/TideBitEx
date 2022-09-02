@@ -761,7 +761,6 @@ class ExchangeHubService {
           dbTransaction,
         });
         newTrade = insertTradesResult;
-        this.logger.log(`for [FORNTEND] _updateTrade`, newTrade);
         // 3. insert voucher to DB
         insertVouchersResult = await this._insertVouchers({
           memberId,
@@ -821,7 +820,7 @@ class ExchangeHubService {
     // get _order data from table
     this.logger.log(`orderId`, orderId);
     _order = await this.database.getOrder(orderId, { dbTransaction });
-    this.logger.log(`_order`, _order);
+    this.logger.log(`db _order`, _order);
     this.logger.log(`memberId`, memberId);
     try {
       if (
@@ -836,10 +835,6 @@ class ExchangeHubService {
           trade.side === Database.ORDER_SIDE.BUY
             ? SafeMath.mult(price, volume)
             : volume;
-        doneAt = `"${new Date(parseInt(trade.ts))
-          .toISOString()
-          .slice(0, 19)
-          .replace("T", " ")}"`;
         updateAt = `"${new Date()
           .toISOString()
           .slice(0, 19)
@@ -865,6 +860,10 @@ class ExchangeHubService {
           state_text = Database.ORDER_STATE_TEXT.DONE;
           filled = true;
           locked = "0"; //++ TODO to be verify: 使用 TideBit ticker 測試)
+          doneAt = `"${new Date(parseInt(trade.ts))
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}"`;
         } else {
           let res = await this.okexConnector.router("getOrderDetails", {
             query: {
@@ -875,32 +874,17 @@ class ExchangeHubService {
           if (res.success) {
             _orderDetails = res.payload;
             this.logger.log(`for _orderDetails`, _orderDetails);
-            state =
-              _orderDetails.state === Database.ORDER_STATE.CANCEL
-                ? _orderDetails.state
-                : _orderDetails.state === Database.ORDER_STATE.FILLED
-                ? Database.ORDER_STATE.DONE
-                : _orderDetails.state === Database.ORDER_STATE.LIVE
-                ? Database.ORDER_STATE.WAIT
-                : Database.ORDER_STATE.UNKNOWN;
-            stateCode =
-              _orderDetails.state === Database.ORDER_STATE.CANCEL
-                ? Database.ORDER_STATE_CODE.CANCEL
-                : _orderDetails.state === Database.ORDER_STATE.FILLED
-                ? Database.ORDER_STATE_CODE.DONE
-                : _orderDetails.state === Database.ORDER_STATE.LIVE
-                ? Database.ORDER_STATE_CODE.WAIT
-                : Database.ORDER_STATE.UNKNOWN;
-            state_text =
-              _orderDetails.state === Database.ORDER_STATE.CANCEL
-                ? Database.ORDER_STATE_TEXT.CANCEL
-                : _orderDetails.state === Database.ORDER_STATE.FILLED
-                ? Database.ORDER_STATE_TEXT.DONE
-                : _orderDetails.state === Database.ORDER_STATE.LIVE
-                ? Database.ORDER_STATE_TEXT.WAIT
-                : Database.ORDER_STATE_TEXT.UNKNOWN;
+            if (_orderDetails.state === Database.ORDER_STATE.CANCEL) {
+              state = _orderDetails.state;
+              stateCode = Database.ORDER_STATE_CODE.CANCEL;
+              state_text = Database.ORDER_STATE_TEXT.CANCEL;
+              locked = "0";
+            }else{
+              stateCode = Database.ORDER_STATE_CODE.WAIT;
+              state = Database.ORDER_STATE.WAIT;
+              state_text = Database.ORDER_STATE_TEXT.WAIT;
+            }
           }
-          locked = "0";
         }
         _updateOrder = {
           id: _order.id,
@@ -940,7 +924,7 @@ class ExchangeHubService {
         this.logger.log("_updateOrder for [FRONTEND]", _updateOrder);
       } else {
         if (_order?.member_id.toString() === memberId)
-          this.logger.error("order has been closed");
+          this.logger.error(`[${this.constructor.name}], order has been closed`);
         else {
           this.logger.error(
             "orderId and memberId is not match, this order is in other environment"
@@ -952,8 +936,6 @@ class ExchangeHubService {
       this.logger.error(`_updateOrderbyTrade`, error);
       throw error;
     }
-    this.logger.log(`for [FRONTEND] _updateOrder`, _updateOrder);
-    this.logger.log(`db _order`, _order);
     this.logger.log(
       `------------- [${this.constructor.name}] _updateOrderbyTrade [END] -------------`
     );
@@ -1100,7 +1082,7 @@ class ExchangeHubService {
             dbTrade = output.trade;
             // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
             // if this trade does need update
-            if (newTrade) {
+            if (updateOrder && newTrade) {
               if (trade.side === Database.ORDER_SIDE.BUY)
                 resultOnAccUpdate = await this._updateAccByBidTrade({
                   memberId,
@@ -1368,7 +1350,7 @@ class ExchangeHubService {
     );
     let result = false;
     if (_filtered.length > 0) {
-      this.logger.log(`_filtered[${_filtered.length}]`);
+      this.logger.log(`_filtered[${_filtered.length}]`, _filtered);
       result = await this._insertOuterTrades(_filtered);
     }
     return result;
