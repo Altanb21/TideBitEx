@@ -1961,10 +1961,10 @@ class ExchangeHub extends Bot {
       ordType === Database.ORD_TYPE.IOC
         ? type === Database.TYPE.ORDER_BID
           ? body.price
-            ? (parseFloat(body.price) * 1.1).toString()
+            ? (parseFloat(body.price) * 1.05).toString()
             : null
           : body.price
-          ? (parseFloat(body.price) * 0.9).toString()
+          ? (parseFloat(body.price) * 0.95).toString()
           : null
         : body.price || null;
     const locked =
@@ -2252,9 +2252,10 @@ class ExchangeHub extends Bot {
                   at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
                   ts: formatOrder.uTime,
                   market: formatOrder.instId.replace("-", "").toLowerCase(),
-                  kind: formatOrder.side === Database.ORDER_SIDE.BUY
-                    ? Database.ORDER_KIND.BID
-                    : Database.ORDER_KIND.ASK,
+                  kind:
+                    formatOrder.side === Database.ORDER_SIDE.BUY
+                      ? Database.ORDER_KIND.BID
+                      : Database.ORDER_KIND.ASK,
                   price: formatOrder.px,
                   origin_volume: formatOrder.sz,
                   state: Database.ORDER_STATE.CANCEL,
