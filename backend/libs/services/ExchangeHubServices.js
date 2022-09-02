@@ -127,7 +127,7 @@ class ExchangeHubService {
       id,
       status,
       update_at,
-      dbTransaction,
+      // dbTransaction,
     });
     try {
       switch (status) {
