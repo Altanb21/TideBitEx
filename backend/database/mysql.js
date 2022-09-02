@@ -321,10 +321,9 @@ class mysql {
   }
 
   async getOrders() {
-    const query =
-      "SELECT * FROM `orders`;";
+    const query = "SELECT * FROM `orders`;";
     try {
-      this.logger.log("getOrders", query, );
+      this.logger.log("getOrders", query);
       const [orders] = await this.db.query({
         query,
       });
@@ -351,9 +350,42 @@ class mysql {
     }
   }
 
+  async getOrdersJoinMemberEmail(state) {
+    const query = `
+    SELECT
+	    orders.id,
+	    orders.member_id,
+	    members.email,
+	    members.member_tag
+    FROM
+	    orders
+	    JOIN members ON orders.member_id = members.id
+    WHERE
+	    orders.state = ?;`;
+    try {
+      this.logger.log("getOrdersJoinMemberEmail", query, `[${state}]`);
+      const [orders] = await this.db.query({
+        query,
+        values: [state],
+      });
+      return orders;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getOuterTradesByStatus(exchangeCode, status) {
-    const query =
-      "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`status` = ?;";
+    const query = `
+    SELECT
+      *
+    FROM
+      outer_trades
+    WHERE
+      outer_trades.exchange_code = ?
+      AND(outer_trades.status = ?
+        OR outer_trades.order_id IS NULL
+        OR outer_trades.create_at IS NULL);`;
     try {
       this.logger.log(
         "getOuterTradesByStatus",
@@ -372,8 +404,31 @@ class mysql {
   }
 
   async getOuterTradesByDayAfter(exchangeCode, day) {
-    const query =
-      "SELECT * FROM `outer_trades` WHERE `outer_trades`.`exchange_code` = ? AND `outer_trades`.`update_at` > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);";
+    /**
+    const query = `
+    SELECT outer_trades.*,
+        referral_commissions.referred_by_member_id,
+        referral_commissions.applied_plan_id,
+        referral_commissions.applied_policy_id,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state
+    FROM outer_trades
+        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+    WHERE outer_trades.exchange_code = ?
+      AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);`;
+    */
+    const query = `
+    SELECT outer_trades.*,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state
+    FROM outer_trades
+        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+    WHERE outer_trades.exchange_code = ?
+        AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);`;
     try {
       this.logger.log(
         "getOuterTradesByDayAfter",
@@ -431,6 +486,26 @@ class mysql {
       this.logger.log(error);
       if (dbTransaction) throw error;
       return [];
+    }
+  }
+
+  async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
+    const query =
+      "SELECT * FROM `vouchers` WHERE `order_id` = ? AND trade_id = ?;";
+    try {
+      this.logger.log(
+        "getVoucherByOrderIdAndTradeId",
+        query,
+        `[${orderId}, ${tradeId}]`
+      );
+      const [[voucher]] = await this.db.query({
+        query,
+        values: [orderId, tradeId],
+      });
+      return voucher;
+    } catch (error) {
+      this.logger.log(error);
+      return null;
     }
   }
 
@@ -703,6 +778,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      this.logger.log(`insertTrades result`, result)
       tradeId = result[0];
     } catch (error) {
       this.logger.error(error);
@@ -727,7 +803,7 @@ class mysql {
     created_at,
     { dbTransaction }
   ) {
-    let result;
+    let result, voucherId;
     const query =
       "INSERT INTO `vouchers` (`id`,`member_id`,`order_id`,`trade_id`,`designated_trading_fee_asset_history_id`,`ask`,`bid`,`price`,`volume`,`value`,`trend`,`ask_fee`,`bid_fee`,`created_at`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -774,11 +850,13 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      this.logger.log(`insertVouchers result`, result)
+      voucherId = result[0];
     } catch (error) {
       this.logger.error(error);
       if (dbTransaction) throw error;
     }
-    return result;
+    return voucherId;
   }
 
   async updateAccount(datas, { dbTransaction }) {
@@ -833,7 +911,10 @@ class mysql {
       const id = datas.id;
       const where = "`id` = " + id;
       delete datas.id;
-      const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
+      const set = Object.keys(datas).map(
+        (key) =>
+          `\`${key}\` = ${key === "email" ? `"${datas[key]}"` : datas[key]}`
+      );
       let query =
         "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + ";";
       this.logger.log("updateOuterTrade", query);

@@ -9,7 +9,8 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const { waterfallPromise, getBar, parseClOrdId } = require("../Utils");
+const { waterfallPromise, getBar, parseClOrdId, wait } = require("../Utils");
+const Database = require("../../constants/Database");
 const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
@@ -21,6 +22,11 @@ class OkexConnector extends ConnectorBase {
   fetchedBook = {};
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
+
+  maxDataLength = 100;
+  tradeFillsMaxRequestTimes = 60;
+  tradeFillsHistoryMaxRequestTimes = 10;
+  restTime = 2 * 1000;
 
   constructor({ logger }) {
     super({ logger });
@@ -73,14 +79,14 @@ class OkexConnector extends ConnectorBase {
   async start() {
     this._okexWsEventListener();
     Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === "OKEx") {
+      if (this.markets[key] === SupportedExchange.OKEX) {
         const instId = key.replace("tb", "");
         this.instIds.push(instId);
       }
     });
     let instruments,
       instrumentsRes = await this.getInstruments({
-        query: { instType: "SPOT" },
+        query: { instType: Database.INST_TYPE.SPOT },
       });
     if (instrumentsRes.success) {
       instruments = instrumentsRes.payload.reduce((prev, instrument) => {
@@ -119,23 +125,6 @@ class OkexConnector extends ConnectorBase {
     return headers;
   }
 
-  //   {
-  //     "side": "sell",
-  //     "fillSz": "0.002",
-  //     "fillPx": "1195.86",
-  //     "fee": "-0.001913376",
-  //     "ordId": "467755654093094921",
-  //     "instType": "SPOT",
-  //     "instId": "ETH-USDT",
-  //     "clOrdId": "377bd372412fSCDE2m332576077o",
-  //     "posSide": "net",
-  //     "billId": "467871903972212805",
-  //     "tag": "377bd372412fSCDE",
-  //     "execType": "M",
-  //     "tradeId": "225260494",
-  //     "feeCcy": "USDT",
-  //     "ts": "1657821354546"
-  // }
   /**
    * @typedef {Object} Trade
    * @property {string} side "sell"
@@ -157,11 +146,18 @@ class OkexConnector extends ConnectorBase {
   /**
    * @returns {Promise<Trade>}
    */
-  async fetchTradeFillsRecords({ query }) {
+  async fetchTradeFillsRecords({
+    query,
+    results = [],
+    requests = this.tradeFillsMaxRequestTimes,
+  }) {
     this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords`);
-    const { before } = query;
+    const { begin, end, before } = query;
     let result,
-      arr = [];
+      arr = [],
+      newBefore,
+      newRequest;
+    if (!before && begin) arr.push(`begin=${begin}`);
     if (before) arr.push(`before=${before}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const method = "GET";
@@ -184,17 +180,127 @@ class OkexConnector extends ConnectorBase {
       }
       const data = res.data.data.map((trade) => ({
         ...trade,
-        // tradeId: `${this.database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
-        status: this.database.OUTERTRADE_STATUS.UNPROCESS,
-        exchangeCode:
-          this.database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
+        // tradeId: `${Database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
+        status: Database.OUTERTRADE_STATUS.UNPROCESS,
+        exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
         updatedAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
+      results = results.concat(data);
+      if (data.length === this.maxDataLength) {
+        newBefore = data[0].billId;
+        newRequest = requests - 1;
+        if (requests > 0)
+          return this.fetchTradeFillsRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: newRequest,
+          });
+        else {
+          await wait(this.restTime);
+          this.fetchTradeFillsRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: this.tradeFillsMaxRequestTimes,
+          });
+        }
+      }
       result = new ResponseFormat({
         message: "tradeFills",
-        payload: data,
+        payload: results,
       });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      result = new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+    return result;
+  }
+
+  async fetchTradeFillsHistoryRecords({
+    query,
+    results = [],
+    requests = this.tradeFillsHistoryMaxRequestTimes,
+  }) {
+    const { instType, begin, end, before } = query;
+    this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
+    let result,
+      arr = [],
+      newBefore,
+      newRequest;
+    const method = "GET";
+    if (instType) arr.push(`instType=${instType}`);
+    if (!before && begin) arr.push(`begin=${begin}`);
+    if (before) arr.push(`before=${before}`);
+    const path = "/api/v5/trade/fills-history";
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
+    const timeString = new Date().toISOString();
+    const okAccessSign = await this.okAccessSign({
+      timeString,
+      method,
+      path: `${path}${qs}`,
+    });
+    try {
+      const res = await axios({
+        method: method.toLocaleLowerCase(),
+        url: `${this.domain}${path}${qs}`,
+        headers: this.getHeaders(true, { timeString, okAccessSign }),
+      });
+      if (res.data && res.data.code !== "0") {
+        const message = JSON.stringify(res.data);
+        this.logger.trace(message);
+      }
+      const data = res.data.data.map((trade) => ({
+        ...trade,
+        // tradeId: `${Database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
+        status: Database.OUTERTRADE_STATUS.UNPROCESS,
+        exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
+        updatedAt: new Date(parseInt(trade.ts)).toISOString(),
+        data: JSON.stringify(trade),
+      }));
+      results = results.concat(data);
+      if (data.length === this.maxDataLength) {
+        newBefore = data[0].billId;
+        newRequest = requests - 1;
+        if (requests > 0)
+          return this.fetchTradeFillsHistoryRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: newRequest,
+          });
+        else {
+          await wait(this.restTime);
+          return this.fetchTradeFillsHistoryRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: this.tradeFillsHistoryMaxRequestTimes,
+          });
+        }
+      }
+      result = new ResponseFormat({
+        message: "tradeFillsHistory",
+        payload: results,
+      });
+      this.logger.log(
+        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length})`
+      );
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -239,61 +345,6 @@ class OkexConnector extends ConnectorBase {
         message: "orderDetails",
         payload: data,
       });
-    } catch (error) {
-      this.logger.error(error);
-      let message = error.message;
-      if (error.response && error.response.data)
-        message = error.response.data.msg;
-      result = new ResponseFormat({
-        message,
-        code: Codes.API_UNKNOWN_ERROR,
-      });
-    }
-    return result;
-  }
-
-  async fetchTradeFillsHistoryRecords({ query }) {
-    const { instType, before } = query;
-    this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
-    let result,
-      arr = [];
-    const method = "GET";
-    if (instType) arr.push(`instType=${instType}`);
-    if (before) arr.push(`before=${before}`);
-    const path = "/api/v5/trade/fills-history";
-    const qs = !!arr.length ? `?${arr.join("&")}` : "";
-    const timeString = new Date().toISOString();
-    const okAccessSign = await this.okAccessSign({
-      timeString,
-      method,
-      path: `${path}${qs}`,
-    });
-    try {
-      const res = await axios({
-        method: method.toLocaleLowerCase(),
-        url: `${this.domain}${path}${qs}`,
-        headers: this.getHeaders(true, { timeString, okAccessSign }),
-      });
-      if (res.data && res.data.code !== "0") {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
-      }
-      const data = res.data.data.map((trade) => ({
-        ...trade,
-        // tradeId: `${this.database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
-        status: this.database.OUTERTRADE_STATUS.UNPROCESS,
-        exchangeCode:
-          this.database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
-        updatedAt: new Date(parseInt(trade.ts)).toISOString(),
-        data: JSON.stringify(trade),
-      }));
-      result = new ResponseFormat({
-        message: "tradeFills",
-        payload: data,
-      });
-      this.logger.log(
-        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](data.length:${data.length})`
-      );
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
@@ -357,22 +408,25 @@ class OkexConnector extends ConnectorBase {
           id: data.ordId,
           ordType: data.ordType,
           price: data.px,
-          kind: data.side === "buy" ? "bid" : "ask",
+          kind:
+            data.side === Database.ORDER_SIDE.BUY
+              ? Database.ORDER_KIND.BID
+              : Database.ORDER_KIND.ASK,
           volume: SafeMath.minus(data.sz, data.fillSz),
           origin_volume: data.sz,
-          filled: data.state === "filled",
+          filled: data.state === Database.ORDER_STATE.FILLED,
           state:
-            data.state === "canceled"
-              ? "canceled"
-              : data.state === "filled"
-              ? "done"
-              : "wait",
+            data.state === Database.ORDER_STATE.CANCEL
+              ? Database.ORDER_STATE.CANCEL
+              : data.state === Database.ORDER_STATE.FILLED
+              ? Database.ORDER_STATE.DONE
+              : Database.ORDER_STATE.WAIT,
           state_text:
-            data.state === "canceled"
-              ? "Canceled"
-              : data.state === "filled"
-              ? "Done"
-              : "Waiting",
+            data.state === Database.ORDER_STATE.CANCEL
+              ? Database.ORDER_STATE_TEXT.CANCEL
+              : data.state === Database.ORDER_STATE.FILLED
+              ? Database.ORDER_STATE_TEXT.DONE
+              : Database.ORDER_STATE_TEXT.WAIT,
           at: parseInt(SafeMath.div(data.uTime, "1000")),
           ts: parseInt(data.uTime),
         });
@@ -1188,22 +1242,25 @@ class OkexConnector extends ConnectorBase {
             ordId: data.ordId,
             ordType: data.ordType,
             price: data.px,
-            kind: data.side === "buy" ? "bid" : "ask",
+            kind:
+              data.side === Database.ORDER_SIDE.BUY
+                ? Database.ORDER_KIND.BID
+                : Database.ORDER_KIND.ASK,
             volume: SafeMath.minus(data.sz, data.fillSz),
             origin_volume: data.sz,
-            filled: data.state === "filled",
+            filled: data.state === Database.ORDER_STATE.FILLED,
             state:
-              data.state === "canceled"
-                ? "canceled"
-                : state === "filled"
-                ? "done"
-                : "wait",
+              data.state === Database.ORDER_STATE.CANCEL
+                ? Database.ORDER_STATE.CANCEL
+                : state === Database.ORDER_STATE.FILLED
+                ? Database.ORDER_STATE.DONE
+                : Database.ORDER_STATE.WAIT,
             state_text:
-              data.state === "canceled"
-                ? "Canceled"
-                : state === "filled"
-                ? "Done"
-                : "Waiting",
+              data.state === Database.ORDER_STATE.CANCEL
+                ? Database.ORDER_STATE_TEXT.CANCEL
+                : state === Database.ORDER_STATE.FILLED
+                ? Database.ORDER_STATE_TEXT.DONE
+                : Database.ORDER_STATE_TEXT.WAIT,
             at: parseInt(SafeMath.div(data.uTime, "1000")),
             ts: parseInt(data.uTime),
           };
@@ -1385,17 +1442,17 @@ class OkexConnector extends ConnectorBase {
         delete arg.channel;
         values = Object.values(arg);
         instId = values[0];
-        if (data.event === "subscribe") {
+        if (data.event === Events.subscribe) {
           this.okexWsChannels[channel] = this.okexWsChannels[channel] || {};
           this.okexWsChannels[channel][instId] =
             this.okexWsChannels[channel][instId] || {};
-        } else if (data.event === "unsubscribe") {
+        } else if (data.event === Events.unsubscribe) {
           delete this.okexWsChannels[channel][instId];
           // ++ TODO ws onClose clean channel
           if (!Object.keys(this.okexWsChannels[channel]).length) {
             delete this.okexWsChannels[channel];
           }
-        } else if (data.event === "error") {
+        } else if (data.event === Events.error) {
           this.logger.error("!!! _okexWsEventListener on event error", data);
         }
       } else if (data.data) {
@@ -1406,22 +1463,22 @@ class OkexConnector extends ConnectorBase {
         values = Object.values(arg);
         instId = values[0];
         switch (channel) {
-          case "instruments":
+          case Events.instruments:
             // this._updateInstruments(instId, data.data);
             break;
-          case "trades":
+          case Events.trades:
             const market = instId.replace("-", "").toLowerCase();
             const trades = this._formateTrades(market, data.data);
             this._updateTrades(instId, market, trades);
             this._updateCandle(market, trades);
             break;
-          case "books":
+          case Events.books:
             this._updateBooks(instId, data.data, data.action);
             break;
           case this.candleChannel:
             // this._updateCandle(data.arg.instId, data.arg.channel, data.data);
             break;
-          case "tickers":
+          case Events.tickers:
             this._updateTickers(data.data);
             break;
           default:
@@ -1434,13 +1491,13 @@ class OkexConnector extends ConnectorBase {
       data = JSON.parse(event.data);
       if (data.event) {
         // subscribe return
-        if (data.event === "login") {
+        if (data.event === Events.login) {
           if (data.code === "0") {
             this._subscribeOrders();
           }
-        } else if (data.event === "subscribe") {
+        } else if (data.event === Events.subscribe) {
           // temp do nothing
-        } else if (data.event === "error") {
+        } else if (data.event === Events.error) {
           this.logger.error(
             "!!! _okexWsPrivateEventListener on event error",
             data
@@ -1454,7 +1511,7 @@ class OkexConnector extends ConnectorBase {
         values = Object.values(arg);
         instId = values[0];
         switch (channel) {
-          case "orders":
+          case Events.orders:
             this._updateOrderDetails(instId, data.data);
             break;
           default:
@@ -1464,7 +1521,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   _updateInstruments(instType, instData) {
-    const channel = "instruments";
+    const channel = Events.instruments;
     if (
       !this.okexWsChannels[channel][instType] ||
       Object.keys(this.okexWsChannels[channel][instType]).length === 0
@@ -1476,8 +1533,8 @@ class OkexConnector extends ConnectorBase {
           (inst.instId.includes("BTC") ||
             inst.instId.includes("ETH") ||
             inst.instId.includes("USDT")) &&
-          (!this.okexWsChannels["tickers"] ||
-            !this.okexWsChannels["tickers"][inst.instId])
+          (!this.okexWsChannels[Events.tickers] ||
+            !this.okexWsChannels[Events.tickers][inst.instId])
         ) {
           instIds.push(inst.instId);
         }
@@ -1532,7 +1589,7 @@ class OkexConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   async _updateTrades(instId, market, trades) {
     try {
-      const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
+      const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
       this.tradeBook.updateByDifference(instId, lotSz, trades);
       EventBus.emit(Events.trades, market, {
         market,
@@ -1554,8 +1611,8 @@ class OkexConnector extends ConnectorBase {
   _updateBooks(instId, data, action) {
     const [updateBooks] = data;
     const market = instId.replace("-", "").toLowerCase();
-    const lotSz = this.okexWsChannels["tickers"][instId]["lotSz"];
-    if (action === "snapshot") {
+    const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
+    if (action === Events.booksActions.snapshot) {
       this.logger.log(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
       try {
         this.depthBook.updateAll(instId, lotSz, updateBooks);
@@ -1563,7 +1620,7 @@ class OkexConnector extends ConnectorBase {
         this.logger.error(`_updateBooks updateAll error`, error);
       }
     }
-    if (action === "update") {
+    if (action === Events.booksActions.update) {
       try {
         this.depthBook.updateByDifference(instId, lotSz, updateBooks);
       } catch (error) {
@@ -1588,11 +1645,11 @@ class OkexConnector extends ConnectorBase {
 
   _subscribeInstruments() {
     const instruments = {
-      op: "subscribe",
+      op: Events.subscribe,
       args: [
         {
-          channel: "instruments",
-          instType: "SPOT",
+          channel: Events.instruments,
+          instType: Database.INST_TYPE.SPOT,
         },
       ],
     };
@@ -1602,14 +1659,14 @@ class OkexConnector extends ConnectorBase {
   _subscribeTrades(instId) {
     const args = [
       {
-        channel: "trades",
+        channel: Events.trades,
         instId,
       },
     ];
     this.logger.debug(`[${this.constructor.name}]_subscribeTrades`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "subscribe",
+        op: Events.subscribe,
         args,
       })
     );
@@ -1619,21 +1676,21 @@ class OkexConnector extends ConnectorBase {
     // books: 400 depth levels will be pushed in the initial full snapshot. Incremental data will be pushed every 100 ms when there is change in order book.
     const args = [
       {
-        channel: "books",
+        channel: Events.books,
         instId,
       },
     ];
     this.logger.debug(`[${this.constructor.name}]_subscribeBook`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "subscribe",
+        op: Events.subscribe,
         args,
       })
     );
   }
 
   _subscribeCandle1m(instId) {
-    this.candleChannel = `candle1m`;
+    this.candleChannel = Events.candle1m;
     const args = [
       {
         channel: this.candleChannel,
@@ -1643,14 +1700,14 @@ class OkexConnector extends ConnectorBase {
     this.logger.debug(`[${this.constructor.name}]_subscribeCandle`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "subscribe",
+        op: Events.subscribe,
         args,
       })
     );
   }
 
   _subscribeTickers(instIds) {
-    const channel = "tickers";
+    const channel = Events.tickers;
     const args = instIds.map((instId) => {
       if (!this.okexWsChannels[channel]) this.okexWsChannels[channel] = {};
       if (!this.okexWsChannels[channel][instId])
@@ -1663,7 +1720,7 @@ class OkexConnector extends ConnectorBase {
     this.logger.debug(`[${this.constructor.name}]_subscribeTickers`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "subscribe",
+        op: Events.subscribe,
         args,
       })
     );
@@ -1672,14 +1729,14 @@ class OkexConnector extends ConnectorBase {
   _unsubscribeTrades(instId) {
     const args = [
       {
-        channel: "trades",
+        channel: Events.trades,
         instId,
       },
     ];
     this.logger.debug(`[${this.constructor.name}]_unsubscribeTrades`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "unsubscribe",
+        op: Events.unsubscribe,
         args,
       })
     );
@@ -1689,14 +1746,14 @@ class OkexConnector extends ConnectorBase {
     // books: 400 depth levels will be pushed in the initial full snapshot. Incremental data will be pushed every 100 ms when there is change in order book.
     const args = [
       {
-        channel: "books",
+        channel: Events.books,
         instId,
       },
     ];
     this.logger.debug(`[${this.constructor.name}]_unsubscribeBook`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "unsubscribe",
+        op: Events.unsubscribe,
         args,
       })
     );
@@ -1705,14 +1762,14 @@ class OkexConnector extends ConnectorBase {
   _unsubscribeCandle1m(instId) {
     const args = [
       {
-        channel: "candle1m",
+        channel: Events.candle1m,
         instId,
       },
     ];
     this.logger.debug(`[${this.constructor.name}]_unsubscribeCandle1m`, args);
     this.websocket.ws.send(
       JSON.stringify({
-        op: "unsubscribe",
+        op: Events.unsubscribe,
         args,
       })
     );
@@ -1730,7 +1787,7 @@ class OkexConnector extends ConnectorBase {
       path: `${path}`,
     });
     const login = {
-      op: "login",
+      op: Events.login,
       args: [
         {
           apiKey: this.apiKey,
@@ -1745,11 +1802,11 @@ class OkexConnector extends ConnectorBase {
 
   _subscribeOrders() {
     const orders = {
-      op: "subscribe",
+      op: Events.subscribe,
       args: [
         {
-          channel: "orders",
-          instType: "SPOT",
+          channel: Events.orders,
+          instType: Database.INST_TYPE.SPOT,
         },
       ],
     };
@@ -1769,7 +1826,7 @@ class OkexConnector extends ConnectorBase {
       this.logger.log(`lotSz`, lotSz);
       this._subscribeTrades(instId);
       this._subscribeBook(instId);
-      this.okexWsChannels["tickers"][instId]["lotSz"] = lotSz;
+      this.okexWsChannels[Events.tickers][instId]["lotSz"] = lotSz;
       // this._subscribeCandle1m(instId);
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [END] ++++++`

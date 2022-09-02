@@ -437,10 +437,10 @@ const StoreProvider = (props) => {
   }, [middleman]);
 
   const start = useCallback(async () => {
-    if (location.pathname.includes("/markets")) {
+    if (location.pathname?.includes("/markets")) {
       let market;
-      market = location.pathname.includes("/markets/")
-        ? location.pathname.replace("/markets/", "")
+      market = location.pathname?.includes("/markets/")
+        ? location.pathname?.replace("/markets/", "")
         : "ethhkd";
       history.push({
         pathname: `/markets/${market}`,

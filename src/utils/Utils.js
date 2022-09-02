@@ -421,23 +421,29 @@ export const hexToAscii = (hex) => {
 
 export const toggleSidebar = (toggle = true) => {
   console.log(`toggleSidebar toggle`, toggle);
-  if (
-    Array.from(
-      document.querySelector(".ui.sidebar.vertical").classList
-    ).includes("visible")
-  ) {
-    document.querySelector(".ui.sidebar.vertical").classList.remove("uncover");
-    document.querySelector(".ui.sidebar.vertical").classList.remove("visible");
-    document.querySelector("#pusher.pusher").classList.remove("dimmed");
-    document.querySelector(".ui.left.sidebar ~ .pusher").style.transform =
-      "translate3d(0, 0, 0)";
-  } else if (toggle) {
-    document.querySelector(".ui.sidebar.vertical").classList.add("uncover");
-    document.querySelector(".ui.sidebar.vertical").classList.add("visible");
-    document.querySelector("#pusher.pusher").classList.add("dimmed");
-    document.querySelector(
-      ".ui.visible.left.sidebar ~ .pusher"
-    ).style.transform = "translate3d(145px, 0, 0)";
+  if (!!document.querySelector(".ui.sidebar.vertical")?.classList) {
+    if (
+      Array.from(
+        document.querySelector(".ui.sidebar.vertical").classList
+      ).includes("visible")
+    ) {
+      document
+        .querySelector(".ui.sidebar.vertical")
+        .classList.remove("uncover");
+      document
+        .querySelector(".ui.sidebar.vertical")
+        .classList.remove("visible");
+      document.querySelector("#pusher.pusher").classList.remove("dimmed");
+      document.querySelector(".ui.left.sidebar ~ .pusher").style.transform =
+        "translate3d(0, 0, 0)";
+    } else if (toggle) {
+      document.querySelector(".ui.sidebar.vertical").classList.add("uncover");
+      document.querySelector(".ui.sidebar.vertical").classList.add("visible");
+      document.querySelector("#pusher.pusher").classList.add("dimmed");
+      document.querySelector(
+        ".ui.visible.left.sidebar ~ .pusher"
+      ).style.transform = "translate3d(145px, 0, 0)";
+    }
   }
 };
 

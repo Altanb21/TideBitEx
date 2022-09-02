@@ -1,3 +1,4 @@
+const Database = require("../constants/Database");
 const SafeMath = require("./SafeMath");
 const Utils = require("./Utils");
 
@@ -43,10 +44,22 @@ class TideBitLegacyAdapter {
   }
 
   // ++ middleware
-  static async getMemberId(ctx, next, redisDomain) {
+  static async getMemberId(ctx, next, redisDomain, database) {
     // let userId = ctx.header.userid;
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
+    // if (
+    //   ctx.session.member?.id !== ctx?.id ||
+    //   ctx.session.member?.email !== ctx?.email
+    // ) {
+    //   if (ctx.session.member) {
+    //     ctx.email = ctx.session.member.id;
+    //     ctx.id = ctx.session.member.email;
+    //   } else {
+    //     delete ctx.email;
+    //     delete ctx.id;
+    //   }
+    // }
     // console.log(`getMemberId ctx`, ctx);
     // if (
     //   ctx.url === "/auth/identity/callback" ||
@@ -67,8 +80,18 @@ class TideBitLegacyAdapter {
         `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
       );
       if (parsedResult.memberId !== -1) {
+        let member;
+        // , email;
+        try {
+          member = await database.getMemberById(parsedResult.memberId);
+          // email = member?.email;
+        } catch (error) {
+          console.error(`database.getMemberById error`, error);
+        }
         ctx.session.token = parsedResult.peatioSession;
-        ctx.session.memberId = parsedResult.memberId;
+        ctx.session.member = member;
+        // ctx.email = email;
+        // ctx.id = parsedResult.memberId;
       }
     }
     if (
@@ -79,7 +102,9 @@ class TideBitLegacyAdapter {
         `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
       );
       delete ctx.session.token;
-      delete ctx.session.memberId;
+      delete ctx.session.member;
+      // delete ctx.email;
+      // delete ctx.id;
     }
     // rediret
     console.log(`getMemberId ctx.session`, ctx.session);
@@ -88,17 +113,17 @@ class TideBitLegacyAdapter {
 
   static peatioOrderBody({ header, body }) {
     let obj = {};
-    if (body.kind === "bid") {
+    if (body.kind === Database.ORDER_KIND.BID) {
       obj["order_bid[ord_type]"] = body.ordType;
       obj["order_bid[origin_volume]"] = body.volume;
-      if (body.ordType === "limit") {
+      if (body.ordType === Database.ORD_TYPE.LIMIT) {
         obj["order_bid[price]"] = body.price;
         obj["order_bid[total]"] = SafeMath.mult(body.price, body.volume);
       }
-    } else if (body.kind === "ask") {
+    } else if (body.kind === Database.ORDER_KIND.ASK) {
       obj["order_ask[ord_type]"] = body.ordType;
       obj["order_ask[origin_volume]"] = body.volume;
-      if (body.ordType === "limit") {
+      if (body.ordType === Database.ORD_TYPE.LIMIT) {
         obj["order_ask[price]"] = body.price;
         obj["order_ask[total]"] = SafeMath.mult(body.price, body.volume);
       }

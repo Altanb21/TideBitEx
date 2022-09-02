@@ -11,7 +11,7 @@ const CustomKeyboard = (props) => {
     if (data === "bksp") {
       v = value.substring(0, value.length - 1);
     } else if (data === ".") {
-      if (!value.includes(".")) {
+      if (!value?.includes(".")) {
         if (value.length === 0) v = "0" + data.toString();
         else v = value + data.toString();
       } else v = value;

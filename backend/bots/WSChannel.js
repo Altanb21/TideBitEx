@@ -91,10 +91,10 @@ class WSChannel extends Bot {
               return;
             }
             switch (op) {
-              case "userStatusUpdate":
+              case Events.userStatusUpdate:
                 this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
-              case "switchMarket":
+              case Events.switchMarket:
                 this.logger.log(
                   `[${this.constructor.name} _onOpSwitchMarket]`,
                   args

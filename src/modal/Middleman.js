@@ -252,8 +252,8 @@ class Middleman {
         // console.log(`_getAccounts res`, res);
         if (res) {
           this.accountBook.updateAll(res.accounts);
-          this.memberId = res.memberId;
-          this.email = res.email;
+          // this.memberId = res.memberId;
+          // this.email = res.email;
         }
       } catch (error) {
         console.error(`_getAccounts error`, error);
@@ -370,6 +370,7 @@ class Middleman {
     if (options.memberId) {
       this.isLogin = true;
       this.memberId = options.memberId;
+      this.email = options.email;
     }else{
       this.isLogin = false;
     }
