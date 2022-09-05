@@ -103,8 +103,8 @@ class DepthBook extends BookBase {
           return [v[0], v[1], SafeMath.mult(v[0], v[1]), sumBidAmount];
         });
     total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
-    asks = asks.map((v) => [...v, SafeMath.div(v[2], total)]);
-    bids = bids.map((v) => [...v, SafeMath.div(v[2], total)]);
+    asks = asks.map((v) => [...v, SafeMath.div(v[3], total)]);
+    bids = bids.map((v) => [...v, SafeMath.div(v[3], total)]);
     if (asks.length > 0 && bids.length > 0) {
       ask = asks[0];
       bid = bids[0];
