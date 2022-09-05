@@ -197,10 +197,13 @@ class Middleman {
   }
 
   getDepthBooks(market) {
-    if (!market) market = this.tickerBook.getCurrentTicker()?.market;
-    let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
-    // console.log(`getBooks current market`, market)
-    return this.depthBook.getSnapshot(market, lotSz);
+    const ticker = this.tickerBook.getCurrentTicker();
+    if (!market) market = ticker?.market;
+    return this.depthBook.getSnapshot(
+      market,
+      this.tickerBook?.tickSz,
+      this.tickerBook?.lotSz
+    );
   }
 
   async _getDepthBooks({ market, sz, lotSz }) {
@@ -266,7 +269,7 @@ class Middleman {
   getAccounts(instId) {
     return {
       accounts: this.accountBook.getSnapshot(instId),
-      sum: this.accountBook.getAssetsSum()
+      sum: this.accountBook.getAssetsSum(),
     };
   }
 
@@ -371,7 +374,7 @@ class Middleman {
       this.isLogin = true;
       this.memberId = options.memberId;
       this.email = options.email;
-    }else{
+    } else {
       this.isLogin = false;
     }
     if (this.isLogin) {

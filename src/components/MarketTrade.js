@@ -11,7 +11,7 @@ import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
-// import CustomKeyboard from "./CustomKeyboard";
+import CustomKeyboard from "./CustomKeyboard";
 
 const TradeForm = (props) => {
   const { t } = useTranslation();
@@ -284,7 +284,7 @@ const TradeForm = (props) => {
       storeCtx.depthBook?.price &&
       storeCtx.depthBook?.amount
     ) {
-      console.log(`TradePannel useEffect depthBook`, storeCtx.depthBook);
+      // console.log(`TradePannel useEffect depthBook`, storeCtx.depthBook);
       formatPrice(storeCtx.depthBook.price);
       formatSize(storeCtx.depthBook.amount);
       storeCtx.depthBookHandler(null);
@@ -325,22 +325,15 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            // ref={inputPrice}
-            // inputMode={props.isMobile ? "none" : "numeric"}
-            inputMode="decimal"
+            inputMode={props.isMobile ? "none" : "decimal"}
+            // inputMode="decimal"
             name="price"
-            // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
-            type="number"
+            type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            // type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
-            // onClick={() => {
-            //   if (props.isMobile) {
-            //     storeCtx.setFocusEl(inputPrice);
-            //   }
-            // }}
             onChange={(e) => {
-              // props.onPxInput(e.target.value);
               formatPrice(e.target.value);
             }}
             required={!props.readyOnly}
@@ -364,22 +357,15 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            // ref={inputAmount}
-            inputMode="decimal"
-            // inputMode={props.isMobile ? "none" : "numeric"}
+            // inputMode="decimal"
+            inputMode={props.isMobile ? "none" : "decimal"}
             name="amount"
-            // type={props.isMobile ? null : "number"}
-            type="number"
+            type={props.isMobile ? null : "number"}
+            // type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
-            // onClick={() => {
-            //   if (props.isMobile) {
-            //     storeCtx.setFocusEl(inputAmount);
-            //   }
-            // }}
             onChange={(e) => {
-              // props.onSzInput(e.target.value);
               formatSize(e.target.value);
             }}
             step={
@@ -436,23 +422,18 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "0.25",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          )
-                    ),
-                    {
-                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                    }
+                  SafeMath.mult(
+                    "0.25",
+                    props.kind === "bid"
+                      ? storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        ]?.balance
+                      : SafeMath.div(
+                          storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          ]?.balance,
+                          price || storeCtx.selectedTicker?.last
+                        )
                   )
                 );
               }
@@ -466,23 +447,18 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "0.5",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          )
-                    ),
-                    {
-                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                    }
+                  SafeMath.mult(
+                    "0.5",
+                    props.kind === "bid"
+                      ? storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        ]?.balance
+                      : SafeMath.div(
+                          storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          ]?.balance,
+                          price || storeCtx.selectedTicker?.last
+                        )
                   )
                 );
               }
@@ -496,23 +472,18 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "0.75",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          )
-                    ),
-                    {
-                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                    }
+                  SafeMath.mult(
+                    "0.75",
+                    props.kind === "bid"
+                      ? storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        ]?.balance
+                      : SafeMath.div(
+                          storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          ]?.balance,
+                          price || storeCtx.selectedTicker?.last
+                        )
                   )
                 );
               }
@@ -526,24 +497,16 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "1",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          ),
-                      {
-                        decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                      }
-                    )
-                  )
+                  props.kind === "bid"
+                    ? storeCtx.accounts?.accounts[
+                        storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                      ]?.balance
+                    : SafeMath.div(
+                        storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                        ]?.balance,
+                        price || storeCtx.selectedTicker?.last
+                      )
                 );
               }
             }}
@@ -553,7 +516,7 @@ const TradeForm = (props) => {
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>
-      {/* {props.isMobile &&
+      {props.isMobile &&
         (storeCtx.focusEl?.name === "price" ||
           storeCtx.focusEl?.name === "amount") && (
           <CustomKeyboard
@@ -569,7 +532,7 @@ const TradeForm = (props) => {
               }
             }}
           />
-        )} */}
+        )}
       <button
         type="submit"
         className="btn market-trade__button"

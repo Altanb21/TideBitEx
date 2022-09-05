@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
-import SafeMath from "../utils/SafeMath";
+// import SafeMath from "../utils/SafeMath";
 import { FixedSizeList as List } from "react-window";
-import { formateDecimal } from "../utils/Utils";
+// import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
 import DropDown from "./DropDown";
@@ -23,32 +23,9 @@ const BookTile = (props) => {
       >
         {props.bid && (
           <>
-            <div>
-              {formateDecimal(
-                SafeMath.mult(props.bid.price, props.bid.amount),
-                {
-                  decimalLength: Math.min(
-                    storeCtx.tickSz || 0,
-                    storeCtx.lotSz || 0
-                  ),
-                  pad: true,
-                }
-              )}
-            </div>
-            <div>
-              {formateDecimal(props.bid.amount, {
-                // decimalLength: 4,
-                decimalLength: storeCtx.lotSz || 0,
-                pad: true,
-              })}
-            </div>
-            <div>
-              {formateDecimal(props.bid.price, {
-                // decimalLength: 2,
-                decimalLength: storeCtx.tickSz || 0,
-                pad: true,
-              })}
-            </div>
+            <div>{props.bid.value}</div>
+            <div>{props.bid.amount}</div>
+            <div>{props.bid.price}</div>
             <div
               className="order-book__tile--cover"
               style={{
@@ -69,32 +46,9 @@ const BookTile = (props) => {
       >
         {props.ask && (
           <>
-            <div>
-              {formateDecimal(props.ask.price, {
-                // decimalLength: 2,
-                decimalLength: storeCtx.tickSz || 0,
-                pad: true,
-              })}
-            </div>
-            <div>
-              {formateDecimal(props.ask.amount, {
-                // decimalLength: 4,
-                decimalLength: storeCtx.lotSz || 0,
-                pad: true,
-              })}
-            </div>
-            <div>
-              {formateDecimal(
-                SafeMath.mult(props.ask.price, props.ask.amount),
-                {
-                  decimalLength: Math.min(
-                    storeCtx.tickSz || 0,
-                    storeCtx.lotSz || 0
-                  ),
-                  pad: true,
-                }
-              )}
-            </div>
+            <div>{props.ask.price}</div>
+            <div>{props.ask.amount}</div>
+            <div>{props.ask.value}</div>
             <div
               className="order-book__tile--cover"
               style={{
@@ -187,7 +141,14 @@ const DepthBook = (props) => {
           <List
             innerElementType="ul"
             height={426}
-            itemCount={storeCtx.books?.bids ? Math.max(storeCtx.books.bids.length, storeCtx.books.asks.length) : 0}
+            itemCount={
+              storeCtx.books?.bids
+                ? Math.max(
+                    storeCtx.books.bids.length,
+                    storeCtx.books.asks.length
+                  )
+                : 0
+            }
             itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
             itemSize={18}
             width={`100%`}
