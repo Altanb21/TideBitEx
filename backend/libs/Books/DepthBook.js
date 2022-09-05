@@ -92,7 +92,7 @@ class DepthBook extends BookBase {
         .slice(0, 50)
         .map((v) => {
           sumAskAmount = SafeMath.plus(v[1], sumAskAmount);
-          return [v[0], v[1], SafeMath.mult(v[0], v[1]), sumAskAmount];
+          return [v[0], v[1], sumAskAmount];
         }),
       bids = this._snapshot[instId].bids
         .filter((v) => SafeMath.gte(v[1], lotSz))
@@ -100,11 +100,11 @@ class DepthBook extends BookBase {
         .slice(0, 50)
         .map((v) => {
           sumBidAmount = SafeMath.plus(v[1], sumBidAmount);
-          return [v[0], v[1], SafeMath.mult(v[0], v[1]), sumBidAmount];
+          return [v[0], v[1], sumBidAmount];
         });
     total = SafeMath.plus(sumAskAmount || "0", sumBidAmount || "0");
-    asks = asks.map((v) => [...v, SafeMath.div(v[3], total)]);
-    bids = bids.map((v) => [...v, SafeMath.div(v[3], total)]);
+    asks = asks.map((v) => [...v, SafeMath.div(v[2], total)]);
+    bids = bids.map((v) => [...v, SafeMath.div(v[2], total)]);
     if (asks.length > 0 && bids.length > 0) {
       ask = asks[0];
       bid = bids[0];

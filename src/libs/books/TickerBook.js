@@ -11,8 +11,6 @@ class TickerBook extends BookBase {
     this._prevSnapshot = {};
     this._currentMarket = null;
     this._currentTicker = null;
-    this.tickSz = 0;
-    this.lotSz = 0;
     return this;
   }
 
@@ -35,7 +33,6 @@ class TickerBook extends BookBase {
    * @property {String} volume
    * @property {Number} at
    * @property {String} source
-
    * @param {Ticker} valueA
    * @param {Ticker} valueB
    */
@@ -68,20 +65,12 @@ class TickerBook extends BookBase {
   }
 
   getCurrentTicker() {
+    this._currentTicker = this._snapshot[this._currentMarket];
     return this._currentTicker;
   }
 
   setCurrentMarket(market) {
     this._currentMarket = market;
-    this._currentTicker = this._snapshot[this._currentMarket];
-    this.tickSz =
-      this._currentTicker?.tickSz?.split(".").length > 1
-        ? this._currentTicker.tickSz?.split(".")[1].length
-        : 0;
-    this.lotSz =
-      this._currentTicker?.lotSz?.split(".").length > 1
-        ? this._currentTicker.lotSz?.split(".")[1].length
-        : 0;
   }
 
   getCurrentMarket() {

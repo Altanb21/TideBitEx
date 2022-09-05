@@ -23,39 +23,42 @@ const TradeForm = (props) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
 
-  const formatValue = useCallback(({ value, precision }) => {
-    // console.log(`value: ${+value < 0 }`, value);
-    let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
-    if (props.isMobile && formatedValue.match(/\./g).length > 1) {
-      formatedValue = formatedValue.substring(0, formatedValue.length - 1);
-    }
-    // console.log(
-    //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
-    //   formatedValue
-    // );
-    if (formatedValue.toString().includes(".")) {
-      if (formatedValue.toString().split(".")[1].length >= precision) {
-        let arr = formatedValue.toString().split(".");
-        let decimal = arr[1].substring(0, precision);
-        formatedValue = `${arr[0]}.${decimal}`;
-        // console.log(
-        //   `formatedValue[('.')length?${
-        //     formatedValue.toString().split(".")[1]
-        //   }]`,
-        //   formatedValue
-        // );
+  const formatValue = useCallback(
+    ({ value, precision }) => {
+      // console.log(`value: ${+value < 0 }`, value);
+      let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+      // if (props.isMobile && formatedValue.match(/\./g).length > 1) {
+      //   formatedValue = formatedValue.substring(0, formatedValue.length - 1);
+      // }
+      // console.log(
+      //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
+      //   formatedValue
+      // );
+      if (formatedValue.toString().includes(".")) {
+        if (formatedValue.toString().split(".")[1].length >= precision) {
+          let arr = formatedValue.toString().split(".");
+          let decimal = arr[1].substring(0, precision);
+          formatedValue = `${arr[0]}.${decimal}`;
+          // console.log(
+          //   `formatedValue[('.')length?${
+          //     formatedValue.toString().split(".")[1]
+          //   }]`,
+          //   formatedValue
+          // );
+        }
+        if (formatedValue.toString().startsWith(".")) {
+          // console.log(`formatedValue='0${formatedValue}'`);
+          formatedValue = `0${formatedValue}`;
+        }
+      } else {
+        if (!!formatedValue && !isNaN(parseInt(formatedValue)))
+          formatedValue = parseInt(formatedValue).toString();
+        // console.log(`formatedValue`, formatedValue);
       }
-      if (formatedValue.toString().startsWith(".")) {
-        // console.log(`formatedValue='0${formatedValue}'`);
-        formatedValue = `0${formatedValue}`;
-      }
-    } else {
-      if (!!formatedValue && !isNaN(parseInt(formatedValue)))
-        formatedValue = parseInt(formatedValue).toString();
-      // console.log(`formatedValue`, formatedValue);
-    }
-    return { formatedValue };
-  }, []);
+      return { formatedValue };
+    },
+    [props.isMobile]
+  );
 
   const formatPrice = useCallback(
     (value) => {
@@ -283,8 +286,8 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            // inputMode={props.isMobile ? "none" : "decimal"}
-            inputMode="decimal"
+            inputMode={props.isMobile ? "none" : "decimal"}
+            // inputMode="decimal"
             name="price"
             type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
             // type="number"
@@ -315,8 +318,8 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            inputMode="decimal"
-            // inputMode={props.isMobile ? "none" : "decimal"}
+            // inputMode="decimal"
+            inputMode={props.isMobile ? "none" : "decimal"}
             name="amount"
             type={props.isMobile ? null : "number"}
             // type="number"
