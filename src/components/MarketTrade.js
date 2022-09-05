@@ -26,6 +26,9 @@ const TradeForm = (props) => {
   const formatValue = useCallback(({ value, precision }) => {
     // console.log(`value: ${+value < 0 }`, value);
     let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+    if (props.isMobile && formatedValue.match(/\./g).length > 1) {
+      formatedValue = formatedValue.substring(0, formatedValue.length - 1);
+    }
     // console.log(
     //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
     //   formatedValue
