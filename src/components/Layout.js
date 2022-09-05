@@ -89,7 +89,10 @@ const Layout = ({ children }) => {
       className="layout layout--pushable"
       onClick={(e) => {
         let elementClass = e.target.getAttribute("class");
-        if (elementClass && !elementClass?.includes(`custom-keyboard`))
+        if (
+          !elementClass ||
+          (elementClass && !elementClass?.includes(`custom-keyboard`))
+        )
           storeCtx.setFocusEl(e.target);
       }}
     >

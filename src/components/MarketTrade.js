@@ -56,60 +56,40 @@ const TradeForm = (props) => {
 
   const formatPrice = useCallback(
     (value) => {
-      // console.log(`formatPrice value`, value);
-
       setErrorMessage(null);
-      // let precision,
-      //   arr = storeCtx.selectedTicker?.tickSz.split(".");
-      // if (arr.length > 1) precision = arr[1].length;
-      // else precision = 0;
-      // let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
-      // let price,
-      //   vArr = _value.toString().split(".");
-      // if (
-      //   _value.toString().length > 2 &&
-      //   _value.toString().startsWith("0") &&
-      //   !_value?.includes(".")
-      // ) {
-      //   _value = _value.substring(1);
-      // }
-      // if (vArr.length > 1 && vArr[1].length > precision) {
-      //   price = parseFloat(_value).toFixed(precision);
-      //   setErrorMessage(
-      //     `Price precision is ${storeCtx.selectedTicker?.tickSz}`
-      //   );
-      // } else price = _value;
+
       let { formatedValue } = formatValue({
         value,
         precision: storeCtx.tickSz,
       });
       setPrice(formatedValue);
-      if (storeCtx.selectedTicker?.tickSz && storeCtx.accounts?.accounts) {
-        if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz))
-          setErrorMessage(
-            `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
-          );
-        if (
-          props.kind === "bid" &&
-          SafeMath.gt(
-            volume,
-            SafeMath.div(
-              storeCtx.accounts?.accounts[
-                storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-              ]?.balance,
-              props.ordType === "market"
-                ? storeCtx.selectedTicker?.last
-                : formatedValue
-            )
+      if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)) {
+        console.log(
+          `formatedValue:${formatedValue}`,
+          `tickSz:${storeCtx.selectedTicker?.tickSz}`,
+          SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)
+        );
+        setErrorMessage(
+          `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
+        );
+      } else if (
+        props.kind === "bid" &&
+        SafeMath.gt(
+          volume,
+          SafeMath.div(
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+            ]?.balance,
+            props.ordType === "market"
+              ? storeCtx.selectedTicker?.last
+              : formatedValue
           )
-        ) {
-          setErrorMessage(
-            `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
-          );
-        }
-      }
-
-      if (
+        )
+      ) {
+        setErrorMessage(
+          `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
+        );
+      } else if (
         props.kind === "ask" &&
         SafeMath.gt(
           volume,
@@ -136,67 +116,41 @@ const TradeForm = (props) => {
 
   const formatSize = useCallback(
     (value) => {
-      // console.log(`formatSize value`, value);
       setErrorMessage(null);
-      let // precision,
-        //   arr = storeCtx.selectedTicker?.lotSz.split("."),
-        _price =
-          props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
-      // if (arr.length > 1) precision = arr[1].length;
-      // else precision = 0;
-      // let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
-      // let size,
-      //   vArr = _value.split(".");
-      // if (
-      //   _value.toString().length > 2 &&
-      //   _value.toString().startsWith("0") &&
-      //   !_value?.includes(".")
-      // ) {
-      //   _value = _value.substring(1);
-      // }
-      // if (vArr.length > 1 && vArr[1].length > precision) {
-      //   size = parseFloat(_value).toFixed(precision);
-      //   setErrorMessage(
-      //     `Amount precision is ${storeCtx.selectedTicker?.lotSz}`
-      //   );
-      // } else size = _value;
+      let _price =
+        props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
       let { formatedValue } = formatValue({
         value,
         precision: storeCtx.lotSz,
       });
       setVolume(formatedValue);
-      if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-        if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
-          setErrorMessage(
-            `Minimum amount is ${storeCtx.selectedTicker?.minSz}`
-          );
-        else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
-          setErrorMessage(
-            `Maximum amount is ${storeCtx.selectedTicker?.maxSz}`
-          );
-        else if (
-          SafeMath.gt(
-            props.kind === "bid"
-              ? SafeMath.mult(_price, formatedValue)
-              : formatedValue,
-            props.kind === "bid"
-              ? storeCtx.accounts?.accounts[
-                  storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                ]?.balance
-              : storeCtx.accounts?.accounts[
-                  storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                ]?.balance
-          )
+
+      if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
+        setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
+      else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
+        setErrorMessage(`Maximum amount is ${storeCtx.selectedTicker?.maxSz}`);
+      else if (
+        SafeMath.gt(
+          props.kind === "bid"
+            ? SafeMath.mult(_price, formatedValue)
+            : formatedValue,
+          props.kind === "bid"
+            ? storeCtx.accounts?.accounts[
+                storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+              ]?.balance
+            : storeCtx.accounts?.accounts[
+                storeCtx.selectedTicker?.base_unit?.toUpperCase()
+              ]?.balance
         )
-          setErrorMessage(
-            `Available ${
-              props.kind === "bid"
-                ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                : storeCtx.selectedTicker?.base_unit?.toUpperCase()
-            } is not enough`
-          );
-        else setErrorMessage(null);
-      }
+      )
+        setErrorMessage(
+          `Available ${
+            props.kind === "bid"
+              ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+              : storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          } is not enough`
+        );
+      else setErrorMessage(null);
     },
     [
       storeCtx.accounts?.accounts,
@@ -325,11 +279,11 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            inputMode={props.isMobile ? "none" : "decimal"}
-            // inputMode="decimal"
+            // inputMode={props.isMobile ? "none" : "decimal"}
+            inputMode="decimal"
             name="price"
-            type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
-            // type="number"
+            // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
@@ -357,11 +311,11 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            // inputMode="decimal"
-            inputMode={props.isMobile ? "none" : "decimal"}
+            inputMode="decimal"
+            // inputMode={props.isMobile ? "none" : "decimal"}
             name="amount"
-            type={props.isMobile ? null : "number"}
-            // type="number"
+            // type={props.isMobile ? null : "number"}
+            type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
