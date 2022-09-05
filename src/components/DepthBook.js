@@ -24,13 +24,16 @@ const BookTile = (props) => {
         {props.bid && (
           <>
             <div>
-              {formateDecimal(props.bid.value, {
-                decimalLength: Math.min(
-                  storeCtx.tickSz || 0,
-                  storeCtx.lotSz || 0
-                ),
-                pad: true,
-              })}
+              {formateDecimal(
+                SafeMath.mult(props.bid.price, props.bid.amount),
+                {
+                  decimalLength: Math.min(
+                    storeCtx.tickSz || 0,
+                    storeCtx.lotSz || 0
+                  ),
+                  pad: true,
+                }
+              )}
             </div>
             <div>
               {formateDecimal(props.bid.amount, {
@@ -81,13 +84,16 @@ const BookTile = (props) => {
               })}
             </div>
             <div>
-              {formateDecimal(props.bid.value, {
-                decimalLength: Math.min(
-                  storeCtx.tickSz || 0,
-                  storeCtx.lotSz || 0
-                ),
-                pad: true,
-              })}
+              {formateDecimal(
+                SafeMath.mult(props.ask.price, props.ask.amount),
+                {
+                  decimalLength: Math.min(
+                    storeCtx.tickSz || 0,
+                    storeCtx.lotSz || 0
+                  ),
+                  pad: true,
+                }
+              )}
             </div>
             <div
               className="order-book__tile--cover"

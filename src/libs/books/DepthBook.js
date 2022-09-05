@@ -78,9 +78,8 @@ class DepthBook extends BookBase {
         price: ask[0],
         amount: ask[1],
         side: "asks",
-        value: ask[2],
-        total: ask[3],
-        depth: ask[4]
+        total: ask[2],
+        depth: ask[3],
       });
     });
     bookObj.bids?.forEach((bid) => {
@@ -88,11 +87,11 @@ class DepthBook extends BookBase {
         price: bid[0],
         amount: bid[1],
         side: "bids",
-        value: bid[2],
-        total: bid[3],
-        depth: bid[4]
+        total: bid[2],
+        depth: bid[3],
       });
     });
+
     return bookArr;
   }
 
