@@ -37,7 +37,7 @@ const StoreProvider = (props) => {
   const [depthBook, setDepthbook] = useState(null);
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
-  const [fiatCurrency, setFiatCurrency] = useState('usd');
+  const [fiatCurrency, setFiatCurrency] = useState("usd");
 
   const action = useCallback(
     (key) => (
@@ -108,6 +108,10 @@ const StoreProvider = (props) => {
 
   const changeRange = (range) => {
     middleman.depthBook.changeRange(range);
+  };
+
+  const getUserRoles = async () => {
+    return await middleman.getUserRoles();
   };
 
   const getUsersAccounts = useCallback(async () => {
@@ -417,10 +421,10 @@ const StoreProvider = (props) => {
     };
   }, [middleman]);
 
-  const updateFiatCurrency = (fiatCurrency)=>{
-    middleman.setFiatCurrency(fiatCurrency)
+  const updateFiatCurrency = (fiatCurrency) => {
+    middleman.setFiatCurrency(fiatCurrency);
     setFiatCurrency(fiatCurrency);
-  }
+  };
 
   const sync = useCallback(async () => {
     await middleman.sync();
@@ -503,7 +507,8 @@ const StoreProvider = (props) => {
         getOuterPendingOrders,
         setFocusEl,
         changeRange,
-        updateFiatCurrency
+        updateFiatCurrency,
+        getUserRoles
       }}
     >
       {props.children}

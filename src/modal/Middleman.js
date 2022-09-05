@@ -48,6 +48,16 @@ class Middleman {
     }
   }
 
+  async getUserRoles() {
+    try {
+      const response = await this.communicator.getUserRoles();
+      return response;
+    } catch (error) {
+      // this.instruments = [];
+      throw error;
+    }
+  }
+
   async getOuterTradeFills(exchange, days) {
     try {
       return await this.communicator.getOuterTradeFills(exchange, days);

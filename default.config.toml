@@ -89,4 +89,6 @@ pathname = [
 
   # options
   "get | /api/v1/options | Bot.ExchangeHub.getOptions",
+
+  "get | /api/v1/user-roles | Bot.ExchangeHub.getUserRoles",
 ]

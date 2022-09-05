@@ -1522,6 +1522,27 @@ class ExchangeHub extends Bot {
     }
   }
 
+  getUserRoles({ memberId, email }) {
+    let roles, name;
+    if (email) {
+      let user = this.adminUsers.find((user) => user.email === email)?.roles;
+      roles = user?.roles;
+      name = user?.name;
+    }
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getUserRoles",
+        payload: {
+          memberId: memberId,
+          email: email,
+          roles: roles,
+          name: name,
+          // peatioSession: token,
+        },
+      })
+    );
+  }
+
   async getOptions({ query, memberId, email, token }) {
     this.logger.debug(`*********** [${this.name}] getOptions ************`);
     this.logger.debug(
@@ -1534,6 +1555,7 @@ class ExchangeHub extends Bot {
       `email`,
       email
     );
+    // let roles = this.adminUsers.find((user) => user.email === email)?.roles;
     return Promise.resolve(
       new ResponseFormat({
         message: "getOptions",
@@ -1541,6 +1563,7 @@ class ExchangeHub extends Bot {
           wsUrl: this.config.websocket.domain,
           memberId: memberId,
           email: email,
+          // roles: roles,
           // peatioSession: token,
         },
       })
