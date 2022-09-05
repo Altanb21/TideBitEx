@@ -24,7 +24,7 @@ const TradeForm = (props) => {
   const [selectedTicker, setSelectedTicker] = useState(null);
 
   const formatValue = useCallback(({ value, precision }) => {
-    // console.log(`value`, value);
+    // console.log(`value: ${+value < 0 }`, value);
     let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
     // console.log(
     //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
@@ -43,7 +43,7 @@ const TradeForm = (props) => {
         // );
       }
       if (formatedValue.toString().startsWith(".")) {
-        // console.log(`formatedValue='0${formatedValue}`);
+        // console.log(`formatedValue='0${formatedValue}'`);
         formatedValue = `0${formatedValue}`;
       }
     } else {
@@ -57,18 +57,18 @@ const TradeForm = (props) => {
   const formatPrice = useCallback(
     (value) => {
       setErrorMessage(null);
-
       let { formatedValue } = formatValue({
         value,
         precision: storeCtx.tickSz,
       });
+      // console.log(
+      //   `formatedValue:${formatedValue}`)
       setPrice(formatedValue);
       if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)) {
-        console.log(
-          `formatedValue:${formatedValue}`,
-          `tickSz:${storeCtx.selectedTicker?.tickSz}`,
-          SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)
-        );
+        // console.log(
+        //   `tickSz:${storeCtx.selectedTicker?.tickSz}`,
+        //   SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)
+        // );
         setErrorMessage(
           `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
         );
@@ -123,8 +123,9 @@ const TradeForm = (props) => {
         value,
         precision: storeCtx.lotSz,
       });
+      // console.log(
+      //   `formatedValue:${formatedValue}`)
       setVolume(formatedValue);
-
       if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
         setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
       else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
@@ -282,8 +283,8 @@ const TradeForm = (props) => {
             // inputMode={props.isMobile ? "none" : "decimal"}
             inputMode="decimal"
             name="price"
-            // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
-            type="number"
+            type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            // type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
@@ -314,8 +315,8 @@ const TradeForm = (props) => {
             inputMode="decimal"
             // inputMode={props.isMobile ? "none" : "decimal"}
             name="amount"
-            // type={props.isMobile ? null : "number"}
-            type="number"
+            type={props.isMobile ? null : "number"}
+            // type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
             value={volume}
@@ -476,12 +477,11 @@ const TradeForm = (props) => {
           <CustomKeyboard
             inputEl={storeCtx.focusEl}
             onInput={(v) => {
+              // console.log(`CustomKeyboard v`, v)
               if (storeCtx.focusEl?.name === "price") {
-                // props.onPxInput(v);
                 formatPrice(v);
               }
               if (storeCtx.focusEl?.name === "amount") {
-                // props.onSzInput(v);
                 formatSize(v);
               }
             }}

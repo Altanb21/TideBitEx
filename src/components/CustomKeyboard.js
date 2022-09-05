@@ -8,21 +8,28 @@ const CustomKeyboard = (props) => {
     let v,
       value = props.inputEl.value;
     // console.log(`CustomKeyboard value`, value);
+    // console.log(`CustomKeyboard e`, e.target.value);
+    // console.log(`CustomKeyboard data`, data);
     if (data === "bksp") {
       v = value.substring(0, value.length - 1);
-    } else if (data === ".") {
-      if (!value?.includes(".")) {
-        if (value.length === 0) v = "0" + data.toString();
-        else v = value + data.toString();
-      } else v = value;
-    } else {
-      v = value + data.toString();
     }
-    if (v.toString().startsWith("0") && !v.includes(".")) {
-      v = v.substring(1);
+    // else if (data === ".") {
+    //   if (!value?.includes(".")) {
+    //     if (value.length === 0) v = "0" + data.toString();
+    //     else v = value + data.toString();
+    //   } else v = value;
+    // }
+    else {
+      if (/^\d+$/.test(data) || (data === "." && !value.includes(".")))
+        v = value + data.toString();
     }
-    // console.log(`CustomKeyboard v`, v);
-    props.onInput(v);
+    // if (v.toString().startsWith("0") && !v.includes(".")) {
+    //   v = v.substring(1);
+    // }
+    if (v) {
+      // console.log(`CustomKeyboard v`, v);
+      props.onInput(v);
+    }
   };
   return (
     <div className="custom-keyboard">
