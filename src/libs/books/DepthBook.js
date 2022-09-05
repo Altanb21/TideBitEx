@@ -34,7 +34,7 @@ class DepthBook extends BookBase {
             decimalLength: lotSz || 0,
             pad: true,
           }),
-          value: formateDecimal(SafeMath.mult(data.price, data.amount), {
+          value: formateDecimal(data.value, {
             // decimalLength: 2,
             decimalLength: Math.min(tickSz || 0, lotSz || 0),
             pad: true,
@@ -96,18 +96,20 @@ class DepthBook extends BookBase {
       bookArr.push({
         price: ask[0],
         amount: ask[1],
+        value: ask[2],
         side: "asks",
-        total: ask[2],
-        depth: ask[3],
+        total: ask[3],
+        depth: ask[4],
       });
     });
     bookObj.bids?.forEach((bid) => {
       bookArr.push({
         price: bid[0],
         amount: bid[1],
+        value: bid[2],
         side: "bids",
-        total: bid[2],
-        depth: bid[3],
+        total: bid[3],
+        depth: bid[4],
       });
     });
     return bookArr;
