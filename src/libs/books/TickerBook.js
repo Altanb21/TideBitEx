@@ -78,9 +78,9 @@ class TickerBook extends BookBase {
       this._currentTicker?.tickSz?.split(".").length > 1
         ? this._currentTicker.tickSz?.split(".")[1].length
         : 0;
-    this.lotSzs =
-      this._currentTicker?.lotSzs?.split(".").length > 1
-        ? this._currentTicker.lotSzs?.split(".")[1].length
+    this.lotSz =
+      this._currentTicker?.lotSz?.split(".").length > 1
+        ? this._currentTicker.lotSz?.split(".")[1].length
         : 0;
   }
 
