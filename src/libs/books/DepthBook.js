@@ -1,6 +1,5 @@
 // import SafeMath from "../../utils/SafeMath";
 import SafeMath from "../../utils/SafeMath";
-import { formateDecimal } from "../../utils/Utils";
 import BookBase from "../BookBase";
 
 class DepthBook extends BookBase {
@@ -16,35 +15,17 @@ class DepthBook extends BookBase {
     this.unit = unit;
   }
 
-  getSnapshot(market, tickSz, lotSz) {
+  getSnapshot(market, lotSz) {
     try {
       let asks = [],
         bids = [];
       if (!this._snapshot[market]) this._snapshot[market] = [];
       for (let data of this._snapshot[market]) {
-        let formatedData = {
-          ...data,
-          price: formateDecimal(data.price, {
-            // decimalLength: 2,
-            decimalLength: tickSz || 0,
-            pad: true,
-          }),
-          amount: formateDecimal(data.amount, {
-            // decimalLength: 2,
-            decimalLength: lotSz || 0,
-            pad: true,
-          }),
-          value: formateDecimal(data.value, {
-            // decimalLength: 2,
-            decimalLength: Math.min(tickSz || 0, lotSz || 0),
-            pad: true,
-          }),
-        };
         if (data.side === "asks") {
-          asks.push(formatedData);
+          asks.push(data);
         }
         if (data.side === "bids") {
-          bids.push(formatedData);
+          bids.push(data);
         }
       }
       return {
@@ -96,20 +77,20 @@ class DepthBook extends BookBase {
       bookArr.push({
         price: ask[0],
         amount: ask[1],
+        side: "asks",
         value: ask[2],
         total: ask[3],
-        depth: ask[4],
-        side: "asks",
+        depth: ask[4]
       });
     });
     bookObj.bids?.forEach((bid) => {
       bookArr.push({
         price: bid[0],
         amount: bid[1],
+        side: "bids",
         value: bid[2],
         total: bid[3],
-        depth: bid[4],
-        side: "bids",
+        depth: bid[4]
       });
     });
     return bookArr;

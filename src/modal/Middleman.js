@@ -197,13 +197,10 @@ class Middleman {
   }
 
   getDepthBooks(market) {
-    const ticker = this.tickerBook.getCurrentTicker();
-    if (!market) market = ticker?.market;
-    return this.depthBook.getSnapshot(
-      market,
-      this.tickerBook?.tickSz,
-      this.tickerBook?.lotSz
-    );
+    if (!market) market = this.tickerBook.getCurrentTicker()?.market;
+    let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
+    // console.log(`getBooks current market`, market)
+    return this.depthBook.getSnapshot(market, lotSz);
   }
 
   async _getDepthBooks({ market, sz, lotSz }) {

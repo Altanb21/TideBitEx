@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
-// import SafeMath from "../utils/SafeMath";
+import SafeMath from "../utils/SafeMath";
 import { FixedSizeList as List } from "react-window";
-// import { formateDecimal } from "../utils/Utils";
+import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
 import DropDown from "./DropDown";
@@ -23,9 +23,29 @@ const BookTile = (props) => {
       >
         {props.bid && (
           <>
-            <div>{props.bid.value}</div>
-            <div>{props.bid.amount}</div>
-            <div>{props.bid.price}</div>
+            <div>
+              {formateDecimal(props.bid.value, {
+                decimalLength: Math.min(
+                  storeCtx.tickSz || 0,
+                  storeCtx.lotSz || 0
+                ),
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.bid.amount, {
+                // decimalLength: 4,
+                decimalLength: storeCtx.lotSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.bid.price, {
+                // decimalLength: 2,
+                decimalLength: storeCtx.tickSz || 0,
+                pad: true,
+              })}
+            </div>
             <div
               className="order-book__tile--cover"
               style={{
@@ -46,9 +66,29 @@ const BookTile = (props) => {
       >
         {props.ask && (
           <>
-            <div>{props.ask.price}</div>
-            <div>{props.ask.amount}</div>
-            <div>{props.ask.value}</div>
+            <div>
+              {formateDecimal(props.ask.price, {
+                // decimalLength: 2,
+                decimalLength: storeCtx.tickSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.ask.amount, {
+                // decimalLength: 4,
+                decimalLength: storeCtx.lotSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.bid.value, {
+                decimalLength: Math.min(
+                  storeCtx.tickSz || 0,
+                  storeCtx.lotSz || 0
+                ),
+                pad: true,
+              })}
+            </div>
             <div
               className="order-book__tile--cover"
               style={{
