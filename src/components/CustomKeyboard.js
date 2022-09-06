@@ -26,11 +26,10 @@ const CustomKeyboard = (props) => {
     // if (v.toString().startsWith("0") && !v.includes(".")) {
     //   v = v.substring(1);
     // }
-    if (v) {
-      // console.log(`CustomKeyboard v`, v);
-      props.onInput(v);
-    }
+    console.log(`CustomKeyboard v`, v);
+    props.onInput(v);
   };
+  
   return (
     <div className="custom-keyboard">
       {/* <div

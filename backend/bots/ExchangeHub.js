@@ -1525,7 +1525,7 @@ class ExchangeHub extends Bot {
   getUserRoles({ memberId, email }) {
     let roles, name;
     if (email) {
-      let user = this.adminUsers.find((user) => user.email === email)?.roles;
+      let user = this.adminUsers.find((user) => user.email === email);
       roles = user?.roles;
       name = user?.name;
     }
@@ -1537,6 +1537,7 @@ class ExchangeHub extends Bot {
           email: email,
           roles: roles,
           name: name,
+          // adminUsers:this.adminUsers
           // peatioSession: token,
         },
       })

@@ -122,15 +122,15 @@ const Vouchers = () => {
               trade.memberId?.includes(_keyword) ||
               trade.exchange?.includes(_keyword)) &&
             ts - trade.ts < _timeInterval;
-          console.log(`timeInterval`, timeInterval);
-          console.log(`filterOption`, filterOption);
-          console.log(
-            `ts[${ts}] - trade.ts[${trade.ts}] = ${
-              ts - trade.ts
-            } < _timeInterval[${_timeInterval}]`,
-            ts - trade.ts < _timeInterval,
-            new Date(trade.ts)
-          );
+          // console.log(`timeInterval`, timeInterval);
+          // console.log(`filterOption`, filterOption);
+          // console.log(
+          //   `ts[${ts}] - trade.ts[${trade.ts}] = ${
+          //     ts - trade.ts
+          //   } < _timeInterval[${_timeInterval}]`,
+          //   ts - trade.ts < _timeInterval,
+          //   new Date(trade.ts)
+          // );
           if (_exchange !== "ALL")
             condition = condition && trade.exchange === _exchange;
           if (_ticker) condition = condition && trade.instId === _ticker;

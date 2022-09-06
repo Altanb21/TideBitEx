@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { useContext } from "react";
 import AdminHeader from "../components/AdminHeader";
 import StoreContext from "../store/store-context";
@@ -10,7 +10,7 @@ const Admin = () => {
   const storeCtx = useContext(StoreContext);
   const [isInit, setIsInit] = useState(false);
   const [user, setUser] = useState(null);
-  const navigate = useNavigate();
+  const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
   const onSelected = (page) => {
     setActivePage(page);
@@ -21,12 +21,12 @@ const Admin = () => {
       storeCtx.getUserRoles().then((user) => {
         if (user) setUser(user);
         else {
-          navigate(-1);
+          history.goBack();
         }
       });
       setIsInit(true);
     }
-  }, [isInit, navigate, storeCtx]);
+  }, [history, isInit, storeCtx]);
 
   return (
     <>

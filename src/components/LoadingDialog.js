@@ -1,7 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { useTranslation } from "react-i18next";
 
 const LoadingDialog = (props) => {
+  const { t } = useTranslation();
   return (
     <React.Fragment>
       <React.Fragment>
@@ -28,7 +30,7 @@ const LoadingDialog = (props) => {
               <div></div>
             </div>
           </div>
-          <div className="modal__text">Loading...</div>
+          <div className="modal__text">{t('loading')}</div>
         </div>,
         document.getElementById("overlay-root")
       )}
