@@ -1532,14 +1532,16 @@ class ExchangeHub extends Bot {
     return Promise.resolve(
       new ResponseFormat({
         message: "getUserRoles",
-        payload: {
-          memberId: memberId,
-          email: email,
-          roles: roles,
-          name: name,
-          // adminUsers:this.adminUsers
-          // peatioSession: token,
-        },
+        payload: email
+          ? {
+              memberId: memberId,
+              email: email,
+              roles: roles,
+              name: name,
+              // adminUsers:this.adminUsers
+              // peatioSession: token,
+            }
+          : null,
       })
     );
   }
