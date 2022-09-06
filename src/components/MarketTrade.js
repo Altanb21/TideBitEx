@@ -17,6 +17,7 @@ const TradeForm = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
   const [tdMode, setTdMode] = useState("cash");
+  const [cursorPosition, setCursorPosition] = useState("cash");
   const [price, setPrice] = useState("");
   const [volume, setVolume] = useState("");
   const [selectedPct, setSelectedPct] = useState(null);
@@ -57,7 +58,7 @@ const TradeForm = (props) => {
       }
       return { formatedValue };
     },
-    [props.isMobile]
+    []
   );
 
   const formatPrice = useCallback(
@@ -293,6 +294,10 @@ const TradeForm = (props) => {
             // type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
+            onMouseUp={(e) => {
+              // console.log(`input[mouseUp] e.target.selectionStart`, e.target.selectionStart);
+              setCursorPosition(e.target.selectionStart);
+            }}
             value={props.readyOnly ? t("market") : price}
             onChange={(e) => {
               if (!props.isMobile) formatPrice(e.target.value);
@@ -325,6 +330,7 @@ const TradeForm = (props) => {
             // type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
+            onMouseUp={(e) => setCursorPosition(e.target.selectionStart)}
             value={volume}
             onChange={(e) => {
               if (!props.isMobile) formatSize(e.target.value);
@@ -481,6 +487,8 @@ const TradeForm = (props) => {
         (storeCtx.focusEl?.name === "price" ||
           storeCtx.focusEl?.name === "amount") && (
           <CustomKeyboard
+            cursorPosition={cursorPosition}
+            setCursorPosition={setCursorPosition}
             inputEl={storeCtx.focusEl}
             onInput={(v) => {
               // console.log(`CustomKeyboard v`, v)
