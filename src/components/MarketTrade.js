@@ -295,7 +295,7 @@ const TradeForm = (props) => {
             // placeholder={t("price")}
             value={props.readyOnly ? t("market") : price}
             onChange={(e) => {
-              formatPrice(e.target.value);
+              if (!props.isMobile) formatPrice(e.target.value);
             }}
             required={!props.readyOnly}
             disabled={!!props.readyOnly}
@@ -327,7 +327,7 @@ const TradeForm = (props) => {
             // placeholder={t("trade_amount")}
             value={volume}
             onChange={(e) => {
-              formatSize(e.target.value);
+              if (!props.isMobile) formatSize(e.target.value);
             }}
             step={
               storeCtx.selectedTicker?.lotSz
