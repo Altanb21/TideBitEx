@@ -1,10 +1,12 @@
 const Database = require("../constants/Database");
 const SafeMath = require("./SafeMath");
+// const path = require("path");
 const Utils = require("./Utils");
 
 const users = {};
 let userGCInterval = 86400 * 1000;
 
+// let adminUsers;
 class TideBitLegacyAdapter {
   static usersGC() {
     // ++ removeUser //++ gc behavior （timer 清理）
@@ -14,6 +16,23 @@ class TideBitLegacyAdapter {
       }
     });
   }
+
+  // static getAdminUsers(config) {
+  //   try {
+  //     const p = path.join(config.base.TideBitLegacyPath, "config/roles.yml");
+  //     const users = Utils.fileParser(p);
+  //     const formatUsers = users.map((user) => {
+  //       return {
+  //         ...user,
+  //       };
+  //     });
+  //     console.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
+  //     return formatUsers;
+  //   } catch (error) {
+  //     console.error(error);
+  //     process.exit(1);
+  //   }
+  // }
 
   static async parseMemberId(header, redisDomain) {
     let peatioSession,
@@ -44,8 +63,9 @@ class TideBitLegacyAdapter {
   }
 
   // ++ middleware
-  static async getMemberId(ctx, next, redisDomain, database) {
+  static async getMemberId(ctx, next, redisDomain, database, config) {
     // let userId = ctx.header.userid;
+    // if (!adminUsers) TideBitLegacyAdapter.getAdminUsers(config);
     let peatioSession = Utils.peatioSession(ctx.header);
     console.log(`getMemberId ctx.url`, ctx.url);
     // if (
@@ -89,7 +109,14 @@ class TideBitLegacyAdapter {
           console.error(`database.getMemberById error`, error);
         }
         ctx.session.token = parsedResult.peatioSession;
-        ctx.session.member = member;
+        // let roles = adminUsers.find(
+        //   (user) => user.email === member?.email
+        // )?.roles;
+        ctx.session.member = {
+          ...member,
+          // , roles: roles
+        };
+
         // ctx.email = email;
         // ctx.id = parsedResult.memberId;
       }

@@ -173,5 +173,6 @@
   "cancel-ask-limit-order-confirm": "You are going to cancel order {{orderId}}: ask {{totalAmount}} {{baseUnit}} for {{totalPrice}} {{quoteUnit}} with price {{price}} {{quoteUnit}} per {{baseUnit}}",
   "cancel-all-bids-limit-order-confirm": "You are going to cancel all bid {{baseUnit}} orders",
   "cancel-all-asks-limit-order-confirm": "You are going to cancel all ask {{baseUnit}} orders",
-  "cancel-all-limit-order-confirm": "You are going to cancel all pending orders"
+  "cancel-all-limit-order-confirm": "You are going to cancel all pending orders",
+  "loading": "Loading..."
 }

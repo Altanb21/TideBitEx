@@ -48,6 +48,16 @@ class Middleman {
     }
   }
 
+  async getUserRoles() {
+    try {
+      const response = await this.communicator.getUserRoles();
+      return response;
+    } catch (error) {
+      // this.instruments = [];
+      throw error;
+    }
+  }
+
   async getOuterTradeFills(exchange, days) {
     try {
       return await this.communicator.getOuterTradeFills(exchange, days);
@@ -266,7 +276,7 @@ class Middleman {
   getAccounts(instId) {
     return {
       accounts: this.accountBook.getSnapshot(instId),
-      sum: this.accountBook.getAssetsSum()
+      sum: this.accountBook.getAssetsSum(),
     };
   }
 
@@ -371,7 +381,7 @@ class Middleman {
       this.isLogin = true;
       this.memberId = options.memberId;
       this.email = options.email;
-    }else{
+    } else {
       this.isLogin = false;
     }
     if (this.isLogin) {

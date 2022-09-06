@@ -70,7 +70,7 @@ class Receptor extends Bot {
             .use(staticServe(this.config.base.static))
             .use(session(CONFIG, app))
             .use((ctx, next) =>
-              getMemberId(ctx, next, this.redis, this.database)
+              getMemberId(ctx, next, this.redis, this.database, this.config)
             )
             .use(this.router.routes())
             .use(this.router.allowedMethods())

@@ -11,150 +11,163 @@ import { convertExponentialToDecimal, formateDecimal } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
-// import CustomKeyboard from "./CustomKeyboard";
+import CustomKeyboard from "./CustomKeyboard";
 
 const TradeForm = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
   const [tdMode, setTdMode] = useState("cash");
+  const [cursorPosition, setCursorPosition] = useState("cash");
   const [price, setPrice] = useState("");
   const [volume, setVolume] = useState("");
   const [selectedPct, setSelectedPct] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
 
+  const formatValue = useCallback(
+    ({ value, precision }) => {
+      // console.log(`value: ${+value < 0 }`, value);
+      let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+      // if (props.isMobile && formatedValue.match(/\./g).length > 1) {
+      //   formatedValue = formatedValue.substring(0, formatedValue.length - 1);
+      // }
+      // console.log(
+      //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
+      //   formatedValue
+      // );
+      if (formatedValue.toString().includes(".")) {
+        if (formatedValue.toString().split(".")[1].length >= precision) {
+          let arr = formatedValue.toString().split(".");
+          let decimal = arr[1].substring(0, precision);
+          formatedValue = `${arr[0]}.${decimal}`;
+          // console.log(
+          //   `formatedValue[('.')length?${
+          //     formatedValue.toString().split(".")[1]
+          //   }]`,
+          //   formatedValue
+          // );
+        }
+        if (formatedValue.toString().startsWith(".")) {
+          // console.log(`formatedValue='0${formatedValue}'`);
+          formatedValue = `0${formatedValue}`;
+        }
+      } else {
+        if (!!formatedValue && !isNaN(parseInt(formatedValue)))
+          formatedValue = parseInt(formatedValue).toString();
+        // console.log(`formatedValue`, formatedValue);
+      }
+      return { formatedValue };
+    },
+    []
+  );
+
   const formatPrice = useCallback(
     (value) => {
-      if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-        setErrorMessage(null);
-        let precision,
-          arr = storeCtx.selectedTicker?.tickSz.split(".");
-        if (arr.length > 1) precision = arr[1].length;
-        else precision = 0;
-        let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
-        let price,
-          vArr = _value.toString().split(".");
-        if (
-          _value.toString().length > 2 &&
-          _value.toString().startsWith("0") &&
-          !_value?.includes(".")
-        ) {
-          _value = _value.substring(1);
-        }
-        if (vArr.length > 1 && vArr[1].length > precision) {
-          price = parseFloat(_value).toFixed(precision);
-          setErrorMessage(
-            `Price precision is ${storeCtx.selectedTicker?.tickSz}`
-          );
-        } else price = _value;
-        setPrice(price);
-        if (SafeMath.lt(price, storeCtx.selectedTicker?.tickSz))
-          setErrorMessage(
-            `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
-          );
-        if (
-          props.kind === "bid" &&
-          SafeMath.gt(
-            volume,
-            SafeMath.div(
-              storeCtx.accounts?.accounts[
-                storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-              ]?.balance,
-              props.ordType === "market" ? storeCtx.selectedTicker?.last : price
-            )
-          )
-        ) {
-          setErrorMessage(
-            `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
-          );
-        }
-        if (
-          props.kind === "ask" &&
-          SafeMath.gt(
-            volume,
+      setErrorMessage(null);
+      let { formatedValue } = formatValue({
+        value,
+        precision: storeCtx.tickSz,
+      });
+      // console.log(
+      //   `formatedValue:${formatedValue}`)
+      setPrice(formatedValue);
+      if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)) {
+        // console.log(
+        //   `tickSz:${storeCtx.selectedTicker?.tickSz}`,
+        //   SafeMath.lt(formatedValue, storeCtx.selectedTicker?.tickSz)
+        // );
+        setErrorMessage(
+          `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
+        );
+      } else if (
+        props.kind === "bid" &&
+        SafeMath.gt(
+          volume,
+          SafeMath.div(
             storeCtx.accounts?.accounts[
-              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-            ]?.balance
+              storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+            ]?.balance,
+            props.ordType === "market"
+              ? storeCtx.selectedTicker?.last
+              : formatedValue
           )
-        ) {
-          setErrorMessage(
-            `Available ${storeCtx.selectedTicker?.base_unit?.toUpperCase()} is not enough`
-          );
-        } else setErrorMessage(null);
-      }
+        )
+      ) {
+        setErrorMessage(
+          `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
+        );
+      } else if (
+        props.kind === "ask" &&
+        SafeMath.gt(
+          volume,
+          storeCtx.accounts?.accounts[
+            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          ]?.balance
+        )
+      ) {
+        setErrorMessage(
+          `Available ${storeCtx.selectedTicker?.base_unit?.toUpperCase()} is not enough`
+        );
+      } else setErrorMessage(null);
     },
     [
+      formatValue,
       props.kind,
       props.ordType,
       storeCtx.accounts?.accounts,
       storeCtx.selectedTicker,
+      storeCtx.tickSz,
       volume,
     ]
   );
 
   const formatSize = useCallback(
     (value) => {
-      if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-        setErrorMessage(null);
-        let precision,
-          arr = storeCtx.selectedTicker?.lotSz.split("."),
-          _price =
-            props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
-        if (arr.length > 1) precision = arr[1].length;
-        else precision = 0;
-        let _value = convertExponentialToDecimal(+value < 0 ? "0" : value);
-        let size,
-          vArr = _value.split(".");
-        if (
-          _value.toString().length > 2 &&
-          _value.toString().startsWith("0") &&
-          !_value?.includes(".")
-        ) {
-          _value = _value.substring(1);
-        }
-        if (vArr.length > 1 && vArr[1].length > precision) {
-          size = parseFloat(_value).toFixed(precision);
-          setErrorMessage(
-            `Amount precision is ${storeCtx.selectedTicker?.lotSz}`
-          );
-        } else size = _value;
-        setVolume(size);
-        if (SafeMath.lt(size, storeCtx.selectedTicker?.minSz))
-          setErrorMessage(
-            `Minimum amount is ${storeCtx.selectedTicker?.minSz}`
-          );
-        else if (SafeMath.gt(size, storeCtx.selectedTicker?.maxSz))
-          setErrorMessage(
-            `Maximum amount is ${storeCtx.selectedTicker?.maxSz}`
-          );
-        else if (
-          SafeMath.gt(
-            props.kind === "bid" ? SafeMath.mult(_price, size) : size,
-            props.kind === "bid"
-              ? storeCtx.accounts?.accounts[
-                  storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                ]?.balance
-              : storeCtx.accounts?.accounts[
-                  storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                ]?.balance
-          )
+      setErrorMessage(null);
+      let _price =
+        props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
+      let { formatedValue } = formatValue({
+        value,
+        precision: storeCtx.lotSz,
+      });
+      // console.log(
+      //   `formatedValue:${formatedValue}`)
+      setVolume(formatedValue);
+      if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
+        setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
+      else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
+        setErrorMessage(`Maximum amount is ${storeCtx.selectedTicker?.maxSz}`);
+      else if (
+        SafeMath.gt(
+          props.kind === "bid"
+            ? SafeMath.mult(_price, formatedValue)
+            : formatedValue,
+          props.kind === "bid"
+            ? storeCtx.accounts?.accounts[
+                storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+              ]?.balance
+            : storeCtx.accounts?.accounts[
+                storeCtx.selectedTicker?.base_unit?.toUpperCase()
+              ]?.balance
         )
-          setErrorMessage(
-            `Available ${
-              props.kind === "bid"
-                ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                : storeCtx.selectedTicker?.base_unit?.toUpperCase()
-            } is not enough`
-          );
-        else setErrorMessage(null);
-      }
+      )
+        setErrorMessage(
+          `Available ${
+            props.kind === "bid"
+              ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+              : storeCtx.selectedTicker?.base_unit?.toUpperCase()
+          } is not enough`
+        );
+      else setErrorMessage(null);
     },
     [
       storeCtx.accounts?.accounts,
       storeCtx.selectedTicker,
+      storeCtx.lotSz,
       props.ordType,
       props.kind,
       price,
+      formatValue,
     ]
   );
 
@@ -233,7 +246,7 @@ const TradeForm = (props) => {
       storeCtx.depthBook?.price &&
       storeCtx.depthBook?.amount
     ) {
-      console.log(`TradePannel useEffect depthBook`, storeCtx.depthBook);
+      // console.log(`TradePannel useEffect depthBook`, storeCtx.depthBook);
       formatPrice(storeCtx.depthBook.price);
       formatSize(storeCtx.depthBook.amount);
       storeCtx.depthBookHandler(null);
@@ -274,27 +287,28 @@ const TradeForm = (props) => {
         <label htmlFor="price">{t("price")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            // ref={inputPrice}
-            // inputMode={props.isMobile ? "none" : "numeric"}
-            inputMode="decimal"
+            inputMode={props.isMobile ? "none" : "decimal"}
+            // inputMode="decimal"
             name="price"
-            // type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
-            type="number"
+            type={props.isMobile ? null : props.readyOnly ? "text" : "number"}
+            // type="number"
             className="market-trade__input form-control"
             // placeholder={t("price")}
+            onMouseUp={(e) => {
+              // console.log(`input[mouseUp] e.target.selectionStart`, e.target.selectionStart);
+              setCursorPosition(e.target.selectionStart);
+            }}
             value={props.readyOnly ? t("market") : price}
-            // onClick={() => {
-            //   if (props.isMobile) {
-            //     storeCtx.setFocusEl(inputPrice);
-            //   }
-            // }}
             onChange={(e) => {
-              // props.onPxInput(e.target.value);
-              formatPrice(e.target.value);
+              if (!props.isMobile) formatPrice(e.target.value);
             }}
             required={!props.readyOnly}
             disabled={!!props.readyOnly}
-            step={storeCtx.selectedTicker?.tickSz}
+            step={
+              storeCtx.selectedTicker?.tickSz
+                ? storeCtx.selectedTicker?.tickSz
+                : "any"
+            }
           />
           {!props.readyOnly && (
             <div className="market-trade__input-group--append input-group-append">
@@ -309,25 +323,23 @@ const TradeForm = (props) => {
         <label htmlFor="trade_amount">{t("trade_amount")}:</label>
         <div className="market-trade__input-group--box">
           <input
-            // ref={inputAmount}
-            inputMode="decimal"
-            // inputMode={props.isMobile ? "none" : "numeric"}
+            // inputMode="decimal"
+            inputMode={props.isMobile ? "none" : "decimal"}
             name="amount"
-            // type={props.isMobile ? null : "number"}
-            type="number"
+            type={props.isMobile ? null : "number"}
+            // type="number"
             className="market-trade__input form-control"
             // placeholder={t("trade_amount")}
+            onMouseUp={(e) => setCursorPosition(e.target.selectionStart)}
             value={volume}
-            // onClick={() => {
-            //   if (props.isMobile) {
-            //     storeCtx.setFocusEl(inputAmount);
-            //   }
-            // }}
             onChange={(e) => {
-              // props.onSzInput(e.target.value);
-              formatSize(e.target.value);
+              if (!props.isMobile) formatSize(e.target.value);
             }}
-            step={storeCtx.selectedTicker?.lotSz}
+            step={
+              storeCtx.selectedTicker?.lotSz
+                ? storeCtx.selectedTicker?.lotSz
+                : "any"
+            }
             required
           />
           <div className="market-trade__input-group--append input-group-append">
@@ -377,23 +389,18 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "0.25",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          )
-                    ),
-                    {
-                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                    }
+                  SafeMath.mult(
+                    "0.25",
+                    props.kind === "bid"
+                      ? storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        ]?.balance
+                      : SafeMath.div(
+                          storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          ]?.balance,
+                          price || storeCtx.selectedTicker?.last
+                        )
                   )
                 );
               }
@@ -407,23 +414,18 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "0.5",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          )
-                    ),
-                    {
-                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                    }
+                  SafeMath.mult(
+                    "0.5",
+                    props.kind === "bid"
+                      ? storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        ]?.balance
+                      : SafeMath.div(
+                          storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          ]?.balance,
+                          price || storeCtx.selectedTicker?.last
+                        )
                   )
                 );
               }
@@ -437,23 +439,18 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "0.75",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            storeCtx.accounts?.accounts[
-                              storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                            ]?.balance,
-                            price || storeCtx.selectedTicker?.last
-                          )
-                    ),
-                    {
-                      decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                    }
+                  SafeMath.mult(
+                    "0.75",
+                    props.kind === "bid"
+                      ? storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        ]?.balance
+                      : SafeMath.div(
+                          storeCtx.accounts?.accounts[
+                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          ]?.balance,
+                          price || storeCtx.selectedTicker?.last
+                        )
                   )
                 );
               }
@@ -467,26 +464,16 @@ const TradeForm = (props) => {
             onClick={() => {
               if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
                 formatSize(
-                  formateDecimal(
-                    SafeMath.mult(
-                      "1",
-                      props.kind === "bid"
-                        ? storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-                          ]?.balance
-                        : SafeMath.div(
-                            SafeMath.div(
-                              storeCtx.accounts?.accounts[
-                                storeCtx.selectedTicker?.base_unit?.toUpperCase()
-                              ]?.balance,
-                              price || storeCtx.selectedTicker?.last
-                            )
-                          ),
-                      {
-                        decimalLength: storeCtx?.lotSz ? storeCtx?.lotSz : "0",
-                      }
-                    )
-                  )
+                  props.kind === "bid"
+                    ? storeCtx.accounts?.accounts[
+                        storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                      ]?.balance
+                    : SafeMath.div(
+                        storeCtx.accounts?.accounts[
+                          storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                        ]?.balance,
+                        price || storeCtx.selectedTicker?.last
+                      )
                 );
               }
             }}
@@ -496,23 +483,24 @@ const TradeForm = (props) => {
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>
-      {/* {props.isMobile &&
+      {props.isMobile &&
         (storeCtx.focusEl?.name === "price" ||
           storeCtx.focusEl?.name === "amount") && (
           <CustomKeyboard
+            cursorPosition={cursorPosition}
+            setCursorPosition={setCursorPosition}
             inputEl={storeCtx.focusEl}
             onInput={(v) => {
+              // console.log(`CustomKeyboard v`, v)
               if (storeCtx.focusEl?.name === "price") {
-                // props.onPxInput(v);
                 formatPrice(v);
               }
               if (storeCtx.focusEl?.name === "amount") {
-                // props.onSzInput(v);
                 formatSize(v);
               }
             }}
           />
-        )} */}
+        )}
       <button
         type="submit"
         className="btn market-trade__button"

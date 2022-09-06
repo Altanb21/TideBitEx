@@ -172,5 +172,6 @@
   "cancel-ask-limit-order-confirm": "你將取消訂單 {{orderId}}: 用 {{totalPrice}} {{quoteUnit}} 賣出 {{totalAmount}} {{baseUnit}} 以每 1 {{baseUnit}} 為 {{price}} {{quoteUnit}} 的價格",
   "cancel-all-bids-limit-order-confirm": "你將取消所有買入 {{baseUnit}} 的訂單",
   "cancel-all-asks-limit-order-confirm": "你將取消所有賣出 {{baseUnit}} 的訂單",
-  "cancel-all-limit-order-confirm": "你將取消所有未完成的訂單"
+  "cancel-all-limit-order-confirm": "你將取消所有未完成的訂單",
+  "loading": "加載中..."
 }

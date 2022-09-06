@@ -33,7 +33,6 @@ class TickerBook extends BookBase {
    * @property {String} volume
    * @property {Number} at
    * @property {String} source
-
    * @param {Ticker} valueA
    * @param {Ticker} valueB
    */
