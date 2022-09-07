@@ -32,7 +32,9 @@ const SelectedTicker = (props) => {
           </div>
           <AiFillCaretDown />
         </div>
-        <DesktopTickers openTickerListHandler={openTickerListHandler} />
+        {openTickerList && (
+          <DesktopTickers openTickerListHandler={openTickerListHandler} />
+        )}
       </div>
       <div className="ticker__price">
         <div

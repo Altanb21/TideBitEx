@@ -134,7 +134,7 @@ class TideBitLegacyAdapter {
       // delete ctx.id;
     }
     // rediret
-    console.log(`getMemberId ctx.session`, ctx.session);
+    // console.log(`getMemberId ctx.session`, ctx.session);
     return next();
   }
 

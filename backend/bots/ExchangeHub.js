@@ -180,7 +180,7 @@ class ExchangeHub extends Bot {
           ...user,
         };
       });
-      this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
+      // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
       return formatUsers;
     } catch (error) {
       this.logger.error(error);
@@ -347,7 +347,7 @@ class ExchangeHub extends Bot {
         const message = JSON.stringify(res.data);
         this.logger.trace(message);
       }
-      this.logger.log(`getPriceList res`, res);
+      // this.logger.log(`getPriceList res`, res);
       return res.data;
     } catch (e) {
       this.logger.error(`getPriceList e`, e);
