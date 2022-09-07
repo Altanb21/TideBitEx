@@ -34,7 +34,7 @@ const CustomKeyboard = (props) => {
           cursorPosition
         )}`;
         props.setCursorPosition((prev) => prev + 1);
-      }
+      } else v = value;
     }
     // if (v.toString().startsWith("0") && !v.includes(".")) {
     //   v = v.substring(1);
