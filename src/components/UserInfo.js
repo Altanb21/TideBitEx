@@ -90,7 +90,7 @@ const UserInfo = (props) => {
             }`}
           >
             <div className="user-info__accounts--dropdown-box">
-              {storeCtx.accounts?.accounts ? (
+              {storeCtx.selectedTicker && storeCtx.accounts?.accounts ? (
                 accountsShowMore ? (
                   Object.values(storeCtx.accounts?.accounts).map((account) => (
                     <AccountMobileTile account={account} />
