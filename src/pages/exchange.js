@@ -9,15 +9,15 @@ import { useLocation } from "react-router-dom";
 const Exchange = () => {
   const storeCtx = useContext(StoreContext);
   const location = useLocation();
-  const [isInit, setIsInit] = useState(false);
+  const [isInit, setIsInit] = useState(null);
   const [isStart, setIsStart] = useState(false);
   const { width } = useViewport();
   const breakpoint = 428;
 
   useEffect(() => {
-    if (!isInit) {
-      storeCtx.init();
-      setIsInit(true);
+    if (isInit === null) {
+      setIsInit(false);
+      storeCtx.init().then((_) => setIsInit(true));
     }
     if (isInit && !isStart && location.pathname?.includes("/markets")) {
       window.storeCtx = storeCtx;

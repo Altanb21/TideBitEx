@@ -66,6 +66,7 @@ class TickerBook extends BookBase {
 
   getCurrentTicker() {
     this._currentTicker = this._snapshot[this._currentMarket];
+    console.log(`this._snapshot`, this._snapshot)
     return this._currentTicker;
   }
 

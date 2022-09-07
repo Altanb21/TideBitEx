@@ -4,7 +4,6 @@ import { useSnackbar } from "notistack";
 import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
-import { wait } from "../utils/Utils";
 import Events from "../constant/Events";
 
 let interval,
@@ -389,6 +388,7 @@ const StoreProvider = (props) => {
   };
 
   const init = useCallback(async () => {
+    console.log(`storeCtx init`);
     await middleman.initWs();
     eventListener();
     await middleman.getTickers();
@@ -399,9 +399,11 @@ const StoreProvider = (props) => {
       setAccounts(middleman.getAccountsSnapshot());
       setMemberEmail(middleman.email);
     }
+    console.log(`storeCtx init end`);
   }, [eventListener, middleman]);
 
   const start = useCallback(async () => {
+    console.log(`storeCtx start`);
     let market =
       document.cookie
         .split(";")
@@ -410,8 +412,10 @@ const StoreProvider = (props) => {
         ?.split("=")[1] || location.pathname?.includes("/markets/")
         ? location.pathname?.replace("/markets/", "")
         : "";
+    console.log(`storeCtx market`, market);
     if (market) {
       setMarket(market);
+      console.log(`middleman.getTickerSnapshot(market)`, middleman.getTickerSnapshot(market));
       setSelectedTicker(middleman.getTickerSnapshot(market));
       if (!isLogin) {
         await middleman.getAccounts();
@@ -430,6 +434,7 @@ const StoreProvider = (props) => {
         setCloseOrders(orders.closedOrders);
       }
     }
+    console.log(`storeCtx start end`);
   }, [isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
