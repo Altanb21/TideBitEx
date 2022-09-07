@@ -74,7 +74,7 @@ const StoreProvider = (props) => {
         });
         setMarket(market);
         await middleman.selectMarket(market);
-        const ticker = middleman.getTicker();
+        const ticker = middleman.getTickerSnapshot();
         setSelectedTicker(ticker);
         setPrecision(ticker);
         setTrades(middleman.getTradesSnapshot(market));
@@ -345,7 +345,7 @@ const StoreProvider = (props) => {
           let ticker = middleman.getTickerSnapshot();
           if (ticker) setPrecision(ticker);
           if (time - tickersLastTimeSync > tickersSyncInterval) {
-            setSelectedTicker(middleman.getTickerSnapshot());
+            setSelectedTicker(ticker);
             setTickers(middleman.getTickersSnapshot());
             tickersLastTimeSync = time;
           }
@@ -404,8 +404,9 @@ const StoreProvider = (props) => {
         : "";
     // console.log(`storeCtx market`, market);
     if (market) {
+      middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
-      setSelectedTicker(middleman.getTickerSnapshot(market));
+      setSelectedTicker(middleman.getTickerSnapshot());
       if (!isLogin) {
         await middleman.getAccounts();
         if (middleman.isLogin) {

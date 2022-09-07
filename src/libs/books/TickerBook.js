@@ -49,8 +49,8 @@ class TickerBook extends BookBase {
     );
   }
 
-  getTickerSnapshot(market) {
-    return this._snapshot[market];
+  getTickerSnapshot() {
+    return this._snapshot[this._currentMarket];
   }
 
   getSnapshot() {
