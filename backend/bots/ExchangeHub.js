@@ -2193,6 +2193,18 @@ class ExchangeHub extends Bot {
       });
     });
 
+    EventBus.on(Events.userStatusUpdate, (memberId, userStatus) => {
+      this.logger.log(
+        `[${this.constructor.name}] EventBus.on(Events.userStatusUpdate)`,
+        memberId,
+        userStatus
+      );
+      this.broadcastAllPrivateClient(memberId, {
+        type: Events.userStatusUpdate,
+        data: userStatus,
+      });
+    });
+
     EventBus.on(Events.trade, (memberId, market, tradeData) => {
       if (this._isIncludeTideBitMarket(market)) {
         this.logger.log(

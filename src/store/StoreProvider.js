@@ -320,6 +320,11 @@ const StoreProvider = (props) => {
       // console.log(metaData);
       const time = Date.now();
       switch (metaData.type) {
+        case Events.userStatusUpdate:
+          if(metaData.data?.isLogin === false)
+          middleman.isLogin = false;
+          setIsLogin(middleman.isLogin);
+          break;
         case Events.account:
           middleman.accountBook.updateByDifference(metaData.data);
           const accounts = middleman.getAccounts();

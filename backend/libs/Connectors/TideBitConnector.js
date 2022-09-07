@@ -841,10 +841,7 @@ class TibeBitConnector extends ConnectorBase {
           : SafeMath.eq(order.state, Database.ORDER_STATE_CODE.DONE)
           ? Database.ORDER_STATE.DONE
           : Database.ORDER_STATE.UNKNOWN,
-        state_text: SafeMath.eq(
-          order.state,
-          Database.ORDER_STATE_CODE.CANCEL
-        )
+        state_text: SafeMath.eq(order.state, Database.ORDER_STATE_CODE.CANCEL)
           ? Database.ORDER_STATE_TEXT.CANCEL
           : SafeMath.eq(order.state, Database.ORDER_STATE_CODE.WAIT)
           ? Database.ORDER_STATE_TEXT.WAIT
@@ -1526,6 +1523,12 @@ class TibeBitConnector extends ConnectorBase {
               auth,
               channel,
             };
+          } else {
+            this.logger.error(`fail to getAuth`);
+            // ++ TODO
+            EventBus.emit(Events.userStatusUpdate, credential.memberId, {
+              isLogin: false,
+            });
           }
         } else {
           this.private_client[credential.memberId].wsIds.push(credential.wsId);
