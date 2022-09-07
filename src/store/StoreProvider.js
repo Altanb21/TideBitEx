@@ -412,6 +412,7 @@ const StoreProvider = (props) => {
         : "";
     if (market) {
       setMarket(market);
+      setSelectedTicker(middleman.getTickerSnapshot(market));
       if (!isLogin) {
         await middleman.getAccounts();
         if (middleman.isLogin) {
@@ -421,7 +422,6 @@ const StoreProvider = (props) => {
         }
       }
       await middleman.selectMarket(market);
-      setSelectedTicker(middleman.getTickerSnapshot());
       setBooks(middleman.getDepthBooksSnapshot());
       setTrades(middleman.getTradesSnapshot());
       if (middleman.isLogin) {

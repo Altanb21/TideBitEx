@@ -292,7 +292,8 @@ class Middleman {
     }
   }
 
-  getTickerSnapshot() {
+  getTickerSnapshot(market) {
+    this.tickerBook.setCurrentMarket(market);
     return this.tickerBook.getCurrentTicker();
   }
 

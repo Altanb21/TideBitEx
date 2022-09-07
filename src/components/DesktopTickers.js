@@ -71,7 +71,7 @@ const TickerList = (props) => {
         <TickerTile
           key={`${ticker.market}`}
           ticker={ticker}
-          active={ticker.market === storeCtx.selectedTicker.market}
+          active={ticker.market === storeCtx.market}
           update={ticker.update}
           onClick={() => {
             storeCtx.selectMarket(ticker.market);
