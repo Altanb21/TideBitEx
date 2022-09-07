@@ -15,7 +15,7 @@ const CustomKeyboard = (props) => {
       v = `${value.substring(0, cursorPosition - 1)}${value.substring(
         cursorPosition
       )}`;
-      props.setCursorPosition((prev) => prev - 1);
+      props.setCursorPosition((prev) => (prev > 0 ? prev - 1 : 0));
     }
     // else if (data === ".") {
     //   if (!value?.includes(".")) {
@@ -29,10 +29,12 @@ const CustomKeyboard = (props) => {
       // v = arr.reduce((prev, v) => {
       //   return (prev += v);
       // }, "");
-      v = `${value.substring(0, cursorPosition)}${data}${value.substring(
-        cursorPosition
-      )}`;
-      props.setCursorPosition((prev) => prev + 1);
+      if (data !== "." || (!value.includes(".") && data === ".")) {
+        v = `${value.substring(0, cursorPosition)}${data}${value.substring(
+          cursorPosition
+        )}`;
+        props.setCursorPosition((prev) => prev + 1);
+      }
     }
     // if (v.toString().startsWith("0") && !v.includes(".")) {
     //   v = v.substring(1);
