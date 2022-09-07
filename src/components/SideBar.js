@@ -124,7 +124,7 @@ const SideBar = (props) => {
       >
         {(key) => <div>{props.languages[key]}</div>}
       </DropDown>
-      <li className="sidebar__item">v0.8.11</li>
+      <li className="sidebar__item">v0.8.11.1</li>
     </ul>
   );
 };
