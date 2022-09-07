@@ -409,8 +409,8 @@ const StoreProvider = (props) => {
       setSelectedTicker(middleman.getTickerSnapshot());
       if (!isLogin) {
         await middleman.getAccounts();
+        setIsLogin(middleman.isLogin);
         if (middleman.isLogin) {
-          setIsLogin(middleman.isLogin);
           setAccounts(middleman.getAccountsSnapshot());
           setMemberEmail(middleman.email);
         }

@@ -329,7 +329,12 @@ class Middleman {
         if (!this.memberId) {
           this.memberId = res.memberId;
           this.email = res.email;
-          if (this.memberId) this.registerUser();
+          if (this.memberId) {
+            this.registerUser();
+            this.isLogin = true;
+          } else {
+            this.isLogin = false;
+          }
         }
       }
     } catch (error) {
@@ -465,7 +470,7 @@ class Middleman {
       this.email = options.email;
       this.registerUser();
     } else {
-      this.isLogin = false;
+      this.isLogin = null;
     }
   }
 
