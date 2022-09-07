@@ -24,6 +24,7 @@ const StoreProvider = (props) => {
   const [memberEmail, setMemberEmail] = useState(false);
   const [tickers, setTickers] = useState([]);
   const [books, setBooks] = useState(null);
+  const [depthChartData, setDepthChartData] = useState(null);
   const [trades, setTrades] = useState([]);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [closeOrders, setCloseOrders] = useState([]);
@@ -313,49 +314,6 @@ const StoreProvider = (props) => {
     setDepthbook({ price, amount });
   }, []);
 
-  // ++ TODO1: verify function works properly
-  // const sync = useCallback(async () => {
-  //   // const startTime = performance.now();
-  //   const time = Date.now();
-  //   // console.log(`sync time`,time);
-  //   // console.time('UniquetLabelName')
-
-  //   if (time - accountTs > accountInterval) {
-  //     const accounts = middleman.getAccounts();
-  //     // console.log(`middleman.accounts`, accounts);
-  //     setIsLogin(middleman.isLogin);
-  //     setAccounts(accounts);
-  //   }
-  //   if (time - tickerTs > tickerInterval) {
-  //     let ticker = middleman.getTicker();
-  //     if (ticker) setPrecision(ticker);
-  //     setSelectedTicker(middleman.getTicker());
-  //   }
-  //   if (time - depthTs > depthInterval) {
-  //     // console.log(`middleman.getDepthBooks()`, middleman.getDepthBooks());
-  //     setBooks(middleman.getDepthBooks());
-  //   }
-  //   if (time - tradeTs > tradeInterval) {
-  //     // console.log(`middleman.getTrades()`, middleman.getTrades());
-  //     setTrades(middleman.getTrades());
-  //   }
-  //   if (time - tickersTs > tickersInterval) {
-  //     setTickers(middleman.getTickers());
-  //   }
-  //   // // TODO orderBook is not completed
-  //   if (time - orderTs > orderInterval) {
-  //     // console.log(`middleman.getMyOrders()`, middleman.getMyOrders());
-  //     const orders = middleman.getMyOrders();
-  //     setPendingOrders(orders.pendingOrders);
-  //     setCloseOrders(orders.closedOrders);
-  //   }
-  //   // const duration = performance.now() - startTime;
-  //   // console.log(`someMethodIThinkMightBeSlow took ${duration}ms`);
-  //   // console.timeEnd('UniqueLabelName')
-  //   await wait(500);
-  //   sync();
-  // }, [middleman]);
-
   const eventListener = useCallback(() => {
     middleman.tbWebSocket.onmessage = (msg) => {
       let metaData = JSON.parse(msg.data);
@@ -375,7 +333,9 @@ const StoreProvider = (props) => {
           // );
           if (time - depthBookLastTimeSync > depthBookSyncInterval) {
             // console.log(`sync depthbook`);
-            setBooks(middleman.getDepthBooks());
+            const books = middleman.getDepthBooks()
+            setBooks(books);
+            setDepthChartData(middleman.getDepthChartData(books))
             depthBookLastTimeSync = time;
           }
           break;
@@ -490,6 +450,7 @@ const StoreProvider = (props) => {
         lotSz,
         memberEmail,
         fiatCurrency,
+        depthChartData,
         setIsLogin,
         // sync,
         start,

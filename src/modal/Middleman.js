@@ -5,6 +5,7 @@ import OrderBook from "../libs/books/OrderBook";
 import TickerBook from "../libs/books/TickerBook";
 import TradeBook from "../libs/books/TradeBook";
 import TideBitWS from "../libs/TideBitWS";
+import SafeMath from "../utils/SafeMath";
 import Communicator from "./Communicator";
 // import Pusher from "pusher-js";
 // import { randomID } from "dvalue";
@@ -208,9 +209,73 @@ class Middleman {
 
   getDepthBooks(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
-    let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
-    // console.log(`getBooks current market`, market)
-    return this.depthBook.getSnapshot(market, lotSz);
+    return this.depthBook.getSnapshot(market);
+  }
+
+  getDepthChartData(books) {
+    const _bids = books.bids
+      .map((bid) => ({ ...bid }))
+      .sort((a, b) => +a.price - +b.price);
+    const _asks = books.asks.map((ask) => ({ ...ask }));
+    if (_bids.length > _asks.length) {
+      const d = _asks.length - 1;
+      for (let i = _asks.length; i < _bids.length; i++) {
+        _asks.push({
+          price: SafeMath.plus(
+            _asks[i - 1]?.price || "0",
+            i + 1 > _bids.length - 1
+              ? SafeMath.minus(
+                  _bids[_bids.length - 1]?.price,
+                  _bids[_bids.length - 2]?.price
+                )
+              : SafeMath.minus(_bids[i + 1]?.price, _bids[i]?.price)
+          ),
+          total: _asks[d]?.total || "0",
+        });
+      }
+    } else if (_bids.length < _asks.length) {
+      for (let i = _bids.length; i < _asks.length; i++) {
+        const d = _bids.length - 1;
+        _bids.push({
+          price: SafeMath.plus(
+            _bids[i - 1]?.price || "0",
+            i + 1 > _bids.length - 1
+              ? SafeMath.minus(
+                  _asks[_asks.length - 1]?.price,
+                  _asks[_asks.length - 2]?.price
+                )
+              : SafeMath.minus(_asks[i + 1]?.price, _asks[i]?.price)
+          ),
+          total: _bids[d]?.total || "0",
+        });
+      }
+    }
+    const _bs = _bids
+      .map((b) => ({
+        x: b.price,
+        y: b.total,
+      }))
+      .concat(
+        _asks.map((a) => ({
+          x: a.price,
+          y: null,
+        }))
+      );
+    const _as = _bids
+      .map((b) => ({
+        x: b.price,
+        y: null,
+      }))
+      .concat(
+        _asks.map((a) => ({
+          x: a.price,
+          y: a.total,
+        }))
+      );
+    return {
+      asks: _as,
+      bids: _bs,
+    };
   }
 
   async _getDepthBooks({ market, sz, lotSz }) {

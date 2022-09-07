@@ -15,7 +15,7 @@ class DepthBook extends BookBase {
     this.unit = unit;
   }
 
-  getSnapshot(market, lotSz) {
+  getSnapshot(market) {
     try {
       let asks = [],
         bids = [];
