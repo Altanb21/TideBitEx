@@ -336,6 +336,8 @@ class Middleman {
             this.isLogin = false;
           }
         }
+      }else{
+        this.isLogin = false;
       }
     } catch (error) {
       console.error(`_getAccounts error`, error);
