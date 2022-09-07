@@ -684,10 +684,12 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
-  async getAccounts({ memberId, email }) {
+  async getAccounts({ query }) {
+    let { memberId, email } = query;
     this.logger.log(
       `[${this.constructor.name}] getAccounts memberId`,
-      memberId
+      memberId,
+      email
     );
     try {
       const _accounts = await this.database.getAccountsByMemberId(memberId);

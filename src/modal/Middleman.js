@@ -109,7 +109,7 @@ class Middleman {
     return await this.communicator.getUsersAccounts(exchange);
   }
 
-  getMyOrders(market) {
+  getMyOrdersSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     return this.orderBook.getSnapshot(market);
   }
@@ -156,11 +156,11 @@ class Middleman {
     }
   }
 
-  getTickers() {
+  getTickersSnapshot() {
     return this.tickerBook.getSnapshot();
   }
 
-  async _getTickers(instType = "SPOT", from, limit) {
+  async getTickers(instType = "SPOT", from, limit) {
     let rawTickers,
       tickers = {};
 
@@ -187,7 +187,7 @@ class Middleman {
     return this.tickers;
   }
 
-  getTrades(market) {
+  getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
     return this.tradeBook.getSnapshot(market, lotSz);
@@ -207,7 +207,7 @@ class Middleman {
     }
   }
 
-  getDepthBooks(market) {
+  getDepthBooksSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     return this.depthBook.getSnapshot(market);
   }
@@ -292,7 +292,7 @@ class Middleman {
     }
   }
 
-  getTicker() {
+  getTickerSnapshot() {
     return this.tickerBook.getCurrentTicker();
   }
 
@@ -317,28 +317,29 @@ class Middleman {
   //   return XSRFToken;
   // }
 
-  async _getAccounts(market) {
-    if (this.isLogin) {
-      try {
-        const res = await this.communicator
-          .getAccounts
-          // this.selectedTicker?.instId?.replace("-", ",")
-          ();
-        // console.log(`_getAccounts res`, res);
-        if (res) {
-          this.accountBook.updateAll(res.accounts);
-          // this.memberId = res.memberId;
-          // this.email = res.email;
+  async getAccounts() {
+    try {
+      const res = await this.communicator
+        .getAccounts
+        // this.selectedTicker?.instId?.replace("-", ",")
+        ();
+      // console.log(`_getAccounts res`, res);
+      if (res) {
+        this.accountBook.updateAll(res.accounts);
+        if (!this.memberId) {
+          this.memberId = res.memberId;
+          this.email = res.email;
+          if (this.memberId) this.registerUser();
         }
-      } catch (error) {
-        console.error(`_getAccounts error`, error);
-        // this.isLogin = false;
-        this.accountBook.clearAll();
       }
+    } catch (error) {
+      console.error(`_getAccounts error`, error);
+      // this.isLogin = false;
+      this.accountBook.clearAll();
     }
   }
 
-  getAccounts(instId) {
+  getAccountsSnapshot(instId) {
     return {
       accounts: this.accountBook.getSnapshot(instId),
       sum: this.accountBook.getAssetsSum(),
@@ -434,7 +435,23 @@ class Middleman {
     };
   }
 
-  async start(market) {
+  async registerUser() {
+    try {
+      const CSRFToken = await this.communicator.CSRFTokenRenew();
+      // console.log(`[Middleman] _getAccounts userId`, this._userId);
+      // const userId = this._userId;
+      this.tbWebSocket.setCurrentUser({
+        CSRFToken,
+        memberId: this.memberId,
+        // peatioSession: options.peatioSession
+        // userId,
+      });
+    } catch (error) {
+      console.error(`tbWebSocket error`, error);
+    }
+  }
+
+  async initWs() {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${
@@ -446,42 +463,10 @@ class Middleman {
       this.isLogin = true;
       this.memberId = options.memberId;
       this.email = options.email;
+      this.registerUser();
     } else {
       this.isLogin = false;
     }
-    if (this.isLogin) {
-      try {
-        const CSRFToken = await this.communicator.CSRFTokenRenew();
-        // console.log(`[Middleman] _getAccounts userId`, this._userId);
-        // const userId = this._userId;
-        this.tbWebSocket.setCurrentUser(market, {
-          CSRFToken,
-          memberId: this.memberId,
-          // peatioSession: options.peatioSession
-          // userId,
-        });
-      } catch (error) {
-        console.error(`tbWebSocket error`, error);
-      }
-    }
-    await this._getTickers();
-    await this._getAccounts(market);
-    await this.selectMarket(market);
-  }
-
-  async sync() {
-    // --- WORKAROUND---
-    // await wait(1 * 60 * 1000);
-    // if (this.isLogin) {
-    // console.log(`--- WORKAROUND--- sync [START]`);
-    const market = this.tickerBook.getCurrentMarket();
-    await this._getAccounts(market);
-    await this._getOrderList(market);
-    await this._getOrderHistory(market);
-    // console.log(`--- WORKAROUND--- sync [END]`);
-    // }
-    // this.sync();
-    // --- WORKAROUND---
   }
 
   stop() {

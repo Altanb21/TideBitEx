@@ -355,7 +355,7 @@ class ExchangeHub extends Bot {
   }
 
   // account api
-  async getAccounts({ memberId }) {
+  async getAccounts({ memberId, email }) {
     let priceList = await this.getPriceList();
     this.accountBook.priceList = priceList;
     this.logger.debug(
@@ -368,7 +368,9 @@ class ExchangeHub extends Bot {
         payload: null,
       });
     }
-    return this.tideBitConnector.router("getAccounts", { memberId });
+    return this.tideBitConnector.router("getAccounts", {
+      query: { memberId, email },
+    });
   }
 
   async getTicker({ params, query }) {
