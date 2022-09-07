@@ -14,13 +14,11 @@ const Exchange = () => {
   const breakpoint = 428;
 
   useEffect(() => {
-    if (location.pathname?.includes("/markets")) {
-      if (!isStart) {
-        window.storeCtx = storeCtx;
-        storeCtx.start();
-        // storeCtx.sync();
-        setIsStart(true);
-      }
+    if (!isStart && location.pathname?.includes("/markets")) {
+      window.storeCtx = storeCtx;
+      storeCtx.start();
+      // storeCtx.sync();
+      setIsStart(true);
     }
     // ++TODO never called
     return () => {

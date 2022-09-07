@@ -12,10 +12,14 @@ const TradingChart = (props) => {
   const { width } = useViewport();
   const breakpoint = 428;
   const { t } = useTranslation();
+  const [selectedTicker, setSelectedTicker] = useState(null);
   const [query, setQuery] = useState(null);
 
   useEffect(() => {
-    if (storeCtx.selectedTicker) {
+    if (
+      storeCtx.selectedTicker &&
+      selectedTicker?.instId !== storeCtx.selectedTicker?.instId
+    ) {
       const { name, pricescale, source } = storeCtx.selectedTicker;
       const arr = [];
       if (name) arr.push(`symbol=${name}`);
@@ -24,8 +28,9 @@ const TradingChart = (props) => {
       if (props.isMobile) arr.push(`mobile=${1}`);
       const qs = !!arr.length ? `?${arr.join("&")}` : "";
       setQuery(qs);
+      setSelectedTicker({ ...storeCtx.selectedTicker });
     }
-  }, [storeCtx.selectedTicker, props.isMobile]);
+  }, [storeCtx.selectedTicker, props.isMobile, selectedTicker?.instId]);
 
   return (
     <div
