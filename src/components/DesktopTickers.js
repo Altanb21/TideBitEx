@@ -124,12 +124,12 @@ const DesktopTickers = (props) => {
   }, [storeCtx.tickers]);
 
   useEffect(() => {
-    if (!isInit && storeCtx.tickers?.length > 0) {
+    if ((!isInit && storeCtx.tickers?.length > 0) || props.openTickerList) {
       filterTickers();
-      setIsInit(true);
+      if (!isInit) setIsInit(true);
     }
     return () => {};
-  }, [filterTickers, isInit, storeCtx.tickers?.length]);
+  }, [filterTickers, isInit, props.openTickerList, storeCtx.tickers?.length]);
 
   useEffect(() => {
     if (
