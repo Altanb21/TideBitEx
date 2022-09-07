@@ -72,7 +72,7 @@ const StoreProvider = (props) => {
         history.push({
           pathname: `/markets/${market}`,
         });
-        setMarket(market)
+        setMarket(market);
         await middleman.selectMarket(market);
         const ticker = middleman.getTicker();
         setSelectedTicker(ticker);
@@ -324,8 +324,7 @@ const StoreProvider = (props) => {
           break;
         case Events.update:
           middleman.depthBook.updateAll(metaData.data.market, metaData.data);
-          console.log(`Events.update market${market}`)
-          if (market && time - depthBookLastTimeSync > depthBookSyncInterval) {
+          if (time - depthBookLastTimeSync > depthBookSyncInterval) {
             const books = middleman.getDepthBooksSnapshot(market);
             setBooks(books);
             setDepthChartData(middleman.getDepthChartData(books));
@@ -345,8 +344,7 @@ const StoreProvider = (props) => {
           middleman.tickerBook.updateByDifference(metaData.data);
           let ticker = middleman.getTickerSnapshot();
           if (ticker) setPrecision(ticker);
-          console.log(`Events.update market${market}`)
-          if (market && time - tickersLastTimeSync > tickersSyncInterval) {
+          if (time - tickersLastTimeSync > tickersSyncInterval) {
             setSelectedTicker(middleman.getTickerSnapshot());
             setTickers(middleman.getTickersSnapshot());
             tickersLastTimeSync = time;
@@ -357,7 +355,7 @@ const StoreProvider = (props) => {
             metaData.data.market,
             metaData.data.trades
           );
-          if (market && time - tradesLastTimeSync > tradesSyncInterval) {
+          if (time - tradesLastTimeSync > tradesSyncInterval) {
             setTrades(middleman.getTradesSnapshot());
             tradesLastTimeSync = time;
           }
@@ -380,7 +378,7 @@ const StoreProvider = (props) => {
   };
 
   const init = useCallback(async () => {
-    console.log(`storeCtx init`);
+    // console.log(`storeCtx init`);
     await middleman.initWs();
     eventListener();
     await middleman.getTickers();
@@ -391,11 +389,11 @@ const StoreProvider = (props) => {
       setAccounts(middleman.getAccountsSnapshot());
       setMemberEmail(middleman.email);
     }
-    console.log(`storeCtx init end`);
+    // console.log(`storeCtx init end`);
   }, [eventListener, middleman]);
 
   const start = useCallback(async () => {
-    console.log(`storeCtx start`);
+    // console.log(`storeCtx start`);
     let market =
       document.cookie
         .split(";")
@@ -404,7 +402,7 @@ const StoreProvider = (props) => {
         ?.split("=")[1] || location.pathname?.includes("/markets/")
         ? location.pathname?.replace("/markets/", "")
         : "";
-    console.log(`storeCtx market`, market);
+    // console.log(`storeCtx market`, market);
     if (market) {
       setMarket(market);
       setSelectedTicker(middleman.getTickerSnapshot(market));
@@ -417,12 +415,21 @@ const StoreProvider = (props) => {
         }
       }
       await middleman.selectMarket(market);
-      console.log(`middleman.getDepthBooksSnapshot(${market})`,middleman.getDepthBooksSnapshot(market))
+      // console.log(
+      //   `middleman.getDepthBooksSnapshot(${market})`,
+      //   middleman.getDepthBooksSnapshot(market)
+      // );
       setBooks(middleman.getDepthBooksSnapshot(market));
-      console.log(`middleman.getTradesSnapshot(${market})`,middleman.getTradesSnapshot(market))
+      // console.log(
+      //   `middleman.getTradesSnapshot(${market})`,
+      //   middleman.getTradesSnapshot(market)
+      // );
       setTrades(middleman.getTradesSnapshot(market));
       if (middleman.isLogin) {
-        console.log(`middleman.getMyOrdersSnapshot(${market})`,middleman.getMyOrdersSnapshot(market))
+        // console.log(
+        //   `middleman.getMyOrdersSnapshot(${market})`,
+        //   middleman.getMyOrdersSnapshot(market)
+        // );
         const orders = middleman.getMyOrdersSnapshot(market);
         setPendingOrders(orders.pendingOrders);
         setCloseOrders(orders.closedOrders);
