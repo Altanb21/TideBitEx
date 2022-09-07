@@ -64,30 +64,25 @@ const StoreProvider = (props) => {
         : 0;
     setTickSz(tickSz);
     setLotSz(lotSz);
-    // console.log(`selectMarket ticker`, ticker);
-    // console.log(`selectMarket tickSz`, tickSz);
-    // console.log(`selectMarket lotSz`, lotSz);
   };
 
   const selectMarket = useCallback(
     async (market) => {
-      // console.log(`selectedTicker`, selectedTicker, !selectedTicker);
-      // console.log(`ticker`, ticker, ticker.market !== selectedTicker?.market);
       if (!selectedTicker || market !== selectedTicker?.market) {
         history.push({
           pathname: `/markets/${market}`,
         });
+        setMarket(market)
         await middleman.selectMarket(market);
         const ticker = middleman.getTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
-        setTrades(middleman.getTrades());
-        setBooks(middleman.getDepthBooks());
-        const orders = middleman.getMyOrders();
+        setTrades(middleman.getTradesSnapshot(market));
+        setBooks(middleman.getDepthBooksSnapshot(market));
+        const orders = middleman.getMyOrdersSnapshot(market);
         setPendingOrders(orders.pendingOrders);
         setCloseOrders(orders.closedOrders);
       }
-      // console.log(`****^^^^**** selectTickerHandler [END] ****^^^^****`);
     },
     [selectedTicker, history, middleman]
   );
@@ -329,13 +324,9 @@ const StoreProvider = (props) => {
           break;
         case Events.update:
           middleman.depthBook.updateAll(metaData.data.market, metaData.data);
-          // console.log(
-          //   `~~ time[${time}] - depthBookLastTimeSync[${depthBookLastTimeSync}] > depthBookSyncInterval[${depthBookSyncInterval}]`,
-          //   time - depthBookLastTimeSync > depthBookSyncInterval
-          // );
+          console.log(`Events.update market${market}`)
           if (market && time - depthBookLastTimeSync > depthBookSyncInterval) {
-            // console.log(`sync depthbook`);
-            const books = middleman.getDepthBooksSnapshot();
+            const books = middleman.getDepthBooksSnapshot(market);
             setBooks(books);
             setDepthChartData(middleman.getDepthChartData(books));
             depthBookLastTimeSync = time;
@@ -354,6 +345,7 @@ const StoreProvider = (props) => {
           middleman.tickerBook.updateByDifference(metaData.data);
           let ticker = middleman.getTickerSnapshot();
           if (ticker) setPrecision(ticker);
+          console.log(`Events.update market${market}`)
           if (market && time - tickersLastTimeSync > tickersSyncInterval) {
             setSelectedTicker(middleman.getTickerSnapshot());
             setTickers(middleman.getTickersSnapshot());
@@ -415,7 +407,6 @@ const StoreProvider = (props) => {
     console.log(`storeCtx market`, market);
     if (market) {
       setMarket(market);
-      console.log(`middleman.getTickerSnapshot(market)`, middleman.getTickerSnapshot(market));
       setSelectedTicker(middleman.getTickerSnapshot(market));
       if (!isLogin) {
         await middleman.getAccounts();
@@ -426,10 +417,13 @@ const StoreProvider = (props) => {
         }
       }
       await middleman.selectMarket(market);
-      setBooks(middleman.getDepthBooksSnapshot());
-      setTrades(middleman.getTradesSnapshot());
+      console.log(`middleman.getDepthBooksSnapshot(${market})`,middleman.getDepthBooksSnapshot(market))
+      setBooks(middleman.getDepthBooksSnapshot(market));
+      console.log(`middleman.getTradesSnapshot(${market})`,middleman.getTradesSnapshot(market))
+      setTrades(middleman.getTradesSnapshot(market));
       if (middleman.isLogin) {
-        const orders = middleman.getMyOrdersSnapshot();
+        console.log(`middleman.getMyOrdersSnapshot(${market})`,middleman.getMyOrdersSnapshot(market))
+        const orders = middleman.getMyOrdersSnapshot(market);
         setPendingOrders(orders.pendingOrders);
         setCloseOrders(orders.closedOrders);
       }

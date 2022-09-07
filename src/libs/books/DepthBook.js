@@ -1,5 +1,4 @@
 // import SafeMath from "../../utils/SafeMath";
-import SafeMath from "../../utils/SafeMath";
 import BookBase from "../BookBase";
 
 class DepthBook extends BookBase {
