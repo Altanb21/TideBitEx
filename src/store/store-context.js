@@ -243,8 +243,8 @@ const StoreContext = React.createContext({
   getOuterPendingOrders: async (exchange) => {},
   setFocusEl: () => {},
   changeRange: () => {},
-  getUserRoles: () => {},
-  getAdminUsers: () => {},
+  getUserRoles: async() => {},
+  getAdminUsers: async() => {},
 });
 
 export default StoreContext;

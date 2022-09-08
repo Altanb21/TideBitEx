@@ -98,7 +98,7 @@ const UserSetting = () => {
   const [filterKey, setFilterKey] = useState("");
 
   const getAdminUsers = useCallback(async () => {
-    const users = await storeCtx.getAdminUsers();
+    const { adminUsers: users } = await storeCtx.getAdminUsers();
     console.log(`getAdminUsers users`, users);
     setUsers(users);
   }, [storeCtx]);
@@ -208,21 +208,26 @@ const UserSetting = () => {
           <th className="screen__table-header">權限</th>
         </thead>
         <tbody className="screen__table-rows">
-          {Object.values(filterUsers)?.map((user) => (
-            <UserDetail user={user} />
-          ))}
+          {filterUsers &&
+            Object.values(filterUsers)?.map((user) => (
+              <UserDetail user={user} />
+            ))}
         </tbody>
         <tfoot>
           <tr className="screen__table-tools">
-            <div className="screen__table-tool" onClick={() => {}}></div>
-            <div className="screen__table-tool" onClick={() => {}}></div>
+            <div className="screen__table-tool" onClick={() => {}}>
+              <div className="screen__table-tool-icon"></div>
+            </div>
+            <div className="screen__table-tool" onClick={() => {}}>
+              <div className="screen__table-tool-icon"></div>
+            </div>
           </tr>
-          <tr
+          <div
             className="screen__table-btn screen__table-text"
             onClick={() => setShowMore((prev) => !prev)}
           >
             {showMore ? "顯示更少" : "顯示更多"}
-          </tr>
+          </div>
         </tfoot>
       </table>
       <div className="screen__floating-box">

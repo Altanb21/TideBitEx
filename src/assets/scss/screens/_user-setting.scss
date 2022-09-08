@@ -10,7 +10,7 @@
     color: #fff;
     font-size: 20px;
     text-align: center;
-    padding: 180px 0;
+    padding: 18px 0;
   }
   & .screen__table-headers {
     margin: 0 15px;
@@ -33,18 +33,21 @@
     justify-content: flex-end;
   }
   & .screen__table-tool {
+    border-left: 1px solid #707070;
+    padding: 5px;
+  }
+  & .screen__table-tool-icon {
     width: 18px;
     height: 18px;
     background-position: center;
     background-size: contain;
     background-repeat: no-repeat;
     cursor: pointer;
-    border-left: 1px solid #707070;
   }
-  & .screen__table-tool:first-child {
+  & .screen__table-tool:first-child > .screen__table-tool-icon {
     background-image: url("../../images/minus@2x.png");
   }
-  & .screen__table-tool:last-child {
+  & .screen__table-tool:last-child .screen__table-tool-icon {
     background-image: url("../../images/plus@2x.png");
   }
   &__setting-icon {
@@ -56,7 +59,7 @@
     cursor: pointer;
     background-image: url("../../images/setting@2x.png");
   }
-  &__roles{
+  &__roles {
     float: left;
     gap: 10px;
   }
