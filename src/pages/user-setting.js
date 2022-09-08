@@ -92,59 +92,56 @@ const UserSetting = () => {
   const storeCtx = useContext(StoreContext);
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
-  const [users, setUsers] = useState(null);
-  const [filterUsers, setFilterUsers] = useState(null);
-  const [filterOptions, setFilterOptions] = useState(["all"]); //'deposit','withdraw','transfer', 'transaction'
+  const [adminUsers, setAdminUsers] = useState(null);
+  const [filteredAdminUsers, setFilteredAdminUsers] = useState(null);
+  const [filterOptions, setFilterOptions] = useState(["all"]);
   const [filterKey, setFilterKey] = useState("");
 
   const getAdminUsers = useCallback(async () => {
     const { adminUsers: users } = await storeCtx.getAdminUsers();
     console.log(`getAdminUsers users`, users);
-    setUsers(users);
+    setAdminUsers(users);
   }, [storeCtx]);
 
   const filter = useCallback(
     ({ users, option, keyword }) => {
-      let index,
-        options = [...filterOptions];
-      console.log(`filter option`, option);
+      let _keyword = keyword === undefined ? filterKey : keyword,
+        _users = adminUsers || filteredAdminUsers,
+        options;
       if (option) {
-        if (option === "all") options = ["all"];
-        else {
-          if (options.includes(option)) {
-            index = options.findIndex((op) => op === option);
-            options.splice(index, 1);
-          } else {
-            index = options.findIndex((op) => op === "all");
-            if (index > -1) {
-              options.splice(index, 1);
-            }
-            options.push(option);
-          }
+        if (option === "all") {
+          options = ["all"];
+        } else {
+          if (filterOptions.includes("all")) options = [...option];
+          else options = [...filterOptions, option];
         }
-        if (options.length === 0) options = ["all"];
         setFilterOptions(options);
       }
-      let _users = filterUsers || users,
-        _keyword = keyword === undefined ? filterKey : keyword;
-      if (_users) {
-        // _users = Object.values(_users).filter((user) => {
-        //   let condition =  user.roles.some(role=> role.includes(_keyword))
-        //   if (options !== "all")
-        //     condition = condition && user.roles.some(role=> role.includes(options)) ;
-        //     return condition;
-        // });
-        setFilterUsers(_users);
+      if (users) {
+        _users = _users.filter((user) => {
+          let condition =
+            user.email.includes(_keyword) ||
+            user.id.includes(_keyword) ||
+            user.name.includes(_keyword) ||
+            user.roles.some((role) => role.includes(_keyword));
+          if (!options.includes("all"))
+            condition =
+              condition &&
+              user.roles.some((role) =>
+                options.includes(role.replace("-", " "))
+              );
+          return condition;
+        });
       }
+      setFilteredAdminUsers(_users);
     },
-    [filterKey, filterOptions, filterUsers]
+    [adminUsers, filterKey, filterOptions, filteredAdminUsers]
   );
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
         const users = await getAdminUsers();
-        setUsers(users);
         filter({ users: users });
         return !prev;
       } else return prev;
@@ -187,9 +184,9 @@ const UserSetting = () => {
         <div className="screen__display">
           <div className="screen__display-title">顯示：</div>
           <ul className="screen__display-options">
-            {Object.keys(roles).map((role) => (
+            {["all", ...Object.keys(roles)].map((key) => (
               <OptionTag
-                option={role}
+                option={key}
                 filterOptions={filterOptions}
                 onClick={filter}
               />
@@ -208,8 +205,8 @@ const UserSetting = () => {
           <th className="screen__table-header">權限</th>
         </thead>
         <tbody className="screen__table-rows">
-          {filterUsers &&
-            Object.values(filterUsers)?.map((user) => (
+          {filteredAdminUsers &&
+            Object.values(filteredAdminUsers)?.map((user) => (
               <UserDetail user={user} />
             ))}
         </tbody>
