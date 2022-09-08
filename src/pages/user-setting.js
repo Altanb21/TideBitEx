@@ -92,7 +92,7 @@ const UserDetail = (props) => {
                   isSelected={props.user.roles.includes(
                     roles[key].toLowerCase()
                   )}
-                  onClick={handleOnClick}
+                  onClick={() => handleOnClick(key)}
                 />
               );
             })}
