@@ -35,10 +35,10 @@ const RoleTag = (props) => {
   return (
     <span
       className={`user-setting__role-tag${props.isSelected ? " selected" : ""}`}
-      data={props.key}
-      key={props.key}
+      data={props.roleKey}
+      key={props.roleKey}
     >
-      {t(props.key)}
+      {t(props.roleKey)}
     </span>
   );
 };
@@ -46,20 +46,22 @@ const RoleTag = (props) => {
 const UserDetail = (props) => {
   const { t } = useTranslation();
   const [isEdit, setIsEdit] = useState(false);
-  const [roles, setRoles] = useState([...props.user.roles]);
+  const [updateRoles, setUpdateRoles] = useState([...props.user.roles]);
+
+  console.log(props.user);
 
   const handleOnClick = (key) => {
     console.log(`handleOnClick roles`, roles);
     console.log(`handleOnClick key`, key);
-    let updateRoles,
+    let _updateRoles,
       role = key.toLowerCase().replace("-", " ");
     if (roles.includes(role)) {
-      updateRoles = roles.filter((_role) => _role !== role);
+      _updateRoles = updateRoles.filter((_role) => _role !== role);
     } else {
-      updateRoles = roles.concat(role);
+      _updateRoles = updateRoles.concat(role);
     }
-    console.log(`handleOnClick updateRoles`, updateRoles);
-    setRoles(updateRoles);
+    console.log(`handleOnClick _updateRoles`, _updateRoles);
+    setUpdateRoles(_updateRoles);
   };
 
   return (
@@ -73,19 +75,27 @@ const UserDetail = (props) => {
       <td className="screen__table-data">{props.user.email}</td>
       <td className="screen__table-data user-setting__roles">
         {!isEdit
-          ? props.user.roles.map((role) => (
-              <RoleTag
-                key={role.toLowerCase().replace(" ", "-")}
-                isSelected={true}
-              />
-            ))
-          : Object.keys(roles).map((key) => (
-              <RoleTag
-                key={key}
-                isSelected={roles.includes(roles[key].toLowerCase())}
-                onClick={handleOnClick}
-              />
-            ))}
+          ? props.user.roles.map((role) => {
+              console.log(`role`, role.toLowerCase().replace(" ", "-"));
+              return (
+                <RoleTag
+                  roleKey={role.toLowerCase().replace(" ", "-")}
+                  isSelected={true}
+                />
+              );
+            })
+          : Object.keys(roles).map((key) => {
+              console.log(`key`, key);
+              return (
+                <RoleTag
+                  roleKey={key}
+                  isSelected={props.user.roles.includes(
+                    roles[key].toLowerCase()
+                  )}
+                  onClick={handleOnClick}
+                />
+              );
+            })}
       </td>
       {isEdit === null && <div>{t("loading")}</div>}
       {isEdit !== null && (
@@ -100,9 +110,9 @@ const UserDetail = (props) => {
             className="screen__table-data user-setting__setting-label"
             onClick={async () => {
               setIsEdit(null);
-              let result = await props.editUser(props, roles); //TODO
+              let result = await props.editUser(props.user, roles); //TODO
               setIsEdit(false);
-              if (!result) setRoles(props.user.roles);
+              if (!result) setUpdateRoles(props.user.roles);
             }}
           >
             儲存設定
@@ -266,6 +276,7 @@ const UserSetting = (props) => {
           <th className="screen__table-header">管理人員 ID</th>
           <th className="screen__table-header">E-mail</th>
           <th className="screen__table-header">權限</th>
+          <th className="screen__table-header"></th>
         </thead>
         <tbody className="screen__table-rows">
           {filteredAdminUsers &&

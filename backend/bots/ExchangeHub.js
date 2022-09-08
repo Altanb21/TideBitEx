@@ -175,11 +175,15 @@ class ExchangeHub extends Bot {
         "config/roles.yml"
       );
       const users = Utils.fileParser(p);
-      const formatUsers = users.map((user) => {
-        return {
-          ...user,
-        };
-      });
+      const formatUsers = users.reduce((prev, user) => {
+        const index = prev.findIndex((_usr) => _usr.email === user.email);
+        if (index === -1) {
+          prev = [...prev, user];
+        } else {
+          prev[index].roles = prev[index].roles.concat(user.roles);
+        }
+        return prev;
+      }, []);
       // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
       return formatUsers;
     } catch (error) {

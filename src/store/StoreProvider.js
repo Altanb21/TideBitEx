@@ -350,7 +350,7 @@ const StoreProvider = (props) => {
             metaData.data.market,
             metaData.data.difference
           );
-          const orders = middleman.getMyOrders();
+          const orders = middleman.getMyOrdersSnapshot();
           setPendingOrders(orders.pendingOrders);
           setCloseOrders(orders.closedOrders);
           break;

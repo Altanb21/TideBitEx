@@ -18,6 +18,8 @@
     border-bottom: 1px solid #707070;
     background-color: transparent;
     width: unset;
+    justify-content: unset;
+    padding: 10px 0px;
   }
   & .screen__table-rows {
     width: unset;
@@ -25,11 +27,23 @@
     overflow: scroll;
   }
   & .screen__table-row {
+    justify-content: unset;
     padding: 0;
-    margin: 0 15px;
+    padding: 8px 15px;
+    margin: 5px 0;
+  }
+  & .screen__table-row:hover {
+    color: #fff;
+    background-color: #2699fb;
+  }
+  & .screen__table-header:nth-child(3) & .screen__table-row:nth-child(3) {
+    flex: auto;
   }
   & .screen__table-header {
     font-size: 18px;
+  }
+  & .screen__table-data {
+    min-width: 122px;
   }
   & .screen__table-tools {
     border-top: 1px solid #707070;
@@ -86,15 +100,15 @@
     float: left;
     gap: 10px;
   }
-  &__role-tag.selected {
+  &__role-tag {
     background-color: transparent;
     border: 1px solid #707070;
     border-radius: 14px;
-    color: #fff;
+    color: #767676;
   }
-  &__role-tag {
+  &__role-tag.selected {
     background-color: #2699fb;
     border-color: #2699fb;
-    color: #767676;
+    color: #fff;
   }
 }
