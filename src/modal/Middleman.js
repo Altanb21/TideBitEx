@@ -54,7 +54,15 @@ class Middleman {
       const response = await this.communicator.getUserRoles();
       return response;
     } catch (error) {
-      // this.instruments = [];
+      throw error;
+    }
+  }
+
+  async getAdminUsers() {
+    try {
+      const response = await this.communicator.getAdminUsers();
+      return response;
+    } catch (error) {
       throw error;
     }
   }

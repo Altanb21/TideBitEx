@@ -38,7 +38,7 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
-        this.adminUsers = this.getAdminUsers();
+        this.adminUsers = this._getAdminUsers();
         this.currencies = await this.database.getCurrencies();
         this.tickerBook = new TickerBook({
           logger,
@@ -168,7 +168,7 @@ class ExchangeHub extends Bot {
     }
   }
 
-  getAdminUsers() {
+  _getAdminUsers() {
     try {
       const p = path.join(
         this.config.base.TideBitLegacyPath,
@@ -186,6 +186,18 @@ class ExchangeHub extends Bot {
       this.logger.error(error);
       process.exit(1);
     }
+  }
+
+  async getAdminUsers({ query }) {
+    this.logger.debug(`*********** [${this.name}] getAdminUsers ************`);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getAdminUsers",
+        payload: {
+          adminUsers: this.adminUsers,
+        },
+      })
+    );
   }
 
   getTidebitMarkets() {

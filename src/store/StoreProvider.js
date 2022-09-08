@@ -108,6 +108,11 @@ const StoreProvider = (props) => {
     return await middleman.getUserRoles();
   };
 
+
+  const getAdminUsers = async () => {
+    return await middleman.getAdminUsers();
+  };
+
   const getUsersAccounts = useCallback(async () => {
     let usersAccounts = {};
     try {
@@ -485,6 +490,7 @@ const StoreProvider = (props) => {
         changeRange,
         updateFiatCurrency,
         getUserRoles,
+        getAdminUsers
       }}
     >
       {props.children}

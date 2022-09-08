@@ -104,6 +104,10 @@ class TideBitLegacyAdapter {
         // , email;
         try {
           member = await database.getMemberById(parsedResult.memberId);
+          console.log(
+            `!!! [TideBitLegacyAdapter getMemberId] getMemberFromDB`,
+            redisDomain
+          );
           // email = member?.email;
         } catch (error) {
           console.error(`database.getMemberById error`, error);

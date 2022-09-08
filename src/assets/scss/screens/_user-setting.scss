@@ -1,0 +1,74 @@
+.user-setting {
+  & .screen__table {
+    color: #767676;
+    border-radius: 25px 25px 0px 0px;
+  }
+  & .screen__table .screen__table-title {
+    background-color: #767676;
+    border: 1px solid #707070;
+    border-radius: 25px 25px 0px 0px;
+    color: #fff;
+    font-size: 20px;
+    text-align: center;
+    padding: 180px 0;
+  }
+  & .screen__table-headers {
+    margin: 0 15px;
+    border-bottom: 1px solid #707070;
+  }
+  & .screen__table-rows {
+    margin: 0 15px;
+  }
+  & .screen__table-row {
+    padding: 0;
+  }
+  & .screen__table-header {
+    font-size: 18px;
+  }
+  & .screen__table-tools {
+    border-top: 1px solid #707070;
+    border-bottom: 1px solid #707070;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  & .screen__table-tool {
+    width: 18px;
+    height: 18px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    border-left: 1px solid #707070;
+  }
+  & .screen__table-tool:first-child {
+    background-image: url("../../images/minus@2x.png");
+  }
+  & .screen__table-tool:last-child {
+    background-image: url("../../images/plus@2x.png");
+  }
+  &__setting-icon {
+    width: 18px;
+    height: 18px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    background-image: url("../../images/setting@2x.png");
+  }
+  &__roles{
+    float: left;
+    gap: 10px;
+  }
+  &__role-tag.selected {
+    background-color: transparent;
+    border: 1px solid #707070;
+    border-radius: 14px;
+    color: #fff;
+  }
+  &__role-tag {
+    background-color: #2699fb;
+    border-color: #2699fb;
+    color: #767676;
+  }
+}

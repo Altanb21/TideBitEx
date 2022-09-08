@@ -244,6 +244,7 @@ const StoreContext = React.createContext({
   setFocusEl: () => {},
   changeRange: () => {},
   getUserRoles: () => {},
+  getAdminUsers: () => {},
 });
 
 export default StoreContext;
