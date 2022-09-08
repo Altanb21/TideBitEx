@@ -20,12 +20,13 @@
     width: unset;
   }
   & .screen__table-rows {
-    margin: 0 15px;
     width: unset;
     border-bottom: none;
+    overflow: scroll;
   }
   & .screen__table-row {
     padding: 0;
+    margin: 0 15px;
   }
   & .screen__table-header {
     font-size: 18px;
