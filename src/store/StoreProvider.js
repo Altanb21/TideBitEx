@@ -407,6 +407,7 @@ const StoreProvider = (props) => {
       middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
       setSelectedTicker(middleman.getTickerSnapshot());
+      setPrecision(middleman.getTickerSnapshot());
       if (!isLogin) {
         await middleman.getAccounts();
         setIsLogin(middleman.isLogin);

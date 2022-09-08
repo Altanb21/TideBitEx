@@ -1,3 +1,4 @@
+import packageJson from '../../package.json';
 import React, { useContext } from "react";
 import {
   FaHome,
@@ -124,7 +125,7 @@ const SideBar = (props) => {
       >
         {(key) => <div>{props.languages[key]}</div>}
       </DropDown>
-      <li className="sidebar__item">v0.8.11.1</li>
+      <li className="sidebar__item">{`v${packageJson.version}`}</li>
     </ul>
   );
 };
