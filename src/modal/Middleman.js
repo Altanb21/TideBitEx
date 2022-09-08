@@ -67,6 +67,33 @@ class Middleman {
     }
   }
 
+  async addAdminUser(currentUser, newUser) {
+    try {
+      const response = await this.communicator.addAdminUser();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async deleteAdminUser(currentUser, user) {
+    try {
+      const response = await this.communicator.deleteAdminUser();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateAdminUser(currentUser, updateUser) {
+    try {
+      const response = await this.communicator.updateAdminUser();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getOuterTradeFills(exchange, days) {
     try {
       return await this.communicator.getOuterTradeFills(exchange, days);

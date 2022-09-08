@@ -108,9 +108,18 @@ const StoreProvider = (props) => {
     return await middleman.getUserRoles();
   };
 
-
   const getAdminUsers = async () => {
     return await middleman.getAdminUsers();
+  };
+
+  const addAdminUser = async (currentUser, newUser) => {
+    return await middleman.addAdminUser(currentUser, newUser);
+  };
+  const deleteAdminUser = async (currentUser, user) => {
+    return await middleman.deleteAdminUser(currentUser, user);
+  };
+  const updateAdminUser = async (currentUser, updateUser) => {
+    return await middleman.updateAdminUser(currentUser, updateUser);
   };
 
   const getUsersAccounts = useCallback(async () => {
@@ -490,7 +499,10 @@ const StoreProvider = (props) => {
         changeRange,
         updateFiatCurrency,
         getUserRoles,
-        getAdminUsers
+        getAdminUsers,
+        addAdminUser,
+        deleteAdminUser,
+        updateAdminUser
       }}
     >
       {props.children}

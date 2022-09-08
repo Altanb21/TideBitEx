@@ -200,6 +200,52 @@ class ExchangeHub extends Bot {
     );
   }
 
+  async addAdminUser({ body }) {
+    // ++TODO
+    this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
+    this.logger.log(`body`, body);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "addAdminUser",
+        payload: {
+          result: true,
+        },
+      })
+    );
+  }
+
+  async updateAdminUser({ body }) {
+    // ++TODO
+    this.logger.debug(
+      `*********** [${this.name}] updateAdminUser ************`
+    );
+    this.logger.log(`body`, body);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "updateAdminUser",
+        payload: {
+          result: true,
+        },
+      })
+    );
+  }
+
+  async deleteAdminUser({ body }) {
+    // ++TODO
+    this.logger.debug(
+      `*********** [${this.name}] deleteAdminUser ************`
+    );
+    this.logger.log(`body`, body);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "deleteAdminUser",
+        payload: {
+          result: true,
+        },
+      })
+    );
+  }
+
   getTidebitMarkets() {
     try {
       const p = path.join(

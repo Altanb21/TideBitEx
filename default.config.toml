@@ -52,6 +52,7 @@ pathname = [
   "get | /api/v1/account/balance | Bot.ExchangeHub.getAccounts",
 
   # exchange - market
+  "get | /api/v1/market/options | Bot.ExchangeHub.getOptions",
   "get | /api/v1/market/ticker | Bot.ExchangeHub.getTicker",
   "get | /api/v1/market/tickers | Bot.ExchangeHub.getTickers",
   "get | /api/v1/market/books | Bot.ExchangeHub.getDepthBooks",
@@ -71,10 +72,6 @@ pathname = [
   # exchange - public
   "get | /api/v1/public/instruments | Bot.ExchangeHub.getInstruments",
 
-  # exchange - users
-  "get | /api/v1/users/account/list | Bot.ExchangeHub.getUsersAccounts",
-  "get | /api/v1/users/subaccount/list | Bot.ExchangeHub.getExAccounts",
-
   # tradingview
   "get | /api/v1/tradingview/config | Bot.ExchangeHub.getTradingViewConfig",
   "get | /api/v1/tradingview/symbols | Bot.ExchangeHub.getTradingViewSymbol",
@@ -88,8 +85,16 @@ pathname = [
   "get | /api/v1/dashboard | Bot.Dashboard.overview",
 
   # options
-  "get | /api/v1/options | Bot.ExchangeHub.getOptions",
 
-  "get | /api/v1/admin-users | Bot.ExchangeHub.getAdminUsers",
-  "get | /api/v1/user-roles | Bot.ExchangeHub.getUserRoles",
+  # exchange - users
+  "get | /api/v1/users/account/list | Bot.ExchangeHub.getUsersAccounts",
+  "get | /api/v1/users/subaccount/list | Bot.ExchangeHub.getExAccounts",
+
+  # analysis - admin
+  "get | /api/v1/admin/admin-users | Bot.ExchangeHub.getAdminUsers",
+  "get | /api/v1/admin/user-roles | Bot.ExchangeHub.getUserRoles",
+  "post | /api/v1/admin/add-user | Bot.ExchangeHub.addAdminUser",
+  "put | /api/v1/admin/update-user | Bot.ExchangeHub.updateAdminUser",
+  "delete | /api/v1/admin/delete-user | Bot.ExchangeHub.deleteAdminUser",
+
 ]

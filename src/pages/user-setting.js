@@ -43,7 +43,23 @@ const RoleTag = (props) => {
 };
 
 const UserDetail = (props) => {
+  const { t } = useTranslation();
   const [isEdit, setIsEdit] = useState(false);
+  const [roles, setRoles] = useState([...props.users.roles]);
+
+  const handleOnClick = (key) => {
+    console.log(`handleOnClick roles`, roles);
+    console.log(`handleOnClick key`, key);
+    let updateRoles,
+      role = key.toLowerCase().replace("-", " ");
+    if (roles.includes(role)) {
+      updateRoles = roles.filter((_role) => _role !== role);
+    } else {
+      updateRoles = roles.concat(role);
+    }
+    console.log(`handleOnClick updateRoles`, updateRoles);
+    setRoles(updateRoles);
+  };
 
   return (
     <tr
@@ -55,7 +71,7 @@ const UserDetail = (props) => {
       <td className="screen__table-data">{props.user.id}</td>
       <td className="screen__table-data">{props.user.email}</td>
       <td className="screen__table-data user-setting__roles">
-        {isEdit
+        {!isEdit
           ? props.user.roles.map((role) => (
               <RoleTag
                 key={role.toLowerCase().replace(" ", "-")}
@@ -65,30 +81,38 @@ const UserDetail = (props) => {
           : Object.keys(roles).map((key) => (
               <RoleTag
                 key={key}
-                isSelected={props.user.roles.includes(roles[key])}
+                isSelected={roles.includes(roles[key].toLowerCase())}
+                onClick={handleOnClick}
               />
             ))}
       </td>
-      <td
-        className="screen__table-data user-setting__setting-btn"
-        onClick={() => setIsEdit(true)}
-      >
-        <div className="screen__table-data user-setting__setting-icon"></div>
-        <div
-          className="screen__table-data user-setting__setting-label"
+      {isEdit === null && <div>{t("loading")}</div>}
+      {isEdit !== null && (
+        <td
+          className="screen__table-data user-setting__setting-btn"
           onClick={() => {
-            props.updateUserRole(); //TODO
-            setIsEdit(true);
+            if (props.currentUser.roles.includes("root")) setIsEdit(true);
           }}
         >
-          儲存設定
-        </div>
-      </td>
+          <div className="screen__table-data user-setting__setting-icon"></div>
+          <div
+            className="screen__table-data user-setting__setting-label"
+            onClick={async () => {
+              setIsEdit(null);
+              let result = await props.editUser(props, roles); //TODO
+              setIsEdit(false);
+              if (!result) setRoles(props.user.roles);
+            }}
+          >
+            儲存設定
+          </div>
+        </td>
+      )}
     </tr>
   );
 };
 
-const UserSetting = () => {
+const UserSetting = (props) => {
   const storeCtx = useContext(StoreContext);
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
@@ -96,6 +120,34 @@ const UserSetting = () => {
   const [filteredAdminUsers, setFilteredAdminUsers] = useState(null);
   const [filterOptions, setFilterOptions] = useState(["all"]);
   const [filterKey, setFilterKey] = useState("");
+
+  const editUser = useCallback(
+    async (user, roles) => {
+      console.log(`editUser user`, user)
+      console.log(`editUser roles`, roles)
+      let updateUser = { ...user };
+      let index = adminUsers.findIndex(
+        (adminUser) => adminUser.email === user.email
+      );
+      console.log(`editUser index`, index)
+      if (index !== -1) {
+        updateUser.roles = roles;
+        const { result } = await storeCtx.updateAdminUser(
+          props.currentUser,
+          updateUser
+        );
+        console.log(`updateAdminUser result`, result)
+        if (result) {
+          let updateUsers = [...adminUsers];
+          updateUsers[index] = updateUser;
+          setAdminUsers(updateUsers);
+        }
+        return true;
+      }
+      return false;
+    },
+    [adminUsers, props.currentUser, storeCtx]
+  );
 
   const getAdminUsers = useCallback(async () => {
     const { adminUsers: users } = await storeCtx.getAdminUsers();
@@ -105,31 +157,40 @@ const UserSetting = () => {
 
   const filter = useCallback(
     ({ users, option, keyword }) => {
+      console.log(`filter users`, users);
+      console.log(`filter option`, option);
+      console.log(`filter keyword`, keyword);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _users = adminUsers || filteredAdminUsers,
-        options;
+        _options;
+      console.log(`filter _users`, _users);
+      console.log(`filter _keyword`, _keyword);
       if (option) {
         if (option === "all") {
-          options = ["all"];
+          _options = ["all"];
         } else {
-          if (filterOptions.includes("all")) options = [...option];
-          else options = [...filterOptions, option];
+          if (filterOptions.includes("all")) _options = [...option];
+          else _options = [...filterOptions, option];
         }
-        setFilterOptions(options);
+        setFilterOptions(_options);
       }
+      console.log(`filter _options`, _options);
       if (users) {
         _users = _users.filter((user) => {
+          console.log(`filter user`, user);
           let condition =
             user.email.includes(_keyword) ||
             user.id.includes(_keyword) ||
             user.name.includes(_keyword) ||
             user.roles.some((role) => role.includes(_keyword));
-          if (!options.includes("all"))
+          console.log(`filter condition`, condition);
+          if (!_options.includes("all"))
             condition =
               condition &&
               user.roles.some((role) =>
-                options.includes(role.replace("-", " "))
+                _options.includes(role.replace("-", " "))
               );
+          console.log(`filter condition`, condition);
           return condition;
         });
       }
@@ -207,7 +268,11 @@ const UserSetting = () => {
         <tbody className="screen__table-rows">
           {filteredAdminUsers &&
             Object.values(filteredAdminUsers)?.map((user) => (
-              <UserDetail user={user} />
+              <UserDetail
+                user={user}
+                currentUser={props.currentUser}
+                editUser={editUser}
+              />
             ))}
         </tbody>
         <tfoot>
