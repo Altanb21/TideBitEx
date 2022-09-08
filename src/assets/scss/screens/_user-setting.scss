@@ -55,6 +55,23 @@
   & .screen__table-tool:last-child .screen__table-tool-icon {
     background-image: url("../../images/plus@2x.png");
   }
+  &__setting-btn {
+    display: flex;
+  }
+  .editing &__setting-btn {
+    gap: 5px;
+  }
+  .editing &__setting-icon {
+    background-image: url("../../images/settings-line-blue@2x.png");
+  }
+  .editing &__setting-label {
+    display: block;
+  }
+  &__setting-label {
+    display: none;
+    color: #2699fb;
+    font-size: 14px;
+  }
   &__setting-icon {
     width: 18px;
     height: 18px;

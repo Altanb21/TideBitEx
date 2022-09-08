@@ -34,8 +34,9 @@ const RoleTag = (props) => {
   const { t } = useTranslation();
   return (
     <span
-      className={`user-setting__role-tag${props.isSelected}? " selected": ""`}
+      className={`user-setting__role-tag${props.isSelected ? " selected" : ""}`}
       data={props.key}
+      key={props.key}
     >
       {t(props.key)}
     </span>
