@@ -162,7 +162,7 @@ const UserSetting = (props) => {
       console.log(`filter option`, option);
       console.log(`filter keyword`, keyword);
       let _keyword = keyword === undefined ? filterKey : keyword,
-        _users = adminUsers || filteredAdminUsers,
+        _users = users || filteredAdminUsers,
         _options;
       console.log(`filter _users`, _users);
       console.log(`filter _keyword`, _keyword);
