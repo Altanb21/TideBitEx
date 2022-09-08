@@ -37,6 +37,7 @@ const RoleTag = (props) => {
       className={`user-setting__role-tag${props.isSelected ? " selected" : ""}`}
       data={props.roleKey}
       key={props.roleKey}
+      onClick={props.onClick}
     >
       {t(props.roleKey)}
     </span>
@@ -81,6 +82,7 @@ const UserDetail = (props) => {
                 <RoleTag
                   roleKey={role.toLowerCase().replace(" ", "-")}
                   isSelected={true}
+                  onClick={() => {}}
                 />
               );
             })
