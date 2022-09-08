@@ -153,6 +153,7 @@ const UserSetting = (props) => {
     const { adminUsers: users } = await storeCtx.getAdminUsers();
     console.log(`getAdminUsers users`, users);
     setAdminUsers(users);
+    return users;
   }, [storeCtx]);
 
   const filter = useCallback(

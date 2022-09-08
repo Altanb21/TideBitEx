@@ -2,6 +2,7 @@
   & .screen__table {
     color: #767676;
     border-radius: 25px 25px 0px 0px;
+    overflow-y: unset;
   }
   & .screen__table .screen__table-title {
     background-color: #767676;
@@ -15,9 +16,13 @@
   & .screen__table-headers {
     margin: 0 15px;
     border-bottom: 1px solid #707070;
+    background-color: transparent;
+    width: unset;
   }
   & .screen__table-rows {
     margin: 0 15px;
+    width: unset;
+    border-bottom: none;
   }
   & .screen__table-row {
     padding: 0;
