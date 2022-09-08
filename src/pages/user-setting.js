@@ -45,7 +45,7 @@ const RoleTag = (props) => {
 const UserDetail = (props) => {
   const { t } = useTranslation();
   const [isEdit, setIsEdit] = useState(false);
-  const [roles, setRoles] = useState([...props.users.roles]);
+  const [roles, setRoles] = useState([...props.user.roles]);
 
   const handleOnClick = (key) => {
     console.log(`handleOnClick roles`, roles);
