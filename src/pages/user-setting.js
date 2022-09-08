@@ -123,20 +123,20 @@ const UserSetting = (props) => {
 
   const editUser = useCallback(
     async (user, roles) => {
-      console.log(`editUser user`, user)
-      console.log(`editUser roles`, roles)
+      console.log(`editUser user`, user);
+      console.log(`editUser roles`, roles);
       let updateUser = { ...user };
       let index = adminUsers.findIndex(
         (adminUser) => adminUser.email === user.email
       );
-      console.log(`editUser index`, index)
+      console.log(`editUser index`, index);
       if (index !== -1) {
         updateUser.roles = roles;
         const { result } = await storeCtx.updateAdminUser(
           props.currentUser,
           updateUser
         );
-        console.log(`updateAdminUser result`, result)
+        console.log(`updateAdminUser result`, result);
         if (result) {
           let updateUsers = [...adminUsers];
           updateUsers[index] = updateUser;
@@ -163,7 +163,7 @@ const UserSetting = (props) => {
       console.log(`filter keyword`, keyword);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _users = users || filteredAdminUsers,
-        _options;
+        _options = [...filterOptions];
       console.log(`filter _users`, _users);
       console.log(`filter _keyword`, _keyword);
       if (option) {
@@ -174,8 +174,8 @@ const UserSetting = (props) => {
           else _options = [...filterOptions, option];
         }
         setFilterOptions(_options);
+        console.log(`filter _options`, _options);
       }
-      console.log(`filter _options`, _options);
       if (users) {
         _users = _users.filter((user) => {
           console.log(`filter user`, user);
@@ -197,7 +197,7 @@ const UserSetting = (props) => {
       }
       setFilteredAdminUsers(_users);
     },
-    [adminUsers, filterKey, filterOptions, filteredAdminUsers]
+    [filterKey, filterOptions, filteredAdminUsers]
   );
 
   const init = useCallback(() => {
