@@ -36,6 +36,11 @@
     color: #fff;
     background-color: #2699fb;
   }
+  & .screen__table-row:hover.editing {
+    color: unset;
+    background-color: transparent;
+  }
+  
   & .screen__table-row:hover &__setting-icon {
     background-image: url("../../images/settings-line-white@2x.png");
   }
@@ -113,6 +118,9 @@
     border: 1px solid #707070;
     border-radius: 14px;
     color: #767676;
+    font-size: 16px;
+    padding: 20px 5px;
+    cursor: pointer;
   }
   &__role-tag.selected {
     background-color: #2699fb;
