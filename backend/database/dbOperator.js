@@ -1,59 +1,8 @@
-const path = require("path");
-
 const mysql = require("./mysql");
 
 class DBOperator {
   database = null;
   _isInit = false;
-  REASON = {
-    STRIKE_FEE: 100,
-    STRIKE_ADD: 110,
-    STRIKE_SUB: 120,
-    STRIKE_UNLOCK: 130,
-    ORDER_SUBMIT: 600,
-    ORDER_CANCEL: 610,
-    ORDER_FULLFILLED: 620,
-  };
-  FUNC = {
-    UNLOCK_FUNDS: 1,
-    LOCK_FUNDS: 2,
-    PLUS_FUNDS: 3,
-    SUB_FUNDS: 4,
-    UNLOCK_AND_SUB_FUNDS: 5,
-  };
-  ORDER_STATE = {
-    CANCEL: 0,
-    WAIT: 100,
-    DONE: 200,
-  };
-  TYPE = {
-    ORDER_ASK: "OrderAsk",
-    ORDER_BID: "OrderBid",
-  };
-  ORD_TYPE = {
-    LIMIT: "limit",
-    MARKET: "market",
-    IOC: "ioc",
-  };
-  MODIFIABLE_TYPE = {
-    ORDER: "Order",
-    TRADE: "Trade",
-  };
-  EXCHANGE = {
-    OKEX: 10,
-  };
-  // ++ TODO outerTrades status
-  // 0: unproccess
-  // 1: done
-  // 9: ERROR: order is Done but outerTrades is not
-  OUTERTRADE_STATUS = {
-    UNPROCESS: 0,
-    DONE: 1,
-    SYSTEM_ERROR: 9,
-    OTHER_SYSTEM_TRADE: 8,
-    ClORDId_ERROR: 7,
-  };
-
   constructor() {
     return this;
   }
@@ -155,12 +104,20 @@ class DBOperator {
     return this.database.getVouchersByOrderId(orderId, { dbTransaction });
   }
 
+  async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
+    return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
+  }
+
   async getTradeByTradeFk(tradeFk) {
     return this.database.getTradeByTradeFk(tradeFk);
   }
 
   async getOuterTradesByStatus(exchangeCode, status) {
     return this.database.getOuterTradesByStatus(exchangeCode, status);
+  }
+
+  async getOrdersJoinMemberEmail(state) {
+    return this.database.getOrdersJoinMemberEmail(state);
   }
 
   async getOuterTradesByDayAfter(exchangeCode, day) {

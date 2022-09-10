@@ -9,25 +9,27 @@ import { useLocation } from "react-router-dom";
 const Exchange = () => {
   const storeCtx = useContext(StoreContext);
   const location = useLocation();
+  const [isInit, setIsInit] = useState(null);
   const [isStart, setIsStart] = useState(false);
   const { width } = useViewport();
   const breakpoint = 428;
 
   useEffect(() => {
-    if (location.pathname.includes("/markets")) {
-      if (!isStart) {
-        window.storeCtx = storeCtx;
-        storeCtx.start();
-        // storeCtx.sync();
-        setIsStart(true);
-      }
+    if (isInit === null) {
+      setIsInit(false);
+      storeCtx.init().then((_) => setIsInit(true));
+    }
+    if (isInit && !isStart && location.pathname?.includes("/markets")) {
+      window.storeCtx = storeCtx;
+      storeCtx.start();
+      setIsStart(true);
     }
     // ++TODO never called
     return () => {
       // storeCtx.stop();
       // clearInterval(interval)
     };
-  }, [isStart, location.pathname, storeCtx]);
+  }, [isInit, isStart, location.pathname, storeCtx]);
 
   return (
     <Layout>

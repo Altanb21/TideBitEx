@@ -4,11 +4,13 @@ import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
+import { TableHeader } from "./vouchers";
 
 const exchanges = ["OKEx"];
 
 const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [orders, setOrders] = useState(null);
@@ -16,8 +18,6 @@ const CurrentOrders = () => {
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  const [ascending, setAscending] = useState(false);
-  const { t } = useTranslation();
   const [tickers, setTickers] = useState({ ticker: t("ticker") });
   const [filterTicker, setFilterTicker] = useState(t("ticker"));
 
@@ -29,7 +29,17 @@ const CurrentOrders = () => {
         _orders[exchange] = orders;
         return _orders;
       });
-      return orders;
+      let tickers = {},
+        ticker;
+      for (let order of orders) {
+        if (!tickers[order.instId]) tickers[order.instId] = order.instId;
+      }
+      setTickers(tickers);
+      if (Object.values(tickers).length > 0) {
+        ticker = Object.values(tickers)[0];
+        setFilterTicker(ticker);
+      }
+      return { orders, tickers, ticker: ticker };
     },
     [storeCtx]
   );
@@ -41,25 +51,27 @@ const CurrentOrders = () => {
         _exchange = exchange || filterExchange,
         _orders = filterOrders || orders[_exchange],
         _ticker = ticker || filterTicker,
-        tickers = { ticker: t("ticker") };
+        res;
       if (ticker) setFilterTicker(ticker);
       if (side) setFilterOption(side);
       if (exchange) {
         setFilterExchange(exchange);
         if (orders[exchange]) _orders = orders[exchange];
-        else _orders = await getCurrentOrders(exchange);
+        else {
+          res = await getCurrentOrders(exchange);
+          _orders = res.orders;
+          _ticker = res.ticker;
+        }
       }
       if (_orders) {
         _orders = _orders.filter((order) => {
-          if (!tickers[order.instId]) tickers[order.instId] = order.instId;
           let condition =
             order.id.includes(_keyword) ||
             order.memberId.includes(_keyword) ||
             order.instId.includes(_keyword) ||
             order.email.includes(_keyword) ||
             order.exchange.includes(_keyword);
-          if (_ticker !== t("ticker"))
-            condition = condition && order.instId === _ticker;
+          if (_ticker) condition = condition && order.instId === _ticker;
           if (_option !== "all")
             condition = condition && order.side === _option;
           if (_exchange !== "ALL")
@@ -67,7 +79,6 @@ const CurrentOrders = () => {
           return condition;
         });
         setFilterOrders(_orders);
-        setTickers(tickers);
       }
     },
     [
@@ -77,26 +88,24 @@ const CurrentOrders = () => {
       filterTicker,
       getCurrentOrders,
       orders,
-      t,
     ]
   );
 
-  const sorting = () => {
-    setAscending((prev) => {
-      setFilterOrders((prevOrders) =>
-        !prev
-          ? prevOrders.sort((a, b) => a.ts - b.ts)
-          : prevOrders.sort((a, b) => b.ts - a.ts)
-      );
-      return !prev;
+  const sorting = (key, ascending) => {
+    setFilterOrders((prevOrders) => {
+      let sortedOrders = prevOrders.map((order) => ({ ...order }));
+      sortedOrders = ascending
+        ? sortedOrders?.sort((a, b) => +a[key] - +b[key])
+        : sortedOrders?.sort((a, b) => +b[key] - +a[key]);
+      return sortedOrders;
     });
   };
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const orders = await getCurrentOrders(exchanges[0]);
-        filter({ filterOrders: orders });
+        const res = await getCurrentOrders(exchanges[0]);
+        filter({ filterOrders: res.orders, ticker: res.ticker });
         return !prev;
       } else return prev;
     });
@@ -120,9 +129,11 @@ const CurrentOrders = () => {
       <div className="screen__search-bar">
         <TableDropdown
           className="screen__filter"
-          selectHandler={(option) => filter({ exchange: option })}
-          options={exchanges}
-          selected={filterExchange}
+          selectHandler={(ticker) => {
+            filter({ ticker });
+          }}
+          options={tickers ? Object.values(tickers) : []}
+          selected={filterTicker}
         />
         <div className="screen__search-box">
           <input
@@ -171,30 +182,49 @@ const CurrentOrders = () => {
             </li>
           </ul>
         </div>
-        <div className="screen__sorting" onClick={sorting}>
+        {/* <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
-        </div>
+        </div> */}
       </div>
-      <div className={`screen__table${showMore ? " show" : ""}`}>
-        <ul className="screen__table-headers">
-          <li className="screen__table-header">{t("date")}</li>
-          <li className="screen__table-header">{t("memberId_email")}</li>
-          <li className="screen__table-header">{t("transaction-side")}</li>
-          <TableDropdown
+      <table className={`screen__table${showMore ? " show" : ""}`}>
+        <tr className="screen__table-headers">
+          {/* <li className="screen__table-header">{t("date")}</li> */}
+          <TableHeader
+            label={t("date")}
+            onClick={(ascending) => sorting("ts", ascending)}
+          />
+          <th className="screen__table-header">{t("memberId_email")}</th>
+          <th className="screen__table-header">{t("transaction-side")}</th>
+          {/* <TableDropdown
             className="screen__table-header"
             selectHandler={(option) => filter({ ticker: option })}
             options={Object.values(tickers)}
             selected={filterTicker}
+          /> */}
+          <th className="screen__table-header">
+            <div className="screen__table-header--text">{t("exchange")}</div>
+            <div className="screen__table-header--switch"></div>
+          </th>
+          {/* <li className="screen__table-header">{t("match-volume")}</li> */}
+          <TableHeader
+            label={t("match-volume")}
+            onClick={(ascending) => sorting("accFillSz", ascending)}
           />
-          <li className="screen__table-header">{t("exchange")}</li>
-          <li className="screen__table-header">{t("match-volume")}</li>
-          <li className="screen__table-header">{t("unmatch-volume")}</li>
-          <li className="screen__table-header">{t("turnover")}</li>
-        </ul>
-        <ul className="screen__table-rows">
+          {/* <li className="screen__table-header">{t("unmatch-volume")}</li> */}
+          <TableHeader
+            label={t("unmatch-volume")}
+            onClick={(ascending) => sorting("unFillSz", ascending)}
+          />
+          {/* <li className="screen__table-header">{t("funds-receive")}</li> */}
+          <TableHeader
+            label={t("funds-receive")}
+            onClick={(ascending) => sorting("fundsReceived", ascending)}
+          />
+        </tr>
+        <tr className="screen__table-rows">
           {filterOrders &&
             filterOrders.map((order) => (
-              <div
+              <td
                 className={`current-orders__tile screen__table-row${
                   order.email ? "" : " unknown"
                 }`}
@@ -204,7 +234,7 @@ const CurrentOrders = () => {
                   {dateFormatter(order.ts).text}
                 </div>
                 <div className="current-orders__text screen__table-item">
-                <div>{`${order.email ? order.email + "/" : "Unknown"}`}</div>
+                  <div>{`${order.email ? order.email + "/" : "Unknown"}`}</div>
                   <div>{`${order.email ? order.memberId : ""}`}</div>
                 </div>
                 <div
@@ -214,9 +244,9 @@ const CurrentOrders = () => {
                 >
                   {t(order.side)}
                 </div>
-                <div className="current-orders__text screen__table-item">
+                {/* <div className="current-orders__text screen__table-item">
                   {order.instId}
-                </div>
+                </div> */}
                 <div className="current-orders__text screen__table-item">
                   {order.exchange}
                 </div>
@@ -227,7 +257,7 @@ const CurrentOrders = () => {
                 </div>
                 <div className="current-orders__text screen__table-item">
                   {`${convertExponentialToDecimal(
-                    SafeMath.minus(order.sz, order.accFillSz)
+                    order.unFillSz
                   )} / ${convertExponentialToDecimal(order.sz)}`}
                 </div>
                 <div className="current-orders__text screen__table-item">
@@ -237,16 +267,16 @@ const CurrentOrders = () => {
                     SafeMath.mult(order.sz, order.px)
                   )}`}
                 </div>
-              </div>
+              </td>
             ))}
-        </ul>
-        <div
+        </tr>
+        <tfoot
           className="screen__table-btn screen__table-text"
           onClick={() => setShowMore((prev) => !prev)}
         >
           {showMore ? t("show-less") : t("show-more")}
-        </div>
-      </div>
+        </tfoot>
+      </table>
       <div className="screen__floating-box">
         <div
           className="screen__floating-btn"

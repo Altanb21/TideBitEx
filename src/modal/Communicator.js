@@ -425,7 +425,7 @@ class Communicator {
 
   async getOptions() {
     try {
-      const url = `/options`;
+      const url = `/market/options`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",
@@ -437,6 +437,101 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       console.error(`[getOptions] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getUserRoles() {
+    try {
+      const url = `/admin/user-roles`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getUserRoles] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getAdminUsers() {
+    try {
+      const url = `/admin/admin-users`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getAdminUsers] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+  async addAdminUser(currentUser, newUser) {
+    try {
+      const url = `/admin/add-user`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "POST",
+        url,
+        data: { currentUser: { ...currentUser }, newUser: { ...newUser } },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[addAdminUser] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async deleteAdminUser(currentUser, user) {
+    try {
+      const url = `/admin/delete-user`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "DELETE",
+        url,
+        data: { currentUser: { ...currentUser }, user: { ...user } },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[deleteAdminUser] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updateAdminUser(currentUser, updateUser) {
+    try {
+      const url = `/admin/update-user`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: {
+          currentUser: { ...currentUser },
+          updateUser: { ...updateUser },
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updateAdminUser] error`, error);
       return Promise.reject({ ...error });
     }
   }

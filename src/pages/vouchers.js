@@ -7,8 +7,52 @@ import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
 
+export const TableHeader = (props) => {
+  const [ascending, setAscending] = useState(null);
+  return (
+    <th className="screen__table-header">
+      <span
+        className="screen__table-header--text"
+        onClick={() =>
+          setAscending((prev) => {
+            props.onClick(!prev);
+            return !prev;
+          })
+        }
+      >
+        {props.label}
+      </span>
+      <span
+        className={`screen__table-header--btns${
+          ascending === true
+            ? " ascending"
+            : ascending === false
+            ? " descending"
+            : ""
+        }`}
+      >
+        <span
+          className="screen__table-header--btn screen__table-header--btn-up"
+          onClick={() => {
+            setAscending(true);
+            props.onClick(true);
+          }}
+        ></span>
+        <span
+          className="screen__table-header--btn screen__table-header--btn-down"
+          onClick={() => {
+            setAscending(false);
+            props.onClick(false);
+          }}
+        ></span>
+      </span>
+    </th>
+  );
+};
+
 const Vouchers = () => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [trades, setTrades] = useState(null);
@@ -17,22 +61,30 @@ const Vouchers = () => {
   const [filterOption, setFilterOption] = useState("30"); //'30','365'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  const [ascending, setAscending] = useState(false);
-  const { t } = useTranslation();
-  const [tickers, setTickers] = useState({ ticker: t("ticker") });
-  const [filterTicker, setFilterTicker] = useState(t("ticker"));
+  const [tickers, setTickers] = useState(null);
+  const [filterTicker, setFilterTicker] = useState(null);
 
   const getVouchers = useCallback(
     async (exchange) => {
-      const trades = await storeCtx.getOuterTradeFills(exchange, filterOption);
+      const trades = await storeCtx.getOuterTradeFills(exchange, 365);
       setTrades((prev) => {
         let _trades = { ...prev };
         _trades[exchange] = trades;
         return _trades;
       });
-      return trades;
+      let tickers = {},
+        ticker;
+      for (let trade of trades) {
+        if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
+      }
+      setTickers(tickers);
+      if (Object.values(tickers).length > 0) {
+        ticker = Object.values(tickers)[0];
+        setFilterTicker(ticker);
+      }
+      return { trades, tickers, ticker: ticker };
     },
-    [filterOption, storeCtx]
+    [storeCtx]
   );
 
   const filter = useCallback(
@@ -41,22 +93,28 @@ const Vouchers = () => {
         _exchange = exchange || filterExchange,
         _trades = filterTrades || trades[_exchange],
         ts = Date.now(),
-        _timeInterval =
-          timeInterval === "month"
+        _timeInterval = timeInterval
+          ? timeInterval === "30"
             ? 30 * 24 * 60 * 60 * 1000
-            : 12 * 30 * 24 * 60 * 60 * 1000,
+            : 12 * 30 * 24 * 60 * 60 * 1000
+          : filterOption === "30"
+          ? 30 * 24 * 60 * 60 * 1000
+          : 12 * 30 * 24 * 60 * 60 * 1000,
         _ticker = ticker || filterTicker,
-        tickers = { ticker: t("ticker") };
+        res;
       if (ticker) setFilterTicker(ticker);
       if (timeInterval) setFilterOption(timeInterval);
       if (exchange) {
         setFilterExchange(exchange);
         if (trades[exchange]) _trades = trades[exchange];
-        else _trades = await getVouchers(exchange);
+        else {
+          res = await getVouchers(exchange);
+          _trades = res.trades;
+          _ticker = res.ticker;
+        }
       }
       if (_trades) {
         _trades = _trades.filter((trade) => {
-          if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
           let condition =
             (trade.orderId?.includes(_keyword) ||
               trade.instId?.includes(_keyword) ||
@@ -64,14 +122,21 @@ const Vouchers = () => {
               trade.memberId?.includes(_keyword) ||
               trade.exchange?.includes(_keyword)) &&
             ts - trade.ts < _timeInterval;
+          // console.log(`timeInterval`, timeInterval);
+          // console.log(`filterOption`, filterOption);
+          // console.log(
+          //   `ts[${ts}] - trade.ts[${trade.ts}] = ${
+          //     ts - trade.ts
+          //   } < _timeInterval[${_timeInterval}]`,
+          //   ts - trade.ts < _timeInterval,
+          //   new Date(trade.ts)
+          // );
           if (_exchange !== "ALL")
             condition = condition && trade.exchange === _exchange;
-          if (_ticker !== t("ticker"))
-            condition = condition && trade.instId === _ticker;
+          if (_ticker) condition = condition && trade.instId === _ticker;
           return condition;
         });
         setFilterTrades(_trades);
-        setTickers(tickers);
         let profits = _trades.reduce((prev, trade) => {
           if (trade.revenue) {
             if (!prev[trade.feeCcy]) {
@@ -90,25 +155,28 @@ const Vouchers = () => {
         setProfits(profits);
       }
     },
-    [filterExchange, filterKey, filterTicker, getVouchers, t, trades]
+    [filterExchange, filterKey, filterOption, filterTicker, getVouchers, trades]
   );
 
-  const sorting = () => {
-    setAscending((prev) => {
-      setFilterTrades((prevTrades) =>
-        !prev
-          ? prevTrades.sort((a, b) => a.ts - b.ts)
-          : prevTrades.sort((a, b) => b.ts - a.ts)
-      );
-      return !prev;
+  const sorting = (key, ascending) => {
+    // console.log(`key`, key);
+    // console.log(`ascending`, ascending);
+    setFilterTrades((prevTrades) => {
+      // console.log(`prevTrades`, prevTrades);
+      let sortedTrades = prevTrades.map((trade) => ({ ...trade }));
+      sortedTrades = ascending
+        ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
+        : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
+      // console.log(`sortedTrades`, sortedTrades);
+      return sortedTrades;
     });
   };
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const trades = await getVouchers(exchanges[0]);
-        filter({ filterTrades: trades });
+        const res = await getVouchers(exchanges[0]);
+        filter({ filterTrades: res.trades, ticker: res.ticker });
         return !prev;
       } else return prev;
     });
@@ -126,11 +194,11 @@ const Vouchers = () => {
       <div className="screen__search-bar">
         <TableDropdown
           className="screen__filter"
-          selectHandler={(option) => {
-            filter({ exchange: option });
+          selectHandler={(ticker) => {
+            filter({ ticker });
           }}
-          options={exchanges}
-          selected={filterExchange}
+          options={tickers ? Object.values(tickers) : []}
+          selected={filterTicker}
         />
         <div className="screen__search-box">
           <input
@@ -171,9 +239,9 @@ const Vouchers = () => {
             </li>
           </ul>
         </div>
-        <div className="screen__sorting" onClick={sorting}>
+        {/* <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
-        </div>
+        </div> */}
       </div>
       <div className="screen__table--overivew">
         <div className="screen__table-title">{`${t("current-profit")}:`}</div>
@@ -190,29 +258,70 @@ const Vouchers = () => {
             ))}
         </div>
       </div>
-      <div className={`screen__table${showMore ? " show" : ""}`}>
-        <ul className="screen__table-headers">
-          <li className="screen__table-header">{t("date")}</li>
-          <li className="screen__table-header">{t("memberId_email")}</li>
-          <li className="screen__table-header">{t("orderId")}</li>
+      <table className={`screen__table${showMore ? " show" : ""}`}>
+        <tr className="screen__table-headers">
+          {/* <li className="screen__table-header">{t("date")}</li> */}
+          <TableHeader
+            label={t("date")}
+            onClick={(ascending) => sorting("ts", ascending)}
+          />
+          <th className="screen__table-header">{t("memberId_email")}</th>
+          {/* <li className="screen__table-header">{t("orderId")}</li> */}
+          <TableHeader
+            label={t("orderId")}
+            onClick={(ascending) => sorting("orderId", ascending)}
+          />
           {/* <li className="screen__table-header">{t("ticker")}</li> */}
-          <TableDropdown
+          {/* <TableDropdown
             className="screen__table-header"
             selectHandler={(option) => filter({ ticker: option })}
             options={Object.values(tickers)}
             selected={filterTicker}
+          /> */}
+          <th className="screen__table-header">
+            <div className="screen__table-header--text">{t("exchange")}</div>
+            <div className="screen__table-header--switch"></div>
+          </th>
+          {/* <li className="screen__table-header">{t("transaction-side")}</li> */}
+          {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
+          <TableHeader
+            label={t("transaction-price")}
+            onClick={(ascending) => sorting("px", ascending)}
           />
-          <li className="screen__table-header">{t("exchange")}</li>
-          <li className="screen__table-header">{t("transaction-side")}</li>
-          <li className="screen__table-header">{t("match-fee")}</li>
-          <li className="screen__table-header">{t("external-fee")}</li>
+          {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
+          <TableHeader
+            label={t("transaction-amount")}
+            onClick={(ascending) => sorting("fillSz", ascending)}
+          />
+          {/* <li className="screen__table-header">{t("match-fee")}</li> */}
+          <TableHeader
+            label={t("match-fee")}
+            onClick={(ascending) => sorting("fee", ascending)}
+          />
+          {/* <li className="screen__table-header">{t("external-fee")}</li> */}
+          <TableHeader
+            label={t("external-fee")}
+            onClick={(ascending) => sorting("externalFee", ascending)}
+          />
           {/* <li className="screen__table-header">{t("referral")}</li> */}
-          <li className="screen__table-header">{t("revenue")}</li>
-        </ul>
-        <ul className="screen__table-rows">
+          <TableHeader
+            label={t("referral")}
+            onClick={(ascending) => sorting("referral", ascending)}
+          />
+          {/* <TableHeader
+            label={t("referral")}
+            onClick={(ascending) => sorting("referral", ascending)}
+          /> */}
+          {/* <li className="screen__table-header">{t("revenue")}</li> */}
+          <TableHeader
+            label={t("revenue")}
+            onClick={(ascending) => sorting("revenue", ascending)}
+          />
+        </tr>
+        <tr className="screen__table-rows">
           {filterTrades &&
             filterTrades.map((trade, i) => (
-              <div
+              <td
                 className={`vouchers__tile screen__table-row${
                   trade.email ? "" : " unknown"
                 }`}
@@ -226,11 +335,11 @@ const Vouchers = () => {
                   <div>{`${trade.email ? trade.memberId : ""}`}</div>
                 </div>
                 <div className="vouchers__text screen__table-item">
-                  {trade.orderId}
+                  {trade.orderId || "Unknown"}
                 </div>
-                <div className="vouchers__text screen__table-item">
+                {/* <div className="vouchers__text screen__table-item">
                   {trade.instId}
-                </div>
+                </div> */}
                 <div className="vouchers__text screen__table-item">
                   {trade.exchange}
                 </div>
@@ -239,36 +348,38 @@ const Vouchers = () => {
                     trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
-                  {t(trade.side)}
+                  {trade.email
+                    ? `${trade.px} / ${trade.fillPx}` || "--"
+                    : "Unknown"}
                 </div>
                 <div
                   className={`vouchers__text screen__table-item${
-                    trade.fee ? " positive" : ""
+                    trade.side === "buy" ? " positive" : " negative"
                   }`}
                 >
+                  {trade.email ? trade.fillSz || "--" : "Unknown"}
+                </div>
+                <div className={`vouchers__text screen__table-item`}>
                   {trade.fee
                     ? `${convertExponentialToDecimal(trade.fee)} ${
                         trade.feeCcy
                       }`
                     : "Unknown"}
                 </div>
-                <div
-                  className={`vouchers__text screen__table-item${
-                    trade.externalFee ? " negative" : ""
-                  }`}
-                >
+                <div className={`vouchers__text screen__table-item`}>
                   {trade.externalFee
                     ? `${convertExponentialToDecimal(trade.externalFee)} ${
                         trade.feeCcy
                       }`
                     : "--"}
                 </div>
-                {/* <div
+                <div
                   className={`vouchers__text screen__table-item${
                     trade.referral
-                      ? trade.referral > 0
-                        ? " positive"
-                        : " negative"
+                      ? // trade.referral > 0
+                        //   ? " positive"
+                        // :
+                        " negative"
                       : ""
                   }`}
                 >
@@ -277,13 +388,13 @@ const Vouchers = () => {
                         trade.feeCcy
                       }`
                     : "--"}
-                </div> */}
+                </div>
                 <div
                   className={`vouchers__text screen__table-item${
                     trade.revenue
                       ? trade.revenue > 0
-                        ? " positive"
-                        : " negative"
+                        ? " "
+                        : " negative negative--em"
                       : ""
                   }`}
                 >
@@ -293,16 +404,16 @@ const Vouchers = () => {
                       }`
                     : "Unknown"}
                 </div>
-              </div>
+              </td>
             ))}
-        </ul>
-        <div
+        </tr>
+        <tfoot
           className="screen__table-btn screen__table-text"
           onClick={() => setShowMore((prev) => !prev)}
         >
           {showMore ? t("show-less") : t("show-more")}
-        </div>
-      </div>
+        </tfoot>
+      </table>
       <div className="screen__floating-box">
         <div
           className="screen__floating-btn"

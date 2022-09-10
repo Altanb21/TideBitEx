@@ -241,8 +241,8 @@ export const padDecimal = (n, length) => {
 
 export const convertExponentialToDecimal = (exponentialNumber) => {
   // sanity check - is it exponential number
-  const str = exponentialNumber.toString();
-  if (str.indexOf("e") !== -1) {
+  const str = exponentialNumber?.toString();
+  if (str?.indexOf("e") !== -1) {
     const exponent = parseInt(str.split("-")[1], 10);
     // Unfortunately I can not return 1e-8 as 0.00000001, because even if I call parseFloat() on it,
     // it will still return the exponential representation
@@ -421,23 +421,29 @@ export const hexToAscii = (hex) => {
 
 export const toggleSidebar = (toggle = true) => {
   console.log(`toggleSidebar toggle`, toggle);
-  if (
-    Array.from(
-      document.querySelector(".ui.sidebar.vertical").classList
-    ).includes("visible")
-  ) {
-    document.querySelector(".ui.sidebar.vertical").classList.remove("uncover");
-    document.querySelector(".ui.sidebar.vertical").classList.remove("visible");
-    document.querySelector("#pusher.pusher").classList.remove("dimmed");
-    document.querySelector(".ui.left.sidebar ~ .pusher").style.transform =
-      "translate3d(0, 0, 0)";
-  } else if (toggle) {
-    document.querySelector(".ui.sidebar.vertical").classList.add("uncover");
-    document.querySelector(".ui.sidebar.vertical").classList.add("visible");
-    document.querySelector("#pusher.pusher").classList.add("dimmed");
-    document.querySelector(
-      ".ui.visible.left.sidebar ~ .pusher"
-    ).style.transform = "translate3d(145px, 0, 0)";
+  if (!!document.querySelector(".ui.sidebar.vertical")?.classList) {
+    if (
+      Array.from(
+        document.querySelector(".ui.sidebar.vertical").classList
+      ).includes("visible")
+    ) {
+      document
+        .querySelector(".ui.sidebar.vertical")
+        .classList.remove("uncover");
+      document
+        .querySelector(".ui.sidebar.vertical")
+        .classList.remove("visible");
+      document.querySelector("#pusher.pusher").classList.remove("dimmed");
+      document.querySelector(".ui.left.sidebar ~ .pusher").style.transform =
+        "translate3d(0, 0, 0)";
+    } else if (toggle) {
+      document.querySelector(".ui.sidebar.vertical").classList.add("uncover");
+      document.querySelector(".ui.sidebar.vertical").classList.add("visible");
+      document.querySelector("#pusher.pusher").classList.add("dimmed");
+      document.querySelector(
+        ".ui.visible.left.sidebar ~ .pusher"
+      ).style.transform = "translate3d(145px, 0, 0)";
+    }
   }
 };
 

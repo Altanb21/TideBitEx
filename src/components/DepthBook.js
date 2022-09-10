@@ -187,7 +187,14 @@ const DepthBook = (props) => {
           <List
             innerElementType="ul"
             height={426}
-            itemCount={storeCtx.books?.bids ? Math.max(storeCtx.books.bids.length, storeCtx.books.asks.length) : 0}
+            itemCount={
+              storeCtx.books?.bids
+                ? Math.max(
+                    storeCtx.books.bids.length,
+                    storeCtx.books.asks.length
+                  )
+                : 0
+            }
             itemData={storeCtx.books?.bids ? storeCtx.books.bids : []}
             itemSize={18}
             width={`100%`}
@@ -197,7 +204,7 @@ const DepthBook = (props) => {
                 style={style}
                 bid={storeCtx.books.bids[index]}
                 ask={storeCtx.books.asks[index]}
-                key={`${storeCtx.selectedTicker.instId}-depthbbook-${index}`}
+                key={`depthbbook-${index}`}
               />
             )}
           </List>

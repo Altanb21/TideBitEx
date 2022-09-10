@@ -6,24 +6,43 @@ const CustomKeyboard = (props) => {
     e.preventDefault();
     // console.log(`CustomKeyboard props.inputEl`, props.inputEl);
     let v,
-      value = props.inputEl.value;
-    // console.log(`CustomKeyboard value`, value);
+      value = props.inputEl.value,
+      cursorPosition = props.cursorPosition;
+    // console.log(`CustomKeyboard value[${value.length}]`, value);
+    // console.log(`CustomKeyboard cursorPosition`, cursorPosition);
+
     if (data === "bksp") {
-      v = value.substring(0, value.length - 1);
-    } else if (data === ".") {
-      if (!value.includes(".")) {
-        if (value.length === 0) v = "0" + data.toString();
-        else v = value + data.toString();
+      v = `${value.substring(0, cursorPosition - 1)}${value.substring(
+        cursorPosition
+      )}`;
+      props.setCursorPosition((prev) => (prev > 0 ? prev - 1 : 0));
+    }
+    // else if (data === ".") {
+    //   if (!value?.includes(".")) {
+    //     if (value.length === 0) v = "0" + data.toString();
+    //     else v = value + data.toString();
+    //   } else v = value;
+    // }
+    else {
+      // let arr = value.split("");
+      // arr.splice(cursorPosition, 0, data);
+      // v = arr.reduce((prev, v) => {
+      //   return (prev += v);
+      // }, "");
+      if (data !== "." || (!value.includes(".") && data === ".")) {
+        v = `${value.substring(0, cursorPosition)}${data}${value.substring(
+          cursorPosition
+        )}`;
+        props.setCursorPosition((prev) => prev + 1);
       } else v = value;
-    } else {
-      v = value + data.toString();
     }
-    if (v.toString().startsWith("0") && !v.includes(".")) {
-      v = v.substring(1);
-    }
-    // console.log(`CustomKeyboard v`, v);
+    // if (v.toString().startsWith("0") && !v.includes(".")) {
+    //   v = v.substring(1);
+    // }
+    console.log(`CustomKeyboard v`, v);
     props.onInput(v);
   };
+
   return (
     <div className="custom-keyboard">
       {/* <div

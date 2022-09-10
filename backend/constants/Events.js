@@ -1,6 +1,19 @@
 module.exports = {
-  // subscribe ticker event
+  // okex events
+  subscribe: "subscribe",
+  unsubscribe: "unsubscribe",
   tickerOnSibscribe: "tickerOnSibscribe",
+  error: "error",
+  instruments: "instruments",
+  books: "books",
+  booksActions: {
+    snapshot: "snapshot",
+    update: "update",
+  },
+  login: "login",
+  candle1m: "candle1m",
+  orders: "orders",
+  // subscribe ticker event
   tickerOnUnsubscribe: "tickerOnUnsubscribe",
   userOnSubscribe: "userOnSubscribe",
   userOnUnsubscribe: "userOnUnsubscribe",
@@ -16,4 +29,7 @@ module.exports = {
   candleOnUpdate: "candleOnUpdate",
   orderDetailUpdate: "orderDetailUpdate",
   // tradesDetailUpdate:"tradesDetailUpdate"
+
+  userStatusUpdate: "userStatusUpdate",
+  switchMarket: "switchMarket",
 };

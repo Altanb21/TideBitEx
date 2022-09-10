@@ -69,7 +69,9 @@ class Receptor extends Bot {
             .use(cors({ credentials: true }))
             .use(staticServe(this.config.base.static))
             .use(session(CONFIG, app))
-            .use((ctx, next) => getMemberId(ctx, next, this.redis))
+            .use((ctx, next) =>
+              getMemberId(ctx, next, this.redis, this.database, this.config)
+            )
             .use(this.router.routes())
             .use(this.router.allowedMethods())
             .use(proxy(peatio));
@@ -140,8 +142,10 @@ class Receptor extends Bot {
           query: ctx.query,
           session: ctx.session,
           token: ctx.session.token,
-          memberId: ctx.session.memberId,
+          memberId: ctx.session.member?.id,
+          email: ctx.session.member?.email,
         };
+        // this.logger.log(`inputs`, inputs);
         return operation(inputs).then((rs) => {
           if (rs.html) {
             ctx.body = rs.html;
@@ -149,7 +153,6 @@ class Receptor extends Bot {
           } else {
             ctx.body = rs;
           }
-
           // ++ TODO 需新增寫入 session 的功能
           next();
         });

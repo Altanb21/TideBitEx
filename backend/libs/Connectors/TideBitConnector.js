@@ -10,6 +10,7 @@ const Codes = require("../../constants/Codes");
 const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
 const { getBar, convertExponentialToDecimal } = require("../Utils");
+const Database = require("../../constants/Database");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {
@@ -128,7 +129,7 @@ class TibeBitConnector extends ConnectorBase {
         }
         let memberId;
         switch (data.event) {
-          case "trades":
+          case Events.trades:
             /**
             {
               trades: [
@@ -149,21 +150,21 @@ class TibeBitConnector extends ConnectorBase {
             this._updateTrades(instId, market, trades);
             this._updateCandle(market, trades);
             break;
-          case "update":
+          case Events.update:
             this._updateBooks(market, JSON.parse(data.data));
             break;
-          case "tickers":
+          case Events.tickers:
             this._updateTickers(JSON.parse(data.data));
             break;
-          case "account":
+          case Events.account:
             memberId = this.sn[channel.replace("private-", "")];
             this._updateAccount(memberId, JSON.parse(data.data));
             break;
-          case "order":
+          case Events.order:
             memberId = this.sn[channel.replace("private-", "")];
             this._updateOrder(memberId, JSON.parse(data.data));
             break;
-          case "trade":
+          case Events.trade:
             memberId = this.sn[channel.replace("private-", "")];
             this._updateTrade(memberId, JSON.parse(data.data));
             break;
@@ -357,8 +358,8 @@ class TibeBitConnector extends ConnectorBase {
       tbBooks.asks.forEach((ask) => {
         if (
           ask.market === market &&
-          ask.ord_type === "limit" &&
-          ask.state === "wait"
+          ask.ord_type === Database.ORD_TYPE.LIMIT &&
+          ask.state === Database.ORDER_STATE.WAIT
         ) {
           let index;
           index = asks.findIndex((_ask) => SafeMath.eq(_ask[0], ask.price));
@@ -378,8 +379,8 @@ class TibeBitConnector extends ConnectorBase {
       tbBooks.bids.forEach((bid) => {
         if (
           bid.market === market &&
-          bid.ord_type === "limit" &&
-          bid.state === "wait"
+          bid.ord_type === Database.ORD_TYPE.LIMIT &&
+          bid.state === Database.ORDER_STATE.WAIT
         ) {
           let index;
           index = bids.findIndex((_bid) => SafeMath.eq(_bid[0], bid.price));
@@ -683,14 +684,14 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
-  async getAccounts({ memberId }) {
+  async getAccounts({ query }) {
+    let { memberId, email } = query;
     this.logger.log(
       `[${this.constructor.name}] getAccounts memberId`,
-      memberId
+      memberId,
+      email
     );
-    let member;
     try {
-      member = await this.database.getMemberById(memberId);
       const _accounts = await this.database.getAccountsByMemberId(memberId);
       const accounts = _accounts.map((account) => ({
         currency: this.currencies.find((curr) => curr.id === account.currency)
@@ -722,7 +723,7 @@ class TibeBitConnector extends ConnectorBase {
       payload: {
         accounts: this.accountBook.getSnapshot(memberId),
         memberId,
-        email: member.email,
+        email,
       },
     });
   }
@@ -795,7 +796,7 @@ class TibeBitConnector extends ConnectorBase {
     // this.logger.log(`tbGetOrderList orderList`, orderList);
     const orders = orderList.map((order) => {
       /*
-      if (order.state === this.database.ORDER_STATE.DONE) {
+      if (order.state === Database.ORDER_STATE_CODE.DONE) {
         return {
           id: order.id,
           at: parseInt(
@@ -828,24 +829,27 @@ class TibeBitConnector extends ConnectorBase {
           SafeMath.div(new Date(order.updated_at).getTime(), "1000")
         ),
         market: query.instId.replace("-", "").toLowerCase(),
-        kind: order.type === "OrderAsk" ? "ask" : "bid",
+        kind:
+          order.type === Database.TYPE.ORDER_ASK
+            ? Database.ORDER_KIND.ASK
+            : Database.ORDER_KIND.BID,
         price: Utils.removeZeroEnd(order.price),
         origin_volume: Utils.removeZeroEnd(order.origin_volume),
         volume: Utils.removeZeroEnd(order.volume),
-        state: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "wait"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "done"
-          : "unkwon",
-        state_text: SafeMath.eq(order.state, this.database.ORDER_STATE.CANCEL)
-          ? "Canceled"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.WAIT)
-          ? "Waiting"
-          : SafeMath.eq(order.state, this.database.ORDER_STATE.DONE)
-          ? "Done"
-          : "Unkwon",
+        state: SafeMath.eq(order.state, Database.ORDER_STATE_CODE.CANCEL)
+          ? Database.ORDER_STATE.CANCEL
+          : SafeMath.eq(order.state, Database.ORDER_STATE_CODE.WAIT)
+          ? Database.ORDER_STATE.WAIT
+          : SafeMath.eq(order.state, Database.ORDER_STATE_CODE.DONE)
+          ? Database.ORDER_STATE.DONE
+          : Database.ORDER_STATE.UNKNOWN,
+        state_text: SafeMath.eq(order.state, Database.ORDER_STATE_CODE.CANCEL)
+          ? Database.ORDER_STATE_TEXT.CANCEL
+          : SafeMath.eq(order.state, Database.ORDER_STATE_CODE.WAIT)
+          ? Database.ORDER_STATE_TEXT.WAIT
+          : SafeMath.eq(order.state, Database.ORDER_STATE_CODE.DONE)
+          ? Database.ORDER_STATE_TEXT.DONE
+          : Database.ORDER_STATE_TEXT.UNKNOWN,
         clOrdId: order.id,
         instId: query.instId,
         ordType: order.ord_type,
@@ -958,7 +962,10 @@ class TibeBitConnector extends ConnectorBase {
       // ordId: data.id,
       clOrdId: data.id,
       instId,
-      ordType: data.price === undefined ? "market" : "limit",
+      ordType:
+        data.price === undefined
+          ? Database.ORD_TYPE.MARKET
+          : Database.ORD_TYPE.LIMIT,
       ts: parseInt(SafeMath.mult(data.at, "1000")),
       at: parseInt(data.at),
       price,
@@ -969,17 +976,17 @@ class TibeBitConnector extends ConnectorBase {
       // ),
       filled: data.volume !== data.origin_volume,
       state:
-        data.state === "wait"
-          ? "wait"
-          : data.state === "done"
-          ? "done"
-          : "canceled",
+        data.state === Database.ORDER_STATE.WAIT
+          ? Database.ORDER_STATE.WAIT
+          : data.state === Database.ORDER_STATE.DONE
+          ? Database.ORDER_STATE.DONE
+          : Database.ORDER_STATE.CANCEL,
       state_text:
-        data.state === "wait"
-          ? "Waiting"
-          : data.state === "done"
-          ? "Done"
-          : "Canceled",
+        data.state === Database.ORDER_STATE.WAIT
+          ? Database.ORDER_STATE_TEXT.WAIT
+          : data.state === Database.ORDER_STATE.DONE
+          ? Database.ORDER_STATE_TEXT.DONE
+          : Database.ORDER_STATE_TEXT.CANCEL,
     };
     this.logger.log(
       `[TO FRONTEND][OnEvent: ${Events.order}] updateOrder`,
@@ -1000,7 +1007,7 @@ class TibeBitConnector extends ConnectorBase {
   async postPlaceOrder({ header, body }) {
     try {
       const url =
-        body.kind === "bid"
+        body.kind === Database.ORDER_KIND.BID
           ? `${this.peatio}/markets/${body.market.id}/order_bids`
           : `${this.peatio}/markets/${body.market.id}/order_asks`;
       this.logger.debug("postPlaceOrder", url);
@@ -1440,7 +1447,7 @@ class TibeBitConnector extends ConnectorBase {
     this.isStart = true;
     this._registerGlobalChannel();
     Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === "TideBit") {
+      if (this.markets[key] === SupportedExchange.TIDEBIT) {
         const instId = key.replace("tb", "");
         this.instIds.push(instId);
       }
@@ -1518,6 +1525,12 @@ class TibeBitConnector extends ConnectorBase {
               auth,
               channel,
             };
+          } else {
+            this.logger.error(`fail to getAuth`);
+            // ++ TODO
+            EventBus.emit(Events.userStatusUpdate, credential.memberId, {
+              isLogin: false,
+            });
           }
         } else {
           this.private_client[credential.memberId].wsIds.push(credential.wsId);

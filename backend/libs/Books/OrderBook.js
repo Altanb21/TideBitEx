@@ -1,3 +1,4 @@
+const Database = require("../../constants/Database");
 const BookBase = require("../BookBase");
 
 class OrderBook extends BookBase {
@@ -34,10 +35,11 @@ class OrderBook extends BookBase {
       .sort((a, b) => +b.at - +a.at)
       .forEach((d) => {
         if (pendingOrders.length >= 100 && historyOrders.length >= 100) return;
-        if (d.state === "wait" && pendingOrders.length < 100)
+        if (d.state === Database.ORDER_STATE.WAIT && pendingOrders.length < 100)
           pendingOrders.push(d);
         if (
-          (d.state === "canceled" || d.state === "done") &&
+          (d.state === Database.ORDER_STATE.CANCEL ||
+            d.state === Database.ORDER_STATE.DONE) &&
           historyOrders.length < 100
         )
           historyOrders.push(d);
@@ -57,20 +59,25 @@ class OrderBook extends BookBase {
     if (!this._snapshot[memberId]) return [];
     else if (!this._snapshot[memberId][instId]) return [];
     else {
-      if (state === "pending")
+      if (state === Database.STATE.PENDING)
         return this._snapshot[memberId][instId].filter(
-          (order) => order.state === "wait"
+          (order) => order.state === Database.ORDER_STATE.WAIT
         );
-      else if (state === "history")
+      else if (state === Database.STATE.HISTORY)
         return this._snapshot[memberId][instId].filter(
-          (order) => order.state === "canceled" || order.state === "done"
+          (order) =>
+            order.state === Database.ORDER_STATE.CANCEL ||
+            order.state === Database.ORDER_STATE.DONE
         );
       else return this._snapshot[memberId][instId];
     }
   }
 
   updateByDifference(memberId, instId, difference) {
-    this.logger.log(`[${this.constructor.name}] updateByDifference difference`, difference);
+    this.logger.log(
+      `[${this.constructor.name}] updateByDifference difference`,
+      difference
+    );
     try {
       if (!this._difference[memberId]) this._difference[memberId] = {};
       if (!this._snapshot[memberId]) this._snapshot[memberId] = {};

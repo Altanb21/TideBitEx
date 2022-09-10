@@ -29,6 +29,7 @@ const languages = {
 const Layout = ({ children }) => {
   const storeCtx = useContext(StoreContext);
   const { i18n } = useTranslation();
+  const [isInit, setIsInit] = useState(false);
   // const [languageKey, setLanguageKey] = useState("en");
   const [active, setActive] = useState(false);
   const changeLanguage = useCallback(
@@ -42,50 +43,56 @@ const Layout = ({ children }) => {
   );
 
   useEffect(() => {
-    const lang = (
-      document.cookie
-        .split(";")
-        .filter((v) => /lang/.test(v))
-        .pop()
-        ?.split("=")[1] || navigator.language
-    ).toLowerCase();
-    switch (lang.toLowerCase()) {
-      case "en":
-      case "en-us":
-      case "en_us":
-        storeCtx.setLanguageKey("en-US");
-        break;
-      case "zh-hk":
-      case "zh_hk":
-      case "zh_tw":
-      case "zh-tw":
-        storeCtx.setLanguageKey("zh-HK");
-        break;
-      case "zh_cn":
-      case "zh-cn":
-        storeCtx.setLanguageKey("zh-CN");
-        break;
-      // case "jp":
-      //   storeCtx.setLanguageKey("jp");
-      //   break;
-      default:
-        storeCtx.setLanguageKey("en-US");
-        break;
+    if (!isInit) {
+      const lang = (
+        document.cookie
+          .split(";")
+          .filter((v) => /lang/.test(v))
+          .pop()
+          ?.split("=")[1] || navigator.language
+      ).toLowerCase();
+      switch (lang.toLowerCase()) {
+        case "en":
+        case "en-us":
+        case "en_us":
+          storeCtx.setLanguageKey("en-US");
+          break;
+        case "zh-hk":
+        case "zh_hk":
+        case "zh_tw":
+        case "zh-tw":
+          storeCtx.setLanguageKey("zh-HK");
+          break;
+        case "zh_cn":
+        case "zh-cn":
+          storeCtx.setLanguageKey("zh-CN");
+          break;
+        // case "jp":
+        //   storeCtx.setLanguageKey("jp");
+        //   break;
+        default:
+          storeCtx.setLanguageKey("en-US");
+          break;
+      }
+      setIsInit(true);
     }
     // window.cookieStore.get("lang").then((lang) => {
     //   const key = lang.value;
     //   console.log(`lang`, lang, `key`, key);
     //   storeCtx.setLanguageKey(key);
     // });
-  }, [storeCtx]);
+  }, [isInit, storeCtx]);
 
   return (
     <div
       id="layout"
       className="layout layout--pushable"
       onClick={(e) => {
-        let elementClass = e.target.className;
-        if (elementClass && !elementClass.includes(`custom-keyboard`))
+        let elementClass = e.target.getAttribute("class");
+        if (
+          !elementClass ||
+          (elementClass && !elementClass?.includes(`custom-keyboard`))
+        )
           storeCtx.setFocusEl(e.target);
       }}
     >

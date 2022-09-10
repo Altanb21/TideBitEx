@@ -8,11 +8,12 @@
     position: relative;
     display: flex;
     font-size: 24px;
-    color: #c6c6c6;
+    color: #2699fb;
     gap: 5px;
     align-items: center;
     cursor: pointer;
-
+    min-width: 170px;
+    position: relative;
     &--icon {
       width: 7px;
       height: 7px;
@@ -208,25 +209,59 @@
   }
   &__table-item,
   &__table-header {
-    min-width: 120px;
+    min-width: 122px;
     display: flex;
     align-items: center;
+    & span {
+      display: block;
+    }
     &--text {
       display: flex;
       padding-right: 5px;
+      cursor: pointer;
     }
+    &--switch,
     &--icon {
       width: 18px;
       height: 18px;
       background-image: url("../../images/settings-line@2x.png");
       background-position: center;
       background-size: contain;
+      background-repeat: no-repeat;
+      cursor: pointer;
+    }
+    &--switch {
+      background-image: url("../../images/switch_horizontal@2x.png");
     }
     &--value {
       min-width: 85px;
     }
     &--value.alert {
       color: #eccb2c;
+    }
+    &--btns {
+      display: flex;
+      flex-direction: column;
+    }
+    &--btn {
+      width: 10px;
+      height: 10px;
+      background-position: center;
+      background-size: contain;
+      background-repeat: no-repeat;
+      cursor: pointer;
+    }
+    &--btn-up {
+      background-image: url("../../images/triangle_up@2x.png");
+    }
+    .ascending > &--btn-up {
+      background-image: url("../../images/triangle_up_fill@2x.png");
+    }
+    &--btn-down {
+      background-image: url("../../images/triangle_down@2x.png");
+    }
+    .descending > &--btn-down {
+      background-image: url("../../images/triangle_down_fill@2x.png");
     }
   }
   .currency-dropdown__label-item--fixed &__table-header-btn--lock {
@@ -286,7 +321,7 @@
     justify-content: space-between;
     align-items: center;
   }
-  &__table-row.unknown{
+  &__table-row.unknown {
     opacity: 0.6;
   }
   &__table-switch,
@@ -301,7 +336,7 @@
     font-weight: bold;
     padding: 20px 0;
   }
-  &__table-title{
+  &__table-title {
     padding-right: 5px;
   }
   &__table-value.positive {

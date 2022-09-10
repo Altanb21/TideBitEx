@@ -1,3 +1,4 @@
+const Database = require("../../constants/Database");
 const BookBase = require("../BookBase");
 const SafeMath = require("../SafeMath");
 
@@ -48,10 +49,10 @@ class TradeBook extends BookBase {
               ...trade,
               side:
                 i === data.length - 1
-                  ? "up"
+                  ? Database.TREND.UP
                   : SafeMath.gt(trade.price, data[i + 1].price)
-                  ? "up"
-                  : "down",
+                  ? Database.TREND.UP
+                  : Database.TREND.DOWN,
             }
           : trade
       );

@@ -32,7 +32,19 @@ class AccountBook extends BookBase {
 
   getDifference(memberId) {
     if (!this._difference[memberId]) return null;
-    else return Object.values(this._difference[memberId]);
+    else
+      return Object.values(this._difference[memberId]).map((account) => ({
+        ...account,
+        exchangeRate:
+          account.currency.toLowerCase() === "try"
+            ? this._ratio.try
+            : this.priceList[account.currency.toLowerCase()]
+            ? SafeMath.mult(
+                this.priceList[account.currency.toLowerCase()],
+                this._ratio.usd
+              )
+            : 0,
+      }));
   }
 
   getSnapshot(memberId, instId) {

@@ -832,7 +832,7 @@ class Utils {
     };
   }
 
-  static marketParser(filePath) {
+  static fileParser(filePath) {
     const p = filePath;
     const doc = yaml.load(fs.readFileSync(p, "utf8"));
     return doc;
