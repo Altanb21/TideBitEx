@@ -104,6 +104,10 @@ class TideBitLegacyAdapter {
         // , email;
         try {
           member = await database.getMemberById(parsedResult.memberId);
+          console.log(
+            `!!! [TideBitLegacyAdapter getMemberId] getMemberFromDB`,
+            redisDomain
+          );
           // email = member?.email;
         } catch (error) {
           console.error(`database.getMemberById error`, error);
@@ -134,7 +138,7 @@ class TideBitLegacyAdapter {
       // delete ctx.id;
     }
     // rediret
-    console.log(`getMemberId ctx.session`, ctx.session);
+    // console.log(`getMemberId ctx.session`, ctx.session);
     return next();
   }
 

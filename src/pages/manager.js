@@ -9,6 +9,7 @@ import SubAccounts from "./sub-accounts";
 import TickerSetting from "./ticker-setting";
 import Vouchers from "./vouchers";
 import CurrentOrders from "./current-orders";
+import UserSetting from "./user-setting";
 
 const Manager = (props) => {
   const [activePage, setActivePage] = useState("ticker-setting");
@@ -31,6 +32,7 @@ const Manager = (props) => {
       {activePage === "sub-account" && <SubAccounts />}
       {activePage === "platform-assets" && <PlatformAssets />}
       {activePage === "user-assets" && <UserAssets />}
+      {activePage === "user-setting" && <UserSetting currentUser={props.user}/>}
       {activePage === "info-setting" && <InfoSetting />}
       {activePage === "match-orders" && <Vouchers />}
       {activePage === "current-orders" && <CurrentOrders />}

@@ -5,6 +5,7 @@ import OrderBook from "../libs/books/OrderBook";
 import TickerBook from "../libs/books/TickerBook";
 import TradeBook from "../libs/books/TradeBook";
 import TideBitWS from "../libs/TideBitWS";
+import SafeMath from "../utils/SafeMath";
 import Communicator from "./Communicator";
 // import Pusher from "pusher-js";
 // import { randomID } from "dvalue";
@@ -53,7 +54,42 @@ class Middleman {
       const response = await this.communicator.getUserRoles();
       return response;
     } catch (error) {
-      // this.instruments = [];
+      throw error;
+    }
+  }
+
+  async getAdminUsers() {
+    try {
+      const response = await this.communicator.getAdminUsers();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addAdminUser(currentUser, newUser) {
+    try {
+      const response = await this.communicator.addAdminUser();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+  
+  async deleteAdminUser(currentUser, user) {
+    try {
+      const response = await this.communicator.deleteAdminUser();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateAdminUser(currentUser, updateUser) {
+    try {
+      const response = await this.communicator.updateAdminUser();
+      return response;
+    } catch (error) {
       throw error;
     }
   }
@@ -108,7 +144,7 @@ class Middleman {
     return await this.communicator.getUsersAccounts(exchange);
   }
 
-  getMyOrders(market) {
+  getMyOrdersSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     return this.orderBook.getSnapshot(market);
   }
@@ -155,11 +191,11 @@ class Middleman {
     }
   }
 
-  getTickers() {
+  getTickersSnapshot() {
     return this.tickerBook.getSnapshot();
   }
 
-  async _getTickers(instType = "SPOT", from, limit) {
+  async getTickers(instType = "SPOT", from, limit) {
     let rawTickers,
       tickers = {};
 
@@ -186,7 +222,7 @@ class Middleman {
     return this.tickers;
   }
 
-  getTrades(market) {
+  getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
     return this.tradeBook.getSnapshot(market, lotSz);
@@ -206,11 +242,75 @@ class Middleman {
     }
   }
 
-  getDepthBooks(market) {
+  getDepthBooksSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
-    let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
-    // console.log(`getBooks current market`, market)
-    return this.depthBook.getSnapshot(market, lotSz);
+    return this.depthBook.getSnapshot(market);
+  }
+
+  getDepthChartData(books) {
+    const _bids = books.bids
+      .map((bid) => ({ ...bid }))
+      .sort((a, b) => +a.price - +b.price);
+    const _asks = books.asks.map((ask) => ({ ...ask }));
+    if (_bids.length > _asks.length) {
+      const d = _asks.length - 1;
+      for (let i = _asks.length; i < _bids.length; i++) {
+        _asks.push({
+          price: SafeMath.plus(
+            _asks[i - 1]?.price || "0",
+            i + 1 > _bids.length - 1
+              ? SafeMath.minus(
+                  _bids[_bids.length - 1]?.price,
+                  _bids[_bids.length - 2]?.price
+                )
+              : SafeMath.minus(_bids[i + 1]?.price, _bids[i]?.price)
+          ),
+          total: _asks[d]?.total || "0",
+        });
+      }
+    } else if (_bids.length < _asks.length) {
+      for (let i = _bids.length; i < _asks.length; i++) {
+        const d = _bids.length - 1;
+        _bids.push({
+          price: SafeMath.plus(
+            _bids[i - 1]?.price || "0",
+            i + 1 > _bids.length - 1
+              ? SafeMath.minus(
+                  _asks[_asks.length - 1]?.price,
+                  _asks[_asks.length - 2]?.price
+                )
+              : SafeMath.minus(_asks[i + 1]?.price, _asks[i]?.price)
+          ),
+          total: _bids[d]?.total || "0",
+        });
+      }
+    }
+    const _bs = _bids
+      .map((b) => ({
+        x: b.price,
+        y: b.total,
+      }))
+      .concat(
+        _asks.map((a) => ({
+          x: a.price,
+          y: null,
+        }))
+      );
+    const _as = _bids
+      .map((b) => ({
+        x: b.price,
+        y: null,
+      }))
+      .concat(
+        _asks.map((a) => ({
+          x: a.price,
+          y: a.total,
+        }))
+      );
+    return {
+      asks: _as,
+      bids: _bs,
+    };
   }
 
   async _getDepthBooks({ market, sz, lotSz }) {
@@ -227,7 +327,7 @@ class Middleman {
     }
   }
 
-  getTicker() {
+  getTickerSnapshot() {
     return this.tickerBook.getCurrentTicker();
   }
 
@@ -252,28 +352,36 @@ class Middleman {
   //   return XSRFToken;
   // }
 
-  async _getAccounts(market) {
-    if (this.isLogin) {
-      try {
-        const res = await this.communicator
-          .getAccounts
-          // this.selectedTicker?.instId?.replace("-", ",")
-          ();
-        // console.log(`_getAccounts res`, res);
-        if (res) {
-          this.accountBook.updateAll(res.accounts);
-          // this.memberId = res.memberId;
-          // this.email = res.email;
+  async getAccounts() {
+    try {
+      const res = await this.communicator
+        .getAccounts
+        // this.selectedTicker?.instId?.replace("-", ",")
+        ();
+      // console.log(`_getAccounts res`, res);
+      if (res) {
+        this.accountBook.updateAll(res.accounts);
+        if (!this.memberId) {
+          this.memberId = res.memberId;
+          this.email = res.email;
+          if (this.memberId) {
+            this.registerUser();
+            this.isLogin = true;
+          } else {
+            this.isLogin = false;
+          }
         }
-      } catch (error) {
-        console.error(`_getAccounts error`, error);
-        // this.isLogin = false;
-        this.accountBook.clearAll();
+      }else{
+        this.isLogin = false;
       }
+    } catch (error) {
+      console.error(`_getAccounts error`, error);
+      // this.isLogin = false;
+      this.accountBook.clearAll();
     }
   }
 
-  getAccounts(instId) {
+  getAccountsSnapshot(instId) {
     return {
       accounts: this.accountBook.getSnapshot(instId),
       sum: this.accountBook.getAssetsSum(),
@@ -369,7 +477,23 @@ class Middleman {
     };
   }
 
-  async start(market) {
+  async registerUser() {
+    try {
+      const CSRFToken = await this.communicator.CSRFTokenRenew();
+      // console.log(`[Middleman] _getAccounts userId`, this._userId);
+      // const userId = this._userId;
+      this.tbWebSocket.setCurrentUser({
+        CSRFToken,
+        memberId: this.memberId,
+        // peatioSession: options.peatioSession
+        // userId,
+      });
+    } catch (error) {
+      console.error(`tbWebSocket error`, error);
+    }
+  }
+
+  async initWs() {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${
@@ -381,42 +505,10 @@ class Middleman {
       this.isLogin = true;
       this.memberId = options.memberId;
       this.email = options.email;
+      this.registerUser();
     } else {
-      this.isLogin = false;
+      this.isLogin = null;
     }
-    if (this.isLogin) {
-      try {
-        const CSRFToken = await this.communicator.CSRFTokenRenew();
-        // console.log(`[Middleman] _getAccounts userId`, this._userId);
-        // const userId = this._userId;
-        this.tbWebSocket.setCurrentUser(market, {
-          CSRFToken,
-          memberId: this.memberId,
-          // peatioSession: options.peatioSession
-          // userId,
-        });
-      } catch (error) {
-        console.error(`tbWebSocket error`, error);
-      }
-    }
-    await this._getTickers();
-    await this._getAccounts(market);
-    await this.selectMarket(market);
-  }
-
-  async sync() {
-    // --- WORKAROUND---
-    // await wait(1 * 60 * 1000);
-    // if (this.isLogin) {
-    // console.log(`--- WORKAROUND--- sync [START]`);
-    const market = this.tickerBook.getCurrentMarket();
-    await this._getAccounts(market);
-    await this._getOrderList(market);
-    await this._getOrderHistory(market);
-    // console.log(`--- WORKAROUND--- sync [END]`);
-    // }
-    // this.sync();
-    // --- WORKAROUND---
   }
 
   stop() {

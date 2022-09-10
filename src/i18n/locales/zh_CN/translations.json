@@ -173,5 +173,15 @@
   "cancel-all-bids-limit-order-confirm": "你将取消所有买入 {{baseUnit}} 的订单",
   "cancel-all-asks-limit-order-confirm": "你将取消所有卖出 {{baseUnit}} 的订单",
   "cancel-all-limit-order-confirm": "你将取消所有未完成的订单",
-  "loading": "加载中..."
+  "loading": "加载中...",
+  "root": "Root",
+  "accountant": "Accountant",
+  "operating": "Operating",
+  "worker": "Worker",
+  "supervisor": "Supervisor",
+  "withdraw-checker": "Withdraw checker",
+  "deposit-checker": "Deposit checker",
+  "kyc-checker": "KYC checker",
+  "deposit-maker": "Deposit maker",
+  "deposit-viewer": "Deposit viewer"
 }

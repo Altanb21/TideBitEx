@@ -38,7 +38,7 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
-        this.adminUsers = this.getAdminUsers();
+        this.adminUsers = this._getAdminUsers();
         this.currencies = await this.database.getCurrencies();
         this.tickerBook = new TickerBook({
           logger,
@@ -168,24 +168,86 @@ class ExchangeHub extends Bot {
     }
   }
 
-  getAdminUsers() {
+  _getAdminUsers() {
     try {
       const p = path.join(
         this.config.base.TideBitLegacyPath,
         "config/roles.yml"
       );
       const users = Utils.fileParser(p);
-      const formatUsers = users.map((user) => {
-        return {
-          ...user,
-        };
-      });
-      this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
+      const formatUsers = users.reduce((prev, user) => {
+        const index = prev.findIndex((_usr) => _usr.email === user.email);
+        if (index === -1) {
+          prev = [...prev, user];
+        } else {
+          prev[index].roles = prev[index].roles.concat(user.roles);
+        }
+        return prev;
+      }, []);
+      // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
       return formatUsers;
     } catch (error) {
       this.logger.error(error);
       process.exit(1);
     }
+  }
+
+  async getAdminUsers({ query }) {
+    this.logger.debug(`*********** [${this.name}] getAdminUsers ************`);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getAdminUsers",
+        payload: {
+          adminUsers: this.adminUsers,
+        },
+      })
+    );
+  }
+
+  async addAdminUser({ body }) {
+    // ++TODO
+    this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
+    this.logger.log(`body`, body);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "addAdminUser",
+        payload: {
+          result: true,
+        },
+      })
+    );
+  }
+
+  async updateAdminUser({ body }) {
+    // ++TODO
+    this.logger.debug(
+      `*********** [${this.name}] updateAdminUser ************`
+    );
+    this.logger.log(`body`, body);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "updateAdminUser",
+        payload: {
+          result: true,
+        },
+      })
+    );
+  }
+
+  async deleteAdminUser({ body }) {
+    // ++TODO
+    this.logger.debug(
+      `*********** [${this.name}] deleteAdminUser ************`
+    );
+    this.logger.log(`body`, body);
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "deleteAdminUser",
+        payload: {
+          result: true,
+        },
+      })
+    );
   }
 
   getTidebitMarkets() {
@@ -347,7 +409,7 @@ class ExchangeHub extends Bot {
         const message = JSON.stringify(res.data);
         this.logger.trace(message);
       }
-      this.logger.log(`getPriceList res`, res);
+      // this.logger.log(`getPriceList res`, res);
       return res.data;
     } catch (e) {
       this.logger.error(`getPriceList e`, e);
@@ -355,7 +417,7 @@ class ExchangeHub extends Bot {
   }
 
   // account api
-  async getAccounts({ memberId }) {
+  async getAccounts({ memberId, email }) {
     let priceList = await this.getPriceList();
     this.accountBook.priceList = priceList;
     this.logger.debug(
@@ -368,7 +430,9 @@ class ExchangeHub extends Bot {
         payload: null,
       });
     }
-    return this.tideBitConnector.router("getAccounts", { memberId });
+    return this.tideBitConnector.router("getAccounts", {
+      query: { memberId, email },
+    });
   }
 
   async getTicker({ params, query }) {
@@ -2190,6 +2254,18 @@ class ExchangeHub extends Bot {
         market,
         type: Events.order,
         data: order,
+      });
+    });
+
+    EventBus.on(Events.userStatusUpdate, (memberId, userStatus) => {
+      this.logger.log(
+        `[${this.constructor.name}] EventBus.on(Events.userStatusUpdate)`,
+        memberId,
+        userStatus
+      );
+      this.broadcastAllPrivateClient(memberId, {
+        type: Events.userStatusUpdate,
+        data: userStatus,
       });
     });
 

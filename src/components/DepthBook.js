@@ -204,7 +204,7 @@ const DepthBook = (props) => {
                 style={style}
                 bid={storeCtx.books.bids[index]}
                 ask={storeCtx.books.asks[index]}
-                key={`${storeCtx.selectedTicker.instId}-depthbbook-${index}`}
+                key={`depthbbook-${index}`}
               />
             )}
           </List>

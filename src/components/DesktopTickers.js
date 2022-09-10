@@ -71,7 +71,7 @@ const TickerList = (props) => {
         <TickerTile
           key={`${ticker.market}`}
           ticker={ticker}
-          active={ticker.market === storeCtx.selectedTicker.market}
+          active={ticker.market === storeCtx.market}
           update={ticker.update}
           onClick={() => {
             storeCtx.selectMarket(ticker.market);
@@ -107,6 +107,7 @@ const quoteCcies = {
 const DesktopTickers = (props) => {
   const storeCtx = useContext(StoreContext);
   const inputRef = useRef();
+  const [isInit, setIsInit] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [defaultActiveKey, setDefaultActiveKey] = useState("hkd");
   const [filteredTickers, setFilteredTickers] = useState([]);
@@ -123,9 +124,12 @@ const DesktopTickers = (props) => {
   }, [storeCtx.tickers]);
 
   useEffect(() => {
-    filterTickers();
+    if ((!isInit && storeCtx.tickers?.length > 0) || props.openTickerList) {
+      filterTickers();
+      if (!isInit) setIsInit(true);
+    }
     return () => {};
-  }, [filterTickers]);
+  }, [filterTickers, isInit, props.openTickerList, storeCtx.tickers?.length]);
 
   useEffect(() => {
     if (

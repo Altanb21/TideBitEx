@@ -68,20 +68,6 @@ const UserInfo = (props) => {
     setOpenNav((prev) => (open !== undefined ? open : !prev));
   };
 
-  // useEffect(() => {
-  //   // if (!isInit) {
-  //   console.log(`document.cookie`, document.cookie);
-  //   const email =
-  //     document.cookie
-  //       .split(";")
-  //       .filter((v) => /email/.test(v))
-  //       .pop()
-  //       ?.split("=")[1] || storeCtx.email;
-  //   setEmail((prev) => (prev !== email ? email : prev));
-  //   //   setIsInit(true);
-  //   // }
-  // }, [storeCtx.email]);
-
   return (
     <div className="user-info">
       {storeCtx.accounts?.sum && (
@@ -104,7 +90,7 @@ const UserInfo = (props) => {
             }`}
           >
             <div className="user-info__accounts--dropdown-box">
-              {storeCtx.accounts?.accounts ? (
+              {storeCtx.selectedTicker && storeCtx.accounts?.accounts ? (
                 accountsShowMore ? (
                   Object.values(storeCtx.accounts?.accounts).map((account) => (
                     <AccountMobileTile account={account} />

@@ -24,42 +24,39 @@ const TradeForm = (props) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
 
-  const formatValue = useCallback(
-    ({ value, precision }) => {
-      // console.log(`value: ${+value < 0 }`, value);
-      let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
-      // if (props.isMobile && formatedValue.match(/\./g).length > 1) {
-      //   formatedValue = formatedValue.substring(0, formatedValue.length - 1);
-      // }
-      // console.log(
-      //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
-      //   formatedValue
-      // );
-      if (formatedValue.toString().includes(".")) {
-        if (formatedValue.toString().split(".")[1].length >= precision) {
-          let arr = formatedValue.toString().split(".");
-          let decimal = arr[1].substring(0, precision);
-          formatedValue = `${arr[0]}.${decimal}`;
-          // console.log(
-          //   `formatedValue[('.')length?${
-          //     formatedValue.toString().split(".")[1]
-          //   }]`,
-          //   formatedValue
-          // );
-        }
-        if (formatedValue.toString().startsWith(".")) {
-          // console.log(`formatedValue='0${formatedValue}'`);
-          formatedValue = `0${formatedValue}`;
-        }
-      } else {
-        if (!!formatedValue && !isNaN(parseInt(formatedValue)))
-          formatedValue = parseInt(formatedValue).toString();
-        // console.log(`formatedValue`, formatedValue);
+  const formatValue = useCallback(({ value, precision }) => {
+    // console.log(`value: ${+value < 0 }`, value);
+    let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+    // if (props.isMobile && formatedValue.match(/\./g).length > 1) {
+    //   formatedValue = formatedValue.substring(0, formatedValue.length - 1);
+    // }
+    // console.log(
+    //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
+    //   formatedValue
+    // );
+    if (formatedValue.toString().includes(".")) {
+      if (formatedValue.toString().split(".")[1].length >= precision) {
+        let arr = formatedValue.toString().split(".");
+        let decimal = arr[1].substring(0, precision);
+        formatedValue = `${arr[0]}.${decimal}`;
+        // console.log(
+        //   `formatedValue[('.')length?${
+        //     formatedValue.toString().split(".")[1]
+        //   }]`,
+        //   formatedValue
+        // );
       }
-      return { formatedValue };
-    },
-    []
-  );
+      if (formatedValue.toString().startsWith(".")) {
+        // console.log(`formatedValue='0${formatedValue}'`);
+        formatedValue = `0${formatedValue}`;
+      }
+    } else {
+      if (!!formatedValue && !isNaN(parseInt(formatedValue)))
+        formatedValue = parseInt(formatedValue).toString();
+      // console.log(`formatedValue`, formatedValue);
+    }
+    return { formatedValue };
+  }, []);
 
   const formatPrice = useCallback(
     (value) => {
@@ -244,14 +241,16 @@ const TradeForm = (props) => {
     if (
       storeCtx.depthBook !== null &&
       storeCtx.depthBook?.price &&
-      storeCtx.depthBook?.amount
+      storeCtx.depthBook?.price !== price &&
+      storeCtx.depthBook?.amount &&
+      storeCtx.depthBook?.amount !== volume
     ) {
       // console.log(`TradePannel useEffect depthBook`, storeCtx.depthBook);
       formatPrice(storeCtx.depthBook.price);
       formatSize(storeCtx.depthBook.amount);
       storeCtx.depthBookHandler(null);
     }
-  }, [formatPrice, formatSize, storeCtx]);
+  }, [formatPrice, formatSize, price, volume, storeCtx]);
 
   return (
     <form

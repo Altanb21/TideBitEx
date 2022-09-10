@@ -100,14 +100,21 @@ const Sidebar = (props) => {
           },
         ]}
       />
-      <div
-        className={`btn admin-sidebar__btn${
-          props.activePage === "info-setting" ? " active" : ""
-        }`}
-        onClick={() => props.onSelected("info-setting")}
-      >
-        <div className="admin-sidebar__text">通知設定</div>
-      </div>
+      <DropDownMenu
+        label="管理人員"
+        selectPageHandler={(page) => props.onSelected(page)}
+        activePage={props.activePage}
+        options={[
+          {
+            page: "user-setting",
+            text: "管理人員設定",
+          },
+          {
+            page: "info-setting",
+            text: "通知設定",
+          },
+        ]}
+      />
       <DropDownMenu
         label="營收管理"
         selectPageHandler={(page) => props.onSelected(page)}

@@ -270,12 +270,12 @@ const CurrentOrders = () => {
               </td>
             ))}
         </tr>
-        <div
+        <tfoot
           className="screen__table-btn screen__table-text"
           onClick={() => setShowMore((prev) => !prev)}
         >
           {showMore ? t("show-less") : t("show-more")}
-        </div>
+        </tfoot>
       </table>
       <div className="screen__floating-box">
         <div

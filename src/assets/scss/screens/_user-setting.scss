@@ -1,0 +1,130 @@
+.user-setting {
+  & .screen__table {
+    color: #767676;
+    border-radius: 25px 25px 0px 0px;
+    overflow-y: unset;
+  }
+  & .screen__table .screen__table-title {
+    background-color: #767676;
+    border: 1px solid #707070;
+    border-radius: 25px 25px 0px 0px;
+    color: #fff;
+    font-size: 20px;
+    text-align: center;
+    padding: 18px 0;
+  }
+  & .screen__table-headers {
+    margin: 0 15px;
+    border-bottom: 1px solid #707070;
+    background-color: transparent;
+    width: unset;
+    justify-content: unset;
+    padding: 10px 0px;
+  }
+  & .screen__table-rows {
+    width: unset;
+    border-bottom: none;
+    overflow: scroll;
+  }
+  & .screen__table-row {
+    justify-content: unset;
+    padding: 0;
+    padding: 8px 15px;
+    margin: 5px 0;
+  }
+  & .screen__table-row:hover {
+    color: #fff;
+    background-color: #2699fb;
+  }
+  & .screen__table-row:hover.editing {
+    color: unset;
+    background-color: transparent;
+  }
+
+  & .screen__table-row:hover &__setting-icon {
+    background-image: url("../../images/settings-line-white@2x.png");
+  }
+  & .screen__table-header:nth-child(2),
+  & .screen__table-row:nth-child(2) {
+    min-width: 200px;
+  }
+  & .screen__table-header:nth-child(3),
+  & .screen__table-row:nth-child(3) {
+    flex: auto;
+  }
+  & .screen__table-header {
+    font-size: 18px;
+  }
+  & .screen__table-data {
+    min-width: 122px;
+  }
+  & .screen__table-tools {
+    border-top: 1px solid #707070;
+    border-bottom: 1px solid #707070;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+  & .screen__table-tool {
+    border-left: 1px solid #707070;
+    padding: 5px;
+  }
+  & .screen__table-tool-icon {
+    width: 18px;
+    height: 18px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+  & .screen__table-tool:first-child > .screen__table-tool-icon {
+    background-image: url("../../images/minus@2x.png");
+  }
+  & .screen__table-tool:last-child .screen__table-tool-icon {
+    background-image: url("../../images/plus@2x.png");
+  }
+  &__setting-btn {
+    display: flex;
+  }
+  .editing &__setting-btn {
+    gap: 5px;
+  }
+  .editing &__setting-icon {
+    background-image: url("../../images/settings-line-blue@2x.png");
+  }
+  .editing &__setting-label {
+    display: block;
+  }
+  &__setting-label {
+    display: none;
+    color: #2699fb;
+    font-size: 14px;
+  }
+  &__setting-icon {
+    width: 20px;
+    height: 20px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    background-image: url("../../images/setting@2x.png");
+  }
+  &__roles {
+    float: left;
+    gap: 10px;
+  }
+  &__role-tag {
+    background-color: transparent;
+    border: 1px solid #707070;
+    border-radius: 14px;
+    color: #767676;
+    font-size: 16px;
+    padding: 5px 20px;
+    cursor: pointer;
+  }
+  &__role-tag.selected {
+    background-color: #2699fb;
+    border-color: #2699fb;
+    color: #fff;
+  }
+}

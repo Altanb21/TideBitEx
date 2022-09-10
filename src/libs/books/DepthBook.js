@@ -1,5 +1,4 @@
 // import SafeMath from "../../utils/SafeMath";
-import SafeMath from "../../utils/SafeMath";
 import BookBase from "../BookBase";
 
 class DepthBook extends BookBase {
@@ -15,7 +14,7 @@ class DepthBook extends BookBase {
     this.unit = unit;
   }
 
-  getSnapshot(market, lotSz) {
+  getSnapshot(market) {
     try {
       let asks = [],
         bids = [];
