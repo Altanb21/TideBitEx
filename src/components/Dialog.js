@@ -13,7 +13,7 @@ const Dialog = (props) => {
         )}
       </React.Fragment>
       {ReactDOM.createPortal(
-        <div className={`modal__dialog modal__card${props.className}`}>
+        <div className={`modal__dialog modal__card ${props.className}`}>
           <div className="modal__header">
             <div className="modal__title">{props.title}</div>
             <div className="modal__close-btn"  onClick={props.onClose}></div>

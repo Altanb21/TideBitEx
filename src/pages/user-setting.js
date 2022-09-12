@@ -105,7 +105,7 @@ const AddUserDialog = (props) => {
                   roleKey={key}
                   isSelected={
                     user.roles
-                      ? user.roles?.includes(roles[key].toLowerCase())
+                      ? user.roles?.includes(key)
                       : false
                   }
                   onClick={() => {
