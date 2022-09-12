@@ -45,12 +45,17 @@
     background-image: url("../../images/settings-line-white@2x.png");
   }
   & .screen__table-header:nth-child(2),
-  & .screen__table-row:nth-child(2) {
+  & .screen__table-data:nth-child(2) {
     min-width: 200px;
   }
   & .screen__table-header:nth-child(3),
-  & .screen__table-row:nth-child(3) {
+  & .screen__table-data:nth-child(3) {
     flex: auto;
+  }
+  & .screen__table-header:nth-child(4),
+  & .screen__table-data:nth-child(4) {
+    min-width: unset;
+    width: fit-content;
   }
   & .screen__table-header {
     font-size: 18px;
@@ -89,7 +94,7 @@
   .editing &__setting-btn {
     gap: 5px;
   }
-  .editing &__setting-icon {
+  & .editing.screen__table-row &__setting-icon {
     background-image: url("../../images/settings-line-blue@2x.png");
   }
   .editing &__setting-label {
@@ -110,16 +115,18 @@
     background-image: url("../../images/setting@2x.png");
   }
   &__roles {
-    float: left;
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
+    width: 460px;
   }
   &__role-tag {
     background-color: transparent;
     border: 1px solid #707070;
     border-radius: 14px;
     color: #767676;
-    font-size: 16px;
-    padding: 5px 20px;
+    font-size: 15px;
+    padding: 0px 20px;
     cursor: pointer;
   }
   &__role-tag.selected {
