@@ -70,7 +70,7 @@ const AddUserDialog = (props) => {
               {t("id")}:
             </label>
             <input
-              className="user-setting__dialog-input-label"
+              className="user-setting__dialog-input"
               name="user-setting-add-user-id"
               type="number"
               inputMode="numeric"
@@ -87,7 +87,7 @@ const AddUserDialog = (props) => {
               {t("email")}:
             </label>
             <input
-              className="user-setting__dialog-input-label"
+              className="user-setting__dialog-input"
               name="user-setting-add-user-email"
               type="number"
               inputMode="numeric"
@@ -293,7 +293,7 @@ const UserSetting = (props) => {
       console.log(`filter option`, option);
       console.log(`filter keyword`, keyword);
       let _keyword = keyword === undefined ? filterKey : keyword,
-        _users = users || filteredAdminUsers,
+        _users = users || adminUsers,
         _options = [...filterOptions];
       console.log(`filter _users`, _users);
       console.log(`filter _keyword`, _keyword);
@@ -334,7 +334,7 @@ const UserSetting = (props) => {
       }
       setFilteredAdminUsers(_users);
     },
-    [filterKey, filterOptions, filteredAdminUsers]
+    [adminUsers, filterKey, filterOptions]
   );
 
   const init = useCallback(() => {

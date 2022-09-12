@@ -139,13 +139,25 @@
   &__dialog-add .modal__content {
     padding: 0 50px;
   }
-  &__dialog-input-group{
+  &__dialog-inputs {
     display: flex;
+    gap: 40px;
   }
-  &__dialog-content--roles{
+  &__dialog-content--roles {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     max-width: 500px;
+  }
+  &__dialog-input {
+    display: block;
+    border: 1px solid #707070;
+    border-radius: 5px;
+  }
+  &__dialog-input-group {
+    flex: auto;
+  }
+  &__dialog-input-group:nth-child(2) {
+    max-width: 300px;
   }
 }
