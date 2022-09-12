@@ -115,7 +115,6 @@ const AddUserDialog = (props) => {
                       } else {
                         prev.roles = [...prev.roles, key];
                       }
-                      console.log(`setUser prev`, prev);
                       return { ...prev };
                     });
                   }}
@@ -173,12 +172,14 @@ const UserDetail = (props) => {
   const handleOnClick = (key) => {
     console.log(`updateRoles`, updateRoles);
     console.log(`handleOnClick key`, key);
-    let _updateRoles,
-      role = key.toLowerCase().replace("-", " ");
-    if (Object.keys(roles).includes(role)) {
-      _updateRoles = updateRoles.filter((_role) => _role !== role);
+    console.log(`handleOnClick role`, roles[key]);
+    let _updateRoles;
+    if (Object.keys(roles).includes(key)) {
+      _updateRoles = updateRoles.filter(
+        (_role) => _role.toLowerCase().replace(" ", "-") !== key
+      );
     } else {
-      _updateRoles = updateRoles.concat(role);
+      _updateRoles = updateRoles.concat(roles[key]);
     }
     console.log(`handleOnClick _updateRoles`, _updateRoles);
     setUpdateRoles(_updateRoles);
@@ -444,7 +445,6 @@ const UserSetting = (props) => {
                   editUser={editUser}
                   selectedUser={selectedUser}
                   onSelect={() => {
-                    console.log(user);
                     setSelectedUser(user);
                   }}
                 />

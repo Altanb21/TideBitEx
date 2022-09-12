@@ -156,6 +156,7 @@
     border: 1px solid #707070;
     border-radius: 5px;
     height: 32px;
+    padding: 0 10px;
   }
   &__dialog-input-group {
     flex: auto;
@@ -182,8 +183,8 @@
 }
 
   /* Chrome, Safari, Edge, Opera */
-  input::-webkit-outer-spin-button.user-setting__dialog-input,
-  input::-webkit-inner-spin-button.user-setting__dialog-input {
+  input[type=number]::-webkit-outer-spin-button.user-setting__dialog-input,
+  input[type=number]::-webkit-inner-spin-button.user-setting__dialog-input {
     -webkit-appearance: none;
     margin: 0;
   }
