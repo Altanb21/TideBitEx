@@ -141,4 +141,10 @@
   &__dialog-input-group{
     display: flex;
   }
+  &__dialog-content--roles{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 500px;
+  }
 }
