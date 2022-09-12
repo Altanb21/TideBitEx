@@ -183,5 +183,9 @@
   "deposit-checker": "Deposit checker",
   "kyc-checker": "KYC checker",
   "deposit-maker": "Deposit maker",
-  "deposit-viewer": "Deposit viewer"
+  "deposit-viewer": "Deposit viewer",
+  "id": "ID",
+  "email": "E-mail",
+  "confirm": "確認",
+  "permission": "權限"
 }

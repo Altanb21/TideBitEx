@@ -89,8 +89,8 @@ const AddUserDialog = (props) => {
             <input
               className="user-setting__dialog-input"
               name="user-setting-add-user-email"
-              type="number"
-              inputMode="numeric"
+              type="text"
+              inputmode="email"
               onChange={(e) => {
                 setUser((prev) => ({ ...prev, email: e.target.value }));
               }}

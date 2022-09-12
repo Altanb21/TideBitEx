@@ -140,8 +140,10 @@
     padding: 0 50px;
   }
   &__dialog-inputs {
+    margin-top: 32px;
     display: flex;
     gap: 40px;
+    margin-bottom: 32px;
   }
   &__dialog-content--roles {
     display: flex;
@@ -153,6 +155,7 @@
     display: block;
     border: 1px solid #707070;
     border-radius: 5px;
+    height: 32px;
   }
   &__dialog-input-group {
     flex: auto;
@@ -160,4 +163,19 @@
   &__dialog-input-group:nth-child(2) {
     max-width: 300px;
   }
+  &__dialog-content--title{
+    margin-bottom: 20px;
+  }
 }
+
+  /* Chrome, Safari, Edge, Opera */
+  input::-webkit-outer-spin-button.user-setting__dialog-input,
+  input::-webkit-inner-spin-button.user-setting__dialog-input {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* Firefox */
+  input[type="number"].user-setting__dialog-input {
+    -moz-appearance: textfield;
+  }
