@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 import StoreContext from "../store/store-context";
+import { Dialog } from "@material-ui/core";
+import LoadingDialog from "../components/LoadingDialog";
 
 const roles = {
   // all: "All",
@@ -44,6 +46,127 @@ const RoleTag = (props) => {
   );
 };
 
+const AddUserDialog = (props) => {
+  const { t } = useTranslation();
+  const [user, setUser] = useState({});
+  return (
+    <Dialog
+      className="user-setting__dialog-add"
+      title="Add Administrator"
+      onClose={props.onClose}
+      onCancel={props.onCancel}
+      onConfirm={props.onConfirm}
+    >
+      <>
+        <div className="user-setting__dialog-inputs">
+          <div className="user-setting__dialog-input-group">
+            <label
+              className="user-setting__dialog-input-label"
+              htmlFor="user-setting-add-user-id"
+            >
+              {t("id")}:
+            </label>
+            <input
+              className="user-setting__dialog-input-label"
+              name="user-setting-add-user-id"
+              type="number"
+              inputMode="numeric"
+              onChange={(e) => {
+                setUser((prev) => ({ ...prev, id: e.target.value }));
+              }}
+            />
+          </div>
+          <div className="user-setting__dialog-input-group">
+            <label
+              className="user-setting__dialog-input-label"
+              htmlFor="user-setting-add-user-email"
+            >
+              {t("email")}:
+            </label>
+            <input
+              className="user-setting__dialog-input-label"
+              name="user-setting-add-user-email"
+              type="number"
+              inputMode="numeric"
+              onChange={(e) => {
+                setUser((prev) => ({ ...prev, email: e.target.value }));
+              }}
+            />
+          </div>
+        </div>
+        <div className="user-setting__dialog-content">
+          <div className="user-setting__dialog-content--title">
+            {t("permission")}
+          </div>
+          <div className="user-setting__dialog-content--roles">
+            {Object.keys(roles).map((key) => {
+              return (
+                <RoleTag
+                  roleKey={key}
+                  isSelected={props.user.roles.includes(
+                    roles[key].toLowerCase()
+                  )}
+                  onClick={() => {
+                    setUser((prev) => {
+                      if (!prev.roles) prev.roles = [];
+                      else {
+                        if (prev.roles.includes(key)) {
+                          prev.roles = prev.roles.filter(
+                            (role) => role !== key
+                          );
+                        } else {
+                          prev.roles = prev.roles.concat(key);
+                        }
+                      }
+                      return prev;
+                    });
+                  }}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </>
+    </Dialog>
+  );
+};
+
+const DeleteUserDialog = (props) => {
+  const { t } = useTranslation();
+  return (
+    <Dialog
+      className="user-setting__dialog-delete"
+      title="Confirm"
+      onClose={props.onClose}
+      onCancel={props.onCancel}
+      onConfirm={props.onConfirm}
+    >
+      <>
+        <div className="user-setting__dialog--title">
+          {t("remove-user-confirm")}
+        </div>
+        <div className="user-setting__dialog--content">
+          <div className="user-setting__user-info">
+            <div>{props.user.id}</div>
+            <div>{props.user.email}</div>
+          </div>
+          <div className="user-setting__user-roles">
+            {props.user.roles.map((role) => {
+              return (
+                <RoleTag
+                  roleKey={role.toLowerCase().replace(" ", "-")}
+                  isSelected={true}
+                  onClick={() => {}}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </>
+    </Dialog>
+  );
+};
+
 const UserDetail = (props) => {
   const { t } = useTranslation();
   const [isEdit, setIsEdit] = useState(false);
@@ -56,7 +179,7 @@ const UserDetail = (props) => {
     console.log(`handleOnClick key`, key);
     let _updateRoles,
       role = key.toLowerCase().replace("-", " ");
-    if (roles.includes(role)) {
+    if (Object.keys(roles).includes(role)) {
       _updateRoles = updateRoles.filter((_role) => _role !== role);
     } else {
       _updateRoles = updateRoles.concat(role);
@@ -69,8 +192,9 @@ const UserDetail = (props) => {
     <tr
       className={`screen__table-row user-setting__detail${
         isEdit ? " editing" : ""
-      }`}
+      }${props.selectedUser.email === props.user.email ? " selected" : ""}}`}
       key={`${props.user.name}-${props.user.id}`}
+      onClick={props.onSelect}
     >
       <td className="screen__table-data">{props.user.id}</td>
       <td className="screen__table-data">{props.user.email}</td>
@@ -129,10 +253,14 @@ const UserSetting = (props) => {
   const storeCtx = useContext(StoreContext);
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [adminUsers, setAdminUsers] = useState(null);
   const [filteredAdminUsers, setFilteredAdminUsers] = useState(null);
   const [filterOptions, setFilterOptions] = useState(["all"]);
   const [filterKey, setFilterKey] = useState("");
+  const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
+  const [openDeleteUserDialog, setOpenDeleteUserDialog] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const editUser = useCallback(
     async (user, roles) => {
@@ -230,97 +358,138 @@ const UserSetting = (props) => {
   }, [init, isInit]);
 
   return (
-    <section className="screen__section user-setting">
-      <div className="screen__header">管理人員設定</div>
-      {/* <ScreenTags
+    <>
+      {isLoading && <LoadingDialog />}
+      {openAddUserDialog && (
+        <AddUserDialog
+          onClose={() => setOpenAddUserDialog(false)}
+          onCancel={() => {
+            setOpenAddUserDialog(false);
+          }}
+          onConfirm={async (user) => {
+            setOpenAddUserDialog(false);
+            setIsLoading(true);
+            await storeCtx.addAdminUser(user);
+            setIsLoading(false);
+          }}
+        />
+      )}
+      {openDeleteUserDialog && (
+        <DeleteUserDialog
+          user={selectedUser}
+          onClose={() => setOpenDeleteUserDialog(false)}
+          onCancel={() => {
+            setOpenDeleteUserDialog(false);
+          }}
+          onConfirm={async () => {
+            setOpenDeleteUserDialog(false);
+            setIsLoading(true);
+            await storeCtx.deleteAdminUser(selectedUser);
+            setIsLoading(false);
+          }}
+        />
+      )}
+      <section className="screen__section user-setting">
+        <div className="screen__header">管理人員設定</div>
+        {/* <ScreenTags
         selectedTag={selectedTag}
         selectTagHandler={selectTagHandler}
         data={currencies}
       /> */}
-      <div className="screen__search-bar">
-        <div className="screen__search-box">
-          <input
-            type="text"
-            inputMode="search"
-            className="screen__search-input"
-            placeholder="輸入欲搜尋的關鍵字"
-            onInput={(e) => {
-              setFilterKey(e.target.value);
-              filter({ keyword: e.target.value });
-            }}
-          />
-          <div className="screen__search-icon">
-            <div className="screen__search-icon--circle"></div>
-            <div className="screen__search-icon--rectangle"></div>
+        <div className="screen__search-bar">
+          <div className="screen__search-box">
+            <input
+              type="text"
+              inputMode="search"
+              className="screen__search-input"
+              placeholder="輸入欲搜尋的關鍵字"
+              onInput={(e) => {
+                setFilterKey(e.target.value);
+                filter({ keyword: e.target.value });
+              }}
+            />
+            <div className="screen__search-icon">
+              <div className="screen__search-icon--circle"></div>
+              <div className="screen__search-icon--rectangle"></div>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="screen__tool-bar">
-        <div className="screen__display">
-          <div className="screen__display-title">顯示：</div>
-          <ul className="screen__display-options">
-            {["all", ...Object.keys(roles)].map((key) => (
-              <OptionTag
-                option={key}
-                filterOptions={filterOptions}
-                onClick={filter}
-              />
-            ))}
-          </ul>
-        </div>
-        {/* <div className="screen__sorting">
+        <div className="screen__tool-bar">
+          <div className="screen__display">
+            <div className="screen__display-title">顯示：</div>
+            <ul className="screen__display-options">
+              {["all", ...Object.keys(roles)].map((key) => (
+                <OptionTag
+                  option={key}
+                  filterOptions={filterOptions}
+                  onClick={filter}
+                />
+              ))}
+            </ul>
+          </div>
+          {/* <div className="screen__sorting">
           <img src="/img/sorting@2x.png" alt="sorting" />
         </div> */}
-      </div>
-      <table className={`screen__table${showMore ? " show" : ""}`}>
-        <tr className="screen__table-title">管理人員名單</tr>
-        <thead className="screen__table-headers">
-          <th className="screen__table-header">管理人員 ID</th>
-          <th className="screen__table-header">E-mail</th>
-          <th className="screen__table-header">權限</th>
-          <th className="screen__table-header"></th>
-        </thead>
-        <tbody className="screen__table-rows">
-          {filteredAdminUsers &&
-            Object.values(filteredAdminUsers)?.map((user) => (
-              <UserDetail
-                user={user}
-                currentUser={props.currentUser}
-                editUser={editUser}
-              />
-            ))}
-        </tbody>
-        <tfoot>
-          <tr className="screen__table-tools">
-            <div className="screen__table-tool" onClick={() => {}}>
-              <div className="screen__table-tool-icon"></div>
-            </div>
-            <div className="screen__table-tool" onClick={() => {}}>
-              <div className="screen__table-tool-icon"></div>
-            </div>
-          </tr>
-          <div
-            className="screen__table-btn screen__table-text"
-            onClick={() => setShowMore((prev) => !prev)}
-          >
-            {showMore ? "顯示更少" : "顯示更多"}
-          </div>
-        </tfoot>
-      </table>
-      <div className="screen__floating-box">
-        <div
-          className="screen__floating-btn"
-          onClick={() => {
-            const screenSection =
-              window.document.querySelector(".screen__section");
-            // console.log(screenSection.scrollTop)
-            screenSection.scroll(0, 0);
-          }}
-        >
-          <img src="/img/floating-btn@2x.png" alt="arrow" />
         </div>
-      </div>
-    </section>
+        <table className={`screen__table${showMore ? " show" : ""}`}>
+          <tr className="screen__table-title">管理人員名單</tr>
+          <thead className="screen__table-headers">
+            <th className="screen__table-header">管理人員 ID</th>
+            <th className="screen__table-header">E-mail</th>
+            <th className="screen__table-header">權限</th>
+            <th className="screen__table-header"></th>
+          </thead>
+          <tbody className="screen__table-rows">
+            {filteredAdminUsers &&
+              Object.values(filteredAdminUsers)?.map((user) => (
+                <UserDetail
+                  user={user}
+                  currentUser={props.currentUser}
+                  editUser={editUser}
+                  selectedUser={selectedUser}
+                  onSelect={() => {
+                    setSelectedUser(user);
+                  }}
+                />
+              ))}
+          </tbody>
+          <tfoot>
+            <tr className="screen__table-tools">
+              <div className="screen__table-tool" onClick={() => {}}>
+                <div className="screen__table-tool-icon"></div>
+              </div>
+              <div
+                className="screen__table-tool"
+                onClick={() => {
+                  setOpenAddUserDialog(true);
+                }}
+              >
+                <div className="screen__table-tool-icon"></div>
+              </div>
+            </tr>
+            <div
+              className="screen__table-btn screen__table-text"
+              onClick={() => setShowMore((prev) => !prev)}
+            >
+              {showMore ? "顯示更少" : "顯示更多"}
+            </div>
+          </tfoot>
+        </table>
+        <div className="screen__floating-box">
+          <div
+            className="screen__floating-btn"
+            onClick={() => {
+              const screenSection =
+                window.document.querySelector(".screen__section");
+              // console.log(screenSection.scrollTop)
+              screenSection.scroll(0, 0);
+            }}
+          >
+            <img src="/img/floating-btn@2x.png" alt="arrow" />
+          </div>
+        </div>
+      </section>
+    </>
   );
 };
 

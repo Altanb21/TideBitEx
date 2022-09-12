@@ -32,21 +32,21 @@
     padding: 8px 15px;
     margin: 5px 0;
   }
-  & .screen__table-row:hover {
+  & .screen__table-row.selected {
     color: #fff;
     background-color: #2699fb;
   }
-  & .screen__table-row:hover.editing {
+  & .screen__table-row.selected.editing {
     color: unset;
     background-color: transparent;
   }
 
-  & .screen__table-row:hover &__setting-icon {
+  & .screen__table-row.selected &__setting-icon {
     background-image: url("../../images/settings-line-white@2x.png");
   }
   & .screen__table-header:nth-child(2),
   & .screen__table-data:nth-child(2) {
-    min-width: 200px;
+    min-width: 210px;
   }
   & .screen__table-header:nth-child(3),
   & .screen__table-data:nth-child(3) {
@@ -56,6 +56,7 @@
   & .screen__table-data:nth-child(4) {
     min-width: unset;
     width: fit-content;
+    margin-left: auto;
   }
   & .screen__table-header {
     font-size: 18px;
