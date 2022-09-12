@@ -150,6 +150,9 @@
     background-color: #FBFBFB;
     display: flex;
     flex-direction: column;
+    z-index: 100;
+    position: absolute;
+    transform: translate(50%, 50%);
   }
   &__header {
     position: relative;
@@ -165,7 +168,7 @@
   &__close-btn {
     position: absolute;
     top: 27px;
-    left: 27px;
+    right: 27px;
     width: 30px;
     height: 30px;
     background-position: center;
@@ -190,6 +193,7 @@
     border: 2px solid #3e3e3e;
     width: 200px;
     text-align: center;
+    padding: 10px 0;
   }
   &__cancel-btn {
     color: #3e3e3e;

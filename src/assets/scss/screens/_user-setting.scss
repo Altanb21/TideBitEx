@@ -135,4 +135,10 @@
     border-color: #2699fb;
     color: #fff;
   }
+  &__dialog-add .dialog__content {
+    padding: 0 50px;
+  }
+  &__dialog-input-group{
+    display: flex;
+  }
 }

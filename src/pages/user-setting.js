@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 import StoreContext from "../store/store-context";
-import { Dialog } from "@material-ui/core";
+import  Dialog  from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
 
 const roles = {
@@ -96,16 +96,18 @@ const AddUserDialog = (props) => {
         </div>
         <div className="user-setting__dialog-content">
           <div className="user-setting__dialog-content--title">
-            {t("permission")}
+            {t("permission")}:
           </div>
           <div className="user-setting__dialog-content--roles">
             {Object.keys(roles).map((key) => {
               return (
                 <RoleTag
                   roleKey={key}
-                  isSelected={props.user.roles.includes(
-                    roles[key].toLowerCase()
-                  )}
+                  isSelected={
+                    user.roles
+                      ? user.roles?.includes(roles[key].toLowerCase())
+                      : false
+                  }
                   onClick={() => {
                     setUser((prev) => {
                       if (!prev.roles) prev.roles = [];
@@ -118,6 +120,7 @@ const AddUserDialog = (props) => {
                           prev.roles = prev.roles.concat(key);
                         }
                       }
+                      console.log(`setUser prev`, prev)
                       return prev;
                     });
                   }}
@@ -172,10 +175,8 @@ const UserDetail = (props) => {
   const [isEdit, setIsEdit] = useState(false);
   const [updateRoles, setUpdateRoles] = useState([...props.user.roles]);
 
-  console.log(props.user);
-
   const handleOnClick = (key) => {
-    console.log(`handleOnClick roles`, roles);
+    console.log(`updateRoles`, updateRoles);
     console.log(`handleOnClick key`, key);
     let _updateRoles,
       role = key.toLowerCase().replace("-", " ");
@@ -192,7 +193,7 @@ const UserDetail = (props) => {
     <tr
       className={`screen__table-row user-setting__detail${
         isEdit ? " editing" : ""
-      }${props.selectedUser?.email === props.user.email ? " selected" : ""}}`}
+      }${props.selectedUser?.email === props.user.email ? " selected" : ""}`}
       key={`${props.user.name}-${props.user.id}`}
       onClick={props.onSelect}
     >
@@ -201,7 +202,6 @@ const UserDetail = (props) => {
       <td className="screen__table-data user-setting__roles">
         {!isEdit
           ? props.user.roles.map((role) => {
-              console.log(`role`, role.toLowerCase().replace(" ", "-"));
               return (
                 <RoleTag
                   roleKey={role.toLowerCase().replace(" ", "-")}
@@ -211,13 +211,10 @@ const UserDetail = (props) => {
               );
             })
           : Object.keys(roles).map((key) => {
-              console.log(`key`, key);
               return (
                 <RoleTag
                   roleKey={key}
-                  isSelected={props.user.roles.includes(
-                    roles[key].toLowerCase()
-                  )}
+                  isSelected={updateRoles.includes(roles[key].toLowerCase())}
                   onClick={() => handleOnClick(key)}
                 />
               );
@@ -258,7 +255,7 @@ const UserSetting = (props) => {
   const [filteredAdminUsers, setFilteredAdminUsers] = useState(null);
   const [filterOptions, setFilterOptions] = useState(["all"]);
   const [filterKey, setFilterKey] = useState("");
-  const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
+  const [openAddUserDialog, setOpenAddUserDialog] = useState(true);
   const [openDeleteUserDialog, setOpenDeleteUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
@@ -292,14 +289,12 @@ const UserSetting = (props) => {
 
   const getAdminUsers = useCallback(async () => {
     const { adminUsers: users } = await storeCtx.getAdminUsers();
-    console.log(`getAdminUsers users`, users);
     setAdminUsers(users);
     return users;
   }, [storeCtx]);
 
   const filter = useCallback(
     ({ users, option, keyword }) => {
-      console.log(`filter users`, users);
       console.log(`filter option`, option);
       console.log(`filter keyword`, keyword);
       let _keyword = keyword === undefined ? filterKey : keyword,
@@ -317,22 +312,22 @@ const UserSetting = (props) => {
         setFilterOptions(_options);
         console.log(`filter _options`, _options);
       }
-      if (users) {
+      if (_users) {
         _users = _users.filter((user) => {
-          console.log(`filter user`, user);
+          if (option || keyword) console.log(`filter user`, user);
           let condition =
             user.email.includes(_keyword) ||
             user.id.includes(_keyword) ||
             user.name.includes(_keyword) ||
             user.roles.some((role) => role.includes(_keyword));
-          console.log(`filter condition`, condition);
+          if (option || keyword) console.log(`filter condition`, condition);
           if (!_options.includes("all"))
             condition =
               condition &&
               user.roles.some((role) =>
                 _options.includes(role.replace("-", " "))
               );
-          console.log(`filter condition`, condition);
+          if (option || keyword) console.log(`filter condition`, condition);
           return condition;
         });
       }
@@ -422,7 +417,7 @@ const UserSetting = (props) => {
                 <OptionTag
                   option={key}
                   filterOptions={filterOptions}
-                  onClick={filter}
+                  filter={filter}
                 />
               ))}
             </ul>
@@ -448,6 +443,7 @@ const UserSetting = (props) => {
                   editUser={editUser}
                   selectedUser={selectedUser}
                   onSelect={() => {
+                    console.log(user);
                     setSelectedUser(user);
                   }}
                 />
@@ -455,12 +451,22 @@ const UserSetting = (props) => {
           </tbody>
           <tfoot>
             <tr className="screen__table-tools">
-              <div className="screen__table-tool" onClick={() => {}}>
+              <div
+                className="screen__table-tool"
+                onClick={() => {
+                  console.log(`selectedUser`,selectedUser);
+                  if (selectedUser) {
+                    console.log(`setOpenDeleteUserDialog true`);
+                    setOpenDeleteUserDialog(true);
+                  }
+                }}
+              >
                 <div className="screen__table-tool-icon"></div>
               </div>
               <div
                 className="screen__table-tool"
                 onClick={() => {
+                  console.log(`setOpenAddUserDialog true`);
                   setOpenAddUserDialog(true);
                 }}
               >
