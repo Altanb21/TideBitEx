@@ -110,10 +110,10 @@ const AddUserDialog = (props) => {
                       if (prev.roles.includes(key)) {
                         prev.roles = prev.roles.filter((role) => role !== key);
                       } else {
-                        prev.roles = prev.roles.concat(key);
+                        prev.roles = [...prev.roles, key];
                       }
                       console.log(`setUser prev`, prev);
-                      return [...prev];
+                      return { ...prev };
                     });
                   }}
                 />
