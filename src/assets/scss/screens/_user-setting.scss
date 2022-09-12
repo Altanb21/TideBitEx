@@ -118,7 +118,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    width: 460px;
+    max-width: 500px;
   }
   &__role-tag {
     background-color: transparent;

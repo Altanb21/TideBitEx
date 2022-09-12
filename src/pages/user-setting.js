@@ -107,9 +107,9 @@ const UserDetail = (props) => {
             if (props.currentUser.roles.includes("root")) setIsEdit(true);
           }}
         >
-          <div className="screen__table-data user-setting__setting-icon"></div>
+          <div className="user-setting__setting-icon"></div>
           <div
-            className="screen__table-data user-setting__setting-label"
+            className="user-setting__setting-label"
             onClick={async () => {
               setIsEdit(null);
               let result = await props.editUser(props.user, roles); //TODO
