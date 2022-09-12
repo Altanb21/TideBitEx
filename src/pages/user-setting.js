@@ -142,7 +142,7 @@ const DeleteUserDialog = (props) => {
         <div className="user-setting__dialog--title">
           {t("remove-user-confirm")}
         </div>
-        <div className="user-settingc">
+        <div className="user-setting__dialog--content">
           <div className="user-setting__user-info">
             <div>{props.user.id}</div>
             <div>{props.user.email}</div>
@@ -174,7 +174,7 @@ const UserDetail = (props) => {
     console.log(`handleOnClick key`, key);
     console.log(`handleOnClick role`, roles[key]);
     let _updateRoles;
-    if (Object.keys(roles).includes(key)) {
+    if (updateRoles.includes(key)) {
       _updateRoles = updateRoles.filter(
         (_role) => _role.toLowerCase().replace(" ", "-") !== key
       );
@@ -210,7 +210,9 @@ const UserDetail = (props) => {
               return (
                 <RoleTag
                   roleKey={key}
-                  isSelected={updateRoles.includes(roles[key].toLowerCase())}
+                  isSelected={updateRoles.some(
+                    (role) => role.toLowerCase().replace(" ", "-") === key
+                  )}
                   onClick={() => handleOnClick(key)}
                 />
               );
@@ -251,7 +253,7 @@ const UserSetting = (props) => {
   const [filteredAdminUsers, setFilteredAdminUsers] = useState(null);
   const [filterOptions, setFilterOptions] = useState(["all"]);
   const [filterKey, setFilterKey] = useState("");
-  const [openAddUserDialog, setOpenAddUserDialog] = useState(true);
+  const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
   const [openDeleteUserDialog, setOpenDeleteUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
