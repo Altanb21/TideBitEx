@@ -55,7 +55,10 @@ const AddUserDialog = (props) => {
       title="Add Administrator"
       onClose={props.onClose}
       onCancel={props.onCancel}
-      onConfirm={props.onConfirm}
+      onConfirm={() => {
+        if (user.id && user.email && user.roles?.length > 0)
+          props.onConfirm(user);
+      }}
     >
       <>
         <div className="user-setting__dialog-inputs">
