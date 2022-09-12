@@ -187,5 +187,6 @@
   "id": "ID",
   "email": "E-mail",
   "confirm": "確認",
-  "permission": "權限"
+  "permission": "權限",
+  "remove-user-confirm": "確認要移除此管理者?"
 }

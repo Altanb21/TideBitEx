@@ -188,5 +188,6 @@
   "id": "ID",
   "email": "E-mail",
   "confirm": "Comfirm",
-  "permission": "Permission"
+  "permission": "Permission",
+  "remove-user-confirm": "Are you sure about remove this user?"
 }

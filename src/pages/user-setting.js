@@ -143,7 +143,7 @@ const DeleteUserDialog = (props) => {
         <div className="user-setting__dialog--title">
           {t("remove-user-confirm")}
         </div>
-        <div className="user-setting__dialog--content">
+        <div className="user-settingc">
           <div className="user-setting__user-info">
             <div>{props.user.id}</div>
             <div>{props.user.email}</div>
