@@ -147,12 +147,9 @@
   &__dialog {
     width: 670px;
     height: 490px;
-    background-color: #FBFBFB;
+    background-color: #fbfbfb;
     display: flex;
     flex-direction: column;
-    z-index: 100;
-    position: absolute;
-    transform: translate(50%, 50%);
   }
   &__header {
     position: relative;

@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 import StoreContext from "../store/store-context";
-import  Dialog  from "../components/Dialog";
+import Dialog from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
 
 const roles = {
@@ -103,25 +103,17 @@ const AddUserDialog = (props) => {
               return (
                 <RoleTag
                   roleKey={key}
-                  isSelected={
-                    user.roles
-                      ? user.roles?.includes(key)
-                      : false
-                  }
+                  isSelected={user.roles?.includes(key)}
                   onClick={() => {
                     setUser((prev) => {
                       if (!prev.roles) prev.roles = [];
-                      else {
-                        if (prev.roles.includes(key)) {
-                          prev.roles = prev.roles.filter(
-                            (role) => role !== key
-                          );
-                        } else {
-                          prev.roles = prev.roles.concat(key);
-                        }
+                      if (prev.roles.includes(key)) {
+                        prev.roles = prev.roles.filter((role) => role !== key);
+                      } else {
+                        prev.roles = prev.roles.concat(key);
                       }
-                      console.log(`setUser prev`, prev)
-                      return prev;
+                      console.log(`setUser prev`, prev);
+                      return [...prev];
                     });
                   }}
                 />
@@ -306,8 +298,14 @@ const UserSetting = (props) => {
         if (option === "all") {
           _options = ["all"];
         } else {
-          if (filterOptions.includes("all")) _options = [...option];
-          else _options = [...filterOptions, option];
+          if (filterOptions.includes("all")) _options = [option];
+          else {
+            if (_options.includes(option)) {
+              _options = _options.filter((_option) => _option !== option);
+            } else {
+              _options = _options.concat(option);
+            }
+          }
         }
         setFilterOptions(_options);
         console.log(`filter _options`, _options);
@@ -454,7 +452,7 @@ const UserSetting = (props) => {
               <div
                 className="screen__table-tool"
                 onClick={() => {
-                  console.log(`selectedUser`,selectedUser);
+                  console.log(`selectedUser`, selectedUser);
                   if (selectedUser) {
                     console.log(`setOpenDeleteUserDialog true`);
                     setOpenDeleteUserDialog(true);

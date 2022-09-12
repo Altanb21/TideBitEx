@@ -135,7 +135,8 @@
     border-color: #2699fb;
     color: #fff;
   }
-  &__dialog-add .dialog__content {
+  &__dialog-delete .modal__content,
+  &__dialog-add .modal__content {
     padding: 0 50px;
   }
   &__dialog-input-group{
