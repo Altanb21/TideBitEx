@@ -331,7 +331,7 @@ const UserSetting = (props) => {
             condition =
               condition &&
               user.roles.some((role) =>
-                _options.includes(role.replace("-", " "))
+                _options.includes(role.replace(" ", "-").toLowerCase())
               );
           if (option || keyword) console.log(`filter condition`, condition);
           return condition;
