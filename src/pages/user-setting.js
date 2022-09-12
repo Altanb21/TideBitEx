@@ -174,7 +174,9 @@ const UserDetail = (props) => {
     console.log(`handleOnClick key`, key);
     console.log(`handleOnClick role`, roles[key]);
     let _updateRoles;
-    if (updateRoles.includes(key)) {
+    if (
+      updateRoles.some((role) => role.toLowerCase().replace(" ", "-") === key)
+    ) {
       _updateRoles = updateRoles.filter(
         (_role) => _role.toLowerCase().replace(" ", "-") !== key
       );
