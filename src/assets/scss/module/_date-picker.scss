@@ -107,7 +107,7 @@
   &__days > &__day.disabled {
     color: #afafaf;
     cursor: not-allowed;
-    pointer-events: none;
+    // pointer-events: none;
   }
   &__days > &__day.selected {
     color: #ffffff;
