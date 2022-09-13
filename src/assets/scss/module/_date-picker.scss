@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow&family=Quicksand:wght@400;500;700&display=swap");
+
 .date-picker {
   position: relative;
   &.active &__toggle--icon > img {
@@ -15,7 +17,7 @@
   & &__toggle {
     border: 1px solid #767676;
     border-radius: 5px;
-    padding: 16px 20px;
+    padding: 12px 20px;
     display: flex;
     cursor: pointer;
     width: 273px;
@@ -26,7 +28,7 @@
   & &__selected-date {
     color: #767676;
     font-size: 16px;
-    font-family: Barlow;
+    font-family: "Barlow", sans-serif;
     flex: auto;
   }
   &.active &__dates {
@@ -49,7 +51,9 @@
   }
   & &__mth {
     flex: auto;
-    font: normal normal bold 18px/23px Quicksand;
+    font-family: "Quicksand", sans-serif;
+    font-weight: bold;
+    font-size: 18px;
     letter-spacing: 0.02px;
     color: #1ec6a3;
   }
@@ -62,9 +66,9 @@
     cursor: pointer;
     background-image: url("../../images/arrow-right.svg");
   }
-  & &__arrows.prev-mth {
+  & &__arrows.next-mth {
     transform: matrix(-1, 0, 0, -1, 0, 0);
-    margin-right: 42px;
+    margin-left: 42px;
   }
   & &__label {
     display: flex;
@@ -74,7 +78,9 @@
     width: 20px;
     text-align: center;
     color: #4597e6;
-    font: normal normal medium 16px/20px Quicksand;
+    font-family: "Quicksand", sans-serif;
+    font-weight: normal;
+    font-size: 16px;
   }
   &__days {
     display: grid;
@@ -82,14 +88,16 @@
     grid-template-rows: repeat(5, 1fr);
   }
   &__days > &__day {
-    font: normal normal normal 16px/20px Quicksand;
     color: #353840;
+    font-family: "Quicksand", sans-serif;
+    font-weight: normal;
+    font-size: 16px;
   }
   &__days > &__day.disabled {
     color: #afafaf;
   }
   &__days > &__day.selected {
-    color: #FFFFFF;
+    color: #ffffff;
     background-color: #1ec6a3;
     border-radius: 50%;
   }

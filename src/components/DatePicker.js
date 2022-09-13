@@ -91,7 +91,7 @@ const DatePicker = (props) => {
       month = "0" + month;
     }
     let year = obj.getFullYear();
-    return year + " / " + month + " / " + day;
+    return year + "/" + month + "/" + day;
   };
 
   const goToNextMonth = useCallback(() => {

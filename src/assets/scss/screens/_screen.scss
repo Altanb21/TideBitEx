@@ -345,4 +345,16 @@
   &__table-value.negative {
     color: #dc484e;
   }
+  &__date {
+    &--range-bar,
+    &--group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    &--title{
+      margin-bottom: 0;
+      font-size: 16px;
+    }
+  }
 }

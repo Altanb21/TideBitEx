@@ -189,5 +189,7 @@
   "email": "E-mail",
   "confirm": "Comfirm",
   "permission": "Permission",
-  "remove-user-confirm": "Are you sure about remove this user?"
+  "remove-user-confirm": "Are you sure about remove this user?",
+  "another-time": "Another time",
+  "to": "To"
 }

@@ -188,5 +188,7 @@
   "email": "E-mail",
   "confirm": "確認",
   "permission": "權限",
-  "remove-user-confirm": "確認要移除此管理者?"
+  "remove-user-confirm": "確認要移除此管理者?",
+  "another-time": "其他時間",
+  "to": "至"
 }
