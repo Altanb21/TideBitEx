@@ -33,14 +33,14 @@ const AdminHeader = (props) => {
         >
           分析
         </div>
-        <DropDown
+        {/* <DropDown
           options={Object.keys(props.languages)}
           selected={props.languageKey}
           onSelect={props.changeLanguage}
           placeholder="Language"
         >
           {(key) => <div>{props.languages[key]}</div>}
-        </DropDown>
+        </DropDown> */}
       </div>
     </header>
   );
