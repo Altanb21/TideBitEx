@@ -1,4 +1,5 @@
 import React from "react";
+import DropDown from "./DropDown";
 
 const AdminHeader = (props) => {
   return (
@@ -32,6 +33,14 @@ const AdminHeader = (props) => {
         >
           分析
         </div>
+        <DropDown
+          options={Object.keys(props.languages)}
+          selected={props.languageKey}
+          onSelect={props.changeLanguage}
+          placeholder="Language"
+        >
+          {(key) => <div>{props.languages[key]}</div>}
+        </DropDown>
       </div>
     </header>
   );

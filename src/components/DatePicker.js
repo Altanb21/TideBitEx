@@ -24,7 +24,7 @@ const PopulateDates = (props) => {
       onClick={() => {
         if (el?.date) props.selectDate(el?.date);
       }}
-    >{`${el}`}</div>
+    >{`${el?.date !== undefined ? el.date : " "}`}</div>
   ));
 };
 
@@ -53,30 +53,29 @@ const DatePicker = (props) => {
     let dateLength = new Date(year, month + 1, 0).getDate();
     console.log(`daysInMonth dateLength`, dateLength);
     let dates = [];
-    for (let i = 0; i++; i <= dateLength) {
+    for (let i = 0; i < dateLength; i++) {
       let dateTime = new Date(`${year}-${month + 1}-${i + 1}`).getTime();
-      dates =
-        dates.concat[
-          {
-            date: i + 1,
-            disable: minDate
-              ? dateTime < minDate.getTime()
-                ? true
-                : maxDate
-                ? dateTime > maxDate.getTime()
-                  ? true
-                  : false
-                : false
-              : maxDate
-              ? dateTime > maxDate.getTime()
-                ? true
-                : false
-              : false,
-          }
-        ];
+      let date = {
+        date: i + 1,
+        disable: minDate
+          ? dateTime < minDate.getTime()
+            ? true
+            : maxDate
+            ? dateTime > maxDate.getTime()
+              ? true
+              : false
+            : false
+          : maxDate
+          ? dateTime > maxDate.getTime()
+            ? true
+            : false
+          : false,
+      };
+      console.log(`date`, date);
+      dates.push(date);
     }
     console.log(`daysInMonth dates[${dates.length}]`, dates);
-    dates = Array.apply(null, Array(day)).concat(dates);
+    dates = Array.apply(null, Array(day - 1)).concat(dates);
     console.log(`daysInMonth dates[${dates.length}]`, dates);
     return dates;
   };
