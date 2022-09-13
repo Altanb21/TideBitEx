@@ -237,7 +237,7 @@ const UserDetail = (props) => {
             className="user-setting__setting-label"
             onClick={async () => {
               setIsEdit(null);
-              let isUpdated = await props.editUser(props.user, roles); //TODO
+              let isUpdated = await props.editUser(props.user, updateRoles); //TODO
               setIsEdit(false);
               if (!isUpdated) setUpdateRoles(props.user.roles);
             }}

@@ -212,7 +212,7 @@ class ExchangeHub extends Bot {
     const { currentUser, newUser } = body;
     if (currentUser.roles?.includes("root")) {
       if (newUser?.email) {
-        const member = this.database.getMemberByEmail(newUser.email);
+        const member = await this.database.getMemberByEmail(newUser.email);
         this.logger.log(`addAdminUser member`, member);
         if (member) {
           const updateAdminUsers = this.adminUsers.concat({
