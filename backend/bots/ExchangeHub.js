@@ -770,7 +770,7 @@ class ExchangeHub extends Bot {
       case SupportedExchange.OKEX:
         const _outerTrades = await this.database.getOuterTradesByDayAfter(
           Database.EXCHANGE[query.exchange.toUpperCase()],
-          query.days // 30 || 365
+          365 // ++ TODO
         );
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",

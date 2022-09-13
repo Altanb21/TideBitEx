@@ -22,7 +22,7 @@ const PopulateDates = (props) => {
         el?.date === props.selectedDate ? " selected" : ""
       }${el?.disable ? " disabled" : ""}`}
       onClick={() => {
-        if (el?.date) props.selectDate(el?.date);
+        if (el?.date && !el?.disable) props.selectDate(el?.date);
       }}
     >{`${el?.date !== undefined ? el.date : " "}`}</div>
   ));
@@ -103,8 +103,8 @@ const DatePicker = (props) => {
     }
     setSelectedMonth(month);
     setSelectedYear(year);
-    props.setDate(new Date(`${year}-${month}-${selectedDate}`));
-  }, [props, selectedDate, selectedMonth, selectedYear]);
+    // props.setDate(new Date(`${year}-${month}-${selectedDate}`));
+  }, [selectedMonth, selectedYear]);
 
   const goToPrevMonth = useCallback(() => {
     let month = selectedMonth;
@@ -116,14 +116,20 @@ const DatePicker = (props) => {
     }
     setSelectedMonth(month);
     setSelectedYear(year);
-    props.setDate(new Date(`${year}-${month}-${selectedDate}`));
-  }, [props, selectedDate, selectedMonth, selectedYear]);
+    // props.setDate(new Date(`${year}-${month}-${selectedDate}`));
+  }, [selectedMonth, selectedYear]);
 
   const selectDate = useCallback(
     (date) => {
       setSelectedDate(date);
-      props.setDate(new Date(`${selectedYear}-${selectedMonth}-${date}`));
-      setOpenDates(false);
+      let newDate = new Date(`${selectedYear}-${selectedMonth}-${date}`);
+      if (
+        (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
+        (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
+      ) {
+        props.setDate(newDate);
+        setOpenDates(false);
+      }
     },
     [props, selectedMonth, selectedYear]
   );

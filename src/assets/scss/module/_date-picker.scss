@@ -39,7 +39,7 @@
     top: 55px;
     left: 0;
     display: none;
-    box-shadow: 0 3px 6px rgb(0 0 0 / 16%);
+    box-shadow: 0px 3px 6px #00000029;
     background-color: #fff;
     padding: 10px;
     width: 273px;
@@ -57,7 +57,7 @@
     font-size: 18px;
     letter-spacing: 0.02px;
     color: #1ec6a3;
-    margin-left: 5px
+    margin-left: 5px;
   }
   & &__arrows {
     width: 20px;
@@ -101,9 +101,13 @@
     width: 24px;
     height: 24px;
     text-align: center;
+    cursor: pointer;
+    pointer-events: stroke;
   }
   &__days > &__day.disabled {
     color: #afafaf;
+    cursor: not-allowed;
+    pointer-events: none;
   }
   &__days > &__day.selected {
     color: #ffffff;

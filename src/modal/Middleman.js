@@ -103,9 +103,9 @@ class Middleman {
     }
   }
 
-  async getOuterTradeFills(exchange, days) {
+  async getOuterTradeFills(exchange, start, end) {
     try {
-      return await this.communicator.getOuterTradeFills(exchange, days);
+      return await this.communicator.getOuterTradeFills(exchange, start, end);
     } catch (error) {
       throw error;
     }
