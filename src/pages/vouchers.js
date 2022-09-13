@@ -64,8 +64,8 @@ const Vouchers = () => {
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [tickers, setTickers] = useState(null);
   const [filterTicker, setFilterTicker] = useState(null);
-  const [dateStart, setDateStart] = useState(null);
-  const [dateEnd, setDateEnd] = useState(null);
+  const [dateStart, setDateStart] = useState(new Date());
+  const [dateEnd, setDateEnd] = useState(new Date());
 
   const getVouchers = useCallback(
     async (exchange, start, end) => {
@@ -220,13 +220,13 @@ const Vouchers = () => {
       if (!prev) {
         let currentDate = new Date();
         const end = currentDate.getTime();
-        currentDate = new Date(
-          `${currentDate.getFullYear()}-${
-            currentDate.getMonth() + 1
-          }-${currentDate.getDate()}`
-        );
-        setDateStart(currentDate);
-        setDateEnd(currentDate);
+        // currentDate = new Date(
+        //   `${currentDate.getFullYear()}-${
+        //     currentDate.getMonth() + 1
+        //   }-${currentDate.getDate()}`
+        // );
+        // setDateStart(currentDate);
+        // setDateEnd(currentDate);
         const start = end - filterOption * 24 * 60 * 60 * 1000;
         const res = await getVouchers(exchanges[0], start, end);
         filter({ filterTrades: res.trades, ticker: res.ticker });
