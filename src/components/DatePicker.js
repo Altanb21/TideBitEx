@@ -112,13 +112,13 @@ const DatePicker = (props) => {
     (date) => {
       setSelectedDate(date);
       let newDate = new Date(`${selectedYear}-${selectedMonth}-${date}`);
-      if (
-        (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
-        (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
-      ) {
-        props.setDate(newDate);
-        setOpenDates(false);
-      }
+      // if (
+      //   (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
+      //   (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
+      // ) {
+      props.setDate(newDate);
+      setOpenDates(false);
+      // }
     },
     [props, selectedMonth, selectedYear]
   );

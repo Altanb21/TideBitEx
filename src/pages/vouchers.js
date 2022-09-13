@@ -184,21 +184,21 @@ const Vouchers = () => {
 
   const dateStartUpdateHandler = useCallback(
     (date) => {
-      if (date.getTime() <= dateEnd.getTime()) {
-        setDateStart(date);
-        filter({ start: date });
-      }
+      // if (date.getTime() <= dateEnd.getTime()) {
+      setDateStart(date);
+      filter({ start: date });
+      // }
     },
-    [dateEnd, filter]
+    [filter]
   );
   const dateEndUpdateHandler = useCallback(
     (date) => {
-      if (date.getTime() >= dateStart.getTime()) {
-        setDateEnd(date);
-        filter({ end: date });
-      }
+      // if (date.getTime() >= dateStart.getTime()) {
+      setDateEnd(date);
+      filter({ end: date });
+      // }
     },
-    [dateStart, filter]
+    [filter]
   );
 
   const sorting = (key, ascending) => {
