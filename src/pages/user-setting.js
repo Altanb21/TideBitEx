@@ -167,6 +167,7 @@ const DeleteUserDialog = (props) => {
 const UserDetail = (props) => {
   const { t } = useTranslation();
   const [isEdit, setIsEdit] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
   const [updateRoles, setUpdateRoles] = useState([...props.user.roles]);
 
   const handleOnClick = (key) => {
@@ -185,6 +186,7 @@ const UserDetail = (props) => {
     }
     console.log(`handleOnClick _updateRoles`, _updateRoles);
     setUpdateRoles(_updateRoles);
+    setIsUpdate(true);
   };
 
   return (
@@ -237,9 +239,11 @@ const UserDetail = (props) => {
             className="user-setting__setting-label"
             onClick={async () => {
               setIsEdit(null);
-              let isUpdated = await props.editUser(props.user, updateRoles); //TODO
-              setIsEdit(false);
-              if (!isUpdated) setUpdateRoles(props.user.roles);
+              if (isUpdate) {
+                let result = await props.editUser(props.user, updateRoles); //TODO
+                setIsEdit(false);
+                if (!result) setUpdateRoles(props.user.roles);
+              } else setIsEdit(false);
             }}
           >
             儲存設定
@@ -262,35 +266,6 @@ const UserSetting = (props) => {
   const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
   const [openDeleteUserDialog, setOpenDeleteUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-
-  const editUser = useCallback(
-    async (user, roles) => {
-      console.log(`editUser user`, user);
-      console.log(`editUser roles`, roles);
-      let isUpdated = false;
-      let updateUser = { ...user };
-      let index = adminUsers.findIndex(
-        (adminUser) => adminUser.email === user.email
-      );
-      console.log(`editUser index`, index);
-      if (index !== -1) {
-        updateUser.roles = roles;
-        console.log(`editUser updateUser`, updateUser);
-        const { result, adminUsers } = await storeCtx.updateAdminUser(
-          props.currentUser,
-          updateUser
-        );
-        console.log(`updateAdminUser result`, result);
-        console.log(`updateAdminUser adminUsers`, adminUsers);
-        if (result) {
-          setAdminUsers(adminUsers);
-          isUpdated = result;
-        }
-      }
-      return isUpdated;
-    },
-    [adminUsers, props.currentUser, storeCtx]
-  );
 
   const getAdminUsers = useCallback(async () => {
     const { adminUsers: users } = await storeCtx.getAdminUsers();
@@ -347,6 +322,67 @@ const UserSetting = (props) => {
     [adminUsers, filterKey, filterOptions]
   );
 
+  const editUser = useCallback(
+    async (user, roles) => {
+      console.log(`editUser user`, user);
+      console.log(`editUser roles`, roles);
+      let isUpdated = false;
+      let updateUser = { ...user };
+      let index = adminUsers.findIndex(
+        (adminUser) => adminUser.email === user.email
+      );
+      console.log(`editUser index`, index);
+      if (index !== -1) {
+        updateUser.roles = roles;
+        console.log(`editUser updateUser`, updateUser);
+        const { result, adminUsers } = await storeCtx.updateAdminUser(
+          props.currentUser,
+          updateUser
+        );
+        console.log(`updateAdminUser result`, result);
+        console.log(`updateAdminUser adminUsers`, adminUsers);
+        if (result) {
+          setAdminUsers(adminUsers);
+          isUpdated = result;
+          filter({ users: adminUsers });
+        }
+      }
+      return isUpdated;
+    },
+    [adminUsers, filter, props.currentUser, storeCtx]
+  );
+
+  const addUser = useCallback(
+    async (user) => {
+      setOpenAddUserDialog(false);
+      setIsLoading(true);
+      const { result, adminUsers } = await storeCtx.addAdminUser(
+        props.currentUser,
+        user
+      );
+      if (result) {
+        setAdminUsers(adminUsers);
+        filter({ users: adminUsers });
+      }
+      setIsLoading(false);
+    },
+    [filter, props.currentUser, storeCtx]
+  );
+
+  const deleteUser = useCallback(async () => {
+    setOpenDeleteUserDialog(false);
+    setIsLoading(true);
+    const { result, adminUsers } = await storeCtx.deleteAdminUser(
+      props.currentUser,
+      selectedUser
+    );
+    if (result) {
+      setAdminUsers(adminUsers);
+      filter({ users: adminUsers });
+    }
+    setIsLoading(false);
+  }, [filter, props.currentUser, selectedUser, storeCtx]);
+
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
@@ -372,16 +408,7 @@ const UserSetting = (props) => {
           onCancel={() => {
             setOpenAddUserDialog(false);
           }}
-          onConfirm={async (user) => {
-            setOpenAddUserDialog(false);
-            setIsLoading(true);
-            const { result, adminUsers } = await storeCtx.addAdminUser(
-              props.currentUser,
-              user
-            );
-            if (result) setAdminUsers(adminUsers);
-            setIsLoading(false);
-          }}
+          onConfirm={addUser}
         />
       )}
       {openDeleteUserDialog && (
@@ -391,16 +418,7 @@ const UserSetting = (props) => {
           onCancel={() => {
             setOpenDeleteUserDialog(false);
           }}
-          onConfirm={async () => {
-            setOpenDeleteUserDialog(false);
-            setIsLoading(true);
-            const { result, adminUsers } = await storeCtx.deleteAdminUser(
-              props.currentUser,
-              selectedUser
-            );
-            if (result) setAdminUsers(adminUsers);
-            setIsLoading(false);
-          }}
+          onConfirm={deleteUser}
         />
       )}
       <section className="screen__section user-setting">

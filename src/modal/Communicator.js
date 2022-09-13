@@ -500,7 +500,7 @@ class Communicator {
       const url = `/admin/delete-user`;
       // const res = await this._get(url);
       const res = await this._request({
-        method: "DELETE",
+        method: "POST",
         url,
         data: { currentUser: { ...currentUser }, user: { ...user } },
       });
