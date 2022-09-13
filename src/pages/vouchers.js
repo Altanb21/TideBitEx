@@ -4,6 +4,7 @@ import TableDropdown from "../components/TableDropdown";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
+import DatePicker from "../components/DatePicker";
 
 const exchanges = ["OKEx"];
 
@@ -63,6 +64,8 @@ const Vouchers = () => {
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [tickers, setTickers] = useState(null);
   const [filterTicker, setFilterTicker] = useState(null);
+  const [dateStart, setDateStart] = useState(new Date());
+  const [dateEnd, setDateEnd] = useState(new Date());
 
   const getVouchers = useCallback(
     async (exchange) => {
@@ -238,6 +241,32 @@ const Vouchers = () => {
               {t("recent-year")}
             </li>
           </ul>
+        </div>
+        <div className="screen__date--range-bar">
+          <div className="screen__date--group">
+            <label className="screen__date--title">
+              {t("another-time")}:
+            </label>
+            {/* <input
+              type="date"
+              id="start"
+              name="date-start"
+              value={new Date().toISOString().substring(0, 10)}
+            ></input> */}
+            <DatePicker date={dateStart} setDate={setDateStart}/>
+          </div>
+          <div className="screen__date--group">
+            <label className="screen__date--title">
+              {t("to")}:
+            </label>
+            {/* <input
+              type="date"
+              id="end"
+              name="date-end"
+              value={new Date().toISOString().substring(0, 10)}
+            ></input> */}
+            <DatePicker date={dateEnd} setDate={setDateEnd}/>
+          </div>
         </div>
         {/* <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />

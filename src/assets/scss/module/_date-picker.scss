@@ -1,0 +1,96 @@
+.date-picker {
+  position: relative;
+  &.active &__toggle--icon > img {
+    // https://stackoverflow.com/questions/22252472/how-to-change-the-color-of-an-svg-element
+    // https://codepen.io/sosuke/pen/Pjoqqp
+    filter: invert(56%) sepia(83%) saturate(397%) hue-rotate(117deg)
+      brightness(97%) contrast(92%);
+  }
+  & &__toggle--icon > img {
+    width: 20px;
+  }
+  &.active &__toggle {
+    border: 1px solid #1ec6a3;
+  }
+  & &__toggle {
+    border: 1px solid #767676;
+    border-radius: 5px;
+    padding: 16px 20px;
+    display: flex;
+    cursor: pointer;
+    width: 273px;
+  }
+  &.active &__selected-date {
+    color: #142c34;
+  }
+  & &__selected-date {
+    color: #767676;
+    font-size: 16px;
+    font-family: Barlow;
+    flex: auto;
+  }
+  &.active &__dates {
+    display: block;
+  }
+  & &__dates {
+    position: absolute;
+    top: 55px;
+    left: 0;
+    display: none;
+    box-shadow: 0px 3px 6px #00000029;
+    background-color: #fff;
+    padding: 10px 20px;
+    width: 273px;
+    z-index: 10;
+  }
+  & &__month {
+    display: flex;
+    margin-bottom: 20px;
+  }
+  & &__mth {
+    flex: auto;
+    font: normal normal bold 18px/23px Quicksand;
+    letter-spacing: 0.02px;
+    color: #1ec6a3;
+  }
+  & &__arrows {
+    width: 20px;
+    height: 20px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    background-image: url("../../images/arrow-right.svg");
+  }
+  & &__arrows.prev-mth {
+    transform: matrix(-1, 0, 0, -1, 0, 0);
+    margin-right: 42px;
+  }
+  & &__label {
+    display: flex;
+    justify-content: space-between;
+  }
+  &__label > &__day {
+    width: 20px;
+    text-align: center;
+    color: #4597e6;
+    font: normal normal medium 16px/20px Quicksand;
+  }
+  &__days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+  &__days > &__day {
+    font: normal normal normal 16px/20px Quicksand;
+    color: #353840;
+  }
+  &__days > &__day.outdated {
+    color: #afafaf;
+  }
+  &__days > &__day.selected {
+    color: #FFFFFF;
+    background-color: #1ec6a3;
+    border-radius: 50%;
+  }
+}
