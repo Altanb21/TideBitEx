@@ -85,7 +85,7 @@
     font: normal normal normal 16px/20px Quicksand;
     color: #353840;
   }
-  &__days > &__day.outdated {
+  &__days > &__day.disabled {
     color: #afafaf;
   }
   &__days > &__day.selected {

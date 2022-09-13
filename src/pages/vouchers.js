@@ -244,28 +244,32 @@ const Vouchers = () => {
         </div>
         <div className="screen__date--range-bar">
           <div className="screen__date--group">
-            <label className="screen__date--title">
-              {t("another-time")}:
-            </label>
+            <label className="screen__date--title">{t("another-time")}:</label>
             {/* <input
               type="date"
               id="start"
               name="date-start"
               value={new Date().toISOString().substring(0, 10)}
             ></input> */}
-            <DatePicker date={dateStart} setDate={setDateStart}/>
+            <DatePicker
+              date={dateStart}
+              setDate={setDateStart}
+              maxDate={dateEnd}
+            />
           </div>
           <div className="screen__date--group">
-            <label className="screen__date--title">
-              {t("to")}:
-            </label>
+            <label className="screen__date--title">{t("to")}:</label>
             {/* <input
               type="date"
               id="end"
               name="date-end"
               value={new Date().toISOString().substring(0, 10)}
             ></input> */}
-            <DatePicker date={dateEnd} setDate={setDateEnd}/>
+            <DatePicker
+              date={dateEnd}
+              setDate={setDateEnd}
+              minDate={dateStart}
+            />
           </div>
         </div>
         {/* <div className="screen__sorting" onClick={sorting}>

@@ -20,7 +20,7 @@ const PopulateDates = (props) => {
     <div
       className={`date-picker__day${
         el?.date === props.selectedDate ? " selected" : ""
-      }${el?.beforeToday ? " outdated" : ""}`}
+      }${el?.disable ? " disabled" : ""}`}
       onClick={() => {
         if (el?.date) props.selectDate(el?.date);
       }}
@@ -40,37 +40,40 @@ const DatePicker = (props) => {
   };
 
   const daysInMonth = (year, month) => {
-    let currentDate = new Date();
-    currentDate = new Date(
-      `${currentDate.getFullYear()}-${
-        currentDate.getMonth() + 1
-      }-${currentDate.getDate()}`
-    );
+    // let currentDate = new Date();
+    // currentDate = new Date(
+    //   `${currentDate.getFullYear()}-${
+    //     currentDate.getMonth() + 1
+    //   }-${currentDate.getDate()}`
+    // );
+    let minDate = props.minDate,
+      maxDate = props.maxDate;
     let day = firstDayOfMonth(year, month);
     console.log(`daysInMonth day`, day);
     let dateLength = new Date(year, month + 1, 0).getDate();
     console.log(`daysInMonth dateLength`, dateLength);
     let dates = [];
     for (let i = 0; i++; i <= dateLength) {
-      if (
-        new Date(`${year}-${month + 1}-${i + 1}`).getTime() <
-        currentDate.getTime()
-      )
-        dates =
-          dates.concat[
-            {
-              date: i + 1,
-              beforeToday: true,
-            }
-          ];
-      else
-        dates =
-          dates.concat[
-            {
-              date: i + 1,
-              beforeToday: false,
-            }
-          ];
+      let dateTime = new Date(`${year}-${month + 1}-${i + 1}`).getTime();
+      dates =
+        dates.concat[
+          {
+            date: i + 1,
+            disable: minDate
+              ? dateTime < minDate.getTime()
+                ? true
+                : maxDate
+                ? dateTime > maxDate.getTime()
+                  ? true
+                  : false
+                : false
+              : maxDate
+              ? dateTime > maxDate.getTime()
+                ? true
+                : false
+              : false,
+          }
+        ];
     }
     console.log(`daysInMonth dates[${dates.length}]`, dates);
     dates = Array.apply(null, Array(day)).concat(dates);
@@ -120,9 +123,7 @@ const DatePicker = (props) => {
   const selectDate = useCallback(
     (date) => {
       setSelectedDate(date);
-      props.setDate(
-        new Date(`${selectedYear}-${selectedMonth}-${date}`)
-      );
+      props.setDate(new Date(`${selectedYear}-${selectedMonth}-${date}`));
       setOpenDates(false);
     },
     [props, selectedMonth, selectedYear]
