@@ -40,18 +40,10 @@ const DatePicker = (props) => {
   };
 
   const daysInMonth = (year, month) => {
-    // let currentDate = new Date();
-    // currentDate = new Date(
-    //   `${currentDate.getFullYear()}-${
-    //     currentDate.getMonth() + 1
-    //   }-${currentDate.getDate()}`
-    // );
     let minDate = props.minDate,
       maxDate = props.maxDate;
     let day = firstDayOfMonth(year, month);
-    console.log(`daysInMonth day`, day);
     let dateLength = new Date(year, month + 1, 0).getDate();
-    console.log(`daysInMonth dateLength`, dateLength);
     let dates = [];
     for (let i = 0; i < dateLength; i++) {
       let dateTime = new Date(`${year}-${month + 1}-${i + 1}`).getTime();
@@ -71,12 +63,9 @@ const DatePicker = (props) => {
             : false
           : false,
       };
-      console.log(`date`, date);
       dates.push(date);
     }
-    console.log(`daysInMonth dates[${dates.length}]`, dates);
-    dates = Array.apply(null, Array(day - 1)).concat(dates);
-    console.log(`daysInMonth dates[${dates.length}]`, dates);
+    dates = Array.apply(null, Array(day)).concat(dates);
     return dates;
   };
 
