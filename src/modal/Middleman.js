@@ -69,16 +69,22 @@ class Middleman {
 
   async addAdminUser(currentUser, newUser) {
     try {
-      const response = await this.communicator.addAdminUser();
+      const response = await this.communicator.addAdminUser(
+        currentUser,
+        newUser
+      );
       return response;
     } catch (error) {
       throw error;
     }
   }
-  
+
   async deleteAdminUser(currentUser, user) {
     try {
-      const response = await this.communicator.deleteAdminUser();
+      const response = await this.communicator.deleteAdminUser(
+        currentUser,
+        user
+      );
       return response;
     } catch (error) {
       throw error;
@@ -87,7 +93,10 @@ class Middleman {
 
   async updateAdminUser(currentUser, updateUser) {
     try {
-      const response = await this.communicator.updateAdminUser();
+      const response = await this.communicator.updateAdminUser(
+        currentUser,
+        updateUser
+      );
       return response;
     } catch (error) {
       throw error;
@@ -371,7 +380,7 @@ class Middleman {
             this.isLogin = false;
           }
         }
-      }else{
+      } else {
         this.isLogin = false;
       }
     } catch (error) {

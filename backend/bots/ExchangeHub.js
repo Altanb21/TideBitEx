@@ -205,46 +205,130 @@ class ExchangeHub extends Bot {
   }
 
   async addAdminUser({ body }) {
-    // ++TODO
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
     this.logger.log(`body`, body);
+    let result = false;
+    const { currentUser, newUser } = body;
+    if (currentUser.roles?.includes("root")) {
+      if (newUser?.email) {
+        const member = this.database.getMemberByEmail(newUser.email);
+        this.logger.log(`addAdminUser member`, member);
+        if (member) {
+          const updateAdminUsers = this.adminUsers.concat({
+            id: member.id,
+            email: member.email,
+            name: newUser.name,
+            roles: newUser.roles,
+          });
+          this.logger.log(`addAdminUser updateAdminUsers`, updateAdminUsers);
+          try {
+            Utils.yamlUpdate(updateAdminUsers, p);
+            result = true;
+            this.adminUsers = updateAdminUsers;
+          } catch (e) {
+            this.logger.error(`yamlUpdate addAdminUser`, updateAdminUsers, e);
+          }
+        }
+      }
+    }
     return Promise.resolve(
       new ResponseFormat({
         message: "addAdminUser",
         payload: {
-          result: true,
+          result,
+          adminUsers: this.adminUsers,
         },
       })
     );
   }
 
   async updateAdminUser({ body }) {
-    // ++TODO
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] updateAdminUser ************`
     );
     this.logger.log(`body`, body);
+    let result = false;
+    const { currentUser, updateUser } = body;
+    if (currentUser.roles?.includes("root")) {
+      if (updateUser?.email) {
+        let index = this.adminUsers.findIndex(
+          (user) => user.email === updateUser.email
+        );
+        if (index !== -1) {
+          let updateAdminUsers = this.adminUsers.map((user) => ({
+            ...user,
+            roles: [...user.roles],
+          }));
+          updateAdminUsers[index] = {
+            id: updateUser.id,
+            email: updateUser.email,
+            name: updateUser.name,
+            roles: updateUser.roles,
+          };
+          this.logger.log(`updateAdminUser updateAdminUsers`, updateAdminUsers);
+          try {
+            Utils.yamlUpdate(updateAdminUsers, p);
+            result = true;
+            this.adminUsers = updateAdminUsers;
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateAdminUser`,
+              updateAdminUsers,
+              e
+            );
+          }
+        }
+      }
+    }
     return Promise.resolve(
       new ResponseFormat({
         message: "updateAdminUser",
         payload: {
-          result: true,
+          result,
+          adminUsers: this.adminUsers,
         },
       })
     );
   }
 
   async deleteAdminUser({ body }) {
-    // ++TODO
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] deleteAdminUser ************`
     );
     this.logger.log(`body`, body);
+    let result = false;
+    const { currentUser, user } = body;
+    if (currentUser.roles?.includes("root")) {
+      if (user?.email) {
+        let index = this.adminUsers.findIndex(
+          (adminUser) => adminUser.email === user.email
+        );
+        if (index !== -1) {
+          let updateAdminUsers = this.adminUsers.splice(index, 1);
+          this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
+          try {
+            Utils.yamlUpdate(updateAdminUsers, p);
+            result = true;
+            this.adminUsers = updateAdminUsers;
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate deleteAdminUser`,
+              updateAdminUsers,
+              e
+            );
+          }
+        }
+      }
+    }
     return Promise.resolve(
       new ResponseFormat({
         message: "deleteAdminUser",
         payload: {
-          result: true,
+          result,
+          adminUsers: this.adminUsers,
         },
       })
     );

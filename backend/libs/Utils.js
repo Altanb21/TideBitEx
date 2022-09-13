@@ -838,6 +838,17 @@ class Utils {
     return doc;
   }
 
+  static yamlUpdate(object, filePath) {
+    const editedYaml = yaml.dump(object, {
+      flowLevel: 3,
+      styles: {
+        "!!int": "decimal",
+        "!!null": "camelcase",
+      },
+    });
+    fs.writeFileSync(filePath, editedYaml)
+  }
+
   static getDecimal(length) {
     let num = "0.";
     for (let i = 0; i < length - 1; i++) {

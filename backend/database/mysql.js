@@ -155,6 +155,21 @@ class mysql {
     }
   }
 
+  async getMemberByEmail(memberEmail) {
+    const query = "SELECT * FROM `members` WHERE `members`.`email` = ?;";
+    try {
+      this.logger.log("getMemberByEmail", query, `[${memberEmail}]`);
+      const [[member]] = await this.db.query({
+        query,
+        values: [memberEmail],
+      });
+      return member;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getAccountByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
     const query =
       "SELECT * FROM `accounts` WHERE `accounts`.`member_id` = ? AND `accounts`.`currency` = ?;";

@@ -56,7 +56,7 @@ const AddUserDialog = (props) => {
       onClose={props.onClose}
       onCancel={props.onCancel}
       onConfirm={() => {
-        if (user.id && user.email && user.roles?.length > 0)
+        if (user.name && user.email && user.roles?.length > 0)
           props.onConfirm(user);
       }}
     >
@@ -67,15 +67,15 @@ const AddUserDialog = (props) => {
               className="user-setting__dialog-input-label"
               htmlFor="user-setting-add-user-id"
             >
-              {t("id")}:
+              {t("name")}:
             </label>
             <input
               className="user-setting__dialog-input"
               name="user-setting-add-user-id"
-              type="number"
-              inputMode="numeric"
+              type="text"
+              inputMode="text"
               onChange={(e) => {
-                setUser((prev) => ({ ...prev, id: e.target.value }));
+                setUser((prev) => ({ ...prev, name: e.target.value }));
               }}
             />
           </div>
@@ -228,14 +228,18 @@ const UserDetail = (props) => {
             if (props.currentUser.roles.includes("root")) setIsEdit(true);
           }}
         >
-          <div className="user-setting__setting-icon"></div>
+          <div
+            className={`user-setting__setting-icon${
+              props.currentUser.roles.includes("root") ? "" : " disabled"
+            }`}
+          ></div>
           <div
             className="user-setting__setting-label"
             onClick={async () => {
               setIsEdit(null);
-              let result = await props.editUser(props.user, roles); //TODO
+              let isUpdated = await props.editUser(props.user, roles); //TODO
               setIsEdit(false);
-              if (!result) setUpdateRoles(props.user.roles);
+              if (!isUpdated) setUpdateRoles(props.user.roles);
             }}
           >
             儲存設定
@@ -263,6 +267,7 @@ const UserSetting = (props) => {
     async (user, roles) => {
       console.log(`editUser user`, user);
       console.log(`editUser roles`, roles);
+      let isUpdated = false;
       let updateUser = { ...user };
       let index = adminUsers.findIndex(
         (adminUser) => adminUser.email === user.email
@@ -270,19 +275,19 @@ const UserSetting = (props) => {
       console.log(`editUser index`, index);
       if (index !== -1) {
         updateUser.roles = roles;
-        const { result } = await storeCtx.updateAdminUser(
+        console.log(`editUser updateUser`, updateUser);
+        const { result, adminUsers } = await storeCtx.updateAdminUser(
           props.currentUser,
           updateUser
         );
         console.log(`updateAdminUser result`, result);
+        console.log(`updateAdminUser adminUsers`, adminUsers);
         if (result) {
-          let updateUsers = [...adminUsers];
-          updateUsers[index] = updateUser;
-          setAdminUsers(updateUsers);
+          setAdminUsers(adminUsers);
+          isUpdated = result;
         }
-        return true;
       }
-      return false;
+      return isUpdated;
     },
     [adminUsers, props.currentUser, storeCtx]
   );
@@ -370,7 +375,11 @@ const UserSetting = (props) => {
           onConfirm={async (user) => {
             setOpenAddUserDialog(false);
             setIsLoading(true);
-            await storeCtx.addAdminUser(user);
+            const { result, adminUsers } = await storeCtx.addAdminUser(
+              props.currentUser,
+              user
+            );
+            if (result) setAdminUsers(adminUsers);
             setIsLoading(false);
           }}
         />
@@ -385,7 +394,11 @@ const UserSetting = (props) => {
           onConfirm={async () => {
             setOpenDeleteUserDialog(false);
             setIsLoading(true);
-            await storeCtx.deleteAdminUser(selectedUser);
+            const { result, adminUsers } = await storeCtx.deleteAdminUser(
+              props.currentUser,
+              selectedUser
+            );
+            if (result) setAdminUsers(adminUsers);
             setIsLoading(false);
           }}
         />
@@ -457,11 +470,15 @@ const UserSetting = (props) => {
           <tfoot>
             <tr className="screen__table-tools">
               <div
-                className="screen__table-tool"
+                className={`screen__table-tool${
+                  props.currentUser.roles.includes("root") ? "" : " disabled"
+                }`}
                 onClick={() => {
                   console.log(`selectedUser`, selectedUser);
-                  if (selectedUser) {
-                    console.log(`setOpenDeleteUserDialog true`);
+                  if (
+                    selectedUser &&
+                    props.currentUser.roles.includes("root")
+                  ) {
                     setOpenDeleteUserDialog(true);
                   }
                 }}
@@ -469,10 +486,12 @@ const UserSetting = (props) => {
                 <div className="screen__table-tool-icon"></div>
               </div>
               <div
-                className="screen__table-tool"
+                className={`screen__table-tool${
+                  props.currentUser.roles.includes("root") ? "" : " disabled"
+                }`}
                 onClick={() => {
-                  console.log(`setOpenAddUserDialog true`);
-                  setOpenAddUserDialog(true);
+                  if (props.currentUser.roles.includes("root"))
+                    setOpenAddUserDialog(true);
                 }}
               >
                 <div className="screen__table-tool-icon"></div>
