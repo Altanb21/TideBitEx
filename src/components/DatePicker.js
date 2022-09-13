@@ -140,7 +140,7 @@ const DatePicker = (props) => {
       </div>
       <div className="date-picker__dates">
         <div className="date-picker__month">
-          <div className="date-picker__mth">{`${months[selectedMonth]} ${selectedDate}`}</div>
+          <div className="date-picker__mth">{`${months[selectedMonth]} ${selectedYear}`}</div>
           <div
             className="date-picker__arrows prev-mth"
             onClick={goToPrevMonth}
