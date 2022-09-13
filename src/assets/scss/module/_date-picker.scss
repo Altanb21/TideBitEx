@@ -39,9 +39,9 @@
     top: 55px;
     left: 0;
     display: none;
-    box-shadow: 0px 3px 6px #00000029;
+    box-shadow: 0 3px 6px rgb(0 0 0 / 16%);
     background-color: #fff;
-    padding: 10px 20px;
+    padding: 10px;
     width: 273px;
     z-index: 10;
   }
@@ -57,6 +57,7 @@
     font-size: 18px;
     letter-spacing: 0.02px;
     color: #1ec6a3;
+    margin-left: 5px
   }
   & &__arrows {
     width: 20px;
@@ -78,8 +79,8 @@
     gap: 15px;
   }
   &__label > &__day {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     text-align: center;
     color: #4597e6;
     font-family: "Quicksand", sans-serif;
@@ -97,8 +98,8 @@
     font-family: "Quicksand", sans-serif;
     font-weight: normal;
     font-size: 16px;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     text-align: center;
   }
   &__days > &__day.disabled {
