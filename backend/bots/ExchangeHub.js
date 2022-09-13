@@ -315,26 +315,20 @@ class ExchangeHub extends Bot {
       const { currentUser, user } = body;
       if (currentUser.roles?.includes("root")) {
         if (user?.email) {
-          let index = this.adminUsers.findIndex(
-            (adminUser) => adminUser.email === user.email
+          let updateAdminUsers = this.adminUsers.filter(
+            (adminUser) => adminUser.email !== user.email
           );
-          if (index !== -1) {
-            let updateAdminUsers = this.adminUsers.splice(index, 1);
-            this.logger.log(
-              `deleteAdminUser updateAdminUsers`,
-              updateAdminUsers
+          this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
+          try {
+            Utils.yamlUpdate(updateAdminUsers, p);
+            result = true;
+            this.adminUsers = updateAdminUsers;
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate deleteAdminUser`,
+              updateAdminUsers,
+              e
             );
-            try {
-              Utils.yamlUpdate(updateAdminUsers, p);
-              result = true;
-              this.adminUsers = updateAdminUsers;
-            } catch (e) {
-              this.logger.error(
-                `yamlUpdate deleteAdminUser`,
-                updateAdminUsers,
-                e
-              );
-            }
           }
         }
       }
