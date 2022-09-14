@@ -213,16 +213,21 @@ class ExchangeHub extends Bot {
     );
   }
 
-  async addAdminUser({ body }) {
+  async addAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
+    this.logger.log(`email`, email);
     this.logger.log(`body`, body);
     let result = false;
+    let currentUser = this.addAdminUser.find((user) => user.email === email);
+    this.logger.log(`currentUser`, currentUser);
     try {
-      const { currentUser, newUser } = body;
+      const { newAdminUser } = body;
       if (currentUser.roles?.includes(ROLES.root)) {
-        if (newUser?.email) {
-          const member = await this.database.getMemberByEmail(newUser.email);
+        if (newAdminUser?.email) {
+          const member = await this.database.getMemberByEmail(
+            newAdminUser.email
+          );
           this.logger.log(`addAdminUser member`, member);
           if (member) {
             const updateAdminUsers = this.adminUsers
@@ -233,8 +238,8 @@ class ExchangeHub extends Bot {
               .concat({
                 id: member.id,
                 email: member.email,
-                name: newUser.name,
-                roles: newUser.roles.map((key) => ROLES[key]),
+                name: newAdminUser.name,
+                roles: newAdminUser.roles.map((key) => ROLES[key]),
               });
             this.logger.log(`addAdminUser updateAdminUsers`, updateAdminUsers);
             try {
@@ -264,19 +269,24 @@ class ExchangeHub extends Bot {
     );
   }
 
-  async updateAdminUser({ body }) {
+  async updateAdminUser({ query, email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] updateAdminUser ************`
     );
+    this.logger.log(`query`, query);
+    this.logger.log(`email`, email);
     this.logger.log(`body`, body);
+    let updateUserEmail = query.email;
+    let currentUser = this.addAdminUser.find((user) => user.email === email);
+    this.logger.log(`currentUser`, currentUser);
     let result = false;
     try {
-      const { currentUser, updateUser } = body;
+      const { updateAdminUser } = body;
       if (currentUser.roles?.includes("root")) {
-        if (updateUser?.email) {
+        if (updateUserEmail) {
           let index = this.adminUsers.findIndex(
-            (user) => user.email === updateUser.email
+            (user) => user.email === updateUserEmail
           );
           if (index !== -1) {
             let updateAdminUsers = this.adminUsers.map((user) => ({
@@ -284,10 +294,10 @@ class ExchangeHub extends Bot {
               roles: user.roles.map((key) => ROLES[key]),
             }));
             updateAdminUsers[index] = {
-              id: updateUser.id,
-              email: updateUser.email,
-              name: updateUser.name,
-              roles: updateUser.roles.map((key) => ROLES[key]),
+              id: updateAdminUser.id,
+              email: updateAdminUser.email,
+              name: updateAdminUser.name,
+              roles: updateAdminUser.roles.map((key) => ROLES[key]),
             };
             this.logger.log(
               `updateAdminUser updateAdminUsers`,
@@ -324,19 +334,22 @@ class ExchangeHub extends Bot {
     );
   }
 
-  async deleteAdminUser({ body }) {
+  async deleteAdminUser({ query, email }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] deleteAdminUser ************`
     );
-    this.logger.log(`body`, body);
+    this.logger.log(`query`, query);
+    this.logger.log(`email`, email);
+    let currentUser = this.addAdminUser.find((user) => user.email === email);
+    let deleteUserEmail = query.email;
+    this.logger.log(`currentUser`, currentUser);
     let result = false;
     try {
-      const { currentUser, user } = body;
       if (currentUser.roles?.includes("root")) {
-        if (user?.email) {
+        if (deleteUserEmail) {
           let updateAdminUsers = this.adminUsers
-            .filter((adminUser) => adminUser.email !== user.email)
+            .filter((adminUser) => adminUser.email !== deleteUserEmail)
             .map((user) => ({
               ...user,
               roles: user.roles.map((key) => ROLES[key]),
@@ -1719,7 +1732,7 @@ class ExchangeHub extends Bot {
     }
   }
 
-  getUserRoles({ memberId, email }) {
+  getAdminUser({ memberId, email }) {
     let roles, name;
     if (email) {
       let user = this.adminUsers.find((user) => user.email === email);
@@ -1728,15 +1741,13 @@ class ExchangeHub extends Bot {
     }
     return Promise.resolve(
       new ResponseFormat({
-        message: "getUserRoles",
+        message: "getAdminUser",
         payload: email
           ? {
               memberId: memberId,
               email: email,
               roles: roles,
               name: name,
-              // adminUsers:this.adminUsers
-              // peatioSession: token,
             }
           : null,
       })

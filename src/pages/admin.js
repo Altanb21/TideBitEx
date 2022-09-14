@@ -139,7 +139,7 @@ const Admin = () => {
 
   useEffect(() => {
     if (!isInit) {
-      storeCtx.getUserRoles().then((user) => {
+      storeCtx.getAdminUser().then((user) => {
         if (user) {
           let _user = userAbility(user);
           setUser(_user);

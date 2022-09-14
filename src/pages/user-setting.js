@@ -137,11 +137,7 @@ const DeleteUserDialog = (props) => {
           <div className="user-setting__user-roles">
             {props.user.roles.map((role) => {
               return (
-                <RoleTag
-                  roleKey={role}
-                  isSelected={true}
-                  onClick={() => {}}
-                />
+                <RoleTag roleKey={role} isSelected={true} onClick={() => {}} />
               );
             })}
           </div>
@@ -161,12 +157,8 @@ const UserDetail = (props) => {
     console.log(`updateRoles`, updateRoles);
     console.log(`handleOnClick key`, key);
     let _updateRoles;
-    if (
-      updateRoles.some((role) => role === key)
-    ) {
-      _updateRoles = updateRoles.filter(
-        (_role) => _role !== key
-      );
+    if (updateRoles.some((role) => role === key)) {
+      _updateRoles = updateRoles.filter((_role) => _role !== key);
     } else {
       _updateRoles = updateRoles.concat(key);
     }
@@ -189,11 +181,7 @@ const UserDetail = (props) => {
         {!isEdit
           ? props.user.roles.map((role) => {
               return (
-                <RoleTag
-                  roleKey={role}
-                  isSelected={true}
-                  onClick={() => {}}
-                />
+                <RoleTag roleKey={role} isSelected={true} onClick={() => {}} />
               );
             })
           : Object.keys(ROLES).map((key) => {
@@ -317,7 +305,6 @@ const UserSetting = (props) => {
         updateUser.roles = roles;
         console.log(`editUser updateUser`, updateUser);
         const { result, adminUsers } = await storeCtx.updateAdminUser(
-          props.currentUser,
           updateUser
         );
         console.log(`updateAdminUser result`, result);
@@ -330,24 +317,21 @@ const UserSetting = (props) => {
       }
       return isUpdated;
     },
-    [adminUsers, filter, props.currentUser, storeCtx]
+    [adminUsers, filter, storeCtx]
   );
 
   const addUser = useCallback(
     async (user) => {
       setOpenAddUserDialog(false);
       setIsLoading(true);
-      const { result, adminUsers } = await storeCtx.addAdminUser(
-        props.currentUser,
-        user
-      );
+      const { result, adminUsers } = await storeCtx.addAdminUser(user);
       if (result) {
         setAdminUsers(adminUsers);
         filter({ users: adminUsers });
       }
       setIsLoading(false);
     },
-    [filter, props.currentUser, storeCtx]
+    [filter, storeCtx]
   );
 
   const deleteUser = useCallback(async () => {

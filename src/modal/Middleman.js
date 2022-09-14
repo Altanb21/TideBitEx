@@ -49,9 +49,11 @@ class Middleman {
     }
   }
 
-  async getUserRoles() {
+  async getAdminUser() {
     try {
-      const response = await this.communicator.getUserRoles();
+      const response = await this.communicator.getAdminUser(
+        this.memberId || "0"
+      );
       return response;
     } catch (error) {
       throw error;
@@ -67,36 +69,27 @@ class Middleman {
     }
   }
 
-  async addAdminUser(currentUser, newUser) {
+  async addAdminUser(newUser) {
     try {
-      const response = await this.communicator.addAdminUser(
-        currentUser,
-        newUser
-      );
+      const response = await this.communicator.addAdminUser(newUser);
       return response;
     } catch (error) {
       throw error;
     }
   }
 
-  async deleteAdminUser(currentUser, user) {
+  async deleteAdminUser(user) {
     try {
-      const response = await this.communicator.deleteAdminUser(
-        currentUser,
-        user
-      );
+      const response = await this.communicator.deleteAdminUser(user);
       return response;
     } catch (error) {
       throw error;
     }
   }
 
-  async updateAdminUser(currentUser, updateUser) {
+  async updateAdminUser(updateUser) {
     try {
-      const response = await this.communicator.updateAdminUser(
-        currentUser,
-        updateUser
-      );
+      const response = await this.communicator.updateAdminUser(updateUser);
       return response;
     } catch (error) {
       throw error;

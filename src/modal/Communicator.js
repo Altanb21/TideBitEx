@@ -441,9 +441,9 @@ class Communicator {
     }
   }
 
-  async getUserRoles() {
+  async getAdminUser(id) {
     try {
-      const url = `/admin/user-roles`;
+      const url = `/admin/admin-user?id=${id}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",
@@ -454,7 +454,7 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      console.error(`[getUserRoles] error`, error);
+      console.error(`[getAdminUser] error`, error);
       return Promise.reject({ ...error });
     }
   }
@@ -476,14 +476,14 @@ class Communicator {
       return Promise.reject({ ...error });
     }
   }
-  async addAdminUser(currentUser, newUser) {
+  async addAdminUser(newAdminUser) {
     try {
-      const url = `/admin/add-user`;
+      const url = `/admin/admin-users`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "POST",
         url,
-        data: { currentUser: { ...currentUser }, newUser: { ...newUser } },
+        data: { newAdminUser: { ...newAdminUser } },
       });
       if (res.success) {
         return res.data;
@@ -495,14 +495,13 @@ class Communicator {
     }
   }
 
-  async deleteAdminUser(currentUser, user) {
+  async deleteAdminUser(user) {
     try {
-      const url = `/admin/delete-user`;
+      const url = `/admin/admin-users?email=${user.email}`;
       // const res = await this._get(url);
       const res = await this._request({
-        method: "POST",
+        method: "DELETE",
         url,
-        data: { currentUser: { ...currentUser }, user: { ...user } },
       });
       if (res.success) {
         return res.data;
@@ -514,16 +513,15 @@ class Communicator {
     }
   }
 
-  async updateAdminUser(currentUser, updateUser) {
+  async updateAdminUser(updateAdminUser) {
     try {
-      const url = `/admin/update-user`;
+      const url = `/admin/admin-users?email=${updateAdminUser.email}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "PUT",
         url,
         data: {
-          currentUser: { ...currentUser },
-          updateUser: { ...updateUser },
+          updateAdminUser: { ...updateAdminUser },
         },
       });
       if (res.success) {

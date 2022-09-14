@@ -92,8 +92,8 @@ pathname = [
 
   # analysis - admin
   "get | /api/v1/admin/admin-users | Bot.ExchangeHub.getAdminUsers",
-  "get | /api/v1/admin/user-roles | Bot.ExchangeHub.getUserRoles",
-  "post | /api/v1/admin/add-user | Bot.ExchangeHub.addAdminUser",
-  "put | /api/v1/admin/update-user | Bot.ExchangeHub.updateAdminUser",
-  "post | /api/v1/admin/delete-user | Bot.ExchangeHub.deleteAdminUser",
+  "get | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.getAdminUser",
+  "post | /api/v1/admin/admin-users | Bot.ExchangeHub.addAdminUser",
+  "put | /api/v1/admin/admin-users/:email | Bot.ExchangeHub.updateAdminUser",
+  "delete | /api/v1/admin/admin-users/:email | Bot.ExchangeHub.deleteAdminUser",
 ]

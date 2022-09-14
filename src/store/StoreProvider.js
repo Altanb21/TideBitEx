@@ -104,22 +104,22 @@ const StoreProvider = (props) => {
     middleman.depthBook.changeRange(range);
   };
 
-  const getUserRoles = async () => {
-    return await middleman.getUserRoles();
+  const getAdminUser = async () => {
+    return await middleman.getAdminUser();
   };
 
   const getAdminUsers = async () => {
     return await middleman.getAdminUsers();
   };
 
-  const addAdminUser = async (currentUser, newUser) => {
-    return await middleman.addAdminUser(currentUser, newUser);
+  const addAdminUser = async (newUser) => {
+    return await middleman.addAdminUser(newUser);
   };
-  const deleteAdminUser = async (currentUser, user) => {
-    return await middleman.deleteAdminUser(currentUser, user);
+  const deleteAdminUser = async (user) => {
+    return await middleman.deleteAdminUser(user);
   };
-  const updateAdminUser = async (currentUser, updateUser) => {
-    return await middleman.updateAdminUser(currentUser, updateUser);
+  const updateAdminUser = async (updateUser) => {
+    return await middleman.updateAdminUser(updateUser);
   };
 
   const getUsersAccounts = useCallback(async () => {
@@ -498,11 +498,11 @@ const StoreProvider = (props) => {
         setFocusEl,
         changeRange,
         updateFiatCurrency,
-        getUserRoles,
+        getAdminUser,
         getAdminUsers,
         addAdminUser,
         deleteAdminUser,
-        updateAdminUser
+        updateAdminUser,
       }}
     >
       {props.children}
