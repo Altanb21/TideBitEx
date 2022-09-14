@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import DatePicker from "../components/DatePicker";
 import LoadingDialog from "../components/LoadingDialog";
-import ProfitTrendingChart from "../components/ProfitTrendingChart";
+// import ProfitTrendingChart from "../components/ProfitTrendingChart";
 
 const exchanges = ["OKEx"];
 
@@ -63,13 +63,13 @@ const Vouchers = () => {
   const [trades, setTrades] = useState(null);
   const [profits, setProfits] = useState(null);
   const [filterTrades, setFilterTrades] = useState(null);
-  const [filterOption, setFilterOption] = useState("30"); //'30','365'
+  const [filterOption, setFilterOption] = useState(30); // 30, 365
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [tickers, setTickers] = useState(null);
   const [filterTicker, setFilterTicker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [chartData, setChartData] = useState({});
+  // const [chartData, setChartData] = useState({});
   const [dateStart, setDateStart] = useState(
     new Date(
       `${currentDate.getFullYear()}-${
@@ -183,11 +183,11 @@ const Vouchers = () => {
         setFilterTicker(ticker);
       }
       // trade fromate ++ TODO
-      const chartData = formateTrades(trades);
-      setChartData(chartData);
+      // const chartData = formateTrades(trades);
+      // setChartData(chartData);
       return { trades, tickers, ticker: ticker };
     },
-    [storeCtx, formateTrades]
+    [storeCtx]
   );
 
   const filter = useCallback(
@@ -336,10 +336,10 @@ const Vouchers = () => {
     <>
       {isLoading && <LoadingDialog />}
       <section className="screen__section vouchers">
-        <ProfitTrendingChart
+        {/* <ProfitTrendingChart
           categories={Object.keys(chartData)}
           data={Object.values(chartData).map((data) => data.profits)}
-        />
+        /> */}
         <div className="screen__header">{t("match-orders")}</div>
         <div className="screen__search-bar">
           <TableDropdown
