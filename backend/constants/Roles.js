@@ -1,4 +1,4 @@
-export const ROLES = {
+module.exports = {
   root: "root",
   accountant: "accountant",
   operating: "operating",

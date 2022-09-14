@@ -338,7 +338,6 @@ const UserSetting = (props) => {
     setOpenDeleteUserDialog(false);
     setIsLoading(true);
     const { result, adminUsers } = await storeCtx.deleteAdminUser(
-      props.currentUser,
       selectedUser
     );
     if (result) {
@@ -346,7 +345,7 @@ const UserSetting = (props) => {
       filter({ users: adminUsers });
     }
     setIsLoading(false);
-  }, [filter, props.currentUser, selectedUser, storeCtx]);
+  }, [filter, selectedUser, storeCtx]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {

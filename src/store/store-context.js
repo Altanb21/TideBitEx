@@ -246,7 +246,7 @@ const StoreContext = React.createContext({
   getAdminUser: async () => {},
   getAdminUsers: async () => {},
   addAdminUser: async (newUser) => {},
-  deleteAdminUser: async (currentUser, user) => {},
+  deleteAdminUser: async (user) => {},
   updateAdminUser: async (updateUser) => {},
 });
 

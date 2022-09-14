@@ -94,6 +94,6 @@ pathname = [
   "get | /api/v1/admin/admin-users | Bot.ExchangeHub.getAdminUsers",
   "get | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.getAdminUser",
   "post | /api/v1/admin/admin-users | Bot.ExchangeHub.addAdminUser",
-  "put | /api/v1/admin/admin-users/:email | Bot.ExchangeHub.updateAdminUser",
-  "delete | /api/v1/admin/admin-users/:email | Bot.ExchangeHub.deleteAdminUser",
+  "put | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.updateAdminUser",
+  "delete | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.deleteAdminUser",
 ]

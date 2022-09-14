@@ -18,7 +18,7 @@ const OrderBook = require("../libs/Books/OrderBook");
 const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 const Database = require("../constants/Database");
-const { ROLES } = require("../constants/Roles");
+const ROLES = require("../constants/Roles");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -183,12 +183,12 @@ class ExchangeHub extends Bot {
             ...prev,
             {
               ...user,
-              roles: user.roles.map((role) => role.replace(" ", "_")),
+              roles: user.roles.map((role) => role?.replace(" ", "_")),
             },
           ];
         } else {
           prev[index].roles = prev[index].roles.concat(
-            user.roles.map((role) => role.replace(" ", "_"))
+            user.roles.map((role) => role?.replace(" ", "_"))
           );
         }
         return prev;
@@ -219,7 +219,7 @@ class ExchangeHub extends Bot {
     this.logger.log(`email`, email);
     this.logger.log(`body`, body);
     let result = false;
-    let currentUser = this.addAdminUser.find((user) => user.email === email);
+    let currentUser = this.adminUsers.find((user) => user.email === email);
     this.logger.log(`currentUser`, currentUser);
     try {
       const { newAdminUser } = body;
@@ -276,18 +276,19 @@ class ExchangeHub extends Bot {
     );
     this.logger.log(`query`, query);
     this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
-    let updateUserEmail = query.email;
-    let currentUser = this.addAdminUser.find((user) => user.email === email);
-    this.logger.log(`currentUser`, currentUser);
+    this.logger.log(`body`, body);    
+    let currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(`currentUser[${currentUser.roles?.includes("root")}]`, currentUser);
     let result = false;
     try {
       const { updateAdminUser } = body;
+      this.logger.log(`updateAdminUser`, updateAdminUser);
       if (currentUser.roles?.includes("root")) {
-        if (updateUserEmail) {
+        if (updateAdminUser.email) {
           let index = this.adminUsers.findIndex(
-            (user) => user.email === updateUserEmail
+            (user) => user.email === updateAdminUser.email
           );
+          this.logger.log(`index`, index);
           if (index !== -1) {
             let updateAdminUsers = this.adminUsers.map((user) => ({
               ...user,
@@ -341,7 +342,7 @@ class ExchangeHub extends Bot {
     );
     this.logger.log(`query`, query);
     this.logger.log(`email`, email);
-    let currentUser = this.addAdminUser.find((user) => user.email === email);
+    let currentUser = this.adminUsers.find((user) => user.email === email);
     let deleteUserEmail = query.email;
     this.logger.log(`currentUser`, currentUser);
     let result = false;
