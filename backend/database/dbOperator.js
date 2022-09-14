@@ -128,6 +128,10 @@ class DBOperator {
     return this.database.getOuterTradesByDayAfter(exchangeCode, day);
   }
 
+  async getOuterTradesBetweenDays(exchangeCode, start, end) {
+    return this.database.getOuterTradesBetweenDays(exchangeCode, start, end);
+  }
+
   /* !!! HIGH RISK (start) !!! */
   async insertOrder({
     bid,

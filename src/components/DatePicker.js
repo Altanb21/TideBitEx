@@ -111,7 +111,7 @@ const DatePicker = (props) => {
   const selectDate = useCallback(
     (date) => {
       setSelectedDate(date);
-      let newDate = new Date(`${selectedYear}-${selectedMonth}-${date}`);
+      let newDate = new Date(`${selectedYear}-${selectedMonth + 1}-${date}`);
       // if (
       //   (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
       //   (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
@@ -162,7 +162,11 @@ const DatePicker = (props) => {
         <div className="date-picker__days">
           <PopulateDates
             daysInMonth={daysInMonth(selectedYear, selectedMonth)}
-            selectedDate={selectedDate}
+            isSelected={
+              new Date(
+                `${selectedYear}-${selectedMonth + 1}-${selectedDate}`
+              ).getTime() === props.date.getTime()
+            }
             selectDate={selectDate}
           />
         </div>

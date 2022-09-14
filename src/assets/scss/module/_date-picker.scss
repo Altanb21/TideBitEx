@@ -39,9 +39,9 @@
     top: 55px;
     left: 0;
     display: none;
-    box-shadow: 0px 3px 6px #00000029;
+    box-shadow: 0px 3px 6px#00000029;
     background-color: #fff;
-    padding: 10px;
+    padding: 10px 5px;
     width: 273px;
     z-index: 10;
   }
@@ -49,6 +49,7 @@
     display: flex;
     margin-bottom: 20px;
     align-items: center;
+    margin: 0 6px 20px 6px;
   }
   & &__mth {
     flex: auto;
@@ -57,7 +58,6 @@
     font-size: 18px;
     letter-spacing: 0.02px;
     color: #1ec6a3;
-    margin-left: 5px;
   }
   & &__arrows {
     width: 20px;

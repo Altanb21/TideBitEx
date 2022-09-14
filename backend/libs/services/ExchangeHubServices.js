@@ -7,9 +7,9 @@ class ExchangeHubService {
   _timer;
   _lastSyncTime = 0;
   _syncInterval = 0.5 * 60 * 60 * 1000; // 30 mins
-  _minInterval = 1 * 24 * 60 * 60 * 1000; // 1天
+  _minInterval = 3 * 24 * 60 * 60 * 1000; // 1天
   _interval = 30 * 24 * 60 * 60 * 1000; // 30天
-  _maxInterval = 180 * 24 * 60 * 60 * 1000; // 180天
+  _maxInterval = 3 * 31 * 24 * 60 * 60 * 1000; // 93天
   _isStarted = false;
 
   constructor({
@@ -1285,7 +1285,7 @@ class ExchangeHubService {
             {
               query: {
                 instType: Database.INST_TYPE.SPOT,
-                begin: end - this._interval,
+                begin: end - this._maxInterval,
                 end,
               },
             }

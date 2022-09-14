@@ -18,6 +18,7 @@ const OrderBook = require("../libs/Books/OrderBook");
 const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 const Database = require("../constants/Database");
+const { ROLES } = require("../constants/Roles");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -178,9 +179,17 @@ class ExchangeHub extends Bot {
       const formatUsers = users.reduce((prev, user) => {
         const index = prev.findIndex((_usr) => _usr.email === user.email);
         if (index === -1) {
-          prev = [...prev, user];
+          prev = [
+            ...prev,
+            {
+              ...user,
+              roles: user.roles.map((role) => role.replace(" ", "_")),
+            },
+          ];
         } else {
-          prev[index].roles = prev[index].roles.concat(user.roles);
+          prev[index].roles = prev[index].roles.concat(
+            user.roles.map((role) => role.replace(" ", "_"))
+          );
         }
         return prev;
       }, []);
@@ -211,22 +220,30 @@ class ExchangeHub extends Bot {
     let result = false;
     try {
       const { currentUser, newUser } = body;
-      if (currentUser.roles?.includes("root")) {
+      if (currentUser.roles?.includes(ROLES.root)) {
         if (newUser?.email) {
           const member = await this.database.getMemberByEmail(newUser.email);
           this.logger.log(`addAdminUser member`, member);
           if (member) {
-            const updateAdminUsers = this.adminUsers.concat({
-              id: member.id,
-              email: member.email,
-              name: newUser.name,
-              roles: newUser.roles,
-            });
+            const updateAdminUsers = this.adminUsers
+              .map((user) => ({
+                ...user,
+                roles: user.roles.map((key) => ROLES[key]),
+              }))
+              .concat({
+                id: member.id,
+                email: member.email,
+                name: newUser.name,
+                roles: newUser.roles.map((key) => ROLES[key]),
+              });
             this.logger.log(`addAdminUser updateAdminUsers`, updateAdminUsers);
             try {
               Utils.yamlUpdate(updateAdminUsers, p);
               result = true;
-              this.adminUsers = updateAdminUsers;
+              this.adminUsers = updateAdminUsers.map((user) => ({
+                ...user,
+                roles: user.roles.map((role) => role.replace(" ", "_")),
+              }));
             } catch (e) {
               this.logger.error(`yamlUpdate addAdminUser`, updateAdminUsers, e);
             }
@@ -264,13 +281,13 @@ class ExchangeHub extends Bot {
           if (index !== -1) {
             let updateAdminUsers = this.adminUsers.map((user) => ({
               ...user,
-              roles: [...user.roles],
+              roles: user.roles.map((key) => ROLES[key]),
             }));
             updateAdminUsers[index] = {
               id: updateUser.id,
               email: updateUser.email,
               name: updateUser.name,
-              roles: updateUser.roles,
+              roles: updateUser.roles.map((key) => ROLES[key]),
             };
             this.logger.log(
               `updateAdminUser updateAdminUsers`,
@@ -279,7 +296,10 @@ class ExchangeHub extends Bot {
             try {
               Utils.yamlUpdate(updateAdminUsers, p);
               result = true;
-              this.adminUsers = updateAdminUsers;
+              this.adminUsers = updateAdminUsers.map((user) => ({
+                ...user,
+                roles: user.roles.map((role) => role.replace(" ", "_")),
+              }));
             } catch (e) {
               this.logger.error(
                 `yamlUpdate updateAdminUser`,
@@ -315,14 +335,20 @@ class ExchangeHub extends Bot {
       const { currentUser, user } = body;
       if (currentUser.roles?.includes("root")) {
         if (user?.email) {
-          let updateAdminUsers = this.adminUsers.filter(
-            (adminUser) => adminUser.email !== user.email
-          );
+          let updateAdminUsers = this.adminUsers
+            .filter((adminUser) => adminUser.email !== user.email)
+            .map((user) => ({
+              ...user,
+              roles: user.roles.map((key) => ROLES[key]),
+            }));
           this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
           try {
             Utils.yamlUpdate(updateAdminUsers, p);
             result = true;
-            this.adminUsers = updateAdminUsers;
+            this.adminUsers = updateAdminUsers.map((user) => ({
+              ...user,
+              roles: user.roles.map((role) => role.replace(" ", "_")),
+            }));
           } catch (e) {
             this.logger.error(
               `yamlUpdate deleteAdminUser`,
@@ -765,12 +791,23 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterTradeFills ************`,
       query
     );
+    let { exchange, start, end } = query;
+    let startDate = `${new Date(start)
+      .toISOString()
+      .substring(0, 10)} 00:00:00`;
+    let endtDate = `${new Date(end).toISOString().substring(0, 10)} 23:59:59`;
+    this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
     let outerTrades = [];
-    switch (query.exchange) {
+    switch (exchange) {
       case SupportedExchange.OKEX:
-        const _outerTrades = await this.database.getOuterTradesByDayAfter(
-          Database.EXCHANGE[query.exchange.toUpperCase()],
-          365 // ++ TODO
+        // const _outerTrades = await this.database.getOuterTradesByDayAfter(
+        //   Database.EXCHANGE[exchange.toUpperCase()],
+        //   365 // ++ TODO
+        // );
+        const _outerTrades = await this.database.getOuterTradesBetweenDays(
+          Database.EXCHANGE[exchange.toUpperCase()],
+          startDate,
+          endtDate
         );
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",
@@ -843,7 +880,7 @@ class ExchangeHub extends Bot {
             externalFee: Math.abs(trade.fee),
             fee,
             revenue: revenue,
-            exchange: query.exchange,
+            exchange: exchange,
             referral: _trade.ref_net_fee
               ? Utils.removeZeroEnd(_trade.ref_net_fee)
               : null,

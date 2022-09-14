@@ -418,6 +418,38 @@ class mysql {
     }
   }
 
+  async getOuterTradesBetweenDays(exchangeCode, start, end) {
+    const query = `
+    SELECT outer_trades.*,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state
+    FROM outer_trades
+        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+    WHERE
+        outer_trades.exchange_code = ?
+        AND outer_trades.create_at BETWEEN ?
+        AND ?
+    ORDER BY
+        outer_trades.create_at DESC;`;
+    try {
+      this.logger.log(
+        "getOuterTradesByDayAfter",
+        query,
+        `[${exchangeCode}, ${start}, ${end}]`
+      );
+      const [outerTrades] = await this.db.query({
+        query,
+        values: [exchangeCode, start, end],
+      });
+      return outerTrades;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getOuterTradesByDayAfter(exchangeCode, day) {
     /**
     const query = `
@@ -793,7 +825,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertTrades result`, result)
+      this.logger.log(`insertTrades result`, result);
       tradeId = result[0];
     } catch (error) {
       this.logger.error(error);
@@ -865,7 +897,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertVouchers result`, result)
+      this.logger.log(`insertVouchers result`, result);
       voucherId = result[0];
     } catch (error) {
       this.logger.error(error);

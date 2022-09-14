@@ -3,20 +3,7 @@ import React, { useState, useContext, useEffect, useCallback } from "react";
 import StoreContext from "../store/store-context";
 import Dialog from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
-
-const roles = {
-  // all: "All",
-  root: "Root",
-  accountant: "Accountant",
-  operating: "Operating",
-  worker: "Worker",
-  supervisor: "Supervisor",
-  "withdraw-checker": "Withdraw checker",
-  "deposit-checker": "Deposit checker",
-  "kyc-checker": "KYC checker",
-  "deposit-maker": "Deposit maker",
-  "deposit-viewer": "Deposit viewer",
-};
+import { ROLES } from "../constant/Roles";
 
 const OptionTag = (props) => {
   const { t } = useTranslation();
@@ -102,7 +89,7 @@ const AddUserDialog = (props) => {
             {t("permission")}:
           </div>
           <div className="user-setting__dialog-content--roles">
-            {Object.keys(roles).map((key) => {
+            {Object.keys(ROLES).map((key) => {
               return (
                 <RoleTag
                   roleKey={key}
@@ -151,7 +138,7 @@ const DeleteUserDialog = (props) => {
             {props.user.roles.map((role) => {
               return (
                 <RoleTag
-                  roleKey={role.toLowerCase().replace(" ", "-")}
+                  roleKey={role}
                   isSelected={true}
                   onClick={() => {}}
                 />
@@ -173,16 +160,15 @@ const UserDetail = (props) => {
   const handleOnClick = (key) => {
     console.log(`updateRoles`, updateRoles);
     console.log(`handleOnClick key`, key);
-    console.log(`handleOnClick role`, roles[key]);
     let _updateRoles;
     if (
-      updateRoles.some((role) => role.toLowerCase().replace(" ", "-") === key)
+      updateRoles.some((role) => role === key)
     ) {
       _updateRoles = updateRoles.filter(
-        (_role) => _role.toLowerCase().replace(" ", "-") !== key
+        (_role) => _role !== key
       );
     } else {
-      _updateRoles = updateRoles.concat(roles[key]);
+      _updateRoles = updateRoles.concat(key);
     }
     console.log(`handleOnClick _updateRoles`, _updateRoles);
     setUpdateRoles(_updateRoles);
@@ -204,19 +190,17 @@ const UserDetail = (props) => {
           ? props.user.roles.map((role) => {
               return (
                 <RoleTag
-                  roleKey={role.toLowerCase().replace(" ", "-")}
+                  roleKey={role}
                   isSelected={true}
                   onClick={() => {}}
                 />
               );
             })
-          : Object.keys(roles).map((key) => {
+          : Object.keys(ROLES).map((key) => {
               return (
                 <RoleTag
                   roleKey={key}
-                  isSelected={updateRoles.some(
-                    (role) => role.toLowerCase().replace(" ", "-") === key
-                  )}
+                  isSelected={updateRoles.some((role) => role === key)}
                   onClick={() => handleOnClick(key)}
                 />
               );
@@ -309,10 +293,7 @@ const UserSetting = (props) => {
           if (option || keyword) console.log(`filter condition`, condition);
           if (!_options.includes("all"))
             condition =
-              condition &&
-              user.roles.some((role) =>
-                _options.includes(role.replace(" ", "-").toLowerCase())
-              );
+              condition && user.roles.some((role) => _options.includes(role));
           if (option || keyword) console.log(`filter condition`, condition);
           return condition;
         });
@@ -450,7 +431,7 @@ const UserSetting = (props) => {
           <div className="screen__display">
             <div className="screen__display-title">顯示：</div>
             <ul className="screen__display-options">
-              {["all", ...Object.keys(roles)].map((key) => (
+              {["all", ...Object.keys(ROLES)].map((key) => (
                 <OptionTag
                   option={key}
                   filterOptions={filterOptions}
