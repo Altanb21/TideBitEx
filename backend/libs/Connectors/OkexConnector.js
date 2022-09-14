@@ -238,7 +238,31 @@ class OkexConnector extends ConnectorBase {
     let result,
       arr = [],
       newBefore,
-      newRequest;
+      newRequest; //,
+    //   _beginDate = new Date(begin),
+    //   beginDate = new Date(
+    //     new Date(
+    //       `${_beginDate.getFullYear()}-${
+    //         _beginDate.getMonth() + 1
+    //       }-${_beginDate.getDate()} 00:00:00`
+    //     )
+    //   ),
+    //   _endDate = new Date(end),
+    //   endDate = new Date(
+    //     new Date(
+    //       `${_endDate.getFullYear()}-${
+    //         _endDate.getMonth() + 1
+    //       }-${_endDate.getDate()} 23:59:59`
+    //     )
+    //   );
+    // this.logger.log(
+    //   `[${this.constructor.name}] begin[${begin}]_beginDate:[${_beginDate}]`,
+    //   beginDate
+    // );
+    // this.logger.log(
+    //   `[${this.constructor.name}] end[${end}]_endDate:[${_endDate}]`,
+    //   endDate
+    // );
     const method = "GET";
     if (instType) arr.push(`instType=${instType}`);
     if (!before && begin) arr.push(`begin=${begin}`);
@@ -269,8 +293,19 @@ class OkexConnector extends ConnectorBase {
         updatedAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
-      results = results.concat(data);
-      if (data.length === this.maxDataLength) {
+      results = data.concat(results);
+      // this.logger.log(
+      //   `[${this.constructor.name}]data.length:[${
+      //     data.length
+      //   }]  parseInt(data[0].ts)[${parseInt(
+      //     data[0].ts
+      //   )}] <=  endDate.getTime() :[${endDate.getTime()}]?`,
+      //   parseInt(data[0].ts) <= endDate.getTime()
+      // );
+      if (
+        // parseInt(data[0].ts) <= endDate.getTime() ||
+        data.length === this.maxDataLength
+      ) {
         newBefore = data[0].billId;
         newRequest = requests - 1;
         if (requests > 0)
@@ -297,9 +332,15 @@ class OkexConnector extends ConnectorBase {
       result = new ResponseFormat({
         message: "tradeFillsHistory",
         payload: results,
+        // .filter(
+        //   (trade) =>
+        //     parseInt(trade.ts) <= endDate.getTime() &&
+        //     parseInt(trade.ts) >= beginDate.getTime()
+        // ),
       });
       this.logger.log(
-        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length})`
+        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length}) result[0]`,
+        result[0]
       );
     } catch (error) {
       this.logger.error(error);

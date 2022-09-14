@@ -9,7 +9,7 @@ class ExchangeHubService {
   _syncInterval = 0.5 * 60 * 60 * 1000; // 30 mins
   _minInterval = 3 * 24 * 60 * 60 * 1000; // 1天
   _interval = 30 * 24 * 60 * 60 * 1000; // 30天
-  _maxInterval = 3 * 31 * 24 * 60 * 60 * 1000; // 93天
+  _maxInterval = 3 * 31 * 24 * 60 * 60 * 1000; // 93天 okex 最長只能問到3個月
   _isStarted = false;
 
   constructor({
@@ -1273,7 +1273,16 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _getOuterTradesFromAPI --------------`
     );
     let outerTrades,
-      end = Date.now();
+      _endDate = new Date(),
+      endDate = new Date(
+        new Date(
+          `${_endDate.getFullYear()}-${
+            _endDate.getMonth() + 1
+          }-${_endDate.getDate()} 23:59:59`
+        )
+      ),
+      end = endDate.getTime();
+      this.logger.log(`end[${end}]`, new Date(end))
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
