@@ -194,8 +194,7 @@ const UserDetail = (props) => {
               );
             })}
       </td>
-      {isEdit === null && <div>{t("loading")}</div>}
-      {isEdit !== null && (
+      {isEdit && (
         <td
           className="screen__table-data user-setting__setting-btn"
           onClick={() => {
@@ -210,12 +209,12 @@ const UserDetail = (props) => {
           <div
             className="user-setting__setting-label"
             onClick={async () => {
-              setIsEdit(null);
               if (isUpdate) {
                 let result = await props.editUser(props.user, updateRoles); //TODO
-                setIsEdit(false);
                 if (!result) setUpdateRoles(props.user.roles);
-              } else setIsEdit(false);
+                setIsUpdate(false);
+              }
+              setIsEdit(false);
             }}
           >
             儲存設定
@@ -304,16 +303,17 @@ const UserSetting = (props) => {
       if (index !== -1) {
         updateUser.roles = roles;
         console.log(`editUser updateUser`, updateUser);
-        const { result, adminUsers } = await storeCtx.updateAdminUser(
-          updateUser
-        );
-        console.log(`updateAdminUser result`, result);
-        console.log(`updateAdminUser adminUsers`, adminUsers);
-        if (result) {
+        try {
+          const { adminUsers } = await storeCtx.updateAdminUser(updateUser);
+          console.log(`updateAdminUser adminUsers`, adminUsers);
           setAdminUsers(adminUsers);
-          isUpdated = result;
+          isUpdated = true;
           filter({ users: adminUsers });
+        } catch (error) {
+          // ++TODO
         }
+      } else {
+        // ++TODO
       }
       return isUpdated;
     },
@@ -324,25 +324,36 @@ const UserSetting = (props) => {
     async (user) => {
       setOpenAddUserDialog(false);
       setIsLoading(true);
-      const { result, adminUsers } = await storeCtx.addAdminUser(user);
-      if (result) {
-        setAdminUsers(adminUsers);
-        filter({ users: adminUsers });
+      const index = adminUsers.findIndex(
+        (adminUser) => adminUser.email === user.email
+      );
+      if (index === -1) {
+        try {
+          const { adminUsers: updateAdminUser } = await storeCtx.addAdminUser(
+            user
+          );
+          setAdminUsers(updateAdminUser);
+          filter({ users: updateAdminUser });
+        } catch (error) {
+          // ++TODO
+        }
+        setIsLoading(false);
+      } else {
+        // ++TODO
       }
-      setIsLoading(false);
     },
-    [filter, storeCtx]
+    [adminUsers, filter, storeCtx]
   );
 
   const deleteUser = useCallback(async () => {
     setOpenDeleteUserDialog(false);
     setIsLoading(true);
-    const { result, adminUsers } = await storeCtx.deleteAdminUser(
-      selectedUser
-    );
-    if (result) {
+    try {
+      const { adminUsers } = await storeCtx.deleteAdminUser(selectedUser);
       setAdminUsers(adminUsers);
       filter({ users: adminUsers });
+    } catch (error) {
+      // ++TODO
     }
     setIsLoading(false);
   }, [filter, selectedUser, storeCtx]);

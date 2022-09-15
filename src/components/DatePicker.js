@@ -19,7 +19,8 @@ const PopulateDates = (props) => {
   return props.daysInMonth.map((el) => (
     <div
       className={`date-picker__day${
-        el?.date === props.selectedDate ? " selected" : ""
+        // el?.date === props.selectedDate ? " selected" : ""
+        props.isSelected ? " selected" : ""
       }${el?.disable ? " disabled" : ""}`}
       onClick={() => {
         if (el?.date && !el?.disable) props.selectDate(el?.date);
@@ -167,6 +168,7 @@ const DatePicker = (props) => {
                 `${selectedYear}-${selectedMonth + 1}-${selectedDate}`
               ).getTime() === props.date.getTime()
             }
+            // selectedDate={selectedDate}
             selectDate={selectDate}
           />
         </div>

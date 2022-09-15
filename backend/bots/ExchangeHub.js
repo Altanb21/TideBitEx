@@ -218,68 +218,106 @@ class ExchangeHub extends Bot {
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
     this.logger.log(`email`, email);
     this.logger.log(`body`, body);
-    let result = false;
-    let currentUser = this.adminUsers.find((user) => user.email === email);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
     this.logger.log(`currentUser`, currentUser);
     try {
       const { newAdminUser } = body;
+      const newAdminUserEmail = newAdminUser.email?.trim();
       if (currentUser.roles?.includes(ROLES.root)) {
-        if (newAdminUser?.email) {
-          const member = await this.database.getMemberByEmail(
-            newAdminUser.email
+        if (newAdminUserEmail) {
+          const index = this.adminUsers.findIndex(
+            (user) => user.email === newAdminUserEmail
           );
-          this.logger.log(`addAdminUser member`, member);
-          if (member) {
-            const updateAdminUsers = this.adminUsers
-              .map((user) => ({
-                ...user,
-                roles: user.roles.map((key) => ROLES[key]),
-              }))
-              .concat({
-                id: member.id,
-                email: member.email,
-                name: newAdminUser.name,
-                roles: newAdminUser.roles.map((key) => ROLES[key]),
+          if (index === -1) {
+            const member = await this.database.getMemberByEmail(
+              // `"${newAdminUserEmail}"`
+              newAdminUserEmail
+            );
+            this.logger.log(`addAdminUser member`, member);
+            if (member) {
+              const updateAdminUsers = this.adminUsers
+                .map((user) => ({
+                  ...user,
+                  roles: user.roles.map((key) => ROLES[key]),
+                }))
+                .concat({
+                  id: member.id,
+                  email: member.email,
+                  name: newAdminUser.name,
+                  roles: newAdminUser.roles.map((key) => ROLES[key]),
+                });
+              this.logger.log(
+                `addAdminUser updateAdminUsers`,
+                updateAdminUsers
+              );
+              try {
+                Utils.yamlUpdate(updateAdminUsers, p);
+                this.adminUsers = updateAdminUsers.map((user) => ({
+                  ...user,
+                  roles: user.roles.map((role) => role.replace(" ", "_")),
+                }));
+                result = Promise.resolve(
+                  new ResponseFormat({
+                    message: "addAdminUser",
+                    payload: {
+                      adminUsers: this.adminUsers,
+                    },
+                  })
+                );
+              } catch (e) {
+                this.logger.error(
+                  `yamlUpdate addAdminUser`,
+                  updateAdminUsers,
+                  e
+                );
+                result = new ResponseFormat({
+                  message: "Internal server error",
+                  code: Codes.UNKNOWN_ERROR,
+                });
+              }
+            } else {
+              result = new ResponseFormat({
+                message: "Admin User is not existed",
+                code: Codes.INVALID_INPUT,
               });
-            this.logger.log(`addAdminUser updateAdminUsers`, updateAdminUsers);
-            try {
-              Utils.yamlUpdate(updateAdminUsers, p);
-              result = true;
-              this.adminUsers = updateAdminUsers.map((user) => ({
-                ...user,
-                roles: user.roles.map((role) => role.replace(" ", "_")),
-              }));
-            } catch (e) {
-              this.logger.error(`yamlUpdate addAdminUser`, updateAdminUsers, e);
             }
+          } else {
+            result = new ResponseFormat({
+              message: "Admin User is existed",
+              code: Codes.MEMBER_ID_NOT_FOUND,
+            });
           }
         }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to add admin user",
+          code: Codes.INVALID_INPUT,
+        });
       }
     } catch (e) {
       this.logger.error(`addAdminUser`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
     }
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "addAdminUser",
-        payload: {
-          result,
-          adminUsers: this.adminUsers,
-        },
-      })
-    );
+    return Promise.resolve(result);
   }
 
-  async updateAdminUser({ query, email, body }) {
+  async updateAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] updateAdminUser ************`
     );
-    this.logger.log(`query`, query);
     this.logger.log(`email`, email);
-    this.logger.log(`body`, body);    
-    let currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(`currentUser[${currentUser.roles?.includes("root")}]`, currentUser);
-    let result = false;
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
     try {
       const { updateAdminUser } = body;
       this.logger.log(`updateAdminUser`, updateAdminUser);
@@ -306,7 +344,12 @@ class ExchangeHub extends Bot {
             );
             try {
               Utils.yamlUpdate(updateAdminUsers, p);
-              result = true;
+              new ResponseFormat({
+                message: "updateAdminUser",
+                payload: {
+                  adminUsers: this.adminUsers,
+                },
+              });
               this.adminUsers = updateAdminUsers.map((user) => ({
                 ...user,
                 roles: user.roles.map((role) => role.replace(" ", "_")),
@@ -317,40 +360,51 @@ class ExchangeHub extends Bot {
                 updateAdminUsers,
                 e
               );
+              result = new ResponseFormat({
+                message: "Internal server error",
+                code: Codes.UNKNOWN_ERROR,
+              });
             }
+          } else {
+            result = new ResponseFormat({
+              message: "Update user is not  existed",
+              code: Codes.MEMBER_ID_NOT_FOUND,
+            });
           }
         }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update admin user",
+          code: Codes.INVALID_INPUT,
+        });
       }
     } catch (e) {
       this.logger.error(`updateAdminUser`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
     }
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "updateAdminUser",
-        payload: {
-          result,
-          adminUsers: this.adminUsers,
-        },
-      })
-    );
+    return Promise.resolve(result);
   }
 
-  async deleteAdminUser({ query, email }) {
+  async deleteAdminUser({ params, email }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] deleteAdminUser ************`
     );
-    this.logger.log(`query`, query);
+    this.logger.log(`params.id`, params.id);
     this.logger.log(`email`, email);
-    let currentUser = this.adminUsers.find((user) => user.email === email);
-    let deleteUserEmail = query.email;
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
     this.logger.log(`currentUser`, currentUser);
-    let result = false;
     try {
       if (currentUser.roles?.includes("root")) {
-        if (deleteUserEmail) {
+        if (params.id) {
           let updateAdminUsers = this.adminUsers
-            .filter((adminUser) => adminUser.email !== deleteUserEmail)
+            .filter(
+              (adminUser) => adminUser.id.toString() !== params.id.toString()
+            )
             .map((user) => ({
               ...user,
               roles: user.roles.map((key) => ROLES[key]),
@@ -358,7 +412,12 @@ class ExchangeHub extends Bot {
           this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
           try {
             Utils.yamlUpdate(updateAdminUsers, p);
-            result = true;
+            result = new ResponseFormat({
+              message: "deleteAdminUser",
+              payload: {
+                adminUsers: this.adminUsers,
+              },
+            });
             this.adminUsers = updateAdminUsers.map((user) => ({
               ...user,
               roles: user.roles.map((role) => role.replace(" ", "_")),
@@ -369,21 +428,31 @@ class ExchangeHub extends Bot {
               updateAdminUsers,
               e
             );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
           }
+        } else {
+          result = new ResponseFormat({
+            message: "delete user is not exit",
+            code: Codes.MEMBER_ID_NOT_FOUND,
+          });
         }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to delete admin user",
+          code: Codes.INVALID_INPUT,
+        });
       }
     } catch (e) {
       this.logger.error(`deleteAdminUser`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
     }
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "deleteAdminUser",
-        payload: {
-          result,
-          adminUsers: this.adminUsers,
-        },
-      })
-    );
+    return Promise.resolve(result);
   }
 
   getTidebitMarkets() {
@@ -809,7 +878,9 @@ class ExchangeHub extends Bot {
     let startDate = `${new Date(parseInt(start))
       .toISOString()
       .substring(0, 10)} 00:00:00`;
-    let endtDate = `${new Date(parseInt(end)).toISOString().substring(0, 10)} 23:59:59`;
+    let endtDate = `${new Date(parseInt(end))
+      .toISOString()
+      .substring(0, 10)} 23:59:59`;
     this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
     let outerTrades = [];
     switch (exchange) {

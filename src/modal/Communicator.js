@@ -497,7 +497,7 @@ class Communicator {
 
   async deleteAdminUser(user) {
     try {
-      const url = `/admin/admin-users/${user.id}?email=${user.email}`;
+      const url = `/admin/admin-users/${user.id}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "DELETE",
@@ -515,7 +515,7 @@ class Communicator {
 
   async updateAdminUser(updateAdminUser) {
     try {
-      const url = `/admin/admin-users/${updateAdminUser.id}?email=${updateAdminUser.email}`;
+      const url = `/admin/admin-users/${updateAdminUser.id}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "PUT",
