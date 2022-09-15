@@ -9,7 +9,7 @@ class ExchangeHubService {
   _syncInterval = 0.5 * 60 * 60 * 1000; // 30 mins
   _minInterval = 3 * 24 * 60 * 60 * 1000; // 1天
   _interval = 30 * 24 * 60 * 60 * 1000; // 30天
-  _maxInterval = 3 * 31 * 24 * 60 * 60 * 1000; // 93天 okex 最長只能問到3個月
+  _maxInterval = 365 * 24 * 60 * 60 * 1000; // 93天 okex 最長只能問到3個月
   _isStarted = false;
 
   constructor({
@@ -1281,8 +1281,9 @@ class ExchangeHubService {
           }-${_endDate.getDate()} 23:59:59`
         )
       ),
-      end = endDate.getTime();
-      this.logger.log(`end[${end}]`, new Date(end))
+      end = endDate.getTime(),begin=end - this._maxInterval;
+      this.logger.log(`[${this.constructor.name}] begin[${begin}]`, new Date(begin))
+      this.logger.log(`[${this.constructor.name}] end[${end}]`, new Date(end))
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
@@ -1347,7 +1348,7 @@ class ExchangeHubService {
     const _outerTrades = await this.database.getOuterTradesByDayAfter(
       Database.EXCHANGE[exchange.toUpperCase()],
       // !this._isStarted ? 180 : 1
-      180
+      this._maxInterval
     );
     let outerTrades = await this._getTransactionsDetail(exchange, clOrdId);
     // this.logger.log(`outerTrades`, outerTrades);
@@ -1359,7 +1360,7 @@ class ExchangeHubService {
     );
     let result = false;
     if (_filtered.length > 0) {
-      this.logger.log(`_filtered[${_filtered.length}]`, _filtered);
+      // this.logger.log(`_filtered[${_filtered.length}]`, _filtered);
       result = await this._insertOuterTrades(_filtered);
     }
     return result;
