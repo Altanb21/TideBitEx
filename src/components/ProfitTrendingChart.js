@@ -8,20 +8,30 @@ const ProfitTrendingChart = (props) => {
     <React.Fragment>
       <div className="main-chart__chart">
         <ApexCharts
-          // height="65%"
+          height="60%"
           width="100%"
           type="line"
+          series={[
+            {
+              data: props.data ? props.data : [],
+              name: "profit-line",
+              type: "line",
+            },
+          ]}
           options={{
+            title: {
+              text: "撮合毛利走勢", // ++ TODO t('profit-trend')
+              align: "left",
+            },
             chart: {
               height: 235,
               type: "line",
-              id: "profit-line",
               zoom: {
                 enabled: false,
               },
             },
-            title: {
-              text: "撮合毛利走勢", // ++ TODO t('profit-trend')
+            toolbar: {
+              enabled: false,
             },
             dataLabels: {
               enabled: false,
@@ -29,30 +39,9 @@ const ProfitTrendingChart = (props) => {
             stroke: {
               curve: "straight",
             },
-            grid: {
-              yaxis: {
-                lines: {
-                  show: false,
-                },
-              },
-              xaxis: {
-                lines: {
-                  show: false,
-                },
-              },
-              padding: {
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: 0,
-              },
-            },
             xaxis: {
-              type: "datetime",
+              categories: props.data.categories ? props.data.categories : [],
               labels: {
-                show: false,
-              },
-              axisBorder: {
                 show: false,
               },
             },
@@ -63,87 +52,47 @@ const ProfitTrendingChart = (props) => {
               },
             },
           }}
-          series={[
-            {
-              data: props.data ? props.data : [],
-              type: "profit-line",
-            },
-          ]}
         />
         <ApexCharts
-          // height="32%"
+          height="40%"
           width="100%"
           type="bar"
           series={[
             {
               data: props.data ? props.data : [],
               name: "profit-bar",
+              type: "bar",
             },
           ]}
           options={{
             chart: {
               height: 48,
               type: "bar",
-              brush: {
-                enabled: true,
-                target: "profit-line",
-              },
               zoom: {
                 enabled: false,
               },
             },
-            grid: {
-              yaxis: {
-                lines: {
-                  show: false,
-                },
-              },
-              xaxis: {
-                lines: {
-                  show: true,
-                },
-              },
-              padding: {
-                top: 0,
-                right: 0,
-                bottom: 0,
-                left: 0,
+            toolbar: {
+              enabled: false,
+            },
+            plotOptions: {
+              bar: {
+                horizontal: false,
+                columnWidth: "55%",
+                endingShape: "rounded",
               },
             },
             dataLabels: {
               enabled: false,
             },
-            plotOptions: {
-              bar: {
-                columnWidth: "80%",
-              },
-            },
-            stroke: {
-              width: 0,
-            },
-            // xaxis: {
-            //   type: "datetime",
-            //   axisBorder: {
-            //     show: true,
-            //   },
-            //   labels: {
-            //     datetimeUTC: true,
-            //     datetimeFormatter: {
-            //       year: "yyyy",
-            //       month: "MMM 'yy",
-            //       day: "dd MMM",
-            //       hour: "HH:mm",
-            //     },
-            //   },
-            // },
             xaxis: {
-              categories: props.categories ? props.categories : [],
+              categories: props.data.categories ? props.data.categories : [],
             },
             yaxis: {
+              opposite: true,
               labels: {
                 show: false,
               },
-              opposite: true,
             },
           }}
         />

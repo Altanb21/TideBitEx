@@ -879,7 +879,7 @@ class ExchangeHubService {
               stateCode = Database.ORDER_STATE_CODE.CANCEL;
               state_text = Database.ORDER_STATE_TEXT.CANCEL;
               locked = "0";
-            }else{
+            } else {
               stateCode = Database.ORDER_STATE_CODE.WAIT;
               state = Database.ORDER_STATE.WAIT;
               state_text = Database.ORDER_STATE_TEXT.WAIT;
@@ -924,7 +924,9 @@ class ExchangeHubService {
         this.logger.log("_updateOrder for [FRONTEND]", _updateOrder);
       } else {
         if (_order?.member_id.toString() === memberId)
-          this.logger.error(`[${this.constructor.name}], order has been closed`);
+          this.logger.error(
+            `[${this.constructor.name}], order has been closed`
+          );
         else {
           this.logger.error(
             "orderId and memberId is not match, this order is in other environment"
@@ -1281,9 +1283,13 @@ class ExchangeHubService {
           }-${_endDate.getDate()} 23:59:59`
         )
       ),
-      end = endDate.getTime(),begin=end - this._maxInterval;
-      this.logger.log(`[${this.constructor.name}] begin[${begin}]`, new Date(begin))
-      this.logger.log(`[${this.constructor.name}] end[${end}]`, new Date(end))
+      end = endDate.getTime(),
+      begin = end - this._maxInterval;
+    this.logger.log(
+      `[${this.constructor.name}] begin[${begin}]`,
+      new Date(begin)
+    );
+    this.logger.log(`[${this.constructor.name}] end[${end}]`, new Date(end));
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
@@ -1297,6 +1303,7 @@ class ExchangeHubService {
                 instType: Database.INST_TYPE.SPOT,
                 begin: end - this._maxInterval,
                 end,
+                sz: 100,
               },
             }
           );
@@ -1308,6 +1315,7 @@ class ExchangeHubService {
               instType: "SPOT",
               begin: end - this._minInterval,
               end,
+              sz: 100,
             },
           });
         }

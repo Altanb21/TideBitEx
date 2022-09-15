@@ -152,8 +152,10 @@ class OkexConnector extends ConnectorBase {
     requests = this.tradeFillsMaxRequestTimes,
     tryOnce = 1,
   }) {
-    this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords [START]`);
-    const { begin, end, before } = query;
+    this.logger.log(
+      `[${this.constructor.name}] fetchTradeFillsRecords [START]`
+    );
+    const { begin, end, before, sz } = query;
     let result,
       arr = [],
       newBefore,
@@ -161,6 +163,7 @@ class OkexConnector extends ConnectorBase {
       method = "GET";
     if (!before && begin) arr.push(`begin=${begin}`);
     if (before) arr.push(`before=${before}`);
+    if (sz) arr.push(`sz=${sz}`);
     const path = "/api/v5/trade/fills";
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
@@ -266,13 +269,16 @@ class OkexConnector extends ConnectorBase {
     requests = this.tradeFillsHistoryMaxRequestTimes,
     tryOnce = 1,
   }) {
-    const { instType, begin, end, before } = query;
-    this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords [START]`);
+    const { instType, begin, end, before, sz } = query;
+    this.logger.log(
+      `[${this.constructor.name}] fetchTradeFillsHistoryRecords [START]`
+    );
     let result,
       arr = [],
       newBefore,
       newRequest,
       method = "GET";
+    if (sz) arr.push(`sz=${sz}`);
     if (instType) arr.push(`instType=${instType}`);
     if (!before && begin) arr.push(`begin=${begin}`);
     if (before) arr.push(`before=${before}`);
