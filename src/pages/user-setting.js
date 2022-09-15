@@ -194,7 +194,12 @@ const UserDetail = (props) => {
               );
             })}
       </td>
-      {isEdit && (
+      {isEdit === null && (
+        <td className="screen__table-data user-setting__setting-btn">
+          {t("loading")}
+        </td>
+      )}
+      {isEdit !== null && (
         <td
           className="screen__table-data user-setting__setting-btn"
           onClick={() => {
@@ -210,6 +215,7 @@ const UserDetail = (props) => {
             className="user-setting__setting-label"
             onClick={async () => {
               if (isUpdate) {
+                setIsEdit(null);
                 let result = await props.editUser(props.user, updateRoles); //TODO
                 if (!result) setUpdateRoles(props.user.roles);
                 setIsUpdate(false);

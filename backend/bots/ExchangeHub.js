@@ -183,12 +183,14 @@ class ExchangeHub extends Bot {
             ...prev,
             {
               ...user,
-              roles: user.roles.map((role) => role?.replace(" ", "_")),
+              roles: user.roles.map((role) =>
+                role?.replace(" ", "_").toLowerCase()
+              ),
             },
           ];
         } else {
           prev[index].roles = prev[index].roles.concat(
-            user.roles.map((role) => role?.replace(" ", "_"))
+            user.roles.map((role) => role?.replace(" ", "_").toLowerCase())
           );
         }
         return prev;
@@ -255,7 +257,9 @@ class ExchangeHub extends Bot {
                 Utils.yamlUpdate(updateAdminUsers, p);
                 this.adminUsers = updateAdminUsers.map((user) => ({
                   ...user,
-                  roles: user.roles.map((role) => role.replace(" ", "_")),
+                  roles: user.roles.map((role) =>
+                    role?.replace(" ", "_").toLowerCase()
+                  ),
                 }));
                 result = Promise.resolve(
                   new ResponseFormat({
@@ -344,16 +348,18 @@ class ExchangeHub extends Bot {
             );
             try {
               Utils.yamlUpdate(updateAdminUsers, p);
-              new ResponseFormat({
+              this.adminUsers = updateAdminUsers.map((user) => ({
+                ...user,
+                roles: user.roles.map((role) =>
+                  role?.replace(" ", "_").toLowerCase()
+                ),
+              }));
+              result = new ResponseFormat({
                 message: "updateAdminUser",
                 payload: {
                   adminUsers: this.adminUsers,
                 },
               });
-              this.adminUsers = updateAdminUsers.map((user) => ({
-                ...user,
-                roles: user.roles.map((role) => role.replace(" ", "_")),
-              }));
             } catch (e) {
               this.logger.error(
                 `yamlUpdate updateAdminUser`,
@@ -412,16 +418,18 @@ class ExchangeHub extends Bot {
           this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
           try {
             Utils.yamlUpdate(updateAdminUsers, p);
+            this.adminUsers = updateAdminUsers.map((user) => ({
+              ...user,
+              roles: user.roles.map((role) =>
+                role?.replace(" ", "_").toLowerCase()
+              ),
+            }));
             result = new ResponseFormat({
               message: "deleteAdminUser",
               payload: {
                 adminUsers: this.adminUsers,
               },
             });
-            this.adminUsers = updateAdminUsers.map((user) => ({
-              ...user,
-              roles: user.roles.map((role) => role.replace(" ", "_")),
-            }));
           } catch (e) {
             this.logger.error(
               `yamlUpdate deleteAdminUser`,
