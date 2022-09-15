@@ -170,7 +170,7 @@ const UserDetail = (props) => {
   return (
     <tr
       className={`screen__table-row user-setting__detail${
-        isEdit ? " editing" : ""
+        isEdit === true ? " editing" : ""
       }${props.selectedUser?.email === props.user.email ? " selected" : ""}`}
       key={`${props.user.name}-${props.user.id}`}
       onClick={props.onSelect}
