@@ -16,17 +16,25 @@ const months = [
 ];
 
 const PopulateDates = (props) => {
-  return props.daysInMonth.map((el) => (
-    <div
-      className={`date-picker__day${
-        // el?.date === props.selectedDate ? " selected" : ""
-        props.isSelected ? " selected" : ""
-      }${el?.disable ? " disabled" : ""}`}
-      onClick={() => {
-        if (el?.date && !el?.disable) props.selectDate(el?.date);
-      }}
-    >{`${el?.date !== undefined ? el.date : " "}`}</div>
-  ));
+  return props.daysInMonth.map((el) => {
+    let time = el
+      ? new Date(
+          `${props.selectedYear}-${props.selectedMonth + 1}-${el.date}`
+        ).getTime()
+      : null;
+    let isSelected = time ? time === props.date.getTime() : false;
+    return (
+      <div
+        className={`date-picker__day${
+          // el?.date === props.selectedDate ? " selected" : ""
+          isSelected ? " selected" : ""
+        }${el?.disable ? " disabled" : ""}`}
+        onClick={() => {
+          if (el?.date && !el?.disable) props.selectDate(el?.date);
+        }}
+      >{`${el?.date !== undefined ? el.date : " "}`}</div>
+    );
+  });
 };
 
 const DatePicker = (props) => {
@@ -111,8 +119,10 @@ const DatePicker = (props) => {
 
   const selectDate = useCallback(
     (date) => {
+      console.log(`selectDate date`, date);
       setSelectedDate(date);
       let newDate = new Date(`${selectedYear}-${selectedMonth + 1}-${date}`);
+      console.log(`selectDate newDate`, newDate);
       // if (
       //   (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
       //   (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
@@ -168,7 +178,9 @@ const DatePicker = (props) => {
                 `${selectedYear}-${selectedMonth + 1}-${selectedDate}`
               ).getTime() === props.date.getTime()
             }
-            // selectedDate={selectedDate}
+            date={props.date}
+            selectedYear={selectedYear}
+            selectedMonth={selectedMonth}
             selectDate={selectDate}
           />
         </div>

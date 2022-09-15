@@ -165,6 +165,16 @@ const Vouchers = () => {
 
   const getVouchers = useCallback(
     async (exchange, start, end) => {
+      console.log(
+        `getVouchers end`,
+        end,
+        new Date(end).toISOString().substring(0, 10)
+      );
+      console.log(
+        `getVouchers start`,
+        start,
+        new Date(start).toISOString().substring(0, 10)
+      );
       // const trades = await storeCtx.getOuterTradeFills(exchange, 365);
       const trades = await storeCtx.getOuterTradeFills(exchange, start, end);
       setTrades((prev) => {

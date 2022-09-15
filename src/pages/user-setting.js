@@ -154,15 +154,15 @@ const UserDetail = (props) => {
   const [updateRoles, setUpdateRoles] = useState([...props.user.roles]);
 
   const handleOnClick = (key) => {
-    console.log(`updateRoles`, updateRoles);
-    console.log(`handleOnClick key`, key);
+    // console.log(`updateRoles`, updateRoles);
+    // console.log(`handleOnClick key`, key);
     let _updateRoles;
     if (updateRoles.some((role) => role === key)) {
       _updateRoles = updateRoles.filter((_role) => _role !== key);
     } else {
       _updateRoles = updateRoles.concat(key);
     }
-    console.log(`handleOnClick _updateRoles`, _updateRoles);
+    // console.log(`handleOnClick _updateRoles`, _updateRoles);
     setUpdateRoles(_updateRoles);
     setIsUpdate(true);
   };
@@ -200,16 +200,14 @@ const UserDetail = (props) => {
         </td>
       )}
       {isEdit !== null && (
-        <td
-          className="screen__table-data user-setting__setting-btn"
-          onClick={() => {
-            if (props.currentUser.roles.includes("root")) setIsEdit(true);
-          }}
-        >
+        <td className="screen__table-data user-setting__setting-btn">
           <div
             className={`user-setting__setting-icon${
               props.currentUser.roles.includes("root") ? "" : " disabled"
             }`}
+            onClick={() => {
+              if (props.currentUser.roles.includes("root")) setIsEdit(true);
+            }}
           ></div>
           <div
             className="user-setting__setting-label"
@@ -252,13 +250,13 @@ const UserSetting = (props) => {
 
   const filter = useCallback(
     ({ users, option, keyword }) => {
-      console.log(`filter option`, option);
-      console.log(`filter keyword`, keyword);
+      // console.log(`filter option`, option);
+      // console.log(`filter keyword`, keyword);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _users = users || adminUsers,
         _options = [...filterOptions];
-      console.log(`filter _users`, _users);
-      console.log(`filter _keyword`, _keyword);
+      // console.log(`filter _users`, _users);
+      // console.log(`filter _keyword`, _keyword);
       if (option) {
         if (option === "all") {
           _options = ["all"];
@@ -273,7 +271,7 @@ const UserSetting = (props) => {
           }
         }
         setFilterOptions(_options);
-        console.log(`filter _options`, _options);
+        // console.log(`filter _options`, _options);
       }
       if (_users) {
         _users = _users.filter((user) => {
@@ -283,11 +281,11 @@ const UserSetting = (props) => {
             user.id.includes(_keyword) ||
             user.name.includes(_keyword) ||
             user.roles.some((role) => role.includes(_keyword));
-          if (option || keyword) console.log(`filter condition`, condition);
+          // if (option || keyword) console.log(`filter condition`, condition);
           if (!_options.includes("all"))
             condition =
               condition && user.roles.some((role) => _options.includes(role));
-          if (option || keyword) console.log(`filter condition`, condition);
+          // if (option || keyword) console.log(`filter condition`, condition);
           return condition;
         });
       }
@@ -298,20 +296,20 @@ const UserSetting = (props) => {
 
   const editUser = useCallback(
     async (user, roles) => {
-      console.log(`editUser user`, user);
-      console.log(`editUser roles`, roles);
+      // console.log(`editUser user`, user);
+      // console.log(`editUser roles`, roles);
       let isUpdated = false;
       let updateUser = { ...user };
       let index = adminUsers.findIndex(
         (adminUser) => adminUser.email === user.email
       );
-      console.log(`editUser index`, index);
+      // console.log(`editUser index`, index);
       if (index !== -1) {
         updateUser.roles = roles;
-        console.log(`editUser updateUser`, updateUser);
+        // console.log(`editUser updateUser`, updateUser);
         try {
           const { adminUsers } = await storeCtx.updateAdminUser(updateUser);
-          console.log(`updateAdminUser adminUsers`, adminUsers);
+          // console.log(`updateAdminUser adminUsers`, adminUsers);
           setAdminUsers(adminUsers);
           isUpdated = true;
           filter({ users: adminUsers });
@@ -473,7 +471,7 @@ const UserSetting = (props) => {
                   props.currentUser.roles.includes("root") ? "" : " disabled"
                 }`}
                 onClick={() => {
-                  console.log(`selectedUser`, selectedUser);
+                  // console.log(`selectedUser`, selectedUser);
                   if (
                     selectedUser &&
                     props.currentUser.roles.includes("root")

@@ -111,9 +111,11 @@
     color: #2699fb;
     font-size: 14px;
     cursor: pointer;
+    min-width: 56px
   }
   &__setting-icon {
     width: 20px;
+    min-width: 20px;
     height: 20px;
     background-position: center;
     background-size: contain;
