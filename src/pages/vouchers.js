@@ -74,14 +74,14 @@ const Vouchers = () => {
     new Date(
       `${currentDate.getFullYear()}-${
         currentDate.getMonth() + 1
-      }-${currentDate.getDate()}`
+      }-${currentDate.getDate()} 08:00:00`
     )
   );
   const [dateEnd, setDateEnd] = useState(
     new Date(
       `${currentDate.getFullYear()}-${
         currentDate.getMonth() + 1
-      }-${currentDate.getDate()}`
+      }-${currentDate.getDate()} 08:00:00`
     )
   );
 
@@ -165,16 +165,8 @@ const Vouchers = () => {
 
   const getVouchers = useCallback(
     async (exchange, start, end) => {
-      console.log(
-        `getVouchers end`,
-        end,
-        new Date(end).toISOString().substring(0, 10)
-      );
-      console.log(
-        `getVouchers start`,
-        start,
-        new Date(start).toISOString().substring(0, 10)
-      );
+      // console.log(`getVouchers end`, end);
+      // console.log(`getVouchers start`, start);
       // const trades = await storeCtx.getOuterTradeFills(exchange, 365);
       const trades = await storeCtx.getOuterTradeFills(exchange, start, end);
       setTrades((prev) => {
@@ -212,9 +204,25 @@ const Vouchers = () => {
         setFilterExchange(exchange);
         if (trades[exchange]) _trades = trades[exchange];
         else {
-          const end = new Date().getTime();
-          const start = end - filterOption * 24 * 60 * 60 * 1000;
-          res = await getVouchers(exchange, start, end);
+          const now = new Date();
+          const end = new Date(
+            `${now.getFullYear()}-${
+              now.getMonth() + 1
+            }-${now.getDate()} 08:00:00`
+          );
+          const startTime = new Date(
+            end.getTime() - filterOption * 24 * 60 * 60 * 1000
+          );
+          const start = new Date(
+            `${startTime.getFullYear()}-${
+              startTime.getMonth() + 1
+            }-${startTime.getDate()} 08:00:00`
+          );
+          res = await getVouchers(
+            exchange,
+            start.toISOString().substring(0, 10),
+            end.toISOString().substring(0, 10)
+          );
           _trades = res.trades;
           _ticker = res.ticker;
         }
@@ -266,10 +274,21 @@ const Vouchers = () => {
   const updateInterval = useCallback(
     async (option) => {
       setIsLoading(true);
-      let currentDate = new Date();
-      const end = currentDate.getTime();
-      const start = end - option * 24 * 60 * 60 * 1000;
-      const res = await getVouchers(exchanges[0], start, end);
+      const now = new Date();
+      const end = new Date(
+        `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
+      );
+      const startTime = new Date(end.getTime() - option * 24 * 60 * 60 * 1000);
+      const start = new Date(
+        `${startTime.getFullYear()}-${
+          startTime.getMonth() + 1
+        }-${startTime.getDate()} 08:00:00`
+      );
+      const res = await getVouchers(
+        exchanges[0],
+        start.toISOString().substring(0, 10),
+        end.toISOString().substring(0, 10)
+      );
       filter({ filterTrades: res.trades, ticker: res.ticker });
       setFilterOption(option);
       setIsLoading(false);
@@ -282,8 +301,8 @@ const Vouchers = () => {
       // if (date.getTime() <= dateEnd.getTime()) {
       setIsLoading(true);
       setDateStart(date);
-      const end = dateEnd.getTime();
-      const start = date.getTime();
+      const end = dateEnd.toISOString().substring(0, 10);
+      const start = date.toISOString().substring(0, 10);
       const res = await getVouchers(exchanges[0], start, end);
       filter({ filterTrades: res.trades, ticker: res.ticker });
       setIsLoading(false);
@@ -297,8 +316,8 @@ const Vouchers = () => {
       // if (date.getTime() >= dateStart.getTime()) {
       setIsLoading(true);
       setDateEnd(date);
-      const end = date.getTime();
-      const start = dateStart.getTime();
+      const end = date.toISOString().substring(0, 10);
+      const start = dateStart.toISOString().substring(0, 10);
       const res = await getVouchers(exchanges[0], start, end);
       filter({ filterTrades: res.trades, ticker: res.ticker });
       setIsLoading(false);
@@ -325,10 +344,23 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        let currentDate = new Date();
-        const end = currentDate.getTime();
-        const start = end - filterOption * 24 * 60 * 60 * 1000;
-        const res = await getVouchers(exchanges[0], start, end);
+        const now = new Date();
+        const end = new Date(
+          `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
+        );
+        const startTime = new Date(
+          end.getTime() - filterOption * 24 * 60 * 60 * 1000
+        );
+        const start = new Date(
+          `${startTime.getFullYear()}-${
+            startTime.getMonth() + 1
+          }-${startTime.getDate()} 08:00:00`
+        );
+        const res = await getVouchers(
+          exchanges[0],
+          start.toISOString().substring(0, 10),
+          end.toISOString().substring(0, 10)
+        );
         setIsLoading(false);
         filter({ filterTrades: res.trades, ticker: res.ticker });
         return !prev;

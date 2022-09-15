@@ -30,7 +30,7 @@ const PopulateDates = (props) => {
           isSelected ? " selected" : ""
         }${el?.disable ? " disabled" : ""}`}
         onClick={() => {
-          if (el?.date && !el?.disable) props.selectDate(el?.date);
+          if (el?.date && !el?.disable) props.selectDate(el);
         }}
       >{`${el?.date !== undefined ? el.date : " "}`}</div>
     );
@@ -58,6 +58,7 @@ const DatePicker = (props) => {
       let dateTime = new Date(`${year}-${month + 1}-${i + 1}`).getTime();
       let date = {
         date: i + 1,
+        time: dateTime,
         disable: minDate
           ? dateTime < minDate.getTime()
             ? true
@@ -118,11 +119,20 @@ const DatePicker = (props) => {
   }, [selectedMonth, selectedYear]);
 
   const selectDate = useCallback(
-    (date) => {
-      console.log(`selectDate date`, date);
-      setSelectedDate(date);
-      let newDate = new Date(`${selectedYear}-${selectedMonth + 1}-${date}`);
-      console.log(`selectDate newDate`, newDate);
+    (el) => {
+      // console.log(`selectDate time`, el.time);
+      setSelectedDate(el.date);
+      let newDate = new Date(el.time);
+      newDate = new Date(
+        `${newDate.getFullYear()}-${
+          newDate.getMonth() + 1
+        }-${newDate.getDate()} 08:00:00`
+      );
+      // console.log(
+      //   `selectDate newDate`,
+      //   newDate,
+      //   newDate.toISOString().substring(0, 10)
+      // );
       // if (
       //   (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
       //   (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
@@ -131,7 +141,7 @@ const DatePicker = (props) => {
       setOpenDates(false);
       // }
     },
-    [props, selectedMonth, selectedYear]
+    [props]
   );
 
   return (
