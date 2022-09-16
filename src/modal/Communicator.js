@@ -92,7 +92,10 @@ class Communicator {
 
   async getExchangeRates() {
     try {
-      const res = await this._get(`/public/exchange-rates`);
+      const res = await this._request({
+        method: "GET",
+        url: `/public/exchange-rates`,
+      });
       if (res.success) {
         return res.data;
       }

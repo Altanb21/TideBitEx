@@ -29,6 +29,8 @@ class AccountBook extends BookBase {
       };
       return prev;
     }, {});
+    this.logger.log(`this.exchangeRates `, this.exchangeRates);
+
     this.name = `AccountBook`;
     return this;
   }
@@ -42,7 +44,7 @@ class AccountBook extends BookBase {
     else
       return Object.values(this._difference[memberId]).map((account) => ({
         ...account,
-        exchangeRate: this.exchangeRates[account.currency],
+        exchangeRate: this.exchangeRates[account.currency].rate,
       }));
   }
 
@@ -52,19 +54,11 @@ class AccountBook extends BookBase {
       if (instId)
         return instId.split("-").map((currency) => ({
           ...this._snapshot[memberId][currency],
-          exchangeRate:
-            currency.toLowerCase() === "try"
-              ? this._ratio.try
-              : this.priceList[currency.toLowerCase()]
-              ? SafeMath.mult(
-                  this.priceList[currency.toLowerCase()],
-                  this._ratio.usd
-                )
-              : 0,
+          exchangeRate: this.exchangeRates[currency].rate,
         }));
       return Object.values(this._snapshot[memberId]).map((account) => ({
         ...account,
-        exchangeRate: this.exchangeRates[account.currency],
+        exchangeRate: this.exchangeRates[account.currency].rate,
       }));
     }
   }
