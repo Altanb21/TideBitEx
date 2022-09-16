@@ -21,7 +21,7 @@ const ProfitTrendingChart = (props) => {
           ]}
           options={{
             title: {
-              text: "撮合毛利走勢", // ++ TODO t('profit-trend')
+              text:  t('profit-trend'),
               align: "left",
               style: {
                 fontSize: 20,
@@ -36,13 +36,24 @@ const ProfitTrendingChart = (props) => {
               },
             },
             toolbar: {
+              show: false,
               enabled: false,
             },
             dataLabels: {
-              enabled: false,
+              enabled: true,
+              formatter: function (val, opts) {
+                return "";
+              },
+              background: {
+                width: 10,
+                height: 10,
+                borderRadius: 10,
+                borderWidth: 2,
+              },
             },
             stroke: {
               curve: "straight",
+              colors: "#1F78B4",
             },
             xaxis: {
               // categories: props.data.categories ? props.data.categories : [],
@@ -56,6 +67,9 @@ const ProfitTrendingChart = (props) => {
               labels: {
                 show: false,
               },
+            },
+            grid: {
+              show: false,
             },
           }}
         />
@@ -79,6 +93,7 @@ const ProfitTrendingChart = (props) => {
               },
             },
             toolbar: {
+              show: false,
               enabled: false,
             },
             plotOptions: {
@@ -86,6 +101,7 @@ const ProfitTrendingChart = (props) => {
                 horizontal: false,
                 columnWidth: "55%",
                 endingShape: "rounded",
+                colors: "#2699FB",
               },
             },
             dataLabels: {
@@ -100,6 +116,9 @@ const ProfitTrendingChart = (props) => {
               labels: {
                 show: false,
               },
+            },
+            grid: {
+              show: false,
             },
           }}
         />

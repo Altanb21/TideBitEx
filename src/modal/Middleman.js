@@ -228,6 +228,7 @@ class Middleman {
     try {
       const exchangeRates = await this.communicator.getExchangeRates();
       this.exchangeRates = exchangeRates;
+      console.log(`middleman this.exchangeRates`, this.exchangeRates)
       return exchangeRates;
     } catch (error) {
       this.exchangeRates = {};
