@@ -144,7 +144,7 @@ const Admin = () => {
     if (!isInit) {
       storeCtx.getAdminUser().then((user) => {
         if (!user || userAbility(user).ability.canNotRead === "all") {
-          enqueueSnackbar(`${t("error-happen")}`, {
+          enqueueSnackbar(`${t("no-access")}`, {
             variant: "error",
             anchorOrigin: {
               vertical: "top",
@@ -154,6 +154,7 @@ const Admin = () => {
           history.replace({
             pathname: `/signin`,
           });
+          window.location.reload();
         } else {
           let _user = userAbility(user);
           setUser(_user);

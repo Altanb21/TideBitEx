@@ -195,5 +195,6 @@
   "to": "至",
   "error-happen": "发生错误",
   "success-update": "修改成功",
-  "invail-email": "*E-mail 输入错误，请检查后重新输入"
+  "invail-email": "*E-mail 输入错误，请检查后重新输入",
+  "no-access": "沒有访问权限"
 }
