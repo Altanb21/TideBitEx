@@ -16,6 +16,7 @@ const generateSvg = (paths) => {
   }
 
   svg += '</svg>\n';
+  console.log(`svg`, svg)
   return svg;
 }
 
@@ -32,7 +33,7 @@ const LoadingDialog = (props) => {
       {ReactDOM.createPortal(
         <div className="modal__card">
           <div className="modal__icon">
-            {/* <div className="lds-spinner">
+            <div className="lds-spinner">
               <div></div>
               <div></div>
               <div></div>
@@ -45,8 +46,8 @@ const LoadingDialog = (props) => {
               <div></div>
               <div></div>
               <div></div>
-            </div> */}
-            {generateSvg(loadingPath)}
+            </div>
+            {/* {generateSvg(loadingPath)} */}
           </div>
           <div className="modal__text">{t('loading')}</div>
         </div>,
