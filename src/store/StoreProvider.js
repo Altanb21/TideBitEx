@@ -37,7 +37,7 @@ const StoreProvider = (props) => {
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
   const [fiatCurrency, setFiatCurrency] = useState("usd");
-  const [exchangeRates, setExchangeRates] = useState({});
+  const [exchangeRates, setExchangeRates] = useState(null);
 
   const action = useCallback(
     (key) => (

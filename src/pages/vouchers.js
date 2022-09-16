@@ -116,7 +116,9 @@ const Vouchers = () => {
     // console.log(`date`, date);
     return date.getTime();
   };
-  const formateTrades = useCallback((trades) => {
+  const formateTrades = useCallback(async (trades) => {
+    let exchangeRates = storeCtx.exchangeRates;
+    if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
     // console.log(`formateTrades trades[${trades.length}]`, trades);
     let chartData = { data: {}, xaxisType: "string" },
       data = {};
@@ -179,14 +181,17 @@ const Vouchers = () => {
           // console.log(`formateTrades key`, key);
           if (!data[key])
             data[key] = {
-              y: trade.profit,
+              y: SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate),
               x: key,
               date: lastDailyBar,
             };
           else
             data[key] = {
               ...data[key],
-              y: SafeMath.plus(data[key].y, trade.profit),
+              y: SafeMath.plus(
+                data[key].y,
+                SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
+              ),
             };
 
           // console.log(`formateTrades data[key]`, data[key]);
@@ -259,10 +264,7 @@ const Vouchers = () => {
           // console.log(`formateTrades key`, key);
           if (!data[key])
             data[key] = {
-              y: SafeMath.mult(
-                trade.profit,
-                storeCtx.exchangeRates[trade.feeCcy].rate
-              ),
+              y: SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate),
               x: `${
                 months[lastMonthlyBar.getMonth()]
               } ${lastMonthlyBar.getFullYear()}`,
@@ -273,10 +275,7 @@ const Vouchers = () => {
               ...data[key],
               y: SafeMath.plus(
                 data[key].y,
-                SafeMath.mult(
-                  trade.profit,
-                  storeCtx.exchangeRates[trade.feeCcy].rate
-                )
+                SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
               ),
             };
           // }
@@ -288,7 +287,7 @@ const Vouchers = () => {
     }
     console.log(`formateTrades chartData`, chartData);
     return chartData;
-  }, []);
+  }, [storeCtx]);
 
   const getVouchers = useCallback(
     async (exchange, start, end) => {

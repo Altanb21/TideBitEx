@@ -21,7 +21,7 @@ const ProfitTrendingChart = (props) => {
           ]}
           options={{
             title: {
-              text:  t('profit-trend'),
+              text: t("profit-trend"),
               align: "left",
               style: {
                 fontSize: 20,
@@ -42,7 +42,7 @@ const ProfitTrendingChart = (props) => {
             dataLabels: {
               enabled: true,
               formatter: function (val, opts) {
-                return "";
+                return " ";
               },
               background: {
                 width: 10,
@@ -54,8 +54,10 @@ const ProfitTrendingChart = (props) => {
             stroke: {
               curve: "straight",
               colors: "#1F78B4",
+              width: 1,
             },
             xaxis: {
+              show: false,
               // categories: props.data.categories ? props.data.categories : [],
               labels: {
                 show: false,
