@@ -111,7 +111,7 @@
     color: #2699fb;
     font-size: 14px;
     cursor: pointer;
-    min-width: 56px
+    min-width: 56px;
   }
   &__setting-icon {
     width: 20px;
@@ -158,7 +158,7 @@
     margin-top: 32px;
     display: flex;
     gap: 40px;
-    margin-bottom: 32px;
+    margin-bottom: 12px;
   }
   &__dialog-content--roles {
     display: flex;
@@ -178,6 +178,16 @@
   }
   &__dialog-input-group:nth-child(2) {
     max-width: 300px;
+  }
+  &__dialog-input-message {
+    opacity: 0;
+    margin-top: 5px;
+    color: #dc484e;
+    font-size: 12px;
+    height: 18px;
+  }
+  &__dialog-input-group.error &__dialog-input-message {
+    opacity: 1;
   }
   &__dialog-content--title {
     margin-bottom: 20px;

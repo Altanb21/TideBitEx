@@ -192,5 +192,8 @@
   "permission": "权限",
   "remove-user-confirm": "确认要移除此管理者?",
   "another-time": "其他时间",
-  "to": "至"
+  "to": "至",
+  "error-happen": "发生错误",
+  "success-update": "修改成功",
+  "invail-email": "*E-mail 输入错误，请检查后重新输入"
 }

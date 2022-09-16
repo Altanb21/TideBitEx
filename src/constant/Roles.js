@@ -1,4 +1,4 @@
-export const ROLES = {
+const ROLES = {
   root: "root",
   accountant: "accountant",
   operating: "operating",
@@ -23,3 +23,5 @@ export const ROLES = {
 //     DEPOSIT_MAKER: "deposit maker",
 //     DEPOSIT_VIEWER: "deposit viewer",
 //   };
+
+export default ROLES;

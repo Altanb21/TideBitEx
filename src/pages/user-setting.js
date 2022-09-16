@@ -1,9 +1,10 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useContext, useEffect, useCallback } from "react";
+import { useSnackbar } from "notistack";
 import StoreContext from "../store/store-context";
 import Dialog from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
-import { ROLES } from "../constant/Roles";
+import ROLES from "../constant/Roles";
 
 const OptionTag = (props) => {
   const { t } = useTranslation();
@@ -36,6 +37,14 @@ const RoleTag = (props) => {
 const AddUserDialog = (props) => {
   const { t } = useTranslation();
   const [user, setUser] = useState({});
+  const [hasError, setHasError] = useState(false);
+  const validateEmail = (email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  };
   return (
     <Dialog
       className="user-setting__dialog-add"
@@ -43,8 +52,11 @@ const AddUserDialog = (props) => {
       onClose={props.onClose}
       onCancel={props.onCancel}
       onConfirm={() => {
-        if (user.name && user.email && user.roles?.length > 0)
-          props.onConfirm(user);
+        if (user.name && user.email && user.roles?.length > 0) {
+          const isValid = validateEmail(user.email);
+          if (isValid) props.onConfirm(user);
+          else setHasError(true);
+        }
       }}
     >
       <>
@@ -66,7 +78,11 @@ const AddUserDialog = (props) => {
               }}
             />
           </div>
-          <div className="user-setting__dialog-input-group">
+          <div
+            className={`user-setting__dialog-input-group${
+              hasError ? " error" : ""
+            }`}
+          >
             <label
               className="user-setting__dialog-input-label"
               htmlFor="user-setting-add-user-email"
@@ -79,9 +95,13 @@ const AddUserDialog = (props) => {
               type="text"
               inputmode="email"
               onChange={(e) => {
+                if (hasError) setHasError(false);
                 setUser((prev) => ({ ...prev, email: e.target.value }));
               }}
             />
+            <div className="user-setting__dialog-input-message">
+              {t("invail-email")}
+            </div>
           </div>
         </div>
         <div className="user-setting__dialog-content">
@@ -231,6 +251,7 @@ const UserDetail = (props) => {
 
 const UserSetting = (props) => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -241,6 +262,8 @@ const UserSetting = (props) => {
   const [openAddUserDialog, setOpenAddUserDialog] = useState(false);
   const [openDeleteUserDialog, setOpenDeleteUserDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  // ++TODO customs snackbar https://notistack.com/features/customization
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   const getAdminUsers = useCallback(async () => {
     const { adminUsers: users } = await storeCtx.getAdminUsers();
@@ -313,15 +336,20 @@ const UserSetting = (props) => {
           setAdminUsers(adminUsers);
           isUpdated = true;
           filter({ users: adminUsers });
+          enqueueSnackbar(`${t("success-update")}`, {
+            variant: "success",
+          });
         } catch (error) {
-          // ++TODO
+          enqueueSnackbar(`${t("error-happen")}`, {
+            variant: "error",
+          });
         }
       } else {
         // ++TODO
       }
       return isUpdated;
     },
-    [adminUsers, filter, storeCtx]
+    [adminUsers, enqueueSnackbar, filter, storeCtx, t]
   );
 
   const addUser = useCallback(
@@ -338,15 +366,20 @@ const UserSetting = (props) => {
           );
           setAdminUsers(updateAdminUser);
           filter({ users: updateAdminUser });
+          enqueueSnackbar(`${t("success-update")}`, {
+            variant: "success",
+          });
         } catch (error) {
-          // ++TODO
+          enqueueSnackbar(`${t("error-happen")}`, {
+            variant: "error",
+          });
         }
         setIsLoading(false);
       } else {
         // ++TODO
       }
     },
-    [adminUsers, filter, storeCtx]
+    [adminUsers, enqueueSnackbar, filter, storeCtx, t]
   );
 
   const deleteUser = useCallback(async () => {
@@ -356,11 +389,16 @@ const UserSetting = (props) => {
       const { adminUsers } = await storeCtx.deleteAdminUser(selectedUser);
       setAdminUsers(adminUsers);
       filter({ users: adminUsers });
+      enqueueSnackbar(`${t("success-update")}`, {
+        variant: "success",
+      });
     } catch (error) {
-      // ++TODO
+      enqueueSnackbar(`${t("error-happen")}`, {
+        variant: "error",
+      });
     }
     setIsLoading(false);
-  }, [filter, selectedUser, storeCtx]);
+  }, [enqueueSnackbar, filter, selectedUser, storeCtx, t]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
