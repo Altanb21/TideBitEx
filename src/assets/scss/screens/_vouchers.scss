@@ -66,12 +66,14 @@
     align-items: flex-end;
   }
   & .main-chart__chart {
-    height: 340px;
-    border: 1px solid #707070;
     margin-bottom: 10px;
     &--title {
       font-size: 20px;
-      color: "#767676";
+      color: 767676
+    }
+    &--chart{
+      height: 340px;
+      border: 1px solid #707070;
     }
   }
 }
