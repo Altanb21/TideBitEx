@@ -224,6 +224,18 @@ class Middleman {
     return this.tickers;
   }
 
+  async getExchangeRates() {
+    try {
+      const exchangeRates = await this.communicator.getExchangeRates();
+      this.exchangeRates = exchangeRates;
+      return exchangeRates;
+    } catch (error) {
+      this.exchangeRates = {};
+      throw error;
+    }
+  }
+
+
   getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;

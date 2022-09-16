@@ -1,6 +1,7 @@
 import React from "react";
 
 const StoreContext = React.createContext({
+  exchangeRates: {},
   languageKey: null,
   isLogin: null,
   selectedTicker: null,
@@ -248,6 +249,7 @@ const StoreContext = React.createContext({
   addAdminUser: async (newUser) => {},
   deleteAdminUser: async (user) => {},
   updateAdminUser: async (updateUser) => {},
+  getExchangeRates: async () => {},
 });
 
 export default StoreContext;

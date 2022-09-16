@@ -2,9 +2,10 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import ApexCharts from "react-apexcharts";
+import { formateDecimal } from "../utils/Utils";
 const ProfitTrendingChart = (props) => {
   const { t } = useTranslation();
-  console.log(`ProfitTrendingChart props`, props);
+  // console.log(`ProfitTrendingChart props`, props);
   return (
     <React.Fragment>
       <div className="main-chart__chart">
@@ -12,13 +13,24 @@ const ProfitTrendingChart = (props) => {
           height="60%"
           width="100%"
           type="line"
-          series={[
-            {
-              data: props.data ? props.data : [],
-              name: "profit",
-              type: "line",
-            },
-          ]}
+          // series={[
+          //   {
+          //     data: props.data ? props.data : [],
+          //     name: t("profit"),
+          //     type: "line",
+          //   },
+          // ]}
+          series={
+            props.profits
+              ? [
+                  Object.values(props.profits).map((profit) => ({
+                    name: profit.feeCcy,
+                    type: "line",
+                    data: profit.data ? Object.values(profit.data) : [],
+                  })),
+                ]
+              : []
+          }
           options={{
             title: {
               text: "撮合毛利走勢", // ++ TODO t('profit-trend')
@@ -34,9 +46,6 @@ const ProfitTrendingChart = (props) => {
               zoom: {
                 enabled: false,
               },
-            },
-            toolbar: {
-              enabled: false,
             },
             dataLabels: {
               enabled: false,
@@ -57,19 +66,39 @@ const ProfitTrendingChart = (props) => {
                 show: false,
               },
             },
+            tooltip: {
+              y: {
+                formatter: (value) =>
+                  `${formateDecimal(value, { decimalLength: 8 })}`,
+                title: {
+                  formatter: (seriesName) => seriesName,
+                },
+              },
+            },
           }}
         />
         <ApexCharts
           height="40%"
           width="100%"
           type="bar"
-          series={[
-            {
-              data: props.data ? props.data : [],
-              name: "profit",
-              type: "bar",
-            },
-          ]}
+          // series={[
+          //   {
+          //     data: props.data ? props.data : [],
+          //     name: t("profit"),
+          //     type: "bar",
+          //   },
+          // ]}
+          series={
+            props.profits
+              ? [
+                  Object.values(props.profits).map((profit) => ({
+                    name: profit.feeCcy,
+                    type: "bar",
+                    data: profit.data ? Object.values(profit.data) : [],
+                  })),
+                ]
+              : []
+          }
           options={{
             chart: {
               height: 48,

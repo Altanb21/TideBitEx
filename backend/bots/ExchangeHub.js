@@ -40,7 +40,9 @@ class ExchangeHub extends Bot {
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
         this.adminUsers = this._getAdminUsers();
+        this.priceList = await this.getPriceList();
         this.currencies = await this.database.getCurrencies();
+        this.currenciesSymbol = await this.database.getCurrenciesSymbol();
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
@@ -60,6 +62,8 @@ class ExchangeHub extends Bot {
         this.accountBook = new AccountBook({
           logger,
           markets: this.tidebitMarkets,
+          currencies: this.currenciesSymbol,
+          priceList: this.priceList,
         });
       })
       .then(async () => {
@@ -629,10 +633,18 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async getExchangeRates() {
+    const exchangeRates = this.accountBook.exchangeRates;
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getExchangeRates",
+        payload: exchangeRates,
+      })
+    );
+  }
+
   // account api
   async getAccounts({ memberId, email }) {
-    let priceList = await this.getPriceList();
-    this.accountBook.priceList = priceList;
     this.logger.debug(
       `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
@@ -917,7 +929,7 @@ class ExchangeHub extends Bot {
             memberTag = _trade.member_tag,
             fee,
             processTrade,
-            revenue;
+            profit;
           if (memberTag) {
             if (
               memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
@@ -944,7 +956,7 @@ class ExchangeHub extends Bot {
                   )
                 : SafeMath.mult(trade.fillSz, bidFeeRate)
               : null;
-          revenue =
+          profit =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
               ? _trade.ref_net_fee
                 ? SafeMath.minus(
@@ -968,7 +980,7 @@ class ExchangeHub extends Bot {
             memberId,
             externalFee: Math.abs(trade.fee),
             fee,
-            revenue: revenue,
+            profit: profit,
             exchange: exchange,
             referral: _trade.ref_net_fee
               ? Utils.removeZeroEnd(_trade.ref_net_fee)

@@ -38,6 +38,10 @@ class DBOperator {
     return this.database.getCurrencies(currencyId);
   }
 
+  async getCurrenciesSymbol(currencyId) {
+    return this.database.getCurrenciesSymbol(currencyId);
+  }
+
   async getCurrency(currencyId) {
     return this.database.getCurrency(currencyId);
   }

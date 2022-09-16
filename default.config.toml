@@ -71,6 +71,7 @@ pathname = [
 
   # exchange - public
   "get | /api/v1/public/instruments | Bot.ExchangeHub.getInstruments",
+  "get | /api/v1/public/exchange-rates | Bot.ExchangeHub.getExchangeRates",
 
   # tradingview
   "get | /api/v1/tradingview/config | Bot.ExchangeHub.getTradingViewConfig",

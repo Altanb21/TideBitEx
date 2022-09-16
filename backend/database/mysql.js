@@ -80,6 +80,27 @@ class mysql {
     }
   }
 
+  async getCurrenciesSymbol() {
+    const query = `
+    SELECT
+	    accounts.currency,
+	    asset_bases.key,
+	    asset_bases.symbol
+    FROM
+	    accounts
+	  LEFT JOIN asset_bases ON accounts.currency = asset_bases.id GROUP by accounts.currency;`;
+    try {
+      this.logger.log("getCurrenciesSymbol", query);
+      const [currencies] = await this.db.query({
+        query,
+      });
+      return currencies;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getCurrencies() {
     const query = "SELECT * FROM `asset_bases`;";
     try {

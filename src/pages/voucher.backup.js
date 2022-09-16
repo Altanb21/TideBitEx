@@ -84,7 +84,7 @@ const Vouchers = () => {
   const [tickers, setTickers] = useState(null);
   const [filterTicker, setFilterTicker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
+  const [chartData, setChartData] = useState(null);
   const [dateStart, setDateStart] = useState(
     new Date(
       `${currentDate.getFullYear()}-${
@@ -105,6 +105,7 @@ const Vouchers = () => {
     date.setDate(date.getDate() + 1);
     return date.getTime();
   };
+
   const getNextMonthlyBarTime = (barTime) => {
     const date = new Date(barTime);
     // console.log(`date`, date);
@@ -116,10 +117,29 @@ const Vouchers = () => {
     // console.log(`date`, date);
     return date.getTime();
   };
-  const formateTrades = useCallback((trades) => {
-    // console.log(`formateTrades trades[${trades.length}]`, trades);
-    let chartData = { data: {}, xaxisType: "string" },
-      data = {};
+
+  /** 
+          chartData = {
+            profits: {
+              ETH: {
+                data: {
+                  "2022-8-17": { x: "2022-8-17", y: "0" },
+                },
+                 feeCcy: "ETH",
+              },
+              USDT: {
+                data: {
+                  "2022-8-17": { x: "2022-8-17", y: "0.1" },
+                },
+                feeCcy: "USDT",
+              },
+            },
+            xaxisType: "string",
+          };
+           */
+  const formateTrades = useCallback((trades, currencies) => {
+    console.log(`formateTrades trades[${trades.length}]`, trades);
+    let chartData = { profits: {}, xaxisType: "string" };
     let _trades = trades.sort((a, b) => a.ts - b.ts); //asce
     if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
       let lastDailyBar = new Date(
@@ -127,23 +147,25 @@ const Vouchers = () => {
         ),
         nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
       for (let trade of _trades) {
+        console.log(`trade`, trade);
         if (trade.profit) {
           let key = `${lastDailyBar.getFullYear()}-${
             lastDailyBar.getMonth() + 1
           }-${lastDailyBar.getDate()}`;
           // console.log(`formateTrades key`, key);
-          if (!data[key])
-            data[key] = {
+          console.log(`currencies`, currencies);
+          for (let currency of currencies) {
+            if (!chartData.profits[currency])
+              chartData.profits[currency] = {
+                data: {},
+                feeCcy: currency,
+              };
+            chartData["profits"][currency]["data"][key] = {
               y: "0",
               x: key,
               date: lastDailyBar,
             };
-          // console.log(
-          //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-          //     trade.ts
-          //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
-          //   trade
-          // );
+          }
           while (nextDailyBarTime <= trade.ts) {
             // console.error(
             //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
@@ -164,36 +186,37 @@ const Vouchers = () => {
               lastDailyBar.getMonth() + 1
             }-${lastDailyBar.getDate()}`;
             // console.log(`formateTrades key`, key);
-            if (!data[key])
-              data[key] = {
+            for (let currency of currencies) {
+              if (!chartData.profits[currency])
+                chartData.profits[currency] = {
+                  data: {},
+                  feeCcy: currency,
+                };
+              chartData["profits"][currency]["data"][key] = {
                 y: "0",
                 x: key,
                 date: lastDailyBar,
               };
-            // console.log(`data[${key}]`, data[key]);
+            }
           }
           //  else {
           key = `${lastDailyBar.getFullYear()}-${
             lastDailyBar.getMonth() + 1
           }-${lastDailyBar.getDate()}`;
           // console.log(`formateTrades key`, key);
-          if (!data[key])
-            data[key] = {
-              y: trade.profit,
-              x: key,
-              date: lastDailyBar,
-            };
-          else
-            data[key] = {
-              ...data[key],
-              y: SafeMath.plus(data[key].y, trade.profit),
-            };
-
-          // console.log(`formateTrades data[key]`, data[key]);
-          // }
+          chartData["profits"][trade.feeCcy]["data"][key] = {
+            ...chartData["profits"][trade.feeCcy]["data"][key],
+            y: SafeMath.plus(
+              chartData["profits"][trade.feeCcy]["data"][key].y,
+              trade.profit
+            ),
+          };
+          console.log(
+            `chartData["profits"][${trade.feeCcy}]["data"][${key}]`,
+            chartData["profits"][trade.feeCcy]["data"][key]
+          );
         }
       }
-      chartData.data = data;
       chartData.xaxisType = "datetime";
     } else {
       let lastMonthlyBar = new Date(
@@ -205,8 +228,8 @@ const Vouchers = () => {
           let key = `${lastMonthlyBar.getFullYear()}-${
             lastMonthlyBar.getMonth() + 1
           }`;
-          if (!data[key])
-            data[key] = {
+          if (!chartData["profits"][trade.feeCcy]["data"][key])
+            chartData["profits"][trade.feeCcy]["data"][key] = {
               y: "0",
               x: `${
                 months[lastMonthlyBar.getMonth()]
@@ -242,51 +265,51 @@ const Vouchers = () => {
             key = `${lastMonthlyBar.getFullYear()}-${
               lastMonthlyBar.getMonth() + 1
             }`;
-            if (!data[key])
-              data[key] = {
+            if (!chartData["profits"][trade.feeCcy]["data"][key])
+              chartData["profits"][trade.feeCcy]["data"][key] = {
                 y: "0",
                 x: `${
                   months[lastMonthlyBar.getMonth()]
                 } ${lastMonthlyBar.getFullYear()}`,
                 date: lastMonthlyBar,
               };
-            // console.log(`data[${key}]`, data[key]);
+            // console.log(`profits[${key}]`, profits[trade.feeCcy]["data"][key]);
           }
           //  else {
           key = `${lastMonthlyBar.getFullYear()}-${
             lastMonthlyBar.getMonth() + 1
           }`;
           // console.log(`formateTrades key`, key);
-          if (!data[key])
-            data[key] = {
-              y: SafeMath.mult(
-                trade.profit,
-                storeCtx.exchangeRates[trade.feeCcy].rate
-              ),
+          if (!chartData["profits"][trade.feeCcy]["data"][key])
+            chartData["profits"][trade.feeCcy]["data"][key] = {
+              y: trade.profit,
               x: `${
                 months[lastMonthlyBar.getMonth()]
               } ${lastMonthlyBar.getFullYear()}`,
               date: lastMonthlyBar,
             };
           else
-            data[key] = {
-              ...data[key],
+            chartData["profits"][trade.feeCcy]["data"][key] = {
+              ...chartData["profits"][trade.feeCcy]["data"][key],
               y: SafeMath.plus(
-                data[key].y,
-                SafeMath.mult(
-                  trade.profit,
-                  storeCtx.exchangeRates[trade.feeCcy].rate
-                )
+                chartData["profits"][trade.feeCcy]["data"][key].y,
+                trade.profit
               ),
             };
           // }
-          // console.log(`formateTrades data[${key}]`, data[key]);
+          // console.log(`formateTrades profits[${key}]`, profits[trade.feeCcy]["data"][key]);
         }
       }
-      chartData.data = data;
       chartData.xaxisType = "string";
     }
     console.log(`formateTrades chartData`, chartData);
+    console.log([
+      Object.values(chartData.profits).map((profit) => ({
+        name: profit.feeCcy,
+        type: "line",
+        data: profit.data ? Object.values(profit.data) : [],
+      })),
+    ]);
     return chartData;
   }, []);
 
@@ -302,9 +325,11 @@ const Vouchers = () => {
         return _trades;
       });
       let tickers = {},
-        ticker;
+        ticker,
+        currencies = {};
       for (let trade of trades) {
         if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
+        if (!currencies[trade.feeCcy]) currencies[trade.feeCcy] = trade.feeCcy;
       }
       setTickers(tickers);
       if (Object.values(tickers).length > 0) {
@@ -312,9 +337,13 @@ const Vouchers = () => {
         setFilterTicker(ticker);
       }
       // trade fromate ++ TODO
-      const chartData = formateTrades(trades);
+      const chartData = formateTrades(trades, Object.values(currencies));
       setChartData(chartData);
-      return { trades, tickers, ticker: ticker };
+      return {
+        trades,
+        tickers,
+        ticker: ticker,
+      };
     },
     [formateTrades, storeCtx]
   );
@@ -471,8 +500,6 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        const exchangeRates = await storeCtx.getExchangeRates();
-        console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
         const end = new Date(
           `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
@@ -495,7 +522,7 @@ const Vouchers = () => {
         return !prev;
       } else return prev;
     });
-  }, [storeCtx, filterOption, getVouchers, filter]);
+  }, [filterOption, getVouchers, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -509,8 +536,8 @@ const Vouchers = () => {
       <section className="screen__section vouchers">
         <div className="screen__header">{t("match-orders")}</div>
         <ProfitTrendingChart
-          data={Object.values(chartData.data)}
-          xaxisType={chartData.xaxisType}
+          data={chartData?.profits}
+          xaxisType={chartData?.xaxisType}
         />
         <div className="screen__search-bar">
           <TableDropdown

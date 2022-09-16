@@ -90,6 +90,18 @@ class Communicator {
     }
   }
 
+  async getExchangeRates() {
+    try {
+      const res = await this._get(`/public/exchange-rates`);
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
   // Market
   async ticker(id) {
     try {

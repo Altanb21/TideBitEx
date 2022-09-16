@@ -11,23 +11,30 @@ class AccountBook extends BookBase {
     eur: 8.9341,
     try: 1.4637,
   };
-  constructor({ logger, markets }) {
+  exchangeRates = {};
+  constructor({ logger, markets, currencies, priceList }) {
     super({ logger, markets });
     this._config = { remove: false, add: false, update: true };
+    this.currencies = currencies;
+    this.priceList = priceList;
+    this.exchangeRates = this.currencies.reduce((prev, curr) => {
+      prev[curr.symbol] = {
+        ...curr,
+        rate:
+          curr.key === "try"
+            ? this._ratio.try
+            : this.priceList[curr.key]
+            ? SafeMath.mult(this.priceList[curr.key], this._ratio.usd)
+            : 0,
+      };
+      return prev;
+    }, {});
     this.name = `AccountBook`;
     return this;
   }
 
-  /**
-   * @param {any} data
-   */
-  set priceList(data) {
-    this._priceList = data;
-    // this.logger.log(`[${this.constructor.name}] priceList`, this.priceList);
-  }
-
-  get priceList() {
-    return this._priceList;
+  getExchangeRate() {
+    return this.exchangeRates;
   }
 
   getDifference(memberId) {
@@ -35,15 +42,7 @@ class AccountBook extends BookBase {
     else
       return Object.values(this._difference[memberId]).map((account) => ({
         ...account,
-        exchangeRate:
-          account.currency.toLowerCase() === "try"
-            ? this._ratio.try
-            : this.priceList[account.currency.toLowerCase()]
-            ? SafeMath.mult(
-                this.priceList[account.currency.toLowerCase()],
-                this._ratio.usd
-              )
-            : 0,
+        exchangeRate: this.exchangeRates[account.currency],
       }));
   }
 
@@ -65,15 +64,7 @@ class AccountBook extends BookBase {
         }));
       return Object.values(this._snapshot[memberId]).map((account) => ({
         ...account,
-        exchangeRate:
-          account.currency.toLowerCase() === "try"
-            ? this._ratio.try
-            : this.priceList[account.currency.toLowerCase()]
-            ? SafeMath.mult(
-                this.priceList[account.currency.toLowerCase()],
-                this._ratio.usd
-              )
-            : 0,
+        exchangeRate: this.exchangeRates[account.currency],
       }));
     }
   }
