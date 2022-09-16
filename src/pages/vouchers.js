@@ -70,7 +70,7 @@ const Vouchers = () => {
   const [tickers, setTickers] = useState(null);
   const [filterTicker, setFilterTicker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [chartData, setChartData] = useState({});
+  const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
   const [dateStart, setDateStart] = useState(
     new Date(
       `${currentDate.getFullYear()}-${
@@ -93,106 +93,169 @@ const Vouchers = () => {
   };
   const getNextMonthlyBarTime = (barTime) => {
     const date = new Date(barTime);
+    // console.log(`date`, date);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     let dateLength = new Date(year, month + 1, 0).getDate();
-    console.log(`dateLength`, dateLength);
-    date.setDate(date.getDate() + dateLength - 1);
-    console.log(`date`, date);
+    // console.log(`dateLength`, dateLength);
+    date.setDate(date.getDate() + dateLength + 1);
+    // console.log(`date`, date);
     return date.getTime();
   };
   const formateTrades = useCallback((trades) => {
-    console.log(`formateTrades trades[${trades.length}]`, trades);
-    let chartData = {};
+    // console.log(`formateTrades trades[${trades.length}]`, trades);
+    let chartData = { data: {}, xaxisType: "string" },
+      data = {};
     let _trades = trades.sort((a, b) => a.ts - b.ts); //asce
-    let lastDailyBar = new Date(
-        `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
-      ),
-      nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-    console.log(
-      `formateTrades lastDailyBar`,
-      lastDailyBar.toISOString().substring(0, 10)
-    );
-    console.log(
-      `formateTrades nextDailyBarTime${new Date(nextDailyBarTime)
-        .toISOString()
-        .substring(0, 10)}`,
-      nextDailyBarTime
-    );
-    for (let trade of _trades) {
-      if (trade.revenue) {
-        console.log(`formateTrades trade`, trade);
-        if (trade.ts >= nextDailyBarTime) {
-          lastDailyBar = new Date(nextDailyBarTime);
-          nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-        }
-        //  else {
-        let key = `${lastDailyBar.getFullYear()}-${
-          lastDailyBar.getMonth() + 1
-        }-${lastDailyBar.getDate()}`;
-        console.log(`formateTrades key`, key);
-        if (!chartData[key])
-          chartData[key] = {
-            profits: trade.revenue,
-            date: lastDailyBar,
-          };
-        else
-          chartData[key] = {
-            ...chartData[key],
-            profits: SafeMath.plus(chartData[key].profits, trade.revenue),
-          };
-
-        console.log(`formateTrades chartData[key]`, chartData[key]);
-        // }
-      }
-    }
-    console.log(`formateTrades chartData`, chartData);
-    // if (Object.keys(chartData).length > 24) {
-    if (_trades[_trades.length - 1].ts - _trades[0].ts > 3 * monthInterval) {
-      chartData = {};
-      let lastMonthlyBar = new Date(
+    if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
+      let lastDailyBar = new Date(
           `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
         ),
-        nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
-      console.log(
-        `formateTrades lastMonthlyBar`,
-        lastMonthlyBar.toISOString().substring(0, 10)
-      );
-      console.log(
-        `formateTrades nextMonthlyBarTime${new Date(nextMonthlyBarTime)
-          .toISOString()
-          .substring(0, 10)}`,
-        nextMonthlyBarTime
-      );
+        nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
       for (let trade of _trades) {
         if (trade.revenue) {
-          console.log(
-            `formateTrades trade${trade.ts >= nextMonthlyBarTime}`,
-            trade
-          );
-          if (trade.ts >= nextMonthlyBarTime) {
-            lastMonthlyBar = new Date(nextMonthlyBarTime);
-            nextMonthlyBarTime = getNextDailyBarTime(lastMonthlyBar.getTime());
+          let key = `${lastDailyBar.getFullYear()}-${
+            lastDailyBar.getMonth() + 1
+          }-${lastDailyBar.getDate()}`;
+          // console.log(`formateTrades key`, key);
+          if (!data[key])
+            data[key] = {
+              y: "0",
+              x: key,
+              date: lastDailyBar,
+            };
+          // console.log(
+          //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+          //     trade.ts
+          //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
+          //   trade
+          // );
+          while (nextDailyBarTime <= trade.ts) {
+            // console.error(
+            //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
+            // );
+            // console.log(
+            //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+            //     trade.ts
+            //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
+            // );
+            lastDailyBar = new Date(nextDailyBarTime);
+            nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
+            // console.log(
+            //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+            //     trade.ts
+            //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
+            // );
+            key = `${lastDailyBar.getFullYear()}-${
+              lastDailyBar.getMonth() + 1
+            }-${lastDailyBar.getDate()}`;
+            // console.log(`formateTrades key`, key);
+            if (!data[key])
+              data[key] = {
+                y: "0",
+                x: key,
+                date: lastDailyBar,
+              };
+            // console.log(`data[${key}]`, data[key]);
           }
           //  else {
+          key = `${lastDailyBar.getFullYear()}-${
+            lastDailyBar.getMonth() + 1
+          }-${lastDailyBar.getDate()}`;
+          // console.log(`formateTrades key`, key);
+          if (!data[key])
+            data[key] = {
+              y: trade.revenue,
+              x: key,
+              date: lastDailyBar,
+            };
+          else
+            data[key] = {
+              ...data[key],
+              y: SafeMath.plus(data[key].y, trade.revenue),
+            };
+
+          // console.log(`formateTrades data[key]`, data[key]);
+          // }
+        }
+      }
+      chartData.data = data;
+      chartData.xaxisType = "datetime";
+    } else {
+      let lastMonthlyBar = new Date(
+          `${new Date(_trades[0].ts).toISOString().substring(0, 7)}-01 00:00:00`
+        ),
+        nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
+      for (let trade of _trades) {
+        if (trade.revenue) {
           let key = `${lastMonthlyBar.getFullYear()}-${
             lastMonthlyBar.getMonth() + 1
           }`;
-          console.log(`formateTrades key`, key);
-          if (!chartData[key])
-            chartData[key] = {
-              profits: trade.revenue,
+          if (!data[key])
+            data[key] = {
+              y: "0",
+              x: key,
+              date: lastMonthlyBar,
+            };
+          // console.log(
+          //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+          //     trade.ts
+          //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`,
+          //   trade
+          // );
+          while (nextMonthlyBarTime <= trade.ts) {
+            // console.error(
+            //   `nextMonthlyBarTime <= trade.ts:${
+            //     nextMonthlyBarTime <= trade.ts
+            //   })`
+            // );
+            // console.log(
+            //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+            //     trade.ts
+            //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`
+            // );
+            lastMonthlyBar = new Date(nextMonthlyBarTime);
+            nextMonthlyBarTime = getNextMonthlyBarTime(
+              lastMonthlyBar.getTime()
+            );
+            // console.log(
+            //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+            //     trade.ts
+            //   )}) nextDailyBar(${new Date(nextMonthlyBarTime)})`
+            // );
+            key = `${lastMonthlyBar.getFullYear()}-${
+              lastMonthlyBar.getMonth() + 1
+            }`;
+            if (!data[key])
+              data[key] = {
+                y: "0",
+                x: key,
+                date: lastMonthlyBar,
+              };
+            // console.log(`data[${key}]`, data[key]);
+          }
+          //  else {
+          key = `${lastMonthlyBar.getFullYear()}-${
+            lastMonthlyBar.getMonth() + 1
+          }`;
+          // console.log(`formateTrades key`, key);
+          if (!data[key])
+            data[key] = {
+              y: trade.revenue,
+              x: key,
               date: lastMonthlyBar,
             };
           else
-            chartData[key] = {
-              ...chartData[key],
-              profits: SafeMath.plus(chartData[key].profits, trade.revenue),
+            data[key] = {
+              ...data[key],
+              y: SafeMath.plus(data[key].y, trade.revenue),
             };
           // }
-          console.log(`formateTrades chartData[${key}}]`, chartData[key]);
+          // console.log(`formateTrades data[${key}]`, data[key]);
         }
       }
+      chartData.data = data;
+      chartData.xaxisType = "string";
     }
     console.log(`formateTrades chartData`, chartData);
     return chartData;
@@ -413,11 +476,11 @@ const Vouchers = () => {
     <>
       {isLoading && <LoadingDialog />}
       <section className="screen__section vouchers">
-        <ProfitTrendingChart
-          categories={Object.keys(chartData)}
-          data={Object.values(chartData).map((data) => data.profits)}
-        />
         <div className="screen__header">{t("match-orders")}</div>
+        <ProfitTrendingChart
+          data={Object.values(chartData.data)}
+          xaxisType={chartData.xaxisType}
+        />
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"

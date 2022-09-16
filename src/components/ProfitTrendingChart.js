@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import ApexCharts from "react-apexcharts";
 const ProfitTrendingChart = (props) => {
   const { t } = useTranslation();
+  console.log(`ProfitTrendingChart props`, props);
   return (
     <React.Fragment>
       <div className="main-chart__chart">
@@ -22,6 +23,10 @@ const ProfitTrendingChart = (props) => {
             title: {
               text: "撮合毛利走勢", // ++ TODO t('profit-trend')
               align: "left",
+              style: {
+                fontSize: 20,
+                color: "#767676",
+              },
             },
             chart: {
               height: 235,
@@ -40,10 +45,11 @@ const ProfitTrendingChart = (props) => {
               curve: "straight",
             },
             xaxis: {
-              categories: props.data.categories ? props.data.categories : [],
+              // categories: props.data.categories ? props.data.categories : [],
               labels: {
                 show: false,
               },
+              type: props.xaxisType,
             },
             yaxis: {
               opposite: true,
@@ -86,7 +92,8 @@ const ProfitTrendingChart = (props) => {
               enabled: false,
             },
             xaxis: {
-              categories: props.data.categories ? props.data.categories : [],
+              // categories: props.data.categories ? props.data.categories : [],
+              type: props.xaxisType,
             },
             yaxis: {
               opposite: true,

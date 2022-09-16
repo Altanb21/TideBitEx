@@ -884,7 +884,7 @@ class ExchangeHub extends Bot {
     );
     let { exchange, start, end } = query;
     let startDate = `${start} 00:00:00`;
-    let endtDate = `${end}} 23:59:59`;
+    let endtDate = `${end} 23:59:59`;
     this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
     let outerTrades = [];
     switch (exchange) {
