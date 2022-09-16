@@ -116,53 +116,22 @@ const Vouchers = () => {
     // console.log(`date`, date);
     return date.getTime();
   };
-  const formateTrades = useCallback(async (trades) => {
-    let exchangeRates = storeCtx.exchangeRates;
-    if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
-    // console.log(`formateTrades trades[${trades.length}]`, trades);
-    let chartData = { data: {}, xaxisType: "string" },
-      data = {};
-    let _trades = trades.sort((a, b) => a.ts - b.ts); //asce
-    if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
-      let lastDailyBar = new Date(
-          `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
-        ),
-        nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-      for (let trade of _trades) {
-        if (trade.profit) {
-          let key = `${lastDailyBar.getFullYear()}-${
-            lastDailyBar.getMonth() + 1
-          }-${lastDailyBar.getDate()}`;
-          // console.log(`formateTrades key`, key);
-          if (!data[key])
-            data[key] = {
-              y: "0",
-              x: key,
-              date: lastDailyBar,
-            };
-          // console.log(
-          //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-          //     trade.ts
-          //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
-          //   trade
-          // );
-          while (nextDailyBarTime <= trade.ts) {
-            // console.error(
-            //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
-            // );
-            // console.log(
-            //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-            //     trade.ts
-            //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
-            // );
-            lastDailyBar = new Date(nextDailyBarTime);
-            nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-            // console.log(
-            //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-            //     trade.ts
-            //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
-            // );
-            key = `${lastDailyBar.getFullYear()}-${
+  const formateTrades = useCallback(
+    async (trades) => {
+      let exchangeRates = storeCtx.exchangeRates;
+      if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
+      // console.log(`formateTrades trades[${trades.length}]`, trades);
+      let chartData = { data: {}, xaxisType: "string" },
+        data = {};
+      let _trades = trades.sort((a, b) => a.ts - b.ts); //asce
+      if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
+        let lastDailyBar = new Date(
+            `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
+          ),
+          nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
+        for (let trade of _trades) {
+          if (trade.profit) {
+            let key = `${lastDailyBar.getFullYear()}-${
               lastDailyBar.getMonth() + 1
             }-${lastDailyBar.getDate()}`;
             // console.log(`formateTrades key`, key);
@@ -172,79 +141,79 @@ const Vouchers = () => {
                 x: key,
                 date: lastDailyBar,
               };
-            // console.log(`data[${key}]`, data[key]);
-          }
-          //  else {
-          key = `${lastDailyBar.getFullYear()}-${
-            lastDailyBar.getMonth() + 1
-          }-${lastDailyBar.getDate()}`;
-          // console.log(`formateTrades key`, key);
-          if (!data[key])
-            data[key] = {
-              y: SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate),
-              x: key,
-              date: lastDailyBar,
-            };
-          else
-            data[key] = {
-              ...data[key],
-              y: SafeMath.plus(
-                data[key].y,
-                SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
-              ),
-            };
+            // console.log(
+            //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+            //     trade.ts
+            //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
+            //   trade
+            // );
+            while (nextDailyBarTime <= trade.ts) {
+              // console.error(
+              //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
+              // );
+              // console.log(
+              //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+              //     trade.ts
+              //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
+              // );
+              lastDailyBar = new Date(nextDailyBarTime);
+              nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
+              // console.log(
+              //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+              //     trade.ts
+              //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
+              // );
+              key = `${lastDailyBar.getFullYear()}-${
+                lastDailyBar.getMonth() + 1
+              }-${lastDailyBar.getDate()}`;
+              // console.log(`formateTrades key`, key);
+              if (!data[key])
+                data[key] = {
+                  y: "0",
+                  x: key,
+                  date: lastDailyBar,
+                };
+              // console.log(`data[${key}]`, data[key]);
+            }
+            //  else {
+            key = `${lastDailyBar.getFullYear()}-${
+              lastDailyBar.getMonth() + 1
+            }-${lastDailyBar.getDate()}`;
+            // console.log(`formateTrades key`, key);
+            if (!data[key])
+              data[key] = {
+                y: SafeMath.mult(
+                  trade.profit,
+                  exchangeRates[trade.feeCcy].rate
+                ),
+                x: key,
+                date: lastDailyBar,
+              };
+            else
+              data[key] = {
+                ...data[key],
+                y: SafeMath.plus(
+                  data[key].y,
+                  SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
+                ),
+              };
 
-          // console.log(`formateTrades data[key]`, data[key]);
-          // }
+            // console.log(`formateTrades data[key]`, data[key]);
+            // }
+          }
         }
-      }
-      chartData.data = data;
-      chartData.xaxisType = "datetime";
-    } else {
-      let lastMonthlyBar = new Date(
-          `${new Date(_trades[0].ts).toISOString().substring(0, 7)}-01 00:00:00`
-        ),
-        nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
-      for (let trade of _trades) {
-        if (trade.profit) {
-          let key = `${lastMonthlyBar.getFullYear()}-${
-            lastMonthlyBar.getMonth() + 1
-          }`;
-          if (!data[key])
-            data[key] = {
-              y: "0",
-              x: `${
-                months[lastMonthlyBar.getMonth()]
-              } ${lastMonthlyBar.getFullYear()}`,
-              date: lastMonthlyBar,
-            };
-          // console.log(
-          //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-          //     trade.ts
-          //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`,
-          //   trade
-          // );
-          while (nextMonthlyBarTime <= trade.ts) {
-            // console.error(
-            //   `nextMonthlyBarTime <= trade.ts:${
-            //     nextMonthlyBarTime <= trade.ts
-            //   })`
-            // );
-            // console.log(
-            //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-            //     trade.ts
-            //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`
-            // );
-            lastMonthlyBar = new Date(nextMonthlyBarTime);
-            nextMonthlyBarTime = getNextMonthlyBarTime(
-              lastMonthlyBar.getTime()
-            );
-            // console.log(
-            //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-            //     trade.ts
-            //   )}) nextDailyBar(${new Date(nextMonthlyBarTime)})`
-            // );
-            key = `${lastMonthlyBar.getFullYear()}-${
+        chartData.data = data;
+        chartData.xaxisType = "datetime";
+      } else {
+        let lastMonthlyBar = new Date(
+            `${new Date(_trades[0].ts)
+              .toISOString()
+              .substring(0, 7)}-01 00:00:00`
+          ),
+          nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
+        for (let trade of _trades) {
+          if (trade.profit) {
+            let key = `${lastMonthlyBar.getFullYear()}-${
               lastMonthlyBar.getMonth() + 1
             }`;
             if (!data[key])
@@ -255,39 +224,80 @@ const Vouchers = () => {
                 } ${lastMonthlyBar.getFullYear()}`,
                 date: lastMonthlyBar,
               };
-            // console.log(`data[${key}]`, data[key]);
+            // console.log(
+            //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+            //     trade.ts
+            //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`,
+            //   trade
+            // );
+            while (nextMonthlyBarTime <= trade.ts) {
+              // console.error(
+              //   `nextMonthlyBarTime <= trade.ts:${
+              //     nextMonthlyBarTime <= trade.ts
+              //   })`
+              // );
+              // console.log(
+              //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+              //     trade.ts
+              //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`
+              // );
+              lastMonthlyBar = new Date(nextMonthlyBarTime);
+              nextMonthlyBarTime = getNextMonthlyBarTime(
+                lastMonthlyBar.getTime()
+              );
+              // console.log(
+              //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+              //     trade.ts
+              //   )}) nextDailyBar(${new Date(nextMonthlyBarTime)})`
+              // );
+              key = `${lastMonthlyBar.getFullYear()}-${
+                lastMonthlyBar.getMonth() + 1
+              }`;
+              if (!data[key])
+                data[key] = {
+                  y: "0",
+                  x: `${
+                    months[lastMonthlyBar.getMonth()]
+                  } ${lastMonthlyBar.getFullYear()}`,
+                  date: lastMonthlyBar,
+                };
+              // console.log(`data[${key}]`, data[key]);
+            }
+            //  else {
+            key = `${lastMonthlyBar.getFullYear()}-${
+              lastMonthlyBar.getMonth() + 1
+            }`;
+            // console.log(`formateTrades key`, key);
+            if (!data[key])
+              data[key] = {
+                y: SafeMath.mult(
+                  trade.profit,
+                  exchangeRates[trade.feeCcy].rate
+                ),
+                x: `${
+                  months[lastMonthlyBar.getMonth()]
+                } ${lastMonthlyBar.getFullYear()}`,
+                date: lastMonthlyBar,
+              };
+            else
+              data[key] = {
+                ...data[key],
+                y: SafeMath.plus(
+                  data[key].y,
+                  SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
+                ),
+              };
+            // }
+            // console.log(`formateTrades data[${key}]`, data[key]);
           }
-          //  else {
-          key = `${lastMonthlyBar.getFullYear()}-${
-            lastMonthlyBar.getMonth() + 1
-          }`;
-          // console.log(`formateTrades key`, key);
-          if (!data[key])
-            data[key] = {
-              y: SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate),
-              x: `${
-                months[lastMonthlyBar.getMonth()]
-              } ${lastMonthlyBar.getFullYear()}`,
-              date: lastMonthlyBar,
-            };
-          else
-            data[key] = {
-              ...data[key],
-              y: SafeMath.plus(
-                data[key].y,
-                SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
-              ),
-            };
-          // }
-          // console.log(`formateTrades data[${key}]`, data[key]);
         }
+        chartData.data = data;
+        chartData.xaxisType = "string";
       }
-      chartData.data = data;
-      chartData.xaxisType = "string";
-    }
-    console.log(`formateTrades chartData`, chartData);
-    return chartData;
-  }, [storeCtx]);
+      return chartData;
+    },
+    [storeCtx]
+  );
 
   const getVouchers = useCallback(
     async (exchange, start, end) => {
@@ -311,7 +321,8 @@ const Vouchers = () => {
         setFilterTicker(ticker);
       }
       // trade fromate ++ TODO
-      const chartData = formateTrades(trades);
+      const chartData = await formateTrades(trades);
+      console.log(`formateTrades chartData`, chartData);
       setChartData(chartData);
       return { trades, tickers, ticker: ticker };
     },
@@ -470,8 +481,8 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        const exchangeRates = await storeCtx.getExchangeRates();
-        console.log(`exchangeRates`, exchangeRates);
+        await storeCtx.getExchangeRates();
+        // console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
         const end = new Date(
           `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
@@ -508,7 +519,7 @@ const Vouchers = () => {
       <section className="screen__section vouchers">
         <div className="screen__header">{t("match-orders")}</div>
         <ProfitTrendingChart
-          data={Object.values(chartData.data)}
+          data={chartData.data ? Object.values(chartData.data) : []}
           xaxisType={chartData.xaxisType}
         />
         <div className="screen__search-bar">

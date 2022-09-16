@@ -4,10 +4,11 @@ import { useTranslation } from "react-i18next";
 import ApexCharts from "react-apexcharts";
 const ProfitTrendingChart = (props) => {
   const { t } = useTranslation();
-  // console.log(`ProfitTrendingChart props`, props);
+  console.log(`ProfitTrendingChart props`, props);
   return (
     <React.Fragment>
       <div className="main-chart__chart">
+        <div className="main-chart__chart--title">t("profit-trend")</div>
         <ApexCharts
           height="60%"
           width="100%"
@@ -15,19 +16,11 @@ const ProfitTrendingChart = (props) => {
           series={[
             {
               data: props.data ? props.data : [],
-              name: "profit",
+              name: t("profit"),
               type: "line",
             },
           ]}
           options={{
-            title: {
-              text: t("profit-trend"),
-              align: "left",
-              style: {
-                fontSize: 20,
-                color: "#767676",
-              },
-            },
             chart: {
               height: 235,
               type: "line",
@@ -40,24 +33,37 @@ const ProfitTrendingChart = (props) => {
               enabled: false,
             },
             dataLabels: {
-              enabled: true,
-              formatter: function (val, opts) {
-                return " ";
-              },
-              background: {
-                width: 10,
-                height: 10,
-                borderRadius: 10,
-                borderWidth: 2,
+              enabled: false,
+            },
+            markers: {
+              size: 2,
+              colors: "#fff",
+              strokeColors: "#1F78B4",
+              strokeWidth: 2,
+              strokeOpacity: 1,
+              strokeDashArray: 0,
+              fillOpacity: 1,
+              discrete: [],
+              shape: "circle",
+              radius: 2,
+              offsetX: 0,
+              offsetY: 0,
+              onClick: undefined,
+              onDblClick: undefined,
+              showNullDataPoints: true,
+              hover: {
+                size: undefined,
+                sizeOffset: 3,
               },
             },
             stroke: {
               curve: "straight",
               colors: "#1F78B4",
-              width: 1,
+              width: 2,
             },
             xaxis: {
-              show: false,
+              axisBorder: { show: false },
+              axisTicks: { show: false },
               // categories: props.data.categories ? props.data.categories : [],
               labels: {
                 show: false,
@@ -73,6 +79,17 @@ const ProfitTrendingChart = (props) => {
             grid: {
               show: false,
             },
+            tooltip: {
+              enabled: true,
+              y: {
+                formatter: function (y) {
+                  if (typeof y !== "undefined") {
+                    return y.toFixed(8) + " HKD";
+                  }
+                  return y;
+                },
+              },
+            },
           }}
         />
         <ApexCharts
@@ -82,7 +99,7 @@ const ProfitTrendingChart = (props) => {
           series={[
             {
               data: props.data ? props.data : [],
-              name: "profit",
+              name: t("profit"),
               type: "bar",
             },
           ]}
@@ -103,7 +120,6 @@ const ProfitTrendingChart = (props) => {
                 horizontal: false,
                 columnWidth: "55%",
                 endingShape: "rounded",
-                colors: "#2699FB",
               },
             },
             dataLabels: {
@@ -121,6 +137,17 @@ const ProfitTrendingChart = (props) => {
             },
             grid: {
               show: false,
+            },
+            tooltip: {
+              enabled: true,
+              y: {
+                formatter: function (y) {
+                  if (typeof y !== "undefined") {
+                    return y.toFixed(8) + " HKD";
+                  }
+                  return y;
+                },
+              },
             },
           }}
         />

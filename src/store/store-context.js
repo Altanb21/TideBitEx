@@ -1,7 +1,7 @@
 import React from "react";
 
 const StoreContext = React.createContext({
-  exchangeRates: {},
+  exchangeRates: null,
   languageKey: null,
   isLogin: null,
   selectedTicker: null,
