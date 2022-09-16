@@ -338,10 +338,18 @@ const UserSetting = (props) => {
           filter({ users: adminUsers });
           enqueueSnackbar(`${t("success-update")}`, {
             variant: "success",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
           });
         } catch (error) {
           enqueueSnackbar(`${t("error-happen")}`, {
             variant: "error",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
           });
         }
       } else {
@@ -368,10 +376,18 @@ const UserSetting = (props) => {
           filter({ users: updateAdminUser });
           enqueueSnackbar(`${t("success-update")}`, {
             variant: "success",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
           });
         } catch (error) {
           enqueueSnackbar(`${t("error-happen")}`, {
             variant: "error",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
           });
         }
         setIsLoading(false);
@@ -391,10 +407,18 @@ const UserSetting = (props) => {
       filter({ users: adminUsers });
       enqueueSnackbar(`${t("success-update")}`, {
         variant: "success",
+        anchorOrigin: {
+          vertical: "top",
+          horizontal: "center",
+        },
       });
     } catch (error) {
       enqueueSnackbar(`${t("error-happen")}`, {
         variant: "error",
+        anchorOrigin: {
+          vertical: "top",
+          horizontal: "center",
+        },
       });
     }
     setIsLoading(false);

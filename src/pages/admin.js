@@ -4,6 +4,7 @@ import { useContext } from "react";
 import AdminHeader from "../components/AdminHeader";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 
 import Manager from "./manager";
 import LoadingDialog from "../components/LoadingDialog";
@@ -16,7 +17,9 @@ const Admin = () => {
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
   const { i18n } = useTranslation();
-  
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { t } = useTranslation();
+
   const onSelected = (page) => {
     setActivePage(page);
   };
@@ -32,7 +35,7 @@ const Admin = () => {
   );
 
   const userAbility = (user) => {
-    let _user = { ...user };
+    let _user = user ? { ...user } : {};
     if (user.roles?.includes("root")) {
       _user.ability = {
         canNotManage: [],
@@ -140,19 +143,26 @@ const Admin = () => {
   useEffect(() => {
     if (!isInit) {
       storeCtx.getAdminUser().then((user) => {
-        if (user) {
+        if (!user || userAbility(user).ability.canNotRead === "all") {
+          enqueueSnackbar(`${t("error-happen")}`, {
+            variant: "error",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          });
+          history.replace({
+            pathname: `/signin`,
+          });
+        } else {
           let _user = userAbility(user);
           setUser(_user);
-          if (_user.ability.canNotRead === "all") {
-            history.goBack();
-          }
-        } else {
-          history.goBack();
         }
+
         setIsInit(true);
       });
     }
-  }, [history, isInit, storeCtx]);
+  }, [enqueueSnackbar, history, isInit, storeCtx, t]);
 
   return (
     <>
@@ -166,7 +176,9 @@ const Admin = () => {
           languageKey={storeCtx.languageKey}
           changeLanguage={changeLanguage}
         />
-        {user && activePage === "manager" && <Manager user={user} />}
+        {user &&
+          user.ability?.canNotRead !== "all" &&
+          activePage === "manager" && <Manager user={user} />}
       </div>
     </>
   );
