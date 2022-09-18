@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import { useContext } from "react";
 import AdminHeader from "../components/AdminHeader";
 import StoreContext from "../store/store-context";
+import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 
 import Manager from "./manager";
 import LoadingDialog from "../components/LoadingDialog";
+import { languages } from "../components/Layout";
 
 const Admin = () => {
   const storeCtx = useContext(StoreContext);
@@ -13,12 +16,26 @@ const Admin = () => {
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
+  const { i18n } = useTranslation();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { t } = useTranslation();
+
   const onSelected = (page) => {
     setActivePage(page);
   };
 
+  const changeLanguage = useCallback(
+    (key) => {
+      // await window.cookieStore.set("lang", key);
+      // document.cookie = `lang=${key}`;
+      storeCtx.setLanguageKey(key);
+      i18n.changeLanguage(key);
+    },
+    [i18n, storeCtx]
+  );
+
   const userAbility = (user) => {
-    let _user = { ...user };
+    let _user = user ? { ...user } : {};
     if (user.roles?.includes("root")) {
       _user.ability = {
         canNotManage: [],
@@ -125,20 +142,28 @@ const Admin = () => {
 
   useEffect(() => {
     if (!isInit) {
-      storeCtx.getUserRoles().then((user) => {
-        if (user) {
+      storeCtx.getAdminUser().then((user) => {
+        if (!user || userAbility(user).ability.canNotRead === "all") {
+          enqueueSnackbar(`${t("no-access")}`, {
+            variant: "error",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          });
+          history.replace({
+            pathname: `/signin`,
+          });
+          window.location.reload();
+        } else {
           let _user = userAbility(user);
           setUser(_user);
-          if (_user.ability.canNotRead === "all") {
-            history.goBack();
-          }
-        } else {
-          history.goBack();
         }
+
         setIsInit(true);
       });
     }
-  }, [history, isInit, storeCtx]);
+  }, [enqueueSnackbar, history, isInit, storeCtx, t]);
 
   return (
     <>
@@ -148,8 +173,13 @@ const Admin = () => {
           activePage={activePage}
           onSelected={onSelected}
           user={user}
+          languages={languages}
+          languageKey={storeCtx.languageKey}
+          changeLanguage={changeLanguage}
         />
-        {user && activePage === "manager" && <Manager user={user} />}
+        {user &&
+          user.ability?.canNotRead !== "all" &&
+          activePage === "manager" && <Manager user={user} />}
       </div>
     </>
   );

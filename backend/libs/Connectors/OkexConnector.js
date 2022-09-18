@@ -150,18 +150,22 @@ class OkexConnector extends ConnectorBase {
     query,
     results = [],
     requests = this.tradeFillsMaxRequestTimes,
+    tryOnce = 1,
   }) {
-    this.logger.log(`[${this.constructor.name}] fetchTradeFillsRecords`);
-    const { begin, end, before } = query;
+    this.logger.log(
+      `[${this.constructor.name}] fetchTradeFillsRecords [START]`
+    );
+    const { begin, end, before, sz } = query;
     let result,
       arr = [],
       newBefore,
-      newRequest;
+      newRequest,
+      method = "GET";
     if (!before && begin) arr.push(`begin=${begin}`);
     if (before) arr.push(`before=${before}`);
-    const qs = !!arr.length ? `?${arr.join("&")}` : "";
-    const method = "GET";
+    if (sz) arr.push(`sz=${sz}`);
     const path = "/api/v5/trade/fills";
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
     const okAccessSign = await this.okAccessSign({
       timeString,
@@ -186,7 +190,7 @@ class OkexConnector extends ConnectorBase {
         updatedAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
-      results = results.concat(data);
+      results = data.concat(results);
       if (data.length === this.maxDataLength) {
         newBefore = data[0].billId;
         newRequest = requests - 1;
@@ -198,19 +202,50 @@ class OkexConnector extends ConnectorBase {
             },
             results,
             requests: newRequest,
+            tryOnce: 1,
           });
         else {
           await wait(this.restTime);
-          this.fetchTradeFillsRecords({
+          return this.fetchTradeFillsRecords({
             query: {
               ...query,
               before: newBefore,
             },
             results,
             requests: this.tradeFillsMaxRequestTimes,
+            tryOnce: 1,
+          });
+        }
+      } else if (tryOnce > 0) {
+        newBefore = data[0].billId;
+        newRequest = requests - 1;
+        if (requests > 0)
+          return this.fetchTradeFillsRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: newRequest,
+            tryOnce: 1,
+          });
+        else {
+          await wait(this.restTime);
+          return this.fetchTradeFillsRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: this.tradeFillsMaxRequestTimes,
+            tryOnce: 1,
           });
         }
       }
+      this.logger.log(
+        `[${this.constructor.name}] fetchTradeFillsRecords [END](results.length:${results.length}) results[0]`,
+        results[0]
+      );
       result = new ResponseFormat({
         message: "tradeFills",
         payload: results,
@@ -232,14 +267,18 @@ class OkexConnector extends ConnectorBase {
     query,
     results = [],
     requests = this.tradeFillsHistoryMaxRequestTimes,
+    tryOnce = 1,
   }) {
-    const { instType, begin, end, before } = query;
-    this.logger.log(`[${this.constructor.name}] fetchTradeFillsHistoryRecords`);
+    const { instType, begin, end, before, sz } = query;
+    this.logger.log(
+      `[${this.constructor.name}] fetchTradeFillsHistoryRecords [START]`
+    );
     let result,
       arr = [],
       newBefore,
-      newRequest;
-    const method = "GET";
+      newRequest,
+      method = "GET";
+    if (sz) arr.push(`sz=${sz}`);
     if (instType) arr.push(`instType=${instType}`);
     if (!before && begin) arr.push(`begin=${begin}`);
     if (before) arr.push(`before=${before}`);
@@ -269,8 +308,38 @@ class OkexConnector extends ConnectorBase {
         updatedAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
-      results = results.concat(data);
-      if (data.length === this.maxDataLength) {
+      this.logger.log(`[${this.constructor.name}] data.length[${data.length}]`);
+      this.logger.log(
+        `[${this.constructor.name}][${new Date(
+          parseInt(data[0].ts)
+        )}] data[0].ts range in begin(>begin ${
+          parseInt(data[0].ts) > begin
+        }) and end(>end ${parseInt(data[0].ts) < end}) data[0]`,
+        data[0]
+      );
+      this.logger.log(
+        `[${this.constructor.name}][${new Date(
+          parseInt(data[data.length - 1].ts)
+        )}] data[data.length-1].ts range in begin(>begin ${
+          parseInt(data[data.length - 1].ts) > begin
+        }) and end(>end ${
+          parseInt(data[data.length - 1].ts) < end
+        }) data[data.length-1]`,
+        data[data.length - 1]
+      );
+      results = data.concat(results);
+      // this.logger.log(
+      //   `[${this.constructor.name}]data.length:[${
+      //     data.length
+      //   }]  parseInt(data[0].ts)[${parseInt(
+      //     data[0].ts
+      //   )}] <=  endDate.getTime() :[${endDate.getTime()}]?`,
+      //   parseInt(data[0].ts) <= endDate.getTime()
+      // );
+      if (
+        // parseInt(data[0].ts) <= endDate.getTime() ||
+        data.length === this.maxDataLength
+      ) {
         newBefore = data[0].billId;
         newRequest = requests - 1;
         if (requests > 0)
@@ -281,6 +350,7 @@ class OkexConnector extends ConnectorBase {
             },
             results,
             requests: newRequest,
+            tryOnce: 1,
           });
         else {
           await wait(this.restTime);
@@ -291,15 +361,47 @@ class OkexConnector extends ConnectorBase {
             },
             results,
             requests: this.tradeFillsHistoryMaxRequestTimes,
+            tryOnce: 1,
+          });
+        }
+      } else if (tryOnce > 0) {
+        newBefore = data[0].billId;
+        newRequest = requests - 1;
+        if (requests > 0)
+          return this.fetchTradeFillsHistoryRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: newRequest,
+            tryOnce: 0,
+          });
+        else {
+          await wait(this.restTime);
+          return this.fetchTradeFillsHistoryRecords({
+            query: {
+              ...query,
+              before: newBefore,
+            },
+            results,
+            requests: this.tradeFillsHistoryMaxRequestTimes,
+            tryOnce: 0,
           });
         }
       }
       result = new ResponseFormat({
         message: "tradeFillsHistory",
         payload: results,
+        // .filter(
+        //   (trade) =>
+        //     parseInt(trade.ts) <= endDate.getTime() &&
+        //     parseInt(trade.ts) >= beginDate.getTime()
+        // ),
       });
       this.logger.log(
-        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length})`
+        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length}) results[0]`,
+        results[0]
       );
     } catch (error) {
       this.logger.error(error);

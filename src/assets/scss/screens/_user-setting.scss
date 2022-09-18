@@ -32,25 +32,31 @@
     padding: 8px 15px;
     margin: 5px 0;
   }
-  & .screen__table-row:hover {
+  & .screen__table-row.selected {
     color: #fff;
     background-color: #2699fb;
   }
-  & .screen__table-row:hover.editing {
+  & .screen__table-row.selected.editing {
     color: unset;
     background-color: transparent;
   }
 
-  & .screen__table-row:hover &__setting-icon {
+  & .screen__table-row.selected &__setting-icon {
     background-image: url("../../images/settings-line-white@2x.png");
   }
   & .screen__table-header:nth-child(2),
-  & .screen__table-row:nth-child(2) {
-    min-width: 200px;
+  & .screen__table-data:nth-child(2) {
+    min-width: 210px;
   }
   & .screen__table-header:nth-child(3),
-  & .screen__table-row:nth-child(3) {
+  & .screen__table-data:nth-child(3) {
     flex: auto;
+  }
+  & .screen__table-header:nth-child(4),
+  & .screen__table-data:nth-child(4) {
+    min-width: unset;
+    width: fit-content;
+    margin-left: auto;
   }
   & .screen__table-header {
     font-size: 18px;
@@ -69,6 +75,10 @@
     border-left: 1px solid #707070;
     padding: 5px;
   }
+  & .screen__table-tool.disabled > .screen__table-tool-icon {
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+  }
   & .screen__table-tool-icon {
     width: 18px;
     height: 18px;
@@ -76,6 +86,7 @@
     background-size: contain;
     background-repeat: no-repeat;
     cursor: pointer;
+    pointer-events: stroke;
   }
   & .screen__table-tool:first-child > .screen__table-tool-icon {
     background-image: url("../../images/minus@2x.png");
@@ -89,7 +100,7 @@
   .editing &__setting-btn {
     gap: 5px;
   }
-  .editing &__setting-icon {
+  & .editing.screen__table-row &__setting-icon {
     background-image: url("../../images/settings-line-blue@2x.png");
   }
   .editing &__setting-label {
@@ -99,27 +110,39 @@
     display: none;
     color: #2699fb;
     font-size: 14px;
+    cursor: pointer;
+    min-width: 56px;
   }
   &__setting-icon {
     width: 20px;
+    min-width: 20px;
     height: 20px;
     background-position: center;
     background-size: contain;
     background-repeat: no-repeat;
     cursor: pointer;
     background-image: url("../../images/setting@2x.png");
+    pointer-events: stroke;
   }
+  &__setting-icon.disabled {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    background-image: url("../../images/settings-line-white@2x.png") !important;
+  }
+  &__user-roles,
   &__roles {
-    float: left;
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
+    max-width: 500px;
   }
   &__role-tag {
     background-color: transparent;
     border: 1px solid #707070;
     border-radius: 14px;
     color: #767676;
-    font-size: 16px;
-    padding: 5px 20px;
+    font-size: 15px;
+    padding: 0px 20px;
     cursor: pointer;
   }
   &__role-tag.selected {
@@ -127,4 +150,77 @@
     border-color: #2699fb;
     color: #fff;
   }
+  &__dialog-delete .modal__content,
+  &__dialog-add .modal__content {
+    padding: 0 50px;
+  }
+  &__dialog-inputs {
+    margin-top: 32px;
+    display: flex;
+    gap: 40px;
+    margin-bottom: 12px;
+  }
+  &__dialog-content--roles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    max-width: 500px;
+  }
+  &__dialog-input {
+    display: block;
+    border: 1px solid #707070;
+    border-radius: 5px;
+    height: 32px;
+    padding: 0 10px;
+  }
+  &__dialog-input-group {
+    flex: auto;
+  }
+  &__dialog-input-group:nth-child(2) {
+    max-width: 300px;
+  }
+  &__dialog-input-message {
+    opacity: 0;
+    margin-top: 5px;
+    color: #dc484e;
+    font-size: 12px;
+    height: 18px;
+  }
+  &__dialog-input-group.error &__dialog-input-message {
+    opacity: 1;
+  }
+  &__dialog-content--title {
+    margin-bottom: 20px;
+  }
+  &__dialog--title {
+    margin-top: 50px;
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #767676;
+  }
+  &__dialog--content {
+    border: 1px solid #707070;
+    background-color: #ffffff;
+    padding: 32px 50px;
+  }
+  &__user-info {
+    display: flex;
+    margin-bottom: 15px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #767676;
+    gap: 10px;
+  }
+}
+
+/* Chrome, Safari, Edge, Opera */
+input[type="number"]::-webkit-outer-spin-button.user-setting__dialog-input,
+input[type="number"]::-webkit-inner-spin-button.user-setting__dialog-input {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"].user-setting__dialog-input {
+  -moz-appearance: textfield;
 }
