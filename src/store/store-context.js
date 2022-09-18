@@ -1,6 +1,7 @@
 import React from "react";
 
 const StoreContext = React.createContext({
+  exchangeRates: null,
   languageKey: null,
   isLogin: null,
   selectedTicker: null,
@@ -239,15 +240,16 @@ const StoreContext = React.createContext({
   activePageHandler: () => {},
   getExAccounts: async (exchange) => {},
   getUsersAccounts: async () => {},
-  getOuterTradeFills: async (exchange, days) => {},
+  getOuterTradeFills: async (exchange, start, end) => {},
   getOuterPendingOrders: async (exchange) => {},
   setFocusEl: () => {},
   changeRange: () => {},
-  getUserRoles: async () => {},
+  getAdminUser: async () => {},
   getAdminUsers: async () => {},
-  addAdminUser: async (currentUser, newUser) => {},
-  deleteAdminUser: async (currentUser, user) => {},
-  updateAdminUser: async (currentUser, updateUser) => {},
+  addAdminUser: async (newUser) => {},
+  deleteAdminUser: async (user) => {},
+  updateAdminUser: async (updateUser) => {},
+  getExchangeRates: async () => {},
 });
 
 export default StoreContext;

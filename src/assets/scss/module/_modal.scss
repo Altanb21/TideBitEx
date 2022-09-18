@@ -144,4 +144,60 @@
     top: 75%;
     left: 50%;
   }
+  &__dialog {
+    width: 670px;
+    height: 490px;
+    background-color: #fbfbfb;
+    display: flex;
+    flex-direction: column;
+  }
+  &__header {
+    position: relative;
+    padding-top: 42px;
+  }
+  &__title {
+    text-align: center;
+    font-size: 30px;
+    font-weight: normal;
+    letter-spacing: 0px;
+    color: #767676;
+  }
+  &__close-btn {
+    position: absolute;
+    top: 27px;
+    right: 27px;
+    width: 30px;
+    height: 30px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    background-image: url("../../images/cross-btn@2x.png");
+  }
+  &__content {
+    flex: auto;
+    max-height: 342px;
+  }
+  &__footer {
+    display: flex;
+    gap: 50px;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 22px;
+  }
+  &__btn {
+    font-size: 16px;
+    border: 2px solid #3e3e3e;
+    width: 200px;
+    text-align: center;
+    padding: 10px 0;
+  }
+  &__cancel-btn {
+    color: #3e3e3e;
+    background-color: #fff;
+  }
+  &__confirm-btn {
+    background-color: #3e3e3e;
+    color: #fff;
+  }
 }

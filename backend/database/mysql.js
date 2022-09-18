@@ -80,6 +80,27 @@ class mysql {
     }
   }
 
+  async getCurrenciesSymbol() {
+    const query = `
+    SELECT
+	    accounts.currency,
+	    asset_bases.key,
+	    asset_bases.symbol
+    FROM
+	    accounts
+	  LEFT JOIN asset_bases ON accounts.currency = asset_bases.id GROUP by accounts.currency;`;
+    try {
+      this.logger.log("getCurrenciesSymbol", query);
+      const [currencies] = await this.db.query({
+        query,
+      });
+      return currencies;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getCurrencies() {
     const query = "SELECT * FROM `asset_bases`;";
     try {
@@ -147,6 +168,21 @@ class mysql {
       const [[member]] = await this.db.query({
         query,
         values: [memberId],
+      });
+      return member;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
+  async getMemberByEmail(memberEmail) {
+    const query = "SELECT * FROM `members` WHERE `members`.`email` = ?;";
+    try {
+      this.logger.log("getMemberByEmail", query, `[${memberEmail}]`);
+      const [[member]] = await this.db.query({
+        query,
+        values: [memberEmail],
       });
       return member;
     } catch (error) {
@@ -395,6 +431,38 @@ class mysql {
       const [outerTrades] = await this.db.query({
         query,
         values: [exchangeCode, status],
+      });
+      return outerTrades;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
+  async getOuterTradesBetweenDays(exchangeCode, start, end) {
+    const query = `
+    SELECT outer_trades.*,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state
+    FROM outer_trades
+        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+    WHERE
+        outer_trades.exchange_code = ?
+        AND outer_trades.create_at BETWEEN ?
+        AND ?
+    ORDER BY
+        outer_trades.create_at DESC;`;
+    try {
+      this.logger.log(
+        "getOuterTradesByDayAfter",
+        query,
+        `[${exchangeCode}, ${start}, ${end}]`
+      );
+      const [outerTrades] = await this.db.query({
+        query,
+        values: [exchangeCode, start, end],
       });
       return outerTrades;
     } catch (error) {
@@ -778,7 +846,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertTrades result`, result)
+      this.logger.log(`insertTrades result`, result);
       tradeId = result[0];
     } catch (error) {
       this.logger.error(error);
@@ -850,7 +918,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertVouchers result`, result)
+      this.logger.log(`insertVouchers result`, result);
       voucherId = result[0];
     } catch (error) {
       this.logger.error(error);

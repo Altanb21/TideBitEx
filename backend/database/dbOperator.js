@@ -38,6 +38,10 @@ class DBOperator {
     return this.database.getCurrencies(currencyId);
   }
 
+  async getCurrenciesSymbol(currencyId) {
+    return this.database.getCurrenciesSymbol(currencyId);
+  }
+
   async getCurrency(currencyId) {
     return this.database.getCurrency(currencyId);
   }
@@ -52,6 +56,10 @@ class DBOperator {
 
   async getMemberById(memberId) {
     return this.database.getMemberById(memberId);
+  }
+
+  async getMemberByEmail(memberEmail) {
+    return this.database.getMemberByEmail(memberEmail);
   }
 
   async getAccountByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
@@ -122,6 +130,10 @@ class DBOperator {
 
   async getOuterTradesByDayAfter(exchangeCode, day) {
     return this.database.getOuterTradesByDayAfter(exchangeCode, day);
+  }
+
+  async getOuterTradesBetweenDays(exchangeCode, start, end) {
+    return this.database.getOuterTradesBetweenDays(exchangeCode, start, end);
   }
 
   /* !!! HIGH RISK (start) !!! */
