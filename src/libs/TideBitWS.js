@@ -8,7 +8,7 @@ class TideBitWS {
     return this;
   }
 
-  setCurrentUser( userInfo) {
+  setCurrentUser(userInfo) {
     this.currentUser = userInfo;
     // console.log(`setCurrentUser userInfo`, userInfo)
     this.send(
@@ -28,7 +28,7 @@ class TideBitWS {
         op: "switchMarket",
         args: {
           market,
-          lotSz
+          lotSz,
         },
       })
     );

@@ -5,7 +5,7 @@ import { FixedSizeList as List } from "react-window";
 import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
-import DropDown from "./DropDown";
+// import DropDown from "./DropDown";
 
 const BookTile = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -19,6 +19,7 @@ const BookTile = (props) => {
         }`}
         onClick={() => {
           storeCtx.depthBookHandler(props.bid.price, props.bid.amount);
+          if (props.isMobile) storeCtx.activePageHandler("trade");
         }}
       >
         {props.bid && (
@@ -65,6 +66,7 @@ const BookTile = (props) => {
         }`}
         onClick={() => {
           storeCtx.depthBookHandler(props.ask.price, props.ask.amount);
+          if (props.isMobile) storeCtx.activePageHandler("trade");
         }}
       >
         {props.ask && (
@@ -108,28 +110,28 @@ const BookTile = (props) => {
   );
 };
 
-const getDecimal = (length) => {
-  let num = "0.";
-  for (let i = 0; i < length - 1; i++) {
-    num += "0";
-  }
-  num += "1";
-  return num;
-};
+// const getDecimal = (length) => {
+//   let num = "0.";
+//   for (let i = 0; i < length - 1; i++) {
+//     num += "0";
+//   }
+//   num += "1";
+//   return num;
+// };
 
 const DepthBook = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
-  const [range, setRange] = useState("");
-  const [rangeOptions, setRangeOptions] = useState([]);
+  // const [range, setRange] = useState("");
+  // const [rangeOptions, setRangeOptions] = useState([]);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const { width } = useViewport();
   const breakpoint = 428;
 
-  const changeRange = (range) => {
-    setRange(range);
-    storeCtx.changeRange(range);
-  };
+  // const changeRange = (range) => {
+  //   setRange(range);
+  //   storeCtx.changeRange(range);
+  // };
 
   useEffect(() => {
     if (
@@ -138,22 +140,22 @@ const DepthBook = (props) => {
         selectedTicker?.instId !== storeCtx.selectedTicker?.instId)
     ) {
       setSelectedTicker(storeCtx.selectedTicker);
-      setRange(storeCtx.selectedTicker?.tickSz);
-      storeCtx.changeRange(storeCtx.selectedTicker?.tickSz);
-      const options = [];
-      let fixed =
-        storeCtx.selectedTicker?.tickSz?.split(".").length > 1
-          ? storeCtx.selectedTicker?.tickSz?.split(".")[1].length
-          : 0;
+      // setRange(storeCtx.selectedTicker?.tickSz);
+      // storeCtx.changeRange(storeCtx.selectedTicker?.tickSz);
+      // const options = [];
+      // let fixed =
+      //   storeCtx.selectedTicker?.tickSz?.split(".").length > 1
+      //     ? storeCtx.selectedTicker?.tickSz?.split(".")[1].length
+      //     : 0;
 
-      for (let i = fixed; i > 0; i--) {
-        options.push(getDecimal(i));
-      }
-      options.push(1);
-      if (fixed < 2) {
-        options.push(10);
-      }
-      setRangeOptions(options);
+      // for (let i = fixed; i > 0; i--) {
+      //   options.push(getDecimal(i));
+      // }
+      // options.push(1);
+      // if (fixed < 2) {
+      //   options.push(10);
+      // }
+      // setRangeOptions(options);
     }
   }, [selectedTicker, storeCtx, storeCtx.selectedTicker]);
 
@@ -205,6 +207,7 @@ const DepthBook = (props) => {
                 bid={storeCtx.books.bids[index]}
                 ask={storeCtx.books.asks[index]}
                 key={`depthbbook-${index}`}
+                isMobile={width <= breakpoint}
               />
             )}
           </List>

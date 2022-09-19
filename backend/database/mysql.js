@@ -846,7 +846,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertTrades result`, result)
+      this.logger.log(`insertTrades result`, result);
       tradeId = result[0];
     } catch (error) {
       this.logger.error(error);
@@ -918,7 +918,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertVouchers result`, result)
+      this.logger.log(`insertVouchers result`, result);
       voucherId = result[0];
     } catch (error) {
       this.logger.error(error);
