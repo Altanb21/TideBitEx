@@ -236,7 +236,6 @@ class Middleman {
     }
   }
 
-
   getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
@@ -355,17 +354,29 @@ class Middleman {
     }
   }
 
-  // parseXSRFToken() {
-  //   let cookies = window.document.cookie.split(";");
-  //   const data = cookies.find((v) => {
-  //     return /XSRF-TOKEN/.test(v);
-  //   });
-  //   const XSRFToken = !data
-  //     ? undefined
-  //     : decodeURIComponent(data.split("=")[1]);
-  //   console.log(`parseXSRFToken XSRFToken`, XSRFToken);
-  //   return XSRFToken;
-  // }
+  parseXSRFToken() {
+    let cookies = window.document.cookie.split(";");
+    const data = cookies.find((v) => {
+      return /XSRF-TOKEN/.test(v);
+    });
+    const XSRFToken = !data
+      ? undefined
+      : decodeURIComponent(data.split("=")[1]);
+    console.log(`parseXSRFToken XSRFToken`, XSRFToken);
+    return XSRFToken;
+  }
+
+  parsePeatioSession() {
+    let cookies = window.document.cookie.split(";");
+    const data = cookies.find((v) => {
+      return /_peatio_session/.test(v);
+    });
+    const peatioSession = !data
+      ? undefined
+      : decodeURIComponent(data.split("=")[1]);
+    console.log(`parsePeatioSession peatioSession`, peatioSession);
+    return peatioSession;
+  }
 
   async getAccounts() {
     try {
@@ -495,13 +506,15 @@ class Middleman {
   async registerUser() {
     try {
       const CSRFToken = await this.communicator.CSRFTokenRenew();
-      // console.log(`[Middleman] _getAccounts userId`, this._userId);
+      const peatioSession = this.parsePeatioSession();
+      const XSRFToken = this.parseXSRFToken();
+      console.log(`[Middleman] registerUser window`, this._userId);
       // const userId = this._userId;
       this.tbWebSocket.setCurrentUser({
         CSRFToken,
         memberId: this.memberId,
-        // peatioSession: options.peatioSession
-        // userId,
+        peatioSession,
+        XSRFToken,
       });
     } catch (error) {
       console.error(`tbWebSocket error`, error);

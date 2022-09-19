@@ -20,12 +20,12 @@ const PopulateDates = (props) => {
     let date = el
       ? new Date(`${props.selectedYear}-${props.selectedMonth + 1}-${el.date}`)
       : null;
-    console.log(
-      `date:${date?.getTime()}`,
-      date,
-      `${new Date(props.selectedTime)}`,
-      props.selectedTime
-    );
+    // console.log(
+    //   `date:${date?.getTime()}`,
+    //   date,
+    //   `${new Date(props.selectedTime)}`,
+    //   props.selectedTime
+    // );
     let isSelected = date?.getTime()
       ? date.getTime() === props.selectedTime
       : false;
