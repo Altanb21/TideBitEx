@@ -366,18 +366,6 @@ class Middleman {
     return XSRFToken;
   }
 
-  parsePeatioSession() {
-    let cookies = window.document.cookie.split(";");
-    const data = cookies.find((v) => {
-      return /_peatio_session/.test(v);
-    });
-    const peatioSession = !data
-      ? undefined
-      : decodeURIComponent(data.split("=")[1]);
-    console.log(`parsePeatioSession peatioSession`, peatioSession);
-    return peatioSession;
-  }
-
   async getAccounts() {
     try {
       const res = await this.communicator
@@ -506,9 +494,7 @@ class Middleman {
   async registerUser(peatioSession) {
     try {
       const CSRFToken = await this.communicator.CSRFTokenRenew();
-      // const peatioSession = this.parsePeatioSession();
       const XSRFToken = this.parseXSRFToken();
-      // const userId = this._userId;
       this.tbWebSocket.setCurrentUser({
         CSRFToken,
         memberId: this.memberId,
