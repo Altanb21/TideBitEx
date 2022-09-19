@@ -18,6 +18,7 @@ const OrderBook = require("../libs/Books/OrderBook");
 const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 const Database = require("../constants/Database");
+const ROLES = require("../constants/Roles");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -39,7 +40,9 @@ class ExchangeHub extends Bot {
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
         this.adminUsers = this._getAdminUsers();
+        this.priceList = await this.getPriceList();
         this.currencies = await this.database.getCurrencies();
+        this.currenciesSymbol = await this.database.getCurrenciesSymbol();
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
@@ -59,6 +62,8 @@ class ExchangeHub extends Bot {
         this.accountBook = new AccountBook({
           logger,
           markets: this.tidebitMarkets,
+          currencies: this.currenciesSymbol,
+          priceList: this.priceList,
         });
       })
       .then(async () => {
@@ -178,9 +183,19 @@ class ExchangeHub extends Bot {
       const formatUsers = users.reduce((prev, user) => {
         const index = prev.findIndex((_usr) => _usr.email === user.email);
         if (index === -1) {
-          prev = [...prev, user];
+          prev = [
+            ...prev,
+            {
+              ...user,
+              roles: user.roles.map((role) =>
+                role?.replace(" ", "_").toLowerCase()
+              ),
+            },
+          ];
         } else {
-          prev[index].roles = prev[index].roles.concat(user.roles);
+          prev[index].roles = prev[index].roles.concat(
+            user.roles.map((role) => role?.replace(" ", "_").toLowerCase())
+          );
         }
         return prev;
       }, []);
@@ -204,50 +219,252 @@ class ExchangeHub extends Bot {
     );
   }
 
-  async addAdminUser({ body }) {
-    // ++TODO
+  async addAdminUser({ email, body }) {
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
+    this.logger.log(`email`, email);
     this.logger.log(`body`, body);
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "addAdminUser",
-        payload: {
-          result: true,
-        },
-      })
-    );
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(`currentUser`, currentUser);
+    try {
+      const { newAdminUser } = body;
+      const newAdminUserEmail = newAdminUser.email?.trim();
+      if (currentUser.roles?.includes(ROLES.root)) {
+        if (newAdminUserEmail) {
+          const index = this.adminUsers.findIndex(
+            (user) => user.email === newAdminUserEmail
+          );
+          if (index === -1) {
+            const member = await this.database.getMemberByEmail(
+              // `"${newAdminUserEmail}"`
+              newAdminUserEmail
+            );
+            this.logger.log(`addAdminUser member`, member);
+            if (member) {
+              const updateAdminUsers = this.adminUsers
+                .map((user) => ({
+                  ...user,
+                  roles: user.roles.map((key) => ROLES[key]),
+                }))
+                .concat({
+                  id: member.id,
+                  email: member.email,
+                  name: newAdminUser.name,
+                  roles: newAdminUser.roles.map((key) => ROLES[key]),
+                });
+              this.logger.log(
+                `addAdminUser updateAdminUsers`,
+                updateAdminUsers
+              );
+              try {
+                Utils.yamlUpdate(updateAdminUsers, p);
+                this.adminUsers = updateAdminUsers.map((user) => ({
+                  ...user,
+                  roles: user.roles.map((role) =>
+                    role?.replace(" ", "_").toLowerCase()
+                  ),
+                }));
+                result = Promise.resolve(
+                  new ResponseFormat({
+                    message: "addAdminUser",
+                    payload: {
+                      adminUsers: this.adminUsers,
+                    },
+                  })
+                );
+              } catch (e) {
+                this.logger.error(
+                  `yamlUpdate addAdminUser`,
+                  updateAdminUsers,
+                  e
+                );
+                result = new ResponseFormat({
+                  message: "Internal server error",
+                  code: Codes.UNKNOWN_ERROR,
+                });
+              }
+            } else {
+              result = new ResponseFormat({
+                message: "Admin User is not existed",
+                code: Codes.INVALID_INPUT,
+              });
+            }
+          } else {
+            result = new ResponseFormat({
+              message: "Admin User is existed",
+              code: Codes.MEMBER_ID_NOT_FOUND,
+            });
+          }
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to add admin user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`addAdminUser`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
-  async updateAdminUser({ body }) {
-    // ++TODO
+  async updateAdminUser({ email, body }) {
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] updateAdminUser ************`
     );
+    this.logger.log(`email`, email);
     this.logger.log(`body`, body);
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "updateAdminUser",
-        payload: {
-          result: true,
-        },
-      })
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
     );
+    try {
+      const { updateAdminUser } = body;
+      this.logger.log(`updateAdminUser`, updateAdminUser);
+      if (currentUser.roles?.includes("root")) {
+        if (updateAdminUser.email) {
+          let index = this.adminUsers.findIndex(
+            (user) => user.email === updateAdminUser.email
+          );
+          this.logger.log(`index`, index);
+          if (index !== -1) {
+            let updateAdminUsers = this.adminUsers.map((user) => ({
+              ...user,
+              roles: user.roles.map((key) => ROLES[key]),
+            }));
+            updateAdminUsers[index] = {
+              id: updateAdminUser.id,
+              email: updateAdminUser.email,
+              name: updateAdminUser.name,
+              roles: updateAdminUser.roles.map((key) => ROLES[key]),
+            };
+            this.logger.log(
+              `updateAdminUser updateAdminUsers`,
+              updateAdminUsers
+            );
+            try {
+              Utils.yamlUpdate(updateAdminUsers, p);
+              this.adminUsers = updateAdminUsers.map((user) => ({
+                ...user,
+                roles: user.roles.map((role) =>
+                  role?.replace(" ", "_").toLowerCase()
+                ),
+              }));
+              result = new ResponseFormat({
+                message: "updateAdminUser",
+                payload: {
+                  adminUsers: this.adminUsers,
+                },
+              });
+            } catch (e) {
+              this.logger.error(
+                `yamlUpdate updateAdminUser`,
+                updateAdminUsers,
+                e
+              );
+              result = new ResponseFormat({
+                message: "Internal server error",
+                code: Codes.UNKNOWN_ERROR,
+              });
+            }
+          } else {
+            result = new ResponseFormat({
+              message: "Update user is not  existed",
+              code: Codes.MEMBER_ID_NOT_FOUND,
+            });
+          }
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update admin user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateAdminUser`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
-  async deleteAdminUser({ body }) {
-    // ++TODO
+  async deleteAdminUser({ params, email }) {
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(
       `*********** [${this.name}] deleteAdminUser ************`
     );
-    this.logger.log(`body`, body);
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "deleteAdminUser",
-        payload: {
-          result: true,
-        },
-      })
-    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(`currentUser`, currentUser);
+    try {
+      if (currentUser.roles?.includes("root")) {
+        if (params.id) {
+          let updateAdminUsers = this.adminUsers
+            .filter(
+              (adminUser) => adminUser.id.toString() !== params.id.toString()
+            )
+            .map((user) => ({
+              ...user,
+              roles: user.roles.map((key) => ROLES[key]),
+            }));
+          this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
+          try {
+            Utils.yamlUpdate(updateAdminUsers, p);
+            this.adminUsers = updateAdminUsers.map((user) => ({
+              ...user,
+              roles: user.roles.map((role) =>
+                role?.replace(" ", "_").toLowerCase()
+              ),
+            }));
+            result = new ResponseFormat({
+              message: "deleteAdminUser",
+              payload: {
+                adminUsers: this.adminUsers,
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate deleteAdminUser`,
+              updateAdminUsers,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "delete user is not exit",
+            code: Codes.MEMBER_ID_NOT_FOUND,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to delete admin user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`deleteAdminUser`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
   getTidebitMarkets() {
@@ -416,10 +633,18 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async getExchangeRates() {
+    const exchangeRates = this.accountBook.exchangeRates;
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getExchangeRates",
+        payload: exchangeRates,
+      })
+    );
+  }
+
   // account api
   async getAccounts({ memberId, email }) {
-    let priceList = await this.getPriceList();
-    this.accountBook.priceList = priceList;
     this.logger.debug(
       `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
@@ -669,12 +894,21 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterTradeFills ************`,
       query
     );
+    let { exchange, start, end } = query;
+    let startDate = `${start} 00:00:00`;
+    let endtDate = `${end} 23:59:59`;
+    this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
     let outerTrades = [];
-    switch (query.exchange) {
+    switch (exchange) {
       case SupportedExchange.OKEX:
-        const _outerTrades = await this.database.getOuterTradesByDayAfter(
-          Database.EXCHANGE[query.exchange.toUpperCase()],
-          query.days // 30 || 365
+        // const _outerTrades = await this.database.getOuterTradesByDayAfter(
+        //   Database.EXCHANGE[exchange.toUpperCase()],
+        //   365 // ++ TODO
+        // );
+        const _outerTrades = await this.database.getOuterTradesBetweenDays(
+          Database.EXCHANGE[exchange.toUpperCase()],
+          startDate,
+          endtDate
         );
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",
@@ -695,7 +929,7 @@ class ExchangeHub extends Bot {
             memberTag = _trade.member_tag,
             fee,
             processTrade,
-            revenue;
+            profit;
           if (memberTag) {
             if (
               memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
@@ -722,7 +956,7 @@ class ExchangeHub extends Bot {
                   )
                 : SafeMath.mult(trade.fillSz, bidFeeRate)
               : null;
-          revenue =
+          profit =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
               ? _trade.ref_net_fee
                 ? SafeMath.minus(
@@ -746,8 +980,8 @@ class ExchangeHub extends Bot {
             memberId,
             externalFee: Math.abs(trade.fee),
             fee,
-            revenue: revenue,
-            exchange: query.exchange,
+            profit: profit,
+            exchange: exchange,
             referral: _trade.ref_net_fee
               ? Utils.removeZeroEnd(_trade.ref_net_fee)
               : null,
@@ -1586,7 +1820,7 @@ class ExchangeHub extends Bot {
     }
   }
 
-  getUserRoles({ memberId, email }) {
+  getAdminUser({ memberId, email }) {
     let roles, name;
     if (email) {
       let user = this.adminUsers.find((user) => user.email === email);
@@ -1595,15 +1829,13 @@ class ExchangeHub extends Bot {
     }
     return Promise.resolve(
       new ResponseFormat({
-        message: "getUserRoles",
+        message: "getAdminUser",
         payload: email
           ? {
               memberId: memberId,
               email: email,
               roles: roles,
               name: name,
-              // adminUsers:this.adminUsers
-              // peatioSession: token,
             }
           : null,
       })

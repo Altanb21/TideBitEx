@@ -37,6 +37,7 @@ const StoreProvider = (props) => {
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
   const [fiatCurrency, setFiatCurrency] = useState("usd");
+  const [exchangeRates, setExchangeRates] = useState(null);
 
   const action = useCallback(
     (key) => (
@@ -104,22 +105,22 @@ const StoreProvider = (props) => {
     middleman.depthBook.changeRange(range);
   };
 
-  const getUserRoles = async () => {
-    return await middleman.getUserRoles();
+  const getAdminUser = async () => {
+    return await middleman.getAdminUser();
   };
 
   const getAdminUsers = async () => {
     return await middleman.getAdminUsers();
   };
 
-  const addAdminUser = async (currentUser, newUser) => {
-    return await middleman.addAdminUser(currentUser, newUser);
+  const addAdminUser = async (newUser) => {
+    return await middleman.addAdminUser(newUser);
   };
-  const deleteAdminUser = async (currentUser, user) => {
-    return await middleman.deleteAdminUser(currentUser, user);
+  const deleteAdminUser = async (user) => {
+    return await middleman.deleteAdminUser(user);
   };
-  const updateAdminUser = async (currentUser, updateUser) => {
-    return await middleman.updateAdminUser(currentUser, updateUser);
+  const updateAdminUser = async (updateUser) => {
+    return await middleman.updateAdminUser(updateUser);
   };
 
   const getUsersAccounts = useCallback(async () => {
@@ -133,10 +134,10 @@ const StoreProvider = (props) => {
   }, [middleman]);
 
   const getOuterTradeFills = useCallback(
-    async (exchange, days) => {
+    async (exchange, start, end) => {
       let exAccounts = {};
       try {
-        exAccounts = await middleman.getOuterTradeFills(exchange, days);
+        exAccounts = await middleman.getOuterTradeFills(exchange, start, end);
       } catch (error) {
         console.log(error);
       }
@@ -391,6 +392,19 @@ const StoreProvider = (props) => {
     setFiatCurrency(fiatCurrency);
   };
 
+  const getExchangeRates = useCallback(async () => {
+    let _exchangeRates = exchangeRates;
+    if (!_exchangeRates) {
+      try {
+        _exchangeRates = await middleman.getExchangeRates();
+        setExchangeRates(_exchangeRates);
+      } catch (error) {
+        console.error(`getExchangeRates`, error);
+      }
+    }
+    return _exchangeRates;
+  }, [exchangeRates, middleman]);
+
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
     await middleman.initWs();
@@ -479,6 +493,7 @@ const StoreProvider = (props) => {
         memberEmail,
         fiatCurrency,
         depthChartData,
+        exchangeRates,
         setIsLogin,
         // sync,
         init,
@@ -498,11 +513,12 @@ const StoreProvider = (props) => {
         setFocusEl,
         changeRange,
         updateFiatCurrency,
-        getUserRoles,
+        getAdminUser,
         getAdminUsers,
         addAdminUser,
         deleteAdminUser,
-        updateAdminUser
+        updateAdminUser,
+        getExchangeRates
       }}
     >
       {props.children}

@@ -49,9 +49,11 @@ class Middleman {
     }
   }
 
-  async getUserRoles() {
+  async getAdminUser() {
     try {
-      const response = await this.communicator.getUserRoles();
+      const response = await this.communicator.getAdminUser(
+        this.memberId || "0"
+      );
       return response;
     } catch (error) {
       throw error;
@@ -67,36 +69,36 @@ class Middleman {
     }
   }
 
-  async addAdminUser(currentUser, newUser) {
+  async addAdminUser(newUser) {
     try {
-      const response = await this.communicator.addAdminUser();
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  }
-  
-  async deleteAdminUser(currentUser, user) {
-    try {
-      const response = await this.communicator.deleteAdminUser();
+      const response = await this.communicator.addAdminUser(newUser);
       return response;
     } catch (error) {
       throw error;
     }
   }
 
-  async updateAdminUser(currentUser, updateUser) {
+  async deleteAdminUser(user) {
     try {
-      const response = await this.communicator.updateAdminUser();
+      const response = await this.communicator.deleteAdminUser(user);
       return response;
     } catch (error) {
       throw error;
     }
   }
 
-  async getOuterTradeFills(exchange, days) {
+  async updateAdminUser(updateUser) {
     try {
-      return await this.communicator.getOuterTradeFills(exchange, days);
+      const response = await this.communicator.updateAdminUser(updateUser);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getOuterTradeFills(exchange, start, end) {
+    try {
+      return await this.communicator.getOuterTradeFills(exchange, start, end);
     } catch (error) {
       throw error;
     }
@@ -221,6 +223,19 @@ class Middleman {
     }
     return this.tickers;
   }
+
+  async getExchangeRates() {
+    try {
+      const exchangeRates = await this.communicator.getExchangeRates();
+      this.exchangeRates = exchangeRates;
+      // console.log(`middleman this.exchangeRates`, this.exchangeRates)
+      return exchangeRates;
+    } catch (error) {
+      this.exchangeRates = {};
+      throw error;
+    }
+  }
+
 
   getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
@@ -371,7 +386,7 @@ class Middleman {
             this.isLogin = false;
           }
         }
-      }else{
+      } else {
         this.isLogin = false;
       }
     } catch (error) {

@@ -7,9 +7,9 @@ class ExchangeHubService {
   _timer;
   _lastSyncTime = 0;
   _syncInterval = 0.5 * 60 * 60 * 1000; // 30 mins
-  _minInterval = 1 * 24 * 60 * 60 * 1000; // 1天
+  _minInterval = 3 * 24 * 60 * 60 * 1000; // 1天
   _interval = 30 * 24 * 60 * 60 * 1000; // 30天
-  _maxInterval = 180 * 24 * 60 * 60 * 1000; // 180天
+  _maxInterval = 365 * 24 * 60 * 60 * 1000; // 93天 okex 最長只能問到3個月
   _isStarted = false;
 
   constructor({
@@ -879,7 +879,7 @@ class ExchangeHubService {
               stateCode = Database.ORDER_STATE_CODE.CANCEL;
               state_text = Database.ORDER_STATE_TEXT.CANCEL;
               locked = "0";
-            }else{
+            } else {
               stateCode = Database.ORDER_STATE_CODE.WAIT;
               state = Database.ORDER_STATE.WAIT;
               state_text = Database.ORDER_STATE_TEXT.WAIT;
@@ -924,7 +924,9 @@ class ExchangeHubService {
         this.logger.log("_updateOrder for [FRONTEND]", _updateOrder);
       } else {
         if (_order?.member_id.toString() === memberId)
-          this.logger.error(`[${this.constructor.name}], order has been closed`);
+          this.logger.error(
+            `[${this.constructor.name}], order has been closed`
+          );
         else {
           this.logger.error(
             "orderId and memberId is not match, this order is in other environment"
@@ -1273,7 +1275,21 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _getOuterTradesFromAPI --------------`
     );
     let outerTrades,
-      end = Date.now();
+      _endDate = new Date(),
+      endDate = new Date(
+        new Date(
+          `${_endDate.getFullYear()}-${
+            _endDate.getMonth() + 1
+          }-${_endDate.getDate()} 23:59:59`
+        )
+      ),
+      end = endDate.getTime(),
+      begin = end - this._maxInterval;
+    this.logger.log(
+      `[${this.constructor.name}] begin[${begin}]`,
+      new Date(begin)
+    );
+    this.logger.log(`[${this.constructor.name}] end[${end}]`, new Date(end));
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
@@ -1285,8 +1301,9 @@ class ExchangeHubService {
             {
               query: {
                 instType: Database.INST_TYPE.SPOT,
-                begin: end - this._interval,
+                begin: end - this._maxInterval,
                 end,
+                sz: 100,
               },
             }
           );
@@ -1298,6 +1315,7 @@ class ExchangeHubService {
               instType: "SPOT",
               begin: end - this._minInterval,
               end,
+              sz: 100,
             },
           });
         }
@@ -1338,7 +1356,7 @@ class ExchangeHubService {
     const _outerTrades = await this.database.getOuterTradesByDayAfter(
       Database.EXCHANGE[exchange.toUpperCase()],
       // !this._isStarted ? 180 : 1
-      180
+      this._maxInterval
     );
     let outerTrades = await this._getTransactionsDetail(exchange, clOrdId);
     // this.logger.log(`outerTrades`, outerTrades);
@@ -1350,7 +1368,7 @@ class ExchangeHubService {
     );
     let result = false;
     if (_filtered.length > 0) {
-      this.logger.log(`_filtered[${_filtered.length}]`, _filtered);
+      // this.logger.log(`_filtered[${_filtered.length}]`, _filtered);
       result = await this._insertOuterTrades(_filtered);
     }
     return result;
