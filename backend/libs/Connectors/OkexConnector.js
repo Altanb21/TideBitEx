@@ -219,27 +219,29 @@ class OkexConnector extends ConnectorBase {
       } else if (tryOnce > 0) {
         newBefore = data[0].billId;
         newRequest = requests - 1;
-        if (requests > 0)
-          return this.fetchTradeFillsRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: newRequest,
-            tryOnce: 1,
-          });
-        else {
-          await wait(this.restTime);
-          return this.fetchTradeFillsRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: this.tradeFillsMaxRequestTimes,
-            tryOnce: 1,
-          });
+        if (newBefore) {
+          if (requests > 0)
+            return this.fetchTradeFillsRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: newRequest,
+              tryOnce: 1,
+            });
+          else {
+            await wait(this.restTime);
+            return this.fetchTradeFillsRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: this.tradeFillsMaxRequestTimes,
+              tryOnce: 1,
+            });
+          }
         }
       }
       this.logger.log(
