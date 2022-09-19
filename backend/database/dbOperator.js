@@ -61,7 +61,7 @@ class DBOperator {
   async getMemberByEmail(memberEmail) {
     return this.database.getMemberByEmail(memberEmail);
   }
-
+  
   async getAccountByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
     return this.database.getAccountByMemberIdCurrency(memberId, currencyId, {
       dbTransaction,
