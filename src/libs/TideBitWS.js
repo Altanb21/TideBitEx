@@ -1,3 +1,5 @@
+import Events from "../constant/Events";
+
 class TideBitWS {
   currentUser;
   currentMarket;
@@ -10,10 +12,10 @@ class TideBitWS {
 
   setCurrentUser(userInfo) {
     this.currentUser = userInfo;
-    // console.log(`setCurrentUser userInfo`, userInfo)
+    console.log(`setCurrentUser userInfo`, userInfo)
     this.send(
       JSON.stringify({
-        op: "userStatusUpdate",
+        op:  Events.userStatusUpdate,
         args: {
           ...userInfo,
         },
@@ -25,7 +27,7 @@ class TideBitWS {
     this.currentMarket = market;
     this.send(
       JSON.stringify({
-        op: "switchMarket",
+        op: Events.switchMarket,
         args: {
           market,
           lotSz,
@@ -98,7 +100,7 @@ class TideBitWS {
         this.setCurrentMarket(this.currentMarket);
       }
       if (this.currentUser) {
-        this.setCurrentUser(this.currentMarket, this.currentUser);
+        this.setCurrentUser(this.currentUser);
       }
       this.onmessage = this.cb;
       return new Promise((resolve) => {

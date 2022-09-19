@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import { useContext } from "react";
 import AdminHeader from "../components/AdminHeader";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
+import { useSnackbar } from "notistack";
 
 import Manager from "./manager";
 import LoadingDialog from "../components/LoadingDialog";
+import { languages } from "../components/Layout";
 
 const Admin = () => {
   const storeCtx = useContext(StoreContext);
@@ -21,6 +24,16 @@ const Admin = () => {
   const onSelected = (page) => {
     setActivePage(page);
   };
+
+  const changeLanguage = useCallback(
+    (key) => {
+      // await window.cookieStore.set("lang", key);
+      // document.cookie = `lang=${key}`;
+      storeCtx.setLanguageKey(key);
+      i18n.changeLanguage(key);
+    },
+    [i18n, storeCtx]
+  );
 
   const userAbility = (user) => {
     let _user = user ? { ...user } : {};
@@ -151,7 +164,7 @@ const Admin = () => {
         setIsInit(true);
       });
     }
-  }, [enqueueSnackbar, history, isInit, storeCtx, t]);
+  }, [enqueueSnackbar, enqueueSnackbar, history, isInit, storeCtx, t, t]);
 
   return (
     <>
@@ -161,6 +174,9 @@ const Admin = () => {
           activePage={activePage}
           onSelected={onSelected}
           user={user}
+          languages={languages}
+          languageKey={storeCtx.languageKey}
+          changeLanguage={changeLanguage}
         />
         {user &&
           user.ability?.canNotRead !== "all" &&
