@@ -391,7 +391,7 @@ class Middleman {
           this.memberId = res.memberId;
           this.email = res.email;
           if (this.memberId) {
-            this.registerUser();
+            this.registerUser(res.peatioSession);
             this.isLogin = true;
           } else {
             this.isLogin = false;
@@ -503,10 +503,10 @@ class Middleman {
     };
   }
 
-  async registerUser() {
+  async registerUser(peatioSession) {
     try {
       const CSRFToken = await this.communicator.CSRFTokenRenew();
-      const peatioSession = this.parsePeatioSession();
+      // const peatioSession = this.parsePeatioSession();
       const XSRFToken = this.parseXSRFToken();
       // const userId = this._userId;
       this.tbWebSocket.setCurrentUser({
@@ -528,11 +528,11 @@ class Middleman {
       }/ws`,
       memberId: options.memberId,
     });
-    if (options.memberId) {
+    if (options.memberId && options.peatioSession) {
       this.isLogin = true;
       this.memberId = options.memberId;
       this.email = options.email;
-      this.registerUser();
+      this.registerUser(options.peatioSession);
     } else {
       this.isLogin = null;
     }

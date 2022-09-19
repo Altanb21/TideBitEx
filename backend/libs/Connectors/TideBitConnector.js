@@ -685,7 +685,7 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   async getAccounts({ query }) {
-    let { memberId, email } = query;
+    let { memberId, email, token } = query;
     this.logger.log(
       `[${this.constructor.name}] getAccounts memberId`,
       memberId,
@@ -724,6 +724,7 @@ class TibeBitConnector extends ConnectorBase {
         accounts: this.accountBook.getSnapshot(memberId),
         memberId,
         email,
+        peatioSession: token,
       },
     });
   }
@@ -1474,7 +1475,7 @@ class TibeBitConnector extends ConnectorBase {
         data,
       });
       this.logger.log(`getAuth`, {
-        url: `https://${this.peatio}/pusher/auth`,
+        url: `${this.peatio}/pusher/auth`,
         method: "POST",
         headers: {
           ...headers,

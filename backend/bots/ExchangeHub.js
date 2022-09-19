@@ -644,7 +644,7 @@ class ExchangeHub extends Bot {
   }
 
   // account api
-  async getAccounts({ memberId, email }) {
+  async getAccounts({ memberId, email, token }) {
     this.logger.debug(
       `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
     );
@@ -656,7 +656,7 @@ class ExchangeHub extends Bot {
       });
     }
     return this.tideBitConnector.router("getAccounts", {
-      query: { memberId, email },
+      query: { memberId, email, token },
     });
   }
 
@@ -1863,7 +1863,7 @@ class ExchangeHub extends Bot {
           memberId: memberId,
           email: email,
           // roles: roles,
-          // peatioSession: token,
+          peatioSession: token,
         },
       })
     );
