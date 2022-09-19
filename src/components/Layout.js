@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import BottomNavigator from "./BottomNavigator";
 import StoreContext from "../store/store-context";
 
-const languages = {
+export const languages = {
   "en-US": "English",
   "zh-HK": "繁體中文",
   // jp: "日本語",

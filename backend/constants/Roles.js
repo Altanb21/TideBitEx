@@ -23,4 +23,4 @@ module.exports = {
   //     DEPOSIT_MAKER: "deposit maker",
   //     DEPOSIT_VIEWER: "deposit viewer",
   //   };
-  
+

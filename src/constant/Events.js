@@ -7,4 +7,7 @@ module.exports = {
   order: "order",
   trade: "trade",
   candleOnUpdate: "candleOnUpdate",
+
+  userStatusUpdate: "userStatusUpdate",
+  switchMarket: "switchMarket",
 };
