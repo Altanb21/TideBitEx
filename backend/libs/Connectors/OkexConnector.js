@@ -192,32 +192,34 @@ class OkexConnector extends ConnectorBase {
       }));
       results = data.concat(results);
       if (data.length === this.maxDataLength) {
-        newBefore = data[0].billId;
+        newBefore = data[0]?.billId;
         newRequest = requests - 1;
-        if (requests > 0)
-          return this.fetchTradeFillsRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: newRequest,
-            tryOnce: 1,
-          });
-        else {
-          await wait(this.restTime);
-          return this.fetchTradeFillsRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: this.tradeFillsMaxRequestTimes,
-            tryOnce: 1,
-          });
+        if (newBefore) {
+          if (requests > 0)
+            return this.fetchTradeFillsRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: newRequest,
+              tryOnce: 1,
+            });
+          else {
+            await wait(this.restTime);
+            return this.fetchTradeFillsRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: this.tradeFillsMaxRequestTimes,
+              tryOnce: 1,
+            });
+          }
         }
       } else if (tryOnce > 0) {
-        newBefore = data[0].billId;
+        newBefore = data[0]?.billId;
         newRequest = requests - 1;
         if (newBefore) {
           if (requests > 0)
@@ -342,54 +344,58 @@ class OkexConnector extends ConnectorBase {
         // parseInt(data[0].ts) <= endDate.getTime() ||
         data.length === this.maxDataLength
       ) {
-        newBefore = data[0].billId;
+        newBefore = data[0]?.billId;
         newRequest = requests - 1;
-        if (requests > 0)
-          return this.fetchTradeFillsHistoryRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: newRequest,
-            tryOnce: 1,
-          });
-        else {
-          await wait(this.restTime);
-          return this.fetchTradeFillsHistoryRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: this.tradeFillsHistoryMaxRequestTimes,
-            tryOnce: 1,
-          });
+        if (newBefore) {
+          if (requests > 0)
+            return this.fetchTradeFillsHistoryRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: newRequest,
+              tryOnce: 1,
+            });
+          else {
+            await wait(this.restTime);
+            return this.fetchTradeFillsHistoryRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: this.tradeFillsHistoryMaxRequestTimes,
+              tryOnce: 1,
+            });
+          }
         }
       } else if (tryOnce > 0) {
-        newBefore = data[0].billId;
+        newBefore = data[0]?.billId;
         newRequest = requests - 1;
-        if (requests > 0)
-          return this.fetchTradeFillsHistoryRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: newRequest,
-            tryOnce: 0,
-          });
-        else {
-          await wait(this.restTime);
-          return this.fetchTradeFillsHistoryRecords({
-            query: {
-              ...query,
-              before: newBefore,
-            },
-            results,
-            requests: this.tradeFillsHistoryMaxRequestTimes,
-            tryOnce: 0,
-          });
+        if (newBefore) {
+          if (requests > 0)
+            return this.fetchTradeFillsHistoryRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: newRequest,
+              tryOnce: 0,
+            });
+          else {
+            await wait(this.restTime);
+            return this.fetchTradeFillsHistoryRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests: this.tradeFillsHistoryMaxRequestTimes,
+              tryOnce: 0,
+            });
+          }
         }
       }
       result = new ResponseFormat({
