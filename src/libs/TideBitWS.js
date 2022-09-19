@@ -1,5 +1,3 @@
-import Events from "../constant/Events";
-
 class TideBitWS {
   currentUser;
   currentMarket;
@@ -12,10 +10,10 @@ class TideBitWS {
 
   setCurrentUser(userInfo) {
     this.currentUser = userInfo;
-    console.log(`setCurrentUser userInfo`, userInfo)
+    // console.log(`setCurrentUser userInfo`, userInfo)
     this.send(
       JSON.stringify({
-        op:  Events.userStatusUpdate,
+        op: "userStatusUpdate",
         args: {
           ...userInfo,
         },
@@ -27,7 +25,7 @@ class TideBitWS {
     this.currentMarket = market;
     this.send(
       JSON.stringify({
-        op: Events.switchMarket,
+        op: "switchMarket",
         args: {
           market,
           lotSz,
