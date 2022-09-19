@@ -171,6 +171,8 @@ class WSChannel extends Bot {
       {
         ...header,
         memberId: args.memberId,
+        XSRFToken: args.XSRFToken,
+        peatioSession: args.peatioSession
         // userid: args.userId
       },
       redis

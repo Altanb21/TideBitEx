@@ -16,7 +16,6 @@ const Admin = () => {
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
-  const { i18n } = useTranslation();
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { t } = useTranslation();
 
