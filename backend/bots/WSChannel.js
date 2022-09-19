@@ -92,7 +92,7 @@ class WSChannel extends Bot {
             }
             switch (op) {
               case Events.userStatusUpdate:
-                this._onOpStatusUpdate(ws, args, this.redis);
+                this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
               case Events.switchMarket:
                 this.logger.log(
@@ -165,9 +165,18 @@ class WSChannel extends Bot {
 
   // TODO SPA LOGIN
   // ++ CURRENT_USER UNSAVED
-  async _onOpStatusUpdate(ws, args, redis) {
+  async _onOpStatusUpdate(header, ws, args, redis) {
     const findClient = this._client[ws.id];
-    let { memberId, XSRFToken, peatioSession } = args;
+    let { memberId, XSRFToken, peatioSession } = await parseMemberId(
+      {
+        ...header,
+        memberId: args.memberId,
+        XSRFToken: args.XSRFToken,
+        peatioSession: args.peatioSession
+        // userid: args.userId
+      },
+      redis
+    );
     console.log(
       `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
     );

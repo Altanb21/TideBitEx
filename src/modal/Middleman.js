@@ -508,7 +508,6 @@ class Middleman {
       const CSRFToken = await this.communicator.CSRFTokenRenew();
       const peatioSession = this.parsePeatioSession();
       const XSRFToken = this.parseXSRFToken();
-      console.log(`[Middleman] registerUser window`, this._userId);
       // const userId = this._userId;
       this.tbWebSocket.setCurrentUser({
         CSRFToken,
