@@ -18,16 +18,14 @@ const months = [
 const PopulateDates = (props) => {
   return props.daysInMonth.map((el) => {
     let date = el
-      ? new Date(
-          `${props.selectedYear}-${props.selectedMonth + 1}-${el.date}`
-        )
+      ? new Date(`${props.selectedYear}-${props.selectedMonth + 1}-${el.date}`)
       : null;
-    console.log(
-      `date:${date?.getTime()}`,
-      date,
-      `${new Date(props.selectedTime)}`,
-      props.selectedTime
-    );
+    // console.log(
+    //   `date:${date?.getTime()}`,
+    //   date,
+    //   `${new Date(props.selectedTime)}`,
+    //   props.selectedTime
+    // );
     let isSelected = date?.getTime()
       ? date.getTime() === props.selectedTime
       : false;
@@ -46,7 +44,7 @@ const PopulateDates = (props) => {
 };
 
 const DatePicker = (props) => {
-  const [selectedDate, setSelectedDate] = useState(props.date.getDate());
+  // const [selectedDate, setSelectedDate] = useState(props.date.getDate());
   //   const [selectedDay, setSelectedDay] = useState(props.date.getDay()); // 0~6
   const [selectedMonth, setSelectedMonth] = useState(props.date.getMonth()); // 0 (January) to 11 (December).
   const [selectedYear, setSelectedYear] = useState(props.date.getFullYear());
@@ -129,7 +127,7 @@ const DatePicker = (props) => {
   const selectDate = useCallback(
     (el) => {
       // console.log(`selectDate time`, el.time);
-      setSelectedDate(el.date);
+      // setSelectedDate(el.date);
       let newDate = new Date(el.time);
       newDate = new Date(
         `${newDate.getFullYear()}-${

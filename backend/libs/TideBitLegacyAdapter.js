@@ -35,12 +35,13 @@ class TideBitLegacyAdapter {
   // }
 
   static async parseMemberId(header, redisDomain) {
-    let peatioSession,
-      XSRFToken,
+    let peatioSession = header?.peatioSession
+        ? header.peatioSession
+        : Utils.peatioSession(header),
+      XSRFToken = header?.XSRFToken
+        ? header.XSRFToken
+        : Utils.XSRFToken(header),
       memberId = header?.memberId > -1 ? header.memberId : -1;
-
-    peatioSession = Utils.peatioSession(header);
-    XSRFToken = Utils.XSRFToken(header);
 
     if (peatioSession && memberId === -1) {
       try {

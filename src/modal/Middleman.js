@@ -236,7 +236,6 @@ class Middleman {
     }
   }
 
-
   getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
@@ -355,17 +354,17 @@ class Middleman {
     }
   }
 
-  // parseXSRFToken() {
-  //   let cookies = window.document.cookie.split(";");
-  //   const data = cookies.find((v) => {
-  //     return /XSRF-TOKEN/.test(v);
-  //   });
-  //   const XSRFToken = !data
-  //     ? undefined
-  //     : decodeURIComponent(data.split("=")[1]);
-  //   console.log(`parseXSRFToken XSRFToken`, XSRFToken);
-  //   return XSRFToken;
-  // }
+  parseXSRFToken() {
+    let cookies = window.document.cookie.split(";");
+    const data = cookies.find((v) => {
+      return /XSRF-TOKEN/.test(v);
+    });
+    const XSRFToken = !data
+      ? undefined
+      : decodeURIComponent(data.split("=")[1]);
+    console.log(`parseXSRFToken XSRFToken`, XSRFToken);
+    return XSRFToken;
+  }
 
   async getAccounts() {
     try {
@@ -380,7 +379,7 @@ class Middleman {
           this.memberId = res.memberId;
           this.email = res.email;
           if (this.memberId) {
-            this.registerUser();
+            this.registerUser(res.peatioSession);
             this.isLogin = true;
           } else {
             this.isLogin = false;
@@ -492,16 +491,15 @@ class Middleman {
     };
   }
 
-  async registerUser() {
+  async registerUser(peatioSession) {
     try {
       const CSRFToken = await this.communicator.CSRFTokenRenew();
-      // console.log(`[Middleman] _getAccounts userId`, this._userId);
-      // const userId = this._userId;
+      const XSRFToken = this.parseXSRFToken();
       this.tbWebSocket.setCurrentUser({
         CSRFToken,
         memberId: this.memberId,
-        // peatioSession: options.peatioSession
-        // userId,
+        peatioSession,
+        XSRFToken,
       });
     } catch (error) {
       console.error(`tbWebSocket error`, error);
@@ -516,11 +514,11 @@ class Middleman {
       }/ws`,
       memberId: options.memberId,
     });
-    if (options.memberId) {
+    if (options.memberId && options.peatioSession) {
       this.isLogin = true;
       this.memberId = options.memberId;
       this.email = options.email;
-      this.registerUser();
+      this.registerUser(options.peatioSession);
     } else {
       this.isLogin = null;
     }
