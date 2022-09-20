@@ -96,4 +96,14 @@
     font-weight: 400;
     color: #767676;
   }
+  &__dialog-input-column{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  &__dialog-input-caption{
+    font-size: 14px;
+    color: #3C3C3C;
+  }
 }

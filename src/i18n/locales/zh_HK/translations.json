@@ -199,5 +199,6 @@
   "error-happen": "發生錯誤",
   "success-update": "修改成功",
   "invail-email": "*E-mail 輸入錯誤，請檢查後重新輸入",
-  "no-access": "沒有訪問權限"
+  "no-access": "沒有訪問權限",
+  "current-external-fee": "外部當前手續費"
 }

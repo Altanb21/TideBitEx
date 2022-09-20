@@ -47,7 +47,7 @@ const FeeControlDialog = (props) => {
     >
       <div className="deposit__dialog-content">
         <div className="deposit__dialog-content--title">
-          {props.currency.symbol}
+          {props.currency.exchange}
         </div>
         <div className="deposit__dialog-content--body">
           <div className="deposit__dialog-inputs">
@@ -59,20 +59,29 @@ const FeeControlDialog = (props) => {
                 {t("deposit-fee")}:
               </label>
               <div className="deposit__dialog-input-box">
-                <input
-                  className="deposit__dialog-input"
-                  name="deposit-fee"
-                  type="number"
-                  inputMode="decimal"
-                  onChange={(e) => {
-                    const value = formatValue(e.target.value);
-                    setCurrency((prev) => ({
-                      ...prev,
-                      depositFee: { ...prev.depositFee, current: value },
-                      withdrawFee: { ...prev.withdrawFee },
-                    }));
-                  }}
-                />
+                <div className="deposit__dialog-input-column">
+                  <input
+                    className="deposit__dialog-input"
+                    name="deposit-fee"
+                    type="number"
+                    inputMode="decimal"
+                    onChange={(e) => {
+                      const value = formatValue(e.target.value);
+                      const fee = SafeMath.div(value, 100);
+                      setCurrency((prev) => ({
+                        ...prev,
+                        depositFee: { ...prev.depositFee, current: fee },
+                        withdrawFee: { ...prev.withdrawFee },
+                      }));
+                    }}
+                  />
+                  <div className="deposit__dialog-input-caption">{`${t(
+                    "current-external-fee"
+                  )}: ${SafeMath.mult(
+                    currency.depositFee?.current,
+                    100
+                  )}`}</div>
+                </div>
                 <div className="deposit__dialog-input-suffix">%</div>
               </div>
             </div>
@@ -84,20 +93,29 @@ const FeeControlDialog = (props) => {
                 {t("withdraw-fee")}:
               </label>
               <div className="deposit__dialog-input-box">
-                <input
-                  className="deposit__dialog-input"
-                  name="withdraw-fee"
-                  type="number"
-                  inputMode="decimal"
-                  onChange={(e) => {
-                    const value = formatValue(e.target.value);
-                    setCurrency((prev) => ({
-                      ...prev,
-                      depositFee: { ...prev.depositFee },
-                      withdrawFee: { ...prev.withdrawFee, current: value },
-                    }));
-                  }}
-                />
+                <div className="deposit__dialog-input-column">
+                  <input
+                    className="deposit__dialog-input"
+                    name="withdraw-fee"
+                    type="number"
+                    inputMode="decimal"
+                    onChange={(e) => {
+                      const value = formatValue(e.target.value);
+                      const fee = SafeMath.div(value, 100);
+                      setCurrency((prev) => ({
+                        ...prev,
+                        depositFee: { ...prev.depositFee },
+                        withdrawFee: { ...prev.withdrawFee, current: fee },
+                      }));
+                    }}
+                  />
+                  <div className="deposit__dialog-input-caption">{`${t(
+                    "current-external-fee"
+                  )}: ${SafeMath.mult(
+                    currency.withdrawFee?.current,
+                    100
+                  )}`}</div>
+                </div>
                 <div className="deposit__dialog-input-suffix">%</div>
               </div>
             </div>

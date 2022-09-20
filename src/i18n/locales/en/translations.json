@@ -200,5 +200,6 @@
   "error-happen": "Error happens!",
   "success-update": "Success update!",
   "invail-email": "*Invalid email address, please check and re-enter",
-  "no-access": "You do not have the authority to access this page!"
+  "no-access": "You do not have the authority to access this page!",
+  "current-external-fee": "Current external fee"
 }
