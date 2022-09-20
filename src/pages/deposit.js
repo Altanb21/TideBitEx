@@ -78,7 +78,7 @@ const FeeControlDialog = (props) => {
                   <div className="deposit__dialog-input-caption">{`${t(
                     "current-external-fee"
                   )}: ${SafeMath.mult(
-                    currency.depositFee?.current,
+                    props.currency.depositFee?.current,
                     100
                   )}`}</div>
                 </div>
@@ -112,7 +112,7 @@ const FeeControlDialog = (props) => {
                   <div className="deposit__dialog-input-caption">{`${t(
                     "current-external-fee"
                   )}: ${SafeMath.mult(
-                    currency.withdrawFee?.current,
+                    props.currency.withdrawFee?.current,
                     100
                   )}`}</div>
                 </div>
