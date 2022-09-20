@@ -250,6 +250,7 @@ const StoreContext = React.createContext({
   deleteAdminUser: async (user) => {},
   updateAdminUser: async (updateUser) => {},
   getExchangeRates: async () => {},
+  updateCurrencyFee: async () => {},
 });
 
 export default StoreContext;
