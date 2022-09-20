@@ -73,8 +73,8 @@ const FeeControlDialog = (props) => {
                     }));
                   }}
                 />
+                <div className="deposit__dialog-input-suffix">%</div>
               </div>
-              <div className="deposit__dialog-input-suffix">%</div>
             </div>
             <div className="deposit__dialog-input-group">
               <label
@@ -356,7 +356,7 @@ const Deposit = () => {
         // ++TODO
       }
     },
-    [currencies, enqueueSnackbar, filter, storeCtx, t]
+    [currencies, enqueueSnackbar, storeCtx, t]
   );
 
   const switchExchange = useCallback(
@@ -614,7 +614,16 @@ const Deposit = () => {
                         )}%`}</div>
                       </div>
                     </div>
-                    <div className="screen__table-item--icon"></div>
+                    <div
+                      className="screen__table-item--icon"
+                      onClick={() => {
+                        // console.log(`currency`, currency);
+                        // if(currency.status === "open"){
+                        setSelectedCurrency(currency);
+                        setOpenFeeControlDialog(true);
+                        // }
+                      }}
+                    ></div>
                   </div>
                   <div className="deposit__currency-text screen__table-item">
                     <div className="screen__table-item--text-box">
@@ -636,7 +645,7 @@ const Deposit = () => {
                     <div
                       className="screen__table-item--icon"
                       onClick={() => {
-                        console.log(`currency`, currency);
+                        // console.log(`currency`, currency);
                         // if(currency.status === "open"){
                         setSelectedCurrency(currency);
                         setOpenFeeControlDialog(true);
