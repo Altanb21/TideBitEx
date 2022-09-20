@@ -57,7 +57,8 @@
       color: #767676;
       font-size: 20px;
       font-weight: bold;
-      padding-bottom: 40px;
+      padding-top: 32px;
+      padding-bottom: 20px;
       border-bottom: 1px solid #767676;
     }
     &--body {
@@ -89,6 +90,7 @@
     width: 254px;
     padding: 0 10px;
   }
+  &__dialog-input-label,
   &__dialog-input-suffix {
     font-size: 16px;
     font-weight: 400;

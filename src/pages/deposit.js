@@ -58,20 +58,22 @@ const FeeControlDialog = (props) => {
               >
                 {t("deposit-fee")}:
               </label>
-              <input
-                className="deposit__dialog-input"
-                name="deposit-fee"
-                type="number"
-                inputMode="decimal"
-                onChange={(e) => {
-                  const value = formatValue(e.target.value);
-                  setCurrency((prev) => ({
-                    ...prev,
-                    depositFee: { ...prev.depositFee, current: value },
-                    withdrawFee: { ...prev.withdrawFee },
-                  }));
-                }}
-              />
+              <div className="deposit__dialog-input-box">
+                <input
+                  className="deposit__dialog-input"
+                  name="deposit-fee"
+                  type="number"
+                  inputMode="decimal"
+                  onChange={(e) => {
+                    const value = formatValue(e.target.value);
+                    setCurrency((prev) => ({
+                      ...prev,
+                      depositFee: { ...prev.depositFee, current: value },
+                      withdrawFee: { ...prev.withdrawFee },
+                    }));
+                  }}
+                />
+              </div>
               <div className="deposit__dialog-input-suffix">%</div>
             </div>
             <div className="deposit__dialog-input-group">
@@ -634,9 +636,10 @@ const Deposit = () => {
                     <div
                       className="screen__table-item--icon"
                       onClick={() => {
+                        console.log(`currency`, currency);
                         // if(currency.status === "open"){
-                        setOpenFeeControlDialog(true);
                         setSelectedCurrency(currency);
+                        setOpenFeeControlDialog(true);
                         // }
                       }}
                     ></div>
