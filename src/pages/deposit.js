@@ -75,7 +75,9 @@ const FeeControlDialog = (props) => {
                       }));
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(`${props.type}-current-fee`)}: ${SafeMath.mult(
+                  <div className="deposit__dialog-input-caption">{`${t(
+                    `${props.type}-current-fee`
+                  )}: ${SafeMath.mult(
                     props.currency.depositFee?.current,
                     100
                   )}%`}</div>
@@ -504,7 +506,6 @@ const Deposit = () => {
                       setActive(false);
                       clearTimeout(timer);
                     }, 500);
-                  }
                   }
                 }}
               >
