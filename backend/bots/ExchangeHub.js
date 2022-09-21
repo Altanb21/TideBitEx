@@ -177,46 +177,51 @@ class ExchangeHub extends Bot {
     }
   }
 
-  getAdminUsers({ query }) {
+  _getAdminUsers() {
     let users, adminUsers;
+    try {
+      const p = path.join(
+        this.config.base.TideBitLegacyPath,
+        "config/roles.yml"
+      );
+      users = Utils.fileParser(p);
+      adminUsers = users.reduce((prev, user) => {
+        const index = prev.findIndex((_usr) => _usr.email === user.email);
+        if (index === -1) {
+          prev = [
+            ...prev,
+            {
+              ...user,
+              roles: user.roles.map((role) =>
+                role?.replace(" ", "_").toLowerCase()
+              ),
+            },
+          ];
+        } else {
+          prev[index].roles = prev[index].roles.concat(
+            user.roles.map((role) => role?.replace(" ", "_").toLowerCase())
+          );
+        }
+        return prev;
+      }, []);
+      this.adminUsers = adminUsers;
+    } catch (error) {
+      this.logger.error(error);
+      process.exit(1);
+    }
+    return adminUsers;
+  }
+
+  async getAdminUsers({ query }) {
     if (!this.adminUsers) {
-      try {
-        const p = path.join(
-          this.config.base.TideBitLegacyPath,
-          "config/roles.yml"
-        );
-        users = Utils.fileParser(p);
-        adminUsers = users.reduce((prev, user) => {
-          const index = prev.findIndex((_usr) => _usr.email === user.email);
-          if (index === -1) {
-            prev = [
-              ...prev,
-              {
-                ...user,
-                roles: user.roles.map((role) =>
-                  role?.replace(" ", "_").toLowerCase()
-                ),
-              },
-            ];
-          } else {
-            prev[index].roles = prev[index].roles.concat(
-              user.roles.map((role) => role?.replace(" ", "_").toLowerCase())
-            );
-          }
-          return prev;
-        }, []);
-        this.adminUsers = adminUsers;
-      } catch (error) {
-        this.logger.error(error);
-        process.exit(1);
-      }
-    } else adminUsers = this.adminUsers;
+      this.adminUsers = this._getAdminUsers();
+    }
     // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, adminUsers);
     return Promise.resolve(
       new ResponseFormat({
         message: "getAdminUsers",
         payload: {
-          adminUsers: adminUsers,
+          adminUsers: this.adminUsers,
         },
       })
     );
@@ -2269,6 +2274,9 @@ class ExchangeHub extends Bot {
   }
 
   getAdminUser({ memberId, email }) {
+    if (!this.adminUsers) {
+      this.adminUsers = this._getAdminUsers();
+    }
     let roles, name;
     if (email) {
       let user = this.adminUsers.find((user) => user.email === email);
