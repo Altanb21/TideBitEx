@@ -26,6 +26,10 @@ class ExchangeHub extends Bot {
   systemMemberId;
   okexBrokerId;
   updateDatas = [];
+  adminUsers;
+  coinsSettings;
+  depositsSettings;
+  withdrawsSettings;
   constructor() {
     super();
     this.name = "ExchangeHub";
@@ -39,7 +43,7 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
-        this.adminUsers = this._getAdminUsers();
+        // this.adminUsers = this._getAdminUsers();
         this.priceList = await this.getPriceList();
         this.currencies = await this.database.getCurrencies();
         this.currenciesSymbol = await this.database.getCurrenciesSymbol();
@@ -173,50 +177,494 @@ class ExchangeHub extends Bot {
     }
   }
 
-  _getAdminUsers() {
-    try {
-      const p = path.join(
-        this.config.base.TideBitLegacyPath,
-        "config/roles.yml"
-      );
-      const users = Utils.fileParser(p);
-      const formatUsers = users.reduce((prev, user) => {
-        const index = prev.findIndex((_usr) => _usr.email === user.email);
-        if (index === -1) {
-          prev = [
-            ...prev,
-            {
-              ...user,
-              roles: user.roles.map((role) =>
-                role?.replace(" ", "_").toLowerCase()
-              ),
-            },
-          ];
-        } else {
-          prev[index].roles = prev[index].roles.concat(
-            user.roles.map((role) => role?.replace(" ", "_").toLowerCase())
-          );
-        }
-        return prev;
-      }, []);
-      // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
-      return formatUsers;
-    } catch (error) {
-      this.logger.error(error);
-      process.exit(1);
-    }
-  }
-
-  async getAdminUsers({ query }) {
-    this.logger.debug(`*********** [${this.name}] getAdminUsers ************`);
+  getAdminUsers({ query }) {
+    let users, adminUsers;
+    if (!this.adminUsers) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/roles.yml"
+        );
+        users = Utils.fileParser(p);
+        adminUsers = users.reduce((prev, user) => {
+          const index = prev.findIndex((_usr) => _usr.email === user.email);
+          if (index === -1) {
+            prev = [
+              ...prev,
+              {
+                ...user,
+                roles: user.roles.map((role) =>
+                  role?.replace(" ", "_").toLowerCase()
+                ),
+              },
+            ];
+          } else {
+            prev[index].roles = prev[index].roles.concat(
+              user.roles.map((role) => role?.replace(" ", "_").toLowerCase())
+            );
+          }
+          return prev;
+        }, []);
+        this.adminUsers = adminUsers;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    } else adminUsers = this.adminUsers;
+    // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, adminUsers);
     return Promise.resolve(
       new ResponseFormat({
         message: "getAdminUsers",
         payload: {
-          adminUsers: this.adminUsers,
+          adminUsers: adminUsers,
         },
       })
     );
+  }
+
+  // _getCoinsSettings({ query }) {
+  _getCoinsSettings() {
+    let coinsSettings;
+    if (!this.coinsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/coins.yml"
+        );
+        coinsSettings = Utils.fileParser(p);
+        this.coinsSettings = coinsSettings; //Array<Object>
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.coinsSettings;
+    // this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
+  }
+
+  // _getDepositsSettings({ query }) {
+  _getDepositsSettings() {
+    let depositsSettings, formatDepositsSettings;
+    if (!this.depositsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/deposits.yml"
+        );
+        depositsSettings = Utils.fileParser(p);
+        formatDepositsSettings = depositsSettings.reduce((prev, deposit) => {
+          if (!prev[deposit.id.toString()])
+            prev[deposit.id.toString()] = {
+              ...deposit,
+            };
+          else
+            this.logger.error(
+              `[config/deposits.yml] duplicate deposit`,
+              prev[deposit.id.toString()],
+              deposit
+            );
+          return prev;
+        }, {});
+        // this.logger.log(`-*-*-*-*- getDepositsSettings -*-*-*-*-`, depositsSettings);
+        this.depositsSettings = formatDepositsSettings;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.depositsSettings;
+    // return Promise.resolve(
+    //   new ResponseFormat({
+    //     message: "getDepositsSettings",
+    //     payload: {
+    //       depositsSettings: this.depositsSettings,
+    //     },
+    //   })
+    // );
+  }
+
+  // getWithdrawsSettings({ query }) {
+  _getWithdrawsSettings() {
+    let withdrawsSettings, formatWithdrawsSettings;
+    if (!this.withdrawsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/withdraws.yml"
+        );
+        withdrawsSettings = Utils.fileParser(p);
+        formatWithdrawsSettings = withdrawsSettings.reduce((prev, withdraw) => {
+          if (!prev[withdraw.id.toString()])
+            prev[withdraw.id.toString()] = {
+              ...withdraw,
+            };
+          else
+            this.logger.error(
+              `[config/withdraws.yml] duplicate withdraw`,
+              prev[withdraw.id.toString()],
+              withdraw
+            );
+          return prev;
+        }, {});
+        // this.logger.log(`-*-*-*-*- getWithdrawsSettings -*-*-*-*-`, withdrawsSettings);
+        this.withdrawsSettings = formatWithdrawsSettings;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.withdrawsSettings;
+    // return Promise.resolve(
+    //   new ResponseFormat({
+    //     message: "getWithdrawsSettings",
+    //     payload: {
+    //       withdrawsSettings:  this.withdrawsSettings,
+    //     },
+    //   })
+    // );
+  }
+
+  formatCoinsSettings() {
+    let coins;
+    if (!this.coinsSettings) this._getCoinsSettings();
+    if (!this.depositsSettings) this._getDepositsSettings();
+    if (!this.withdrawsSettings) this._getWithdrawsSettings();
+    coins = this.coinsSettings
+      .filter((coin) => coin.coin)
+      .map((coin) => {
+        const formatCoin = {
+          id: coin.id,
+          key: coin.key,
+          code: coin.code,
+          symbol: coin.symbol,
+          coin: coin.coin,
+          visible: coin.visible,
+          marketingCategory: coin.marketing_category,
+          precision: coin.id || 2,
+          selfTransfer: coin.self_transfer,
+          minConfirm: this.depositsSettings[coin.id]?.min_confirm,
+          maxConfirm: this.depositsSettings[coin.id]?.max_confirm,
+          depositFee: {
+            current: this.depositsSettings[coin.id]?.fee || "0",
+            external: this.depositsSettings[coin.id]?.external_fee || "0",
+          },
+          withdrawFee: {
+            current: this.withdrawsSettings[coin.id]?.fee || "0",
+            external: this.withdrawsSettings[coin.id]?.external_fee || "0",
+          },
+          alert: coin.code === "btc", // ++ TODO
+        };
+        return formatCoin;
+      });
+    return coins;
+  }
+
+  getCoinsSettings({ query }) {
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getCoinsSettings",
+        payload: {
+          coins: this.formatCoinsSettings(),
+        },
+      })
+    );
+  }
+
+  async updateCoinSetting({ params, email, body }) {
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/coins.yml");
+    this.logger.debug(
+      `*********** [${this.name}] updateCoinSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        let index = this.coinsSettings.findIndex(
+          (coin) => coin.id.toString() === params.id.toString()
+        );
+        this.logger.log(`index`, index);
+        if (index !== -1) {
+          let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+            ...coin,
+          }));
+          updatedCoinsSettings[index] = {
+            ...updatedCoinsSettings[index],
+            visible: visible,
+          };
+          this.logger.log(
+            `updatedCoinsSettings[${index}]`,
+            updatedCoinsSettings[index]
+          );
+          try {
+            Utils.yamlUpdate(updatedCoinsSettings, p);
+            this.coinsSettings = updatedCoinsSettings;
+            result = new ResponseFormat({
+              message: "updateCoinSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateCoinSetting`,
+              updatedCoinsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update coins settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateCoinsSettings({ email, body }) {
+    const p = path.join(this.config.base.TideBitLegacyPath, "config/coins.yml");
+    this.logger.debug(
+      `*********** [${this.name}] updateCoinSetting ************`
+    );
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+          ...coin,
+          visible,
+        }));
+        try {
+          Utils.yamlUpdate(updatedCoinsSettings, p);
+          this.coinsSettings = updatedCoinsSettings;
+          result = new ResponseFormat({
+            message: "updateCoinsSettings",
+            payload: {
+              coins: this.formatCoinsSettings(),
+            },
+          });
+        } catch (e) {
+          this.logger.error(
+            `yamlUpdate updateCoinsSettings`,
+            updatedCoinsSettings,
+            e
+          );
+          result = new ResponseFormat({
+            message: "Internal server error",
+            code: Codes.UNKNOWN_ERROR,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update coins settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinsSettings`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateDepositSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/deposits.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateDepositSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      updatedDepositCoin;
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { fee, externalFee } = body;
+      this.logger.log(`updateDepositCoin`, fee, externalFee);
+      if (currentUser.roles?.includes("root")) {
+        updatedDepositCoin = this.depositsSettings[params.id];
+        this.logger.log(`updatedDepositCoin`, updatedDepositCoin);
+        if (updatedDepositCoin) {
+          let updatedDepositsSettings = Object.values(
+            this.depositsSettings
+          ).reduce((prev, deposit) => {
+            prev[deposit.id.toString()] = { ...deposit };
+            return prev;
+          }, {});
+          updatedDepositsSettings[params.id] = {
+            ...updatedDepositCoin,
+            fee: fee,
+            external_fee: externalFee,
+          };
+          this.logger.log(
+            `updatedDepositsSettings[${params.id}]`,
+            updatedDepositsSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(updatedDepositsSettings, p);
+            this.depositsSettings = updatedDepositsSettings;
+            result = new ResponseFormat({
+              message: "updateDepositSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateDepositSetting`,
+              updatedDepositsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update deposit settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateDepositSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateWithdrawSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/withdraws.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateWithdrawSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      updatedWithdrawCoin;
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { fee, externalFee } = body;
+      this.logger.log(`updateWithdrawCoin`, fee, externalFee);
+      if (currentUser.roles?.includes("root")) {
+        updatedWithdrawCoin = this.withdrawsSettings[params.id];
+        this.logger.log(`updatedWithdrawCoin`, updatedWithdrawCoin);
+        if (updatedWithdrawCoin) {
+          let updatedWithdrawsSettings = Object.values(
+            this.withdrawsSettings
+          ).reduce((prev, withdraw) => {
+            prev[withdraw.id.toString()] = { ...withdraw };
+            return prev;
+          }, {});
+          updatedWithdrawsSettings[params.id] = {
+            ...updatedWithdrawCoin,
+            fee: fee,
+            external_fee: externalFee,
+          };
+          this.logger.log(
+            `updatedWithdrawsSettings[${params.id}]`,
+            updatedWithdrawsSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(updatedWithdrawsSettings, p);
+            this.withdrawsSettings = updatedWithdrawsSettings;
+            result = new ResponseFormat({
+              message: "updateWithdrawSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateWithdrawSetting`,
+              updatedWithdrawsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update withdraw settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateWithdrawSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
   async addAdminUser({ email, body }) {

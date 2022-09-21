@@ -123,6 +123,25 @@ const StoreProvider = (props) => {
     return await middleman.updateAdminUser(updateUser);
   };
 
+  const getCoinsSettings = async () => {
+    return await middleman.getCoinsSettings();
+  };
+
+  const updateCoinsSettings = async (visibile) => {
+    return await middleman.updateCoinsSettings(visibile);
+  };
+  const updateCoinSetting = async (id, visibile) => {
+    return await middleman.updateCoinSetting(id, visibile);
+  };
+
+  const updateDepositSetting = async (id, fee, externalFee) => {
+    return await middleman.updateDepositSetting(id, fee, externalFee);
+  };
+
+  const updateWithdrawSetting = async (id, fee, externalFee) => {
+    return await middleman.updateWithdrawSetting(id, fee, externalFee);
+  };
+
   const getUsersAccounts = useCallback(async () => {
     let usersAccounts = {};
     try {
@@ -518,7 +537,12 @@ const StoreProvider = (props) => {
         addAdminUser,
         deleteAdminUser,
         updateAdminUser,
-        getExchangeRates
+        getExchangeRates,
+        getCoinsSettings,
+        updateCoinSetting,
+        updateCoinsSettings,
+        updateDepositSetting,
+        updateWithdrawSetting,
       }}
     >
       {props.children}

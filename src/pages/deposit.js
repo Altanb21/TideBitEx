@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useState, useContext, useEffect, useCallback } from "react";
 import TableSwitchWithLock from "../components/TableSwitchWithLock";
-import TableDropdown from "../components/TableDropdown";
+// import TableDropdown from "../components/TableDropdown";
 import StoreContext from "../store/store-context";
 import Dialog from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
@@ -13,7 +13,7 @@ let timer;
 
 const FeeControlDialog = (props) => {
   const { t } = useTranslation();
-  const [currency, setCurrency] = useState({});
+  const [currency, setCoinSetting] = useState({});
 
   const formatValue = useCallback(({ value, precision = 8 }) => {
     let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
@@ -47,40 +47,38 @@ const FeeControlDialog = (props) => {
     >
       <div className="deposit__dialog-content">
         <div className="deposit__dialog-content--title">
-          {props.currency.exchange}
+          {props.currency.code.toUpperCase()}
         </div>
         <div className="deposit__dialog-content--body">
           <div className="deposit__dialog-inputs">
             <div className="deposit__dialog-input-group">
               <label
                 className="deposit__dialog-input-label"
-                htmlFor="deposit-fee"
+                htmlFor={`${props.type}-current-fee`}
               >
-                {t("deposit-fee")}:
+                {t(`${props.type}-current-fee`)}:
               </label>
               <div className="deposit__dialog-input-box">
                 <div className="deposit__dialog-input-column">
                   <input
                     className="deposit__dialog-input"
-                    name="deposit-fee"
+                    name={`${props.type}-current-fee`}
                     type="number"
                     inputMode="decimal"
                     onChange={(e) => {
                       const value = formatValue(e.target.value);
                       const fee = SafeMath.div(value, 100);
-                      setCurrency((prev) => ({
+                      setCoinSetting((prev) => ({
                         ...prev,
                         depositFee: { ...prev.depositFee, current: fee },
                         withdrawFee: { ...prev.withdrawFee },
                       }));
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(
-                    "current-external-fee"
-                  )}: ${SafeMath.mult(
+                  <div className="deposit__dialog-input-caption">{`${t(`${props.type}-current-fee`)}: ${SafeMath.mult(
                     props.currency.depositFee?.current,
                     100
-                  )}`}</div>
+                  )}%`}</div>
                 </div>
                 <div className="deposit__dialog-input-suffix">%</div>
               </div>
@@ -88,21 +86,21 @@ const FeeControlDialog = (props) => {
             <div className="deposit__dialog-input-group">
               <label
                 className="deposit__dialog-input-label"
-                htmlFor="withdraw-fee"
+                htmlFor={`${props.type}-external-fee`}
               >
-                {t("withdraw-fee")}:
+                {t(`${props.type}-external-fee`)}:
               </label>
               <div className="deposit__dialog-input-box">
                 <div className="deposit__dialog-input-column">
                   <input
                     className="deposit__dialog-input"
-                    name="withdraw-fee"
+                    name={`${props.type}-external-fee`}
                     type="number"
                     inputMode="decimal"
                     onChange={(e) => {
                       const value = formatValue(e.target.value);
                       const fee = SafeMath.div(value, 100);
-                      setCurrency((prev) => ({
+                      setCoinSetting((prev) => ({
                         ...prev,
                         depositFee: { ...prev.depositFee },
                         withdrawFee: { ...prev.withdrawFee, current: fee },
@@ -110,11 +108,11 @@ const FeeControlDialog = (props) => {
                     }}
                   />
                   <div className="deposit__dialog-input-caption">{`${t(
-                    "current-external-fee"
+                    `${props.type}-external-fee`
                   )}: ${SafeMath.mult(
                     props.currency.withdrawFee?.current,
                     100
-                  )}`}</div>
+                  )}%`}</div>
                 </div>
                 <div className="deposit__dialog-input-suffix">%</div>
               </div>
@@ -132,281 +130,169 @@ const Deposit = () => {
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [currencies, setCurrencies] = useState(null);
-  const [selectedCurrency, setSelectedCurrency] = useState(null);
-  const [filterCurrencies, setFilterCurrencies] = useState(null);
-  const [filterOption, setFilterOption] = useState("all"); //'open','close'
+  const [coinsSettngs, setCoinsSettings] = useState(null);
+  const [selectedCoinSetting, setSelectedCoinSetting] = useState(null);
+  const [filterCoinsSettings, setFilterCoinsSettings] = useState(null);
+  const [isVisible, setIsVisibile] = useState(null); //true, fasle
   const [filterKey, setFilterKey] = useState("");
   const [active, setActive] = useState(false);
   const [unLocked, setUnLocked] = useState(false);
-  const [openFeeControlDialog, setOpenFeeControlDialog] = useState(false);
+  const [openDepositControlDialog, setOpenDepositControlDialog] =
+    useState(false);
+  const [openWithdrawControlDialog, setOpenWithdrawControlDialog] =
+    useState(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { t } = useTranslation();
 
   const sorting = () => {};
 
-  const getCurrencies = useCallback(async () => {
-    return Promise.resolve({
-      BTC: {
-        currency: "Bitcoin",
-        symbol: "BTC",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.00000015",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: true,
-        exchange: "OKEx",
-        exchanges: ["TideBit", "OKEx"],
-        tags: ["Blockchain"],
-        status: "open", // 'close'
-      },
-      ETH: {
-        currency: "Ethereum",
-        symbol: "ETH",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchange: "TideBit",
-        exchanges: ["TideBit", "OKEx"],
-        tags: ["Blockchain"],
-        status: "open", // 'close'
-      },
-      XRP: {
-        //The purpose of XRP is to serve as an intermediate mechanism of exchange between two currencies or networks—as a sort of temporary settlement layer denomination
-        currency: "XRP",
-        symbol: "XRP",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchanges: [],
-        tags: ["Layer2"],
-        status: "close", // 'open'
-      },
-      USDC: {
-        //SD Coin is a service to tokenize US dollars and facilitate their use over the internet and public blockchains.
-        currency: "USD Coin",
-        symbol: "USDC",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchange: "OKEx",
-        exchanges: ["TideBit", "OKEx"],
-        tags: ["Defi"],
-        status: "close", // 'close'
-      },
-      USDT: {
-        currency: "Tether",
-        symbol: "USDT",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchange: "TideBit",
-        exchanges: ["TideBit", "OKEx"],
-        tags: ["Polkadot"],
-        status: "open", // 'close'
-      },
-      BNB: {
-        currency: "Build and Build",
-        symbol: "BNB",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchanges: [],
-        tags: ["Greyscale"],
-        status: "close", // 'open'
-      },
-      BUSD: {
-        currency: "Binance USD",
-        symbol: "BUSD",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchanges: [],
-        tags: ["Defi"],
-        status: "close", // 'open'
-      },
-      ADA: {
-        currency: "Cardano", //Cardano is built by a decentralized community of scientists, engineers, and thought leaders united in a common purpose: to create a technology platform that will ignite the positive change the world needs.
-        symbol: "ADA",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchanges: [],
-        tags: ["GameFi"],
-        status: "close", // 'open'
-      },
-      SOL: {
-        currency: "Solana",
-        symbol: "SOL",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchanges: [],
-        tags: ["Meme"],
-        status: "close", // 'open'
-      },
-      DOGE: {
-        currency: "Dogecoin",
-        symbol: "DOGE",
-        depositFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        withdrawFee: {
-          current: "0.0000001",
-          external: "0.0000001",
-        },
-        alert: false,
-        exchanges: [],
-        tags: ["NFT"],
-        status: "close", // 'open'
-      },
-    });
-  }, []);
+  const getCoinsSettings = useCallback(async () => {
+    let coinsSettngs = await storeCtx.getCoinsSettings();
+    return coinsSettngs;
+  }, [storeCtx]);
 
   const filter = useCallback(
-    ({ filterCurrencies, status, keyword }) => {
-      if (status) setFilterOption(status);
-      let _option = status || filterOption,
+    ({ filterCoinsSettings, visibile, keyword }) => {
+      if (visibile) setIsVisibile(visibile);
+      let _option = visibile || isVisible,
         _keyword = keyword === undefined ? filterKey : keyword,
-        _currencies = filterCurrencies || currencies;
-      if (_currencies) {
-        _currencies = Object.values(_currencies).filter((currency) => {
-          if (_option === "all")
+        _coinsSettngs = filterCoinsSettings || coinsSettngs;
+      if (_coinsSettngs) {
+        _coinsSettngs = _coinsSettngs.filter((currency) => {
+          if (_option === null)
             return (
-              currency.currency.includes(_keyword) ||
+              currency.key.includes(_keyword) ||
               currency.symbol.includes(_keyword)
             );
           else
             return (
-              currency.status === _option &&
-              (currency.currency.includes(_keyword) ||
+              currency.visibile === _option &&
+              (currency.key.includes(_keyword) ||
                 currency.symbol.includes(_keyword))
             );
         });
-        setFilterCurrencies(_currencies);
+        setFilterCoinsSettings(_coinsSettngs);
       }
     },
-    [currencies, filterKey, filterOption]
+    [coinsSettngs, filterKey, isVisible]
   );
 
-  const updateCurrencyFee = useCallback(
-    async (currency) => {
-      setOpenFeeControlDialog(false);
+  const updateDepositSetting = useCallback(
+    async (id, fee, externalFee) => {
+      setOpenDepositControlDialog(false);
       setIsLoading(true);
-      const _currency = currencies[currency.symbol];
-      if (_currency) {
-        try {
-          const { currencies: updateCurrencies } =
-            await storeCtx.updateCurrencyFee(currency);
-          setCurrencies(updateCurrencies);
-          // filter({ filterCurrencies: updateCurrencies }); // TODO
-          enqueueSnackbar(`${t("success-update")}`, {
-            variant: "success",
-            anchorOrigin: {
-              vertical: "top",
-              horizontal: "center",
-            },
-          });
-        } catch (error) {
-          enqueueSnackbar(`${t("error-happen")}`, {
-            variant: "error",
-            anchorOrigin: {
-              vertical: "top",
-              horizontal: "center",
-            },
-          });
-        }
-        setIsLoading(false);
-      } else {
-        // ++TODO
+      try {
+        const { coins: updateCoinsSettings } =
+          await storeCtx.updateDepositSetting(id, fee, externalFee);
+        setCoinsSettings(updateCoinsSettings);
+        filter({ filterCoinsSettings: updateCoinsSettings });
+        enqueueSnackbar(`${t("success-update")}`, {
+          variant: "success",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      } catch (error) {
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
       }
+      setIsLoading(false);
     },
-    [currencies, enqueueSnackbar, storeCtx, t]
+    [enqueueSnackbar, filter, storeCtx, t]
   );
 
-  const switchExchange = useCallback(
-    (exchange, symbol) => {
-      console.log(`switchExchange`, exchange, symbol);
-      const updateCurrencies = { ...currencies };
-      updateCurrencies[symbol].exchange = exchange;
-      setCurrencies(updateCurrencies);
+  const updateWithdrawSetting = useCallback(
+    async (id, fee, externalFee) => {
+      setOpenDepositControlDialog(false);
+      setIsLoading(true);
+      try {
+        const { coins: updateCoinsSettings } =
+          await storeCtx.updateWithdrawSetting(id, fee, externalFee);
+        setCoinsSettings(updateCoinsSettings);
+        filter({ filterCoinsSettings: updateCoinsSettings });
+        enqueueSnackbar(`${t("success-update")}`, {
+          variant: "success",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      } catch (error) {
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      }
+      setIsLoading(false);
     },
-    [currencies]
+    [enqueueSnackbar, filter, storeCtx, t]
   );
+
+  // const switchExchange = useCallback(
+  //   (exchange, id) => {
+  //     console.log(`switchExchange`, exchange, id);
+  //     const updateCoinsSettings = coinsSettngs.map((currency) => ({
+  //       ...currency,
+  //     }));
+  //     const index = updateCoinsSettings.findIndex(
+  //       (currency) => currency.id.toString() === id.toString()
+  //     );
+  //     updateCoinsSettings[index].exchange = exchange;
+  //     setCoinsSettings(updateCoinsSettings);
+  //   },
+  //   [coinsSettngs]
+  // );
 
   const toggleStatus = useCallback(
-    (status, symbol) => {
-      console.log(`toggleStatus`, status, symbol);
-      const updateCurrencies = { ...currencies };
-      updateCurrencies[symbol].status = status === "open" ? "close" : "open";
-      setCurrencies(updateCurrencies);
+    async (id, visibile) => {
+      console.log(`toggleStatus`, id, visibile);
+      try {
+        const { coins: updateCoinsSettings } = await storeCtx.updateCoinSetting(
+          id,
+          visibile
+        );
+        setCoinsSettings(updateCoinsSettings);
+        filter({ filterCoinsSettings: updateCoinsSettings });
+        enqueueSnackbar(`${t("success-update")}`, {
+          variant: "success",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      } catch (error) {
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      }
+      setIsLoading(false);
     },
-    [currencies]
+    [enqueueSnackbar, filter, storeCtx, t]
   );
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        const currencies = await getCurrencies();
-        setCurrencies(currencies);
-        filter({ filterCurrencies: currencies });
+        const coinsSettngs = await getCoinsSettings();
+        setCoinsSettings(coinsSettngs);
+        filter({ filterCoinsSettings: coinsSettngs });
         return !prev;
       } else return prev;
     });
-  }, [filter, getCurrencies]);
+  }, [filter, getCoinsSettings]);
 
   useEffect(() => {
     if (!isInit) {
@@ -417,14 +303,26 @@ const Deposit = () => {
   return (
     <>
       {isLoading && <LoadingDialog />}
-      {openFeeControlDialog && selectedCurrency && (
+      {openDepositControlDialog && selectedCoinSetting && (
         <FeeControlDialog
-          currency={selectedCurrency}
-          onClose={() => setOpenFeeControlDialog(false)}
+          type="deposit"
+          currency={selectedCoinSetting}
+          onClose={() => setOpenDepositControlDialog(false)}
           onCancel={() => {
-            setOpenFeeControlDialog(false);
+            setOpenDepositControlDialog(false);
           }}
-          onConfirm={updateCurrencyFee}
+          onConfirm={updateDepositSetting}
+        />
+      )}
+      {openWithdrawControlDialog && selectedCoinSetting && (
+        <FeeControlDialog
+          type="withdraw"
+          currency={selectedCoinSetting}
+          onClose={() => setOpenWithdrawControlDialog(false)}
+          onCancel={() => {
+            setOpenWithdrawControlDialog(false);
+          }}
+          onConfirm={updateWithdrawSetting}
         />
       )}
       <section className="screen__section deposit">
@@ -432,7 +330,7 @@ const Deposit = () => {
         {/* <ScreenTags
         selectedTag={selectedTag}
         selectTagHandler={selectTagHandler}
-        currencies={currencies}
+        coinsSettngs={coinsSettngs}
       /> */}
         <div className="screen__search-bar">
           <div className="screen__search-box">
@@ -458,7 +356,7 @@ const Deposit = () => {
             <ul className="screen__display-options">
               <li
                 className={`screen__display-option${
-                  filterOption === "all" ? " active" : ""
+                  isVisible === null ? " active" : ""
                 }`}
                 onClick={() => filter("all")}
               >
@@ -466,7 +364,7 @@ const Deposit = () => {
               </li>
               <li
                 className={`screen__display-option${
-                  filterOption === "open" ? " active" : ""
+                  isVisible === true ? " active" : ""
                 }`}
                 onClick={() => filter("open")}
               >
@@ -474,7 +372,7 @@ const Deposit = () => {
               </li>
               <li
                 className={`screen__display-option${
-                  filterOption === "close" ? " active" : ""
+                  isVisible === false ? " active" : ""
                 }`}
                 onClick={() => filter("close")}
               >
@@ -490,7 +388,7 @@ const Deposit = () => {
           <ul className="screen__table-headers">
             <li className="screen__table-header">幣種</li>
             <li className="screen__table-header">代號</li>
-            <li className="screen__table-header">入金交易所</li>
+            {/* <li className="screen__table-header">入金交易所</li> */}
             <li className="screen__table-header">
               <div className="screen__table-header--text">入金手續費</div>
               <div className="screen__table-header--icon"></div>
@@ -528,20 +426,36 @@ const Deposit = () => {
               ></div>
               <button
                 disabled={`${
-                  !Object.values(currencies || {}).some(
-                    (currency) => currency.status === "open"
-                  )
+                  !coinsSettngs.some((currency) => currency.visibile === true)
                     ? "disable"
                     : ""
                 }`}
-                onClick={() => {
+                onClick={async () => {
                   if (unLocked) {
-                    const updateCurrencies = { ...currencies };
-                    Object.values(updateCurrencies).forEach(
-                      (currency) => (currency.status = "close")
-                    );
-                    setCurrencies(updateCurrencies);
-                    filter(filterOption, updateCurrencies);
+                    // ++TODO
+                    try {
+                      setIsLoading(true);
+                      const { coins: updateCoinsSettings } =
+                        await storeCtx.updateCoinsSettings(false);
+                      setCoinsSettings(updateCoinsSettings);
+                      filter({ filterCoinsSettings: updateCoinsSettings });
+                      enqueueSnackbar(`${t("success-update")}`, {
+                        variant: "success",
+                        anchorOrigin: {
+                          vertical: "top",
+                          horizontal: "center",
+                        },
+                      });
+                    } catch (error) {
+                      enqueueSnackbar(`${t("error-happen")}`, {
+                        variant: "error",
+                        anchorOrigin: {
+                          vertical: "top",
+                          horizontal: "center",
+                        },
+                      });
+                    }
+                    setIsLoading(false);
                     const timer = setTimeout(() => {
                       setUnLocked(false);
                       setActive(false);
@@ -555,25 +469,42 @@ const Deposit = () => {
               /
               <button
                 disabled={`${
-                  !Object.values(currencies || {}).some(
-                    (currency) => currency.status === "close"
-                  )
+                  !coinsSettngs.some((currency) => currency.visibile === false)
                     ? "disable"
                     : ""
                 }`}
-                onClick={() => {
+                onClick={async () => {
                   if (unLocked) {
-                    const updateCurrencies = { ...currencies };
-                    Object.values(updateCurrencies).forEach(
-                      (currency) => (currency.status = "open")
-                    );
-                    setCurrencies(updateCurrencies);
-                    filter(filterOption, updateCurrencies);
+                    // ++TODO
+                    try {
+                      setIsLoading(true);
+                      const { coins: updateCoinsSettings } =
+                        await storeCtx.updateCoinsSettings(true);
+                      setCoinsSettings(updateCoinsSettings);
+                      filter({ filterCoinsSettings: updateCoinsSettings });
+                      enqueueSnackbar(`${t("success-update")}`, {
+                        variant: "success",
+                        anchorOrigin: {
+                          vertical: "top",
+                          horizontal: "center",
+                        },
+                      });
+                    } catch (error) {
+                      enqueueSnackbar(`${t("error-happen")}`, {
+                        variant: "error",
+                        anchorOrigin: {
+                          vertical: "top",
+                          horizontal: "center",
+                        },
+                      });
+                    }
+                    setIsLoading(false);
                     const timer = setTimeout(() => {
                       setUnLocked(false);
                       setActive(false);
                       clearTimeout(timer);
                     }, 500);
+                  }
                   }
                 }}
               >
@@ -582,38 +513,40 @@ const Deposit = () => {
             </li>
           </ul>
           <ul className="screen__table-rows">
-            {filterCurrencies &&
-              filterCurrencies.map((currency) => (
+            {filterCoinsSettings &&
+              filterCoinsSettings.map((currency) => (
                 <div
                   className={`deposit__currency-tile screen__table-row${
-                    currency.alert ? " screen__table--alert" : ""
+                    currency.alert ? " alert" : ""
                   }`}
-                  key={currency.symbol}
+                  key={currency.code}
                 >
                   <div className="deposit__currency-text screen__table-item">
                     <div className="deposit__currency-alert">
                       <div></div>
                     </div>
-                    {currency.currency}
+                    {`${currency.key
+                      .substring(0, 1)
+                      .toUpperCase()}${currency.key.substring(1)}`}
                   </div>
                   <div className="deposit__currency-text screen__table-item">
-                    {currency.symbol}
+                    {currency.code.toUpperCase()}
                   </div>
-                  <TableDropdown
+                  {/* <TableDropdown
                     className="screen__table-item"
                     selectHandler={(option) =>
-                      switchExchange(option, currency.symbol)
+                      switchExchange(option, currency.id)
                     }
-                    options={currency.exchanges}
-                    selected={currency.exchange}
-                  />
+                    options={currency?.exchanges || []}
+                    selected={currency?.exchange || ""}
+                  /> */}
                   <div className="deposit__currency-text screen__table-item">
                     <div className="screen__table-item--text-box">
                       <div className="screen__table-item--text">
                         <div className="screen__table-item--title">當前：</div>
                         <div
                           className={`screen__table-item--value${
-                            currency.alert ? " screen__table--alert" : ""
+                            currency.alert ? " alert" : ""
                           }`}
                         >{`${SafeMath.mult(
                           currency.depositFee?.current,
@@ -624,7 +557,7 @@ const Deposit = () => {
                         <div className="screen__table-item--title">外部：</div>
                         <div
                           className={`screen__table-item--value${
-                            currency.alert ? " screen__table--alert" : ""
+                            currency.alert ? " alert" : ""
                           }`}
                         >{`${SafeMath.mult(
                           currency.depositFee?.external,
@@ -636,9 +569,9 @@ const Deposit = () => {
                       className="screen__table-item--icon"
                       onClick={() => {
                         // console.log(`currency`, currency);
-                        // if(currency.status === "open"){
-                        setSelectedCurrency(currency);
-                        setOpenFeeControlDialog(true);
+                        // if(currency.visibilt === true){
+                        setSelectedCoinSetting(currency);
+                        setOpenDepositControlDialog(true);
                         // }
                       }}
                     ></div>
@@ -664,18 +597,18 @@ const Deposit = () => {
                       className="screen__table-item--icon"
                       onClick={() => {
                         // console.log(`currency`, currency);
-                        // if(currency.status === "open"){
-                        setSelectedCurrency(currency);
-                        setOpenFeeControlDialog(true);
+                        // if(currency.visibilt === true){
+                        setSelectedCoinSetting(currency);
+                        setOpenWithdrawControlDialog(true);
                         // }
                       }}
                     ></div>
                   </div>
                   <TableSwitchWithLock
                     className="screen__table-switch"
-                    status={currency.status === "open"}
+                    status={currency.visibile}
                     toggleStatus={() =>
-                      toggleStatus(currency.status, currency.symbol)
+                      toggleStatus(currency.id, !currency.visibile)
                     }
                   />
                 </div>

@@ -491,6 +491,7 @@ class Communicator {
       return Promise.reject({ ...error });
     }
   }
+
   async addAdminUser(newAdminUser) {
     try {
       const url = `/admin/admin-users`;
@@ -545,6 +546,110 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       console.error(`[updateAdminUser] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getCoinsSettings() {
+    try {
+      const url = `/coins/coins-settings`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getCoinsSettings] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updateCoinsSettings(visibile) {
+    try {
+      const url = `/coins/coins-settings/`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: {
+          visibile,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updateCoinsSettings] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updateCoinSetting(id, visibile) {
+    try {
+      const url = `/coins/coins-settings/${id}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: {
+          visibile,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updateCoinSetting] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updateDepositSetting(id, fee, externalFee) {
+    try {
+      const url = `/coins/deposits-settings/${id}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: {
+          fee,
+          externalFee,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updateCoinSetting] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updateWithdrawSetting(id, fee, externalFee) {
+    try {
+      const url = `/coins/withdraws-settings/${id}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: {
+          fee,
+          externalFee,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updateCoinSetting] error`, error);
       return Promise.reject({ ...error });
     }
   }

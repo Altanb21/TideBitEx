@@ -69,6 +69,56 @@ class Middleman {
     }
   }
 
+  async getCoinsSettings() {
+    try {
+      const response = await this.communicator.getCoinsSettings();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateCoinsSettings(visibile) {
+    try {
+      const response = await this.communicator.updateCoinsSettings(visibile);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async updateCoinSetting(id, visibile) {
+    try {
+      const response = await this.communicator.updateCoinSetting(id, visibile);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async updateDepositSetting(id, fee, externalFee) {
+    try {
+      const response = await this.communicator.updateDepositSetting(
+        id,
+        fee,
+        externalFee
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async updateWithdrawSetting(id, fee, externalFee) {
+    try {
+      const response = await this.communicator.updateWithdrawSetting(
+        id,
+        fee,
+        externalFee
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addAdminUser(newUser) {
     try {
       const response = await this.communicator.addAdminUser(newUser);
