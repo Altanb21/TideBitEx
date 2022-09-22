@@ -5,7 +5,7 @@ const TableSwitchWithLock = (props) => {
   const [active, setActive] = useState(false);
   const [unLocked, setUnLocked] = useState(false);
   return (
-    <div
+    <td
       className={`switch ${props.className ? props.className : ""}${
         active ? " active" : ""
       }${unLocked ? " unLocked" : ""}`}
@@ -39,7 +39,7 @@ const TableSwitchWithLock = (props) => {
         />
         <div className="switch__btn"></div>
       </div>
-    </div>
+    </td>
   );
 };
 

@@ -427,20 +427,20 @@ const Deposit = () => {
             <img src="/img/sorting@2x.png" alt="sorting" />
           </div>
         </div>
-        <div className={`screen__table${showMore ? " show" : ""}`}>
-          <ul className="screen__table-headers">
-            <li className="screen__table-header">幣種</li>
-            <li className="screen__table-header">代號</li>
-            {/* <li className="screen__table-header">入金交易所</li> */}
-            <li className="screen__table-header">
+        <table className={`screen__table${showMore ? " show" : ""}`}>
+          <tr className="screen__table-headers">
+            <th className="screen__table-header">幣種</th>
+            <th className="screen__table-header">代號</th>
+            {/* <th className="screen__table-header">入金交易所</th> */}
+            <th className="screen__table-header">
               <div className="screen__table-header--text">入金手續費</div>
               <div className="screen__table-header--icon"></div>
-            </li>
-            <li className="screen__table-header">
+            </th>
+            <th className="screen__table-header">
               <div className="screen__table-header--text">出金手續費</div>
               <div className="screen__table-header--icon"></div>
-            </li>
-            <li
+            </th>
+            <th
               className={`screen__table-header-btn${active ? " active" : ""}${
                 unLocked ? " unLocked" : ""
               }`}
@@ -496,34 +496,34 @@ const Deposit = () => {
               >
                 全部開啟
               </button>
-            </li>
-            <li className="screen__table-header">
+            </th>
+            <th className="screen__table-header">
               <div className="screen__table-header--text">{t("deposit")}</div>
-            </li>
-            <li className="screen__table-header">
+            </th>
+            <th className="screen__table-header">
               <div className="screen__table-header--text">{t("withdraw")}</div>
-            </li>
-          </ul>
-          <ul className="screen__table-rows">
+            </th>
+          </tr>
+          <tbody className="screen__table-rows">
             {filterCoinsSettings &&
               filterCoinsSettings.map((currency) => (
-                <div
+                <tr
                   className={`deposit__currency-tile screen__table-row${
                     currency.alert ? " screen__table--alert" : ""
                   }`}
                   key={currency.code}
                 >
-                  <div className="deposit__currency-text screen__table-item">
+                  <td className="deposit__currency-text screen__table-item">
                     <div className="deposit__currency-alert">
                       <div></div>
                     </div>
                     {`${currency.key
                       .substring(0, 1)
                       .toUpperCase()}${currency.key.substring(1)}`}
-                  </div>
-                  <div className="deposit__currency-text screen__table-item">
+                  </td>
+                  <td className="deposit__currency-text screen__table-item">
                     {currency.code.toUpperCase()}
-                  </div>
+                  </td>
                   {/* <TableDropdown
                     className="screen__table-item"
                     selectHandler={(option) =>
@@ -532,7 +532,7 @@ const Deposit = () => {
                     options={currency?.exchanges || []}
                     selected={currency?.exchange || ""}
                   /> */}
-                  <div className="deposit__currency-text screen__table-item">
+                  <td className="deposit__currency-text screen__table-item">
                     <div className="screen__table-item--text-box">
                       <div className="screen__table-item--text">
                         <div className="screen__table-item--title">當前：</div>
@@ -567,8 +567,8 @@ const Deposit = () => {
                         // }
                       }}
                     ></div>
-                  </div>
-                  <div className="deposit__currency-text screen__table-item">
+                  </td>
+                  <td className="deposit__currency-text screen__table-item">
                     <div className="screen__table-item--text-box">
                       <div className="screen__table-item--text">
                         <div className="screen__table-item--title">當前：</div>
@@ -595,7 +595,7 @@ const Deposit = () => {
                         // }
                       }}
                     ></div>
-                  </div>
+                  </td>
                   <TableSwitchWithLock
                     className="screen__table-switch"
                     status={currency.visible}
@@ -629,16 +629,16 @@ const Deposit = () => {
                       )
                     }
                   />
-                </div>
+                </tr>
               ))}
-          </ul>
-          <div
+          </tbody>
+          <tfoot
             className="screen__table-btn screen__table-text"
             onClick={() => setShowMore((prev) => !prev)}
           >
             {showMore ? t("show-less") : t("show-more")}
-          </div>
-        </div>
+          </tfoot>
+        </table>
         <div className="screen__floating-box">
           <div
             className="screen__floating-btn"
