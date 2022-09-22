@@ -241,7 +241,10 @@ class ExchangeHub extends Bot {
           "config/markets/coins.yml"
         );
         coinsSettings = Utils.fileParser(p);
-        this.coinsSettings = coinsSettings; //Array<Object>
+        this.coinsSettings = coinsSettings.map((coinSetting) => ({
+          ...coinSetting,
+          visible: coinSetting.visible === false ? false : true, // default: true
+        }));
       } catch (error) {
         this.logger.error(error);
         process.exit(1);

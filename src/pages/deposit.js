@@ -614,7 +614,7 @@ const Deposit = () => {
                       toggleStatus(
                         COIN_SETTING_TYPE.DEPOSIT,
                         currency.id,
-                        !currency.deposit
+                        !!currency.deposit
                       )
                     }
                   />
@@ -625,7 +625,7 @@ const Deposit = () => {
                       toggleStatus(
                         COIN_SETTING_TYPE.WITHDRAW,
                         currency.id,
-                        !currency.withdraw
+                        !!currency.withdraw
                       )
                     }
                   />
