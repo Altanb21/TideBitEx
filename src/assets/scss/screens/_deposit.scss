@@ -42,6 +42,13 @@
   &__currency-text {
     display: flex;
   }
+  & .screen__table-header {
+    cursor: default;
+    &--icon,
+    &--text {
+      cursor: default;
+    }
+  }
   & .screen__table-header:nth-child(1),
   & .screen__table-item:nth-child(1) {
     min-width: 140px;
@@ -96,14 +103,14 @@
     font-weight: 400;
     color: #767676;
   }
-  &__dialog-input-column{
+  &__dialog-input-column {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
     gap: 3px;
   }
-  &__dialog-input-caption{
+  &__dialog-input-caption {
     font-size: 14px;
-    color: #3C3C3C;
+    color: #3c3c3c;
   }
 }

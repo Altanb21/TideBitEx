@@ -94,24 +94,24 @@ class Middleman {
       throw error;
     }
   }
-  async updateDepositSetting(id, fee, externalFee) {
+  async updateDepositSetting(id, type, data) {
     try {
       const response = await this.communicator.updateDepositSetting(
         id,
-        fee,
-        externalFee
+        type,
+        data
       );
       return response;
     } catch (error) {
       throw error;
     }
   }
-  async updateWithdrawSetting(id, fee, externalFee) {
+  async updateWithdrawSetting(id, type, data) {
     try {
       const response = await this.communicator.updateWithdrawSetting(
         id,
-        fee,
-        externalFee
+        type,
+        data
       );
       return response;
     } catch (error) {

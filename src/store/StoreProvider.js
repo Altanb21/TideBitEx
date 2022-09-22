@@ -134,12 +134,12 @@ const StoreProvider = (props) => {
     return await middleman.updateCoinSetting(id, visible);
   };
 
-  const updateDepositSetting = async (id, fee, externalFee) => {
-    return await middleman.updateDepositSetting(id, fee, externalFee);
+  const updateDepositSetting = async (id, type, data) => {
+    return await middleman.updateDepositSetting(id, type, data);
   };
 
-  const updateWithdrawSetting = async (id, fee, externalFee) => {
-    return await middleman.updateWithdrawSetting(id, fee, externalFee);
+  const updateWithdrawSetting = async (id, type, data) => {
+    return await middleman.updateWithdrawSetting(id, type, data);
   };
 
   const getUsersAccounts = useCallback(async () => {

@@ -610,7 +610,7 @@ class Communicator {
     }
   }
 
-  async updateDepositSetting(id, fee, externalFee) {
+  async updateDepositSetting(id, type, data) {
     try {
       const url = `/coins/deposits-settings/${id}`;
       // const res = await this._get(url);
@@ -618,8 +618,8 @@ class Communicator {
         method: "PUT",
         url,
         data: {
-          fee,
-          externalFee,
+          type,
+          data,
         },
       });
       if (res.success) {
@@ -632,7 +632,7 @@ class Communicator {
     }
   }
 
-  async updateWithdrawSetting(id, fee, externalFee) {
+  async updateWithdrawSetting(id, type, data) {
     try {
       const url = `/coins/withdraws-settings/${id}`;
       // const res = await this._get(url);
@@ -640,8 +640,8 @@ class Communicator {
         method: "PUT",
         url,
         data: {
-          fee,
-          externalFee,
+          type,
+          data,
         },
       });
       if (res.success) {

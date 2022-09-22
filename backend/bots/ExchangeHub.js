@@ -19,6 +19,7 @@ const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 const Database = require("../constants/Database");
 const ROLES = require("../constants/Roles");
+const { COIN_SETTING_TYPE } = require("../constants/CoinSetting");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -44,6 +45,9 @@ class ExchangeHub extends Bot {
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
         this.adminUsers = this._getAdminUsers();
+        this.coinsSettings = this._getCoinsSettings();
+        this.depositsSettings = this._getDepositsSettings();
+        this.withdrawsSettings = this._getWithdrawsSettings();
         this.priceList = await this.getPriceList();
         this.currencies = await this.database.getCurrencies();
         this.currenciesSymbol = await this.database.getCurrenciesSymbol();
@@ -243,8 +247,8 @@ class ExchangeHub extends Bot {
         process.exit(1);
       }
     }
+    this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
     return this.coinsSettings;
-    // this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
   }
 
   // _getDepositsSettings({ query }) {
@@ -335,7 +339,7 @@ class ExchangeHub extends Bot {
     if (!this.depositsSettings) this._getDepositsSettings();
     if (!this.withdrawsSettings) this._getWithdrawsSettings();
     coins = this.coinsSettings
-      .filter((coin) => coin.coin)
+      .filter((coin) => coin.coin && coin.marketing_category)
       .map((coin) => {
         const formatCoin = {
           id: coin.id,
@@ -349,10 +353,12 @@ class ExchangeHub extends Bot {
           selfTransfer: coin.self_transfer,
           minConfirm: this.depositsSettings[coin.id]?.min_confirm,
           maxConfirm: this.depositsSettings[coin.id]?.max_confirm,
+          deposit: this.depositsSettings[coin.id]?.visible,
           depositFee: {
             current: this.depositsSettings[coin.id]?.fee || "0",
             external: this.depositsSettings[coin.id]?.external_fee || "0",
           },
+          withdraw: this.withdrawsSettings[coin.id]?.visible,
           withdrawFee: {
             current: this.withdrawsSettings[coin.id]?.fee || "0",
             external: this.withdrawsSettings[coin.id]?.external_fee || "0",
@@ -533,8 +539,8 @@ class ExchangeHub extends Bot {
       currentUser
     );
     try {
-      const { fee, externalFee } = body;
-      this.logger.log(`updateDepositCoin`, fee, externalFee);
+      const { type, data } = body;
+      this.logger.log(`updateDepositCoin`, type, data);
       if (currentUser.roles?.includes("root")) {
         updatedDepositCoin = this.depositsSettings[params.id];
         this.logger.log(`updatedDepositCoin`, updatedDepositCoin);
@@ -545,11 +551,23 @@ class ExchangeHub extends Bot {
             prev[deposit.id.toString()] = { ...deposit };
             return prev;
           }, {});
-          updatedDepositsSettings[params.id] = {
-            ...updatedDepositCoin,
-            fee: fee,
-            external_fee: externalFee,
-          };
+          switch (type) {
+            case COIN_SETTING_TYPE.FEE:
+              updatedDepositsSettings[params.id] = {
+                ...updatedDepositCoin,
+                fee: data.fee,
+                external_fee: data.externalFee,
+              };
+              break;
+            case COIN_SETTING_TYPE.VISIBLE:
+              updatedDepositsSettings[params.id] = {
+                ...updatedDepositCoin,
+                visible: data.visible,
+              };
+              break;
+            default:
+          }
+
           this.logger.log(
             `updatedDepositsSettings[${params.id}]`,
             updatedDepositsSettings[params.id]
@@ -615,8 +633,8 @@ class ExchangeHub extends Bot {
       currentUser
     );
     try {
-      const { fee, externalFee } = body;
-      this.logger.log(`updateWithdrawCoin`, fee, externalFee);
+      const { type, data } = body;
+      this.logger.log(`updateWithdrawCoin`, type, data);
       if (currentUser.roles?.includes("root")) {
         updatedWithdrawCoin = this.withdrawsSettings[params.id];
         this.logger.log(`updatedWithdrawCoin`, updatedWithdrawCoin);
@@ -627,11 +645,22 @@ class ExchangeHub extends Bot {
             prev[withdraw.id.toString()] = { ...withdraw };
             return prev;
           }, {});
-          updatedWithdrawsSettings[params.id] = {
-            ...updatedWithdrawCoin,
-            fee: fee,
-            external_fee: externalFee,
-          };
+          switch (type) {
+            case COIN_SETTING_TYPE.FEE:
+              updatedWithdrawsSettings[params.id] = {
+                ...updatedWithdrawCoin,
+                fee: data.fee,
+                external_fee: data.externalFee,
+              };
+              break;
+            case COIN_SETTING_TYPE.VISIBLE:
+              updatedWithdrawsSettings[params.id] = {
+                ...updatedWithdrawCoin,
+                visible: data.visible,
+              };
+              break;
+            default:
+          }
           this.logger.log(
             `updatedWithdrawsSettings[${params.id}]`,
             updatedWithdrawsSettings[params.id]

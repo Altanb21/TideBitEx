@@ -16,6 +16,8 @@
   "history": "交易歷史",
   "settings": "設定",
   "setting": "設定",
+  "deposit": "入金",
+  "withdraw": "出金",
   "deposit-current-fee": "當前入金手續費",
   "withdraw-current-fee": "當前出金手續費",
   "deposit-external-fee": "外部入金手續費",

@@ -7,31 +7,23 @@ import Dialog from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
 import SafeMath from "../utils/SafeMath";
 import { useSnackbar } from "notistack";
-import { convertExponentialToDecimal } from "../utils/Utils";
+import { COIN_SETTING_TYPE } from "../constant/CoinSetting";
 
 let timer;
 
 const FeeControlDialog = (props) => {
   const { t } = useTranslation();
-  const [currency, setCoinSetting] = useState({});
+  const [fee, setFee] = useState(null);
+  const [externalFee, setExternalFee] = useState(null);
 
-  // const formatValue = useCallback(({ value, precision = 8 }) => {
-  //   let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
-  //   if (formatedValue.toString().includes(".")) {
-  //     if (formatedValue.toString().split(".")[1].length >= precision) {
-  //       let arr = formatedValue.toString().split(".");
-  //       let decimal = arr[1].substring(0, precision);
-  //       formatedValue = `${arr[0]}.${decimal}`;
-  //     }
-  //     if (formatedValue.toString().startsWith(".")) {
-  //       formatedValue = `0${formatedValue}`;
-  //     }
-  //   } else {
-  //     if (!!formatedValue && !isNaN(parseInt(formatedValue)))
-  //       formatedValue = parseInt(formatedValue).toString();
-  //   }
-  //   return { formatedValue };
-  // }, []);
+  const onConfirm = useCallback(() => {
+    if (fee && externalFee) {
+      props.onConfirm(props.currency.id, COIN_SETTING_TYPE.FEE, {
+        fee,
+        externalFee,
+      });
+    }
+  }, [externalFee, fee, props]);
 
   return (
     <Dialog
@@ -39,15 +31,7 @@ const FeeControlDialog = (props) => {
       title={t("setting")}
       onClose={props.onClose}
       onCancel={props.onCancel}
-      onConfirm={() => {
-        if (currency.fee && currency.externalFee) {
-          props.onConfirm(
-            props.currency.id,
-            currency.fee,
-            currency.externalFee
-          );
-        }
-      }}
+      onConfirm={onConfirm}
     >
       <div className="deposit__dialog-content">
         <div className="deposit__dialog-content--title">
@@ -68,15 +52,13 @@ const FeeControlDialog = (props) => {
                     className="deposit__dialog-input"
                     name={`${props.type}-current-fee`}
                     type="number"
+                    min="0"
                     inputMode="decimal"
+                    value={fee ? SafeMath.mult(fee, 100) : null}
                     onChange={(e) => {
-                      // const value = formatValue(e.target.value);
-                      const value = e.target.value;
+                      const value = Math.abs(e.target.value);
                       const fee = SafeMath.div(value, 100);
-                      setCoinSetting((prev) => ({
-                        ...prev,
-                        fee,
-                      }));
+                      setFee(fee);
                     }}
                   />
                   <div className="deposit__dialog-input-caption">{`${t(
@@ -103,14 +85,12 @@ const FeeControlDialog = (props) => {
                     name={`${props.type}-external-fee`}
                     type="number"
                     inputMode="decimal"
+                    min="0"
+                    value={externalFee ? SafeMath.mult(externalFee, 100) : null}
                     onChange={(e) => {
-                      // const value = formatValue(e.target.value);
-                      const value = e.target.value;
+                      const value = Math.abs(e.target.value);
                       const fee = SafeMath.div(value, 100);
-                      setCoinSetting((prev) => ({
-                        ...prev,
-                        externalFee: fee,
-                      }));
+                      setExternalFee(fee);
                     }}
                   />
                   <div className="deposit__dialog-input-caption">{`${t(
@@ -185,12 +165,12 @@ const Deposit = () => {
   );
 
   const updateDepositSetting = useCallback(
-    async (id, fee, externalFee) => {
+    async (id, type, data) => {
       setOpenDepositControlDialog(false);
       setIsLoading(true);
       try {
         const { coins: updateCoinsSettings } =
-          await storeCtx.updateDepositSetting(id, fee, externalFee);
+          await storeCtx.updateDepositSetting(id, type, data);
         setCoinsSettings(updateCoinsSettings);
         filter({ filterCoinsSettings: updateCoinsSettings });
         enqueueSnackbar(`${t("success-update")}`, {
@@ -215,12 +195,12 @@ const Deposit = () => {
   );
 
   const updateWithdrawSetting = useCallback(
-    async (id, fee, externalFee) => {
+    async (id, type, data) => {
       setOpenDepositControlDialog(false);
       setIsLoading(true);
       try {
         const { coins: updateCoinsSettings } =
-          await storeCtx.updateWithdrawSetting(id, fee, externalFee);
+          await storeCtx.updateWithdrawSetting(id, type, data);
         setCoinsSettings(updateCoinsSettings);
         filter({ filterCoinsSettings: updateCoinsSettings });
         enqueueSnackbar(`${t("success-update")}`, {
@@ -244,6 +224,40 @@ const Deposit = () => {
     [enqueueSnackbar, filter, storeCtx, t]
   );
 
+  const updateCoinsSettings = useCallback(
+    async (visible) => {
+      try {
+        setIsLoading(true);
+        const { coins: updateCoinsSettings } =
+          await storeCtx.updateCoinsSettings(visible);
+        setCoinsSettings(updateCoinsSettings);
+        filter({ filterCoinsSettings: updateCoinsSettings });
+        enqueueSnackbar(`${t("success-update")}`, {
+          variant: "success",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      } catch (error) {
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      }
+      setIsLoading(false);
+      const timer = setTimeout(() => {
+        setUnLocked(false);
+        setActive(false);
+        clearTimeout(timer);
+      }, 500);
+    },
+    [enqueueSnackbar, filter, storeCtx, t]
+  );
+
   // const switchExchange = useCallback(
   //   (exchange, id) => {
   //     console.log(`switchExchange`, exchange, id);
@@ -260,13 +274,35 @@ const Deposit = () => {
   // );
 
   const toggleStatus = useCallback(
-    async (id, visible) => {
-      console.log(`toggleStatus`, id, visible);
+    async (type, id, visible) => {
+      console.log(`toggleStatus`, type, id, visible);
+      let result, updateCoinsSettings;
       try {
-        const { coins: updateCoinsSettings } = await storeCtx.updateCoinSetting(
-          id,
-          visible
-        );
+        switch (type) {
+          case COIN_SETTING_TYPE.VISIBLE:
+            result = await storeCtx.updateCoinSetting(id, visible);
+            break;
+          case COIN_SETTING_TYPE.DEPOSIT:
+            result = await storeCtx.updateDepositSetting(
+              id,
+              COIN_SETTING_TYPE.VISIBLE,
+              {
+                visible,
+              }
+            );
+            break;
+          case COIN_SETTING_TYPE.WITHDRAW:
+            result = await storeCtx.updateWithdrawSetting(
+              id,
+              COIN_SETTING_TYPE.VISIBLE,
+              {
+                visible,
+              }
+            );
+            break;
+          default:
+        }
+        updateCoinsSettings = result.coins;
         setCoinsSettings(updateCoinsSettings);
         filter({ filterCoinsSettings: updateCoinsSettings });
         enqueueSnackbar(`${t("success-update")}`, {
@@ -312,7 +348,7 @@ const Deposit = () => {
       {isLoading && <LoadingDialog />}
       {openDepositControlDialog && selectedCoinSetting && (
         <FeeControlDialog
-          type="deposit"
+          type={COIN_SETTING_TYPE.DEPOSIT}
           currency={selectedCoinSetting}
           onClose={() => setOpenDepositControlDialog(false)}
           onCancel={() => {
@@ -323,7 +359,7 @@ const Deposit = () => {
       )}
       {openWithdrawControlDialog && selectedCoinSetting && (
         <FeeControlDialog
-          type="withdraw"
+          type={COIN_SETTING_TYPE.WITHDRAW}
           currency={selectedCoinSetting}
           onClose={() => setOpenWithdrawControlDialog(false)}
           onCancel={() => {
@@ -439,35 +475,7 @@ const Deposit = () => {
                 }`}
                 onClick={async () => {
                   if (unLocked) {
-                    // ++TODO
-                    try {
-                      setIsLoading(true);
-                      const { coins: updateCoinsSettings } =
-                        await storeCtx.updateCoinsSettings(false);
-                      setCoinsSettings(updateCoinsSettings);
-                      filter({ filterCoinsSettings: updateCoinsSettings });
-                      enqueueSnackbar(`${t("success-update")}`, {
-                        variant: "success",
-                        anchorOrigin: {
-                          vertical: "top",
-                          horizontal: "center",
-                        },
-                      });
-                    } catch (error) {
-                      enqueueSnackbar(`${t("error-happen")}`, {
-                        variant: "error",
-                        anchorOrigin: {
-                          vertical: "top",
-                          horizontal: "center",
-                        },
-                      });
-                    }
-                    setIsLoading(false);
-                    const timer = setTimeout(() => {
-                      setUnLocked(false);
-                      setActive(false);
-                      clearTimeout(timer);
-                    }, 500);
+                    updateCoinsSettings(false);
                   }
                 }}
               >
@@ -482,40 +490,18 @@ const Deposit = () => {
                 }`}
                 onClick={async () => {
                   if (unLocked) {
-                    // ++TODO
-                    try {
-                      setIsLoading(true);
-                      const { coins: updateCoinsSettings } =
-                        await storeCtx.updateCoinsSettings(true);
-                      setCoinsSettings(updateCoinsSettings);
-                      filter({ filterCoinsSettings: updateCoinsSettings });
-                      enqueueSnackbar(`${t("success-update")}`, {
-                        variant: "success",
-                        anchorOrigin: {
-                          vertical: "top",
-                          horizontal: "center",
-                        },
-                      });
-                    } catch (error) {
-                      enqueueSnackbar(`${t("error-happen")}`, {
-                        variant: "error",
-                        anchorOrigin: {
-                          vertical: "top",
-                          horizontal: "center",
-                        },
-                      });
-                    }
-                    setIsLoading(false);
-                    const timer = setTimeout(() => {
-                      setUnLocked(false);
-                      setActive(false);
-                      clearTimeout(timer);
-                    }, 500);
+                    updateCoinsSettings(true);
                   }
                 }}
               >
                 全部開啟
               </button>
+            </li>
+            <li className="screen__table-header">
+              <div className="screen__table-header--text">{t("deposit")}</div>
+            </li>
+            <li className="screen__table-header">
+              <div className="screen__table-header--text">{t("withdraw")}</div>
             </li>
           </ul>
           <ul className="screen__table-rows">
@@ -614,7 +600,33 @@ const Deposit = () => {
                     className="screen__table-switch"
                     status={currency.visible}
                     toggleStatus={() =>
-                      toggleStatus(currency.id, !currency.visible)
+                      toggleStatus(
+                        COIN_SETTING_TYPE.VISIBLE,
+                        currency.id,
+                        !currency.visible
+                      )
+                    }
+                  />
+                  <TableSwitchWithLock
+                    className="screen__table-switch"
+                    status={currency.deposit}
+                    toggleStatus={() =>
+                      toggleStatus(
+                        COIN_SETTING_TYPE.DEPOSIT,
+                        currency.id,
+                        !currency.deposit
+                      )
+                    }
+                  />
+                  <TableSwitchWithLock
+                    className="screen__table-switch"
+                    status={currency.withdraw}
+                    toggleStatus={() =>
+                      toggleStatus(
+                        COIN_SETTING_TYPE.WITHDRAW,
+                        currency.id,
+                        !currency.withdraw
+                      )
                     }
                   />
                 </div>

@@ -16,6 +16,8 @@
   "history": "History",
   "settings": "Settings",
   "setting": "Setting",
+  "deposit": "Deposit",
+  "withdraw": "Withdraw",
   "deposit-current-fee": "Deposit Current Fee",
   "withdraw-current-fee": "Withdraw Current Fee",
   "deposit-external-fee": "Deposit External Fee",
