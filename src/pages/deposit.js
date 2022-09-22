@@ -15,23 +15,23 @@ const FeeControlDialog = (props) => {
   const { t } = useTranslation();
   const [currency, setCoinSetting] = useState({});
 
-  const formatValue = useCallback(({ value, precision = 8 }) => {
-    let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
-    if (formatedValue.toString().includes(".")) {
-      if (formatedValue.toString().split(".")[1].length >= precision) {
-        let arr = formatedValue.toString().split(".");
-        let decimal = arr[1].substring(0, precision);
-        formatedValue = `${arr[0]}.${decimal}`;
-      }
-      if (formatedValue.toString().startsWith(".")) {
-        formatedValue = `0${formatedValue}`;
-      }
-    } else {
-      if (!!formatedValue && !isNaN(parseInt(formatedValue)))
-        formatedValue = parseInt(formatedValue).toString();
-    }
-    return { formatedValue };
-  }, []);
+  // const formatValue = useCallback(({ value, precision = 8 }) => {
+  //   let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+  //   if (formatedValue.toString().includes(".")) {
+  //     if (formatedValue.toString().split(".")[1].length >= precision) {
+  //       let arr = formatedValue.toString().split(".");
+  //       let decimal = arr[1].substring(0, precision);
+  //       formatedValue = `${arr[0]}.${decimal}`;
+  //     }
+  //     if (formatedValue.toString().startsWith(".")) {
+  //       formatedValue = `0${formatedValue}`;
+  //     }
+  //   } else {
+  //     if (!!formatedValue && !isNaN(parseInt(formatedValue)))
+  //       formatedValue = parseInt(formatedValue).toString();
+  //   }
+  //   return { formatedValue };
+  // }, []);
 
   return (
     <Dialog
@@ -40,8 +40,8 @@ const FeeControlDialog = (props) => {
       onClose={props.onClose}
       onCancel={props.onCancel}
       onConfirm={() => {
-        if (currency.depositFee && currency.withdrawFee) {
-          props.onConfirm(currency);
+        if (currency.fee && currency.externalFee) {
+          props.onConfirm(props.currency.id, currency.fee, currency.externalFee);
         }
       }}
     >
@@ -66,12 +66,12 @@ const FeeControlDialog = (props) => {
                     type="number"
                     inputMode="decimal"
                     onChange={(e) => {
-                      const value = formatValue(e.target.value);
+                      // const value = formatValue(e.target.value);
+                      const value = e.target.value;
                       const fee = SafeMath.div(value, 100);
                       setCoinSetting((prev) => ({
                         ...prev,
-                        depositFee: { ...prev.depositFee, current: fee },
-                        withdrawFee: { ...prev.withdrawFee },
+                        fee,
                       }));
                     }}
                   />
@@ -100,12 +100,12 @@ const FeeControlDialog = (props) => {
                     type="number"
                     inputMode="decimal"
                     onChange={(e) => {
-                      const value = formatValue(e.target.value);
+                      // const value = formatValue(e.target.value);
+                      const value = e.target.value;
                       const fee = SafeMath.div(value, 100);
                       setCoinSetting((prev) => ({
                         ...prev,
-                        depositFee: { ...prev.depositFee },
-                        withdrawFee: { ...prev.withdrawFee, current: fee },
+                        externalFee:fee
                       }));
                     }}
                   />
@@ -149,14 +149,15 @@ const Deposit = () => {
   const sorting = () => {};
 
   const getCoinsSettings = useCallback(async () => {
-    let coinsSettngs = await storeCtx.getCoinsSettings();
+    let { coins: coinsSettngs } = await storeCtx.getCoinsSettings();
+    console.log(coinsSettngs);
     return coinsSettngs;
   }, [storeCtx]);
 
   const filter = useCallback(
-    ({ filterCoinsSettings, visibile, keyword }) => {
-      if (visibile) setIsVisibile(visibile);
-      let _option = visibile || isVisible,
+    ({ filterCoinsSettings, visible, keyword }) => {
+      if (visible) setIsVisibile(visible);
+      let _option = visible || isVisible,
         _keyword = keyword === undefined ? filterKey : keyword,
         _coinsSettngs = filterCoinsSettings || coinsSettngs;
       if (_coinsSettngs) {
@@ -168,7 +169,7 @@ const Deposit = () => {
             );
           else
             return (
-              currency.visibile === _option &&
+              currency.visible === _option &&
               (currency.key.includes(_keyword) ||
                 currency.symbol.includes(_keyword))
             );
@@ -255,12 +256,12 @@ const Deposit = () => {
   // );
 
   const toggleStatus = useCallback(
-    async (id, visibile) => {
-      console.log(`toggleStatus`, id, visibile);
+    async (id, visible) => {
+      console.log(`toggleStatus`, id, visible);
       try {
         const { coins: updateCoinsSettings } = await storeCtx.updateCoinSetting(
           id,
-          visibile
+          visible
         );
         setCoinsSettings(updateCoinsSettings);
         filter({ filterCoinsSettings: updateCoinsSettings });
@@ -428,7 +429,7 @@ const Deposit = () => {
               ></div>
               <button
                 disabled={`${
-                  !coinsSettngs.some((currency) => currency.visibile === true)
+                  !coinsSettngs?.some((currency) => currency.visible === true)
                     ? "disable"
                     : ""
                 }`}
@@ -471,7 +472,7 @@ const Deposit = () => {
               /
               <button
                 disabled={`${
-                  !coinsSettngs.some((currency) => currency.visibile === false)
+                  !coinsSettngs?.some((currency) => currency.visible === false)
                     ? "disable"
                     : ""
                 }`}
@@ -518,7 +519,7 @@ const Deposit = () => {
               filterCoinsSettings.map((currency) => (
                 <div
                   className={`deposit__currency-tile screen__table-row${
-                    currency.alert ? " alert" : ""
+                    currency.alert ? " screen__table--alert" : ""
                   }`}
                   key={currency.code}
                 >
@@ -607,9 +608,9 @@ const Deposit = () => {
                   </div>
                   <TableSwitchWithLock
                     className="screen__table-switch"
-                    status={currency.visibile}
+                    status={currency.visible}
                     toggleStatus={() =>
-                      toggleStatus(currency.id, !currency.visibile)
+                      toggleStatus(currency.id, !currency.visible)
                     }
                   />
                 </div>

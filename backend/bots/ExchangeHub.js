@@ -43,7 +43,7 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
-        // this.adminUsers = this._getAdminUsers();
+        this.adminUsers = this._getAdminUsers();
         this.priceList = await this.getPriceList();
         this.currencies = await this.database.getCurrencies();
         this.currenciesSymbol = await this.database.getCurrenciesSymbol();
@@ -234,7 +234,7 @@ class ExchangeHub extends Bot {
       try {
         const p = path.join(
           this.config.base.TideBitLegacyPath,
-          "config/coins.yml"
+          "config/markets/coins.yml"
         );
         coinsSettings = Utils.fileParser(p);
         this.coinsSettings = coinsSettings; //Array<Object>
@@ -254,7 +254,7 @@ class ExchangeHub extends Bot {
       try {
         const p = path.join(
           this.config.base.TideBitLegacyPath,
-          "config/deposits.yml"
+          "config/markets/deposits.yml"
         );
         depositsSettings = Utils.fileParser(p);
         formatDepositsSettings = depositsSettings.reduce((prev, deposit) => {
@@ -295,7 +295,7 @@ class ExchangeHub extends Bot {
       try {
         const p = path.join(
           this.config.base.TideBitLegacyPath,
-          "config/withdraws.yml"
+          "config/markets/withdraws.yml"
         );
         withdrawsSettings = Utils.fileParser(p);
         formatWithdrawsSettings = withdrawsSettings.reduce((prev, withdraw) => {
@@ -376,7 +376,10 @@ class ExchangeHub extends Bot {
   }
 
   async updateCoinSetting({ params, email, body }) {
-    const p = path.join(this.config.base.TideBitLegacyPath, "config/coins.yml");
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
     this.logger.debug(
       `*********** [${this.name}] updateCoinSetting ************`
     );
@@ -452,7 +455,10 @@ class ExchangeHub extends Bot {
   }
 
   async updateCoinsSettings({ email, body }) {
-    const p = path.join(this.config.base.TideBitLegacyPath, "config/coins.yml");
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
     this.logger.debug(
       `*********** [${this.name}] updateCoinSetting ************`
     );
@@ -511,7 +517,7 @@ class ExchangeHub extends Bot {
   async updateDepositSetting({ params, email, body }) {
     const p = path.join(
       this.config.base.TideBitLegacyPath,
-      "config/deposits.yml"
+      "config/markets/deposits.yml"
     );
     this.logger.debug(
       `*********** [${this.name}] updateDepositSetting ************`
@@ -549,7 +555,7 @@ class ExchangeHub extends Bot {
             updatedDepositsSettings[params.id]
           );
           try {
-            Utils.yamlUpdate(updatedDepositsSettings, p);
+            Utils.yamlUpdate(Object.values(updatedDepositsSettings), p);
             this.depositsSettings = updatedDepositsSettings;
             result = new ResponseFormat({
               message: "updateDepositSetting",
@@ -593,7 +599,7 @@ class ExchangeHub extends Bot {
   async updateWithdrawSetting({ params, email, body }) {
     const p = path.join(
       this.config.base.TideBitLegacyPath,
-      "config/withdraws.yml"
+      "config/markets/withdraws.yml"
     );
     this.logger.debug(
       `*********** [${this.name}] updateWithdrawSetting ************`
@@ -631,7 +637,7 @@ class ExchangeHub extends Bot {
             updatedWithdrawsSettings[params.id]
           );
           try {
-            Utils.yamlUpdate(updatedWithdrawsSettings, p);
+            Utils.yamlUpdate(Object.values(updatedWithdrawsSettings), p);
             this.withdrawsSettings = updatedWithdrawsSettings;
             result = new ResponseFormat({
               message: "updateWithdrawSetting",
