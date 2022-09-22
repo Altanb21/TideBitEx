@@ -265,6 +265,8 @@ class ExchangeHub extends Bot {
           if (!prev[deposit.id.toString()])
             prev[deposit.id.toString()] = {
               ...deposit,
+              visible: deposit.visible === false ? false : true, // default: true
+              disable: deposit.disable === true ? true : false, // default: false
             };
           else
             this.logger.error(
@@ -306,6 +308,8 @@ class ExchangeHub extends Bot {
           if (!prev[withdraw.id.toString()])
             prev[withdraw.id.toString()] = {
               ...withdraw,
+              visible: withdraw.visible === false ? false : true, // default: true
+              disable: withdraw.disable === true ? true : false, // default: false
             };
           else
             this.logger.error(
@@ -353,12 +357,16 @@ class ExchangeHub extends Bot {
           selfTransfer: coin.self_transfer,
           minConfirm: this.depositsSettings[coin.id]?.min_confirm,
           maxConfirm: this.depositsSettings[coin.id]?.max_confirm,
-          deposit: this.depositsSettings[coin.id]?.visible,
+          deposit:
+            this.depositsSettings[coin.id]?.visible &&
+            !this.depositsSettings[coin.id]?.disable,
           depositFee: {
             current: this.depositsSettings[coin.id]?.fee || "0",
             external: this.depositsSettings[coin.id]?.external_fee || "0",
           },
-          withdraw: this.withdrawsSettings[coin.id]?.visible,
+          withdraw:
+            this.withdrawsSettings[coin.id]?.visible &&
+            !this.withdrawsSettings[coin.id]?.disable,
           withdrawFee: {
             current: this.withdrawsSettings[coin.id]?.fee || "0",
             external: this.withdrawsSettings[coin.id]?.external_fee || "0",
@@ -559,10 +567,10 @@ class ExchangeHub extends Bot {
                 external_fee: data.externalFee,
               };
               break;
-            case COIN_SETTING_TYPE.VISIBLE:
+            case COIN_SETTING_TYPE.DEPOSIT:
               updatedDepositsSettings[params.id] = {
                 ...updatedDepositCoin,
-                visible: data.visible,
+                disable: data.disable,
               };
               break;
             default:
@@ -653,10 +661,10 @@ class ExchangeHub extends Bot {
                 external_fee: data.externalFee,
               };
               break;
-            case COIN_SETTING_TYPE.VISIBLE:
+            case COIN_SETTING_TYPE.WITHDRAW:
               updatedWithdrawsSettings[params.id] = {
                 ...updatedWithdrawCoin,
-                visible: data.visible,
+                disable: data.disable,
               };
               break;
             default:

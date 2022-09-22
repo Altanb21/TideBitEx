@@ -274,29 +274,29 @@ const Deposit = () => {
   // );
 
   const toggleStatus = useCallback(
-    async (type, id, visible) => {
-      console.log(`toggleStatus`, type, id, visible);
+    async (type, id, value) => {
+      console.log(`toggleStatus`, type, id, value);
       let result, updateCoinsSettings;
       try {
         switch (type) {
           case COIN_SETTING_TYPE.VISIBLE:
-            result = await storeCtx.updateCoinSetting(id, visible);
+            result = await storeCtx.updateCoinSetting(id, value);
             break;
           case COIN_SETTING_TYPE.DEPOSIT:
             result = await storeCtx.updateDepositSetting(
               id,
-              COIN_SETTING_TYPE.VISIBLE,
+              COIN_SETTING_TYPE.DEPOSIT,
               {
-                visible,
+                disable: value,
               }
             );
             break;
           case COIN_SETTING_TYPE.WITHDRAW:
             result = await storeCtx.updateWithdrawSetting(
               id,
-              COIN_SETTING_TYPE.VISIBLE,
+              COIN_SETTING_TYPE.WITHDRAW,
               {
-                visible,
+                disable: value,
               }
             );
             break;
