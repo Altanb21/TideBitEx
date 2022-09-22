@@ -363,17 +363,11 @@ class ExchangeHub extends Bot {
           deposit:
             this.depositsSettings[coin.id]?.visible &&
             !this.depositsSettings[coin.id]?.disable,
-          depositFee: {
-            current: this.depositsSettings[coin.id]?.fee || "0",
-            external: this.depositsSettings[coin.id]?.external_fee || "0",
-          },
+          depositFee: this.depositsSettings[coin.id]?.fee || "0",
           withdraw:
             this.withdrawsSettings[coin.id]?.visible &&
             !this.withdrawsSettings[coin.id]?.disable,
-          withdrawFee: {
-            current: this.withdrawsSettings[coin.id]?.fee || "0",
-            external: this.withdrawsSettings[coin.id]?.external_fee || "0",
-          },
+          withdrawFee: this.withdrawsSettings[coin.id]?.fee || "0",
           alert: coin.code === "btc", // ++ TODO
         };
         return formatCoin;
@@ -567,13 +561,13 @@ class ExchangeHub extends Bot {
               updatedDepositsSettings[params.id] = {
                 ...updatedDepositCoin,
                 fee: data.fee,
-                external_fee: data.externalFee,
               };
               break;
             case COIN_SETTING_TYPE.DEPOSIT:
               updatedDepositsSettings[params.id] = {
                 ...updatedDepositCoin,
                 disable: data.disable,
+                visible: data.disable === false ? true : false,
               };
               break;
             default:
@@ -661,13 +655,13 @@ class ExchangeHub extends Bot {
               updatedWithdrawsSettings[params.id] = {
                 ...updatedWithdrawCoin,
                 fee: data.fee,
-                external_fee: data.externalFee,
               };
               break;
             case COIN_SETTING_TYPE.WITHDRAW:
               updatedWithdrawsSettings[params.id] = {
                 ...updatedWithdrawCoin,
                 disable: data.disable,
+                visible: data.disable === false ? true : false,
               };
               break;
             default:

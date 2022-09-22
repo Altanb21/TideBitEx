@@ -9,21 +9,19 @@ import SafeMath from "../utils/SafeMath";
 import { useSnackbar } from "notistack";
 import { COIN_SETTING_TYPE } from "../constant/CoinSetting";
 
-let timer;
+// let timer;
 
 const FeeControlDialog = (props) => {
   const { t } = useTranslation();
   const [fee, setFee] = useState(null);
-  const [externalFee, setExternalFee] = useState(null);
 
   const onConfirm = useCallback(() => {
-    if (fee && externalFee) {
+    if (fee) {
       props.onConfirm(props.currency.id, COIN_SETTING_TYPE.FEE, {
         fee,
-        externalFee,
       });
     }
-  }, [externalFee, fee, props]);
+  }, [fee, props]);
 
   return (
     <Dialog
@@ -42,15 +40,18 @@ const FeeControlDialog = (props) => {
             <div className="deposit__dialog-input-group">
               <label
                 className="deposit__dialog-input-label"
-                htmlFor={`${props.type}-current-fee`}
+                // htmlFor={`${props.type}-current-fee`}
+                htmlFor={`${props.type}-fee`}
               >
-                {t(`${props.type}-current-fee`)}:
+                {/* {t(`${props.type}-current-fee`)}: */}
+                {t(`${props.type}-fee`)}:
               </label>
               <div className="deposit__dialog-input-box">
                 <div className="deposit__dialog-input-column">
                   <input
                     className="deposit__dialog-input"
-                    name={`${props.type}-current-fee`}
+                    // name={`${props.type}-current-fee`}
+                    name={`${props.type}-fee`}
                     type="number"
                     min="0"
                     inputMode="decimal"
@@ -62,16 +63,20 @@ const FeeControlDialog = (props) => {
                     }}
                   />
                   <div className="deposit__dialog-input-caption">{`${t(
-                    `${props.type}-current-fee`
+                    // `${props.type}-current-fee`
+                    `${props.type}-fee`
                   )}: ${SafeMath.mult(
-                    props.currency.depositFee?.current,
+                    // props.currency.depositFee?.current,
+                    props.type === COIN_SETTING_TYPE.DEPOSIT
+                      ? props.currency.depositFee
+                      : props.currency.withdrawFee,
                     100
                   )}%`}</div>
                 </div>
                 <div className="deposit__dialog-input-suffix">%</div>
               </div>
             </div>
-            <div className="deposit__dialog-input-group">
+            {/* <div className="deposit__dialog-input-group">
               <label
                 className="deposit__dialog-input-label"
                 htmlFor={`${props.type}-external-fee`}
@@ -102,7 +107,7 @@ const FeeControlDialog = (props) => {
                 </div>
                 <div className="deposit__dialog-input-suffix">%</div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -121,8 +126,8 @@ const Deposit = () => {
   const [filterCoinsSettings, setFilterCoinsSettings] = useState(null);
   const [isVisible, setIsVisible] = useState(null); //true, fasle
   const [filterKey, setFilterKey] = useState("");
-  const [active, setActive] = useState(false);
-  const [unLocked, setUnLocked] = useState(false);
+  // const [active, setActive] = useState(false);
+  // const [unLocked, setUnLocked] = useState(false);
   const [openDepositControlDialog, setOpenDepositControlDialog] =
     useState(false);
   const [openWithdrawControlDialog, setOpenWithdrawControlDialog] =
@@ -224,39 +229,39 @@ const Deposit = () => {
     [enqueueSnackbar, filter, storeCtx, t]
   );
 
-  const updateCoinsSettings = useCallback(
-    async (visible) => {
-      try {
-        setIsLoading(true);
-        const { coins: updateCoinsSettings } =
-          await storeCtx.updateCoinsSettings(visible);
-        setCoinsSettings(updateCoinsSettings);
-        filter({ filterCoinsSettings: updateCoinsSettings });
-        enqueueSnackbar(`${t("success-update")}`, {
-          variant: "success",
-          anchorOrigin: {
-            vertical: "top",
-            horizontal: "center",
-          },
-        });
-      } catch (error) {
-        enqueueSnackbar(`${t("error-happen")}`, {
-          variant: "error",
-          anchorOrigin: {
-            vertical: "top",
-            horizontal: "center",
-          },
-        });
-      }
-      setIsLoading(false);
-      const timer = setTimeout(() => {
-        setUnLocked(false);
-        setActive(false);
-        clearTimeout(timer);
-      }, 500);
-    },
-    [enqueueSnackbar, filter, storeCtx, t]
-  );
+  // const updateCoinsSettings = useCallback(
+  //   async (visible) => {
+  //     try {
+  //       setIsLoading(true);
+  //       const { coins: updateCoinsSettings } =
+  //         await storeCtx.updateCoinsSettings(visible);
+  //       setCoinsSettings(updateCoinsSettings);
+  //       filter({ filterCoinsSettings: updateCoinsSettings });
+  //       enqueueSnackbar(`${t("success-update")}`, {
+  //         variant: "success",
+  //         anchorOrigin: {
+  //           vertical: "top",
+  //           horizontal: "center",
+  //         },
+  //       });
+  //     } catch (error) {
+  //       enqueueSnackbar(`${t("error-happen")}`, {
+  //         variant: "error",
+  //         anchorOrigin: {
+  //           vertical: "top",
+  //           horizontal: "center",
+  //         },
+  //       });
+  //     }
+  //     setIsLoading(false);
+  //     const timer = setTimeout(() => {
+  //       setUnLocked(false);
+  //       setActive(false);
+  //       clearTimeout(timer);
+  //     }, 500);
+  //   },
+  //   [enqueueSnackbar, filter, storeCtx, t]
+  // );
 
   // const switchExchange = useCallback(
   //   (exchange, id) => {
@@ -395,7 +400,7 @@ const Deposit = () => {
         </div>
         <div className="screen__tool-bar">
           <div className="screen__display">
-            <div className="screen__display-title">顯示：</div>
+            <div className="screen__display-title">{`${t("show")}:`}</div>
             <ul className="screen__display-options">
               <li
                 className={`screen__display-option${
@@ -440,7 +445,7 @@ const Deposit = () => {
               <div className="screen__table-header--text">出金手續費</div>
               <div className="screen__table-header--icon"></div>
             </th>
-            <th
+            {/* <th
               className={`screen__table-header-btn${active ? " active" : ""}${
                 unLocked ? " unLocked" : ""
               }`}
@@ -496,6 +501,11 @@ const Deposit = () => {
               >
                 全部開啟
               </button>
+            </th> */}
+            <th className="screen__table-header">
+              <div className="screen__table-header--text">{`${t(
+                "show"
+              )}:`}</div>
             </th>
             <th className="screen__table-header">
               <div className="screen__table-header--text">{t("deposit")}</div>
@@ -535,17 +545,18 @@ const Deposit = () => {
                   <td className="deposit__currency-text screen__table-item">
                     <div className="screen__table-item--text-box">
                       <div className="screen__table-item--text">
-                        <div className="screen__table-item--title">當前：</div>
+                        {/* <div className="screen__table-item--title">當前：</div> */}
                         <div
                           className={`screen__table-item--value${
                             currency.alert ? " alert" : ""
                           }`}
                         >{`${SafeMath.mult(
-                          currency.depositFee?.current,
+                          // currency.depositFee?.current,
+                          currency.depositFee,
                           100
                         )}%`}</div>
                       </div>
-                      <div className="screen__table-item--text">
+                      {/* <div className="screen__table-item--text">
                         <div className="screen__table-item--title">外部：</div>
                         <div
                           className={`screen__table-item--value${
@@ -555,7 +566,7 @@ const Deposit = () => {
                           currency.depositFee?.external,
                           100
                         )}%`}</div>
-                      </div>
+                      </div> */}
                     </div>
                     <div
                       className="screen__table-item--icon"
@@ -571,19 +582,20 @@ const Deposit = () => {
                   <td className="deposit__currency-text screen__table-item">
                     <div className="screen__table-item--text-box">
                       <div className="screen__table-item--text">
-                        <div className="screen__table-item--title">當前：</div>
+                        {/* <div className="screen__table-item--title">當前：</div> */}
                         <div className="screen__table-item--value">{`${SafeMath.mult(
-                          currency.withdrawFee?.current,
+                          // currency.withdrawFee?.current,
+                          currency.withdrawFee,
                           100
                         )}%`}</div>
                       </div>
-                      <div className="screen__table-item--text">
+                      {/* <div className="screen__table-item--text">
                         <div className="screen__table-item--title">外部：</div>
                         <div className="screen__table-item--value">{`${SafeMath.mult(
                           currency.withdrawFee?.external,
                           100
                         )}%`}</div>
-                      </div>
+                      </div> */}
                     </div>
                     <div
                       className="screen__table-item--icon"

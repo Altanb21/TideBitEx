@@ -18,6 +18,8 @@
   "setting": "Setting",
   "deposit": "Deposit",
   "withdraw": "Withdraw",
+  "deposit-fee": "Deposit Fee",
+  "withdraw-fee": "Withdraw Fee",
   "deposit-current-fee": "Deposit Current Fee",
   "withdraw-current-fee": "Withdraw Current Fee",
   "deposit-external-fee": "Deposit External Fee",
