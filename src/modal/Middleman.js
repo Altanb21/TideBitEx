@@ -78,17 +78,17 @@ class Middleman {
     }
   }
 
-  async updateCoinsSettings(visibile) {
+  async updateCoinsSettings(visible) {
     try {
-      const response = await this.communicator.updateCoinsSettings(visibile);
+      const response = await this.communicator.updateCoinsSettings(visible);
       return response;
     } catch (error) {
       throw error;
     }
   }
-  async updateCoinSetting(id, visibile) {
+  async updateCoinSetting(id, visible) {
     try {
-      const response = await this.communicator.updateCoinSetting(id, visibile);
+      const response = await this.communicator.updateCoinSetting(id, visible);
       return response;
     } catch (error) {
       throw error;

@@ -127,11 +127,11 @@ const StoreProvider = (props) => {
     return await middleman.getCoinsSettings();
   };
 
-  const updateCoinsSettings = async (visibile) => {
-    return await middleman.updateCoinsSettings(visibile);
+  const updateCoinsSettings = async (visible) => {
+    return await middleman.updateCoinsSettings(visible);
   };
-  const updateCoinSetting = async (id, visibile) => {
-    return await middleman.updateCoinSetting(id, visibile);
+  const updateCoinSetting = async (id, visible) => {
+    return await middleman.updateCoinSetting(id, visible);
   };
 
   const updateDepositSetting = async (id, fee, externalFee) => {

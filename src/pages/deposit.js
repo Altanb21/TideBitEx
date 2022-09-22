@@ -41,7 +41,11 @@ const FeeControlDialog = (props) => {
       onCancel={props.onCancel}
       onConfirm={() => {
         if (currency.fee && currency.externalFee) {
-          props.onConfirm(props.currency.id, currency.fee, currency.externalFee);
+          props.onConfirm(
+            props.currency.id,
+            currency.fee,
+            currency.externalFee
+          );
         }
       }}
     >
@@ -105,7 +109,7 @@ const FeeControlDialog = (props) => {
                       const fee = SafeMath.div(value, 100);
                       setCoinSetting((prev) => ({
                         ...prev,
-                        externalFee:fee
+                        externalFee: fee,
                       }));
                     }}
                   />
@@ -135,7 +139,7 @@ const Deposit = () => {
   const [coinsSettngs, setCoinsSettings] = useState(null);
   const [selectedCoinSetting, setSelectedCoinSetting] = useState(null);
   const [filterCoinsSettings, setFilterCoinsSettings] = useState(null);
-  const [isVisible, setIsVisibile] = useState(null); //true, fasle
+  const [isVisible, setIsVisible] = useState(null); //true, fasle
   const [filterKey, setFilterKey] = useState("");
   const [active, setActive] = useState(false);
   const [unLocked, setUnLocked] = useState(false);
@@ -156,7 +160,7 @@ const Deposit = () => {
 
   const filter = useCallback(
     ({ filterCoinsSettings, visible, keyword }) => {
-      if (visible) setIsVisibile(visible);
+      if (visible) setIsVisible(visible);
       let _option = visible || isVisible,
         _keyword = keyword === undefined ? filterKey : keyword,
         _coinsSettngs = filterCoinsSettings || coinsSettngs;

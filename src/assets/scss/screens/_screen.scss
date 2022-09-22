@@ -238,6 +238,8 @@
     }
     &--value.alert {
       color: #eccb2c;
+      padding: 0;
+      margin-bottom: 0;
     }
     &--btns {
       display: flex;

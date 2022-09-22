@@ -568,7 +568,7 @@ class Communicator {
     }
   }
 
-  async updateCoinsSettings(visibile) {
+  async updateCoinsSettings(visible) {
     try {
       const url = `/coins/coins-settings/`;
       // const res = await this._get(url);
@@ -576,7 +576,7 @@ class Communicator {
         method: "PUT",
         url,
         data: {
-          visibile,
+          visible,
         },
       });
       if (res.success) {
@@ -589,7 +589,7 @@ class Communicator {
     }
   }
 
-  async updateCoinSetting(id, visibile) {
+  async updateCoinSetting(id, visible) {
     try {
       const url = `/coins/coins-settings/${id}`;
       // const res = await this._get(url);
@@ -597,7 +597,7 @@ class Communicator {
         method: "PUT",
         url,
         data: {
-          visibile,
+          visible,
         },
       });
       if (res.success) {
