@@ -503,9 +503,7 @@ const Deposit = () => {
               </button>
             </th> */}
             <th className="screen__table-header">
-              <div className="screen__table-header--text">{`${t(
-                "show"
-              )}:`}</div>
+              <div className="screen__table-header--text">{`${t("show")}`}</div>
             </th>
             <th className="screen__table-header">
               <div className="screen__table-header--text">{t("deposit")}</div>
