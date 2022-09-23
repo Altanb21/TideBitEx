@@ -250,7 +250,7 @@ class ExchangeHub extends Bot {
         process.exit(1);
       }
     }
-    this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
+    // this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
     return this.coinsSettings;
   }
 

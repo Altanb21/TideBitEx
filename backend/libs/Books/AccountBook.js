@@ -44,7 +44,7 @@ class AccountBook extends BookBase {
     else
       return Object.values(this._difference[memberId]).map((account) => ({
         ...account,
-        exchangeRate: this.exchangeRates[account.currency].rate,
+        exchangeRate: this.exchangeRates[account.currency]?.rate || 0,
       }));
   }
 
@@ -54,11 +54,11 @@ class AccountBook extends BookBase {
       if (instId)
         return instId.split("-").map((currency) => ({
           ...this._snapshot[memberId][currency],
-          exchangeRate: this.exchangeRates[currency].rate,
+          exchangeRate: this.exchangeRates[currency]?.rate || 0,
         }));
       return Object.values(this._snapshot[memberId]).map((account) => ({
         ...account,
-        exchangeRate: this.exchangeRates[account.currency].rate,
+        exchangeRate: this.exchangeRates[account.currency]?.rate || 0,
       }));
     }
   }

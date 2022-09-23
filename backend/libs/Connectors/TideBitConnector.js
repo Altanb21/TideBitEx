@@ -693,17 +693,19 @@ class TibeBitConnector extends ConnectorBase {
     );
     try {
       const _accounts = await this.database.getAccountsByMemberId(memberId);
-      const accounts = _accounts.map((account) => ({
-        currency: this.currencies.find((curr) => curr.id === account.currency)
-          .symbol,
-        balance: Utils.removeZeroEnd(account.balance),
-        total: SafeMath.plus(account.balance, account.locked),
-        locked: Utils.removeZeroEnd(account.locked),
-      }));
-      // this.logger.log(
-      //   `[${this.constructor.name}] getAccounts accounts`,
-      //   accounts
-      // );
+      const accounts = _accounts.map((account) => {
+        let currencyObj = this.currencies?.find((curr) => curr?.id === account?.currency);
+        if(!currencyObj){
+          this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency);
+        }
+        return {
+          currency: currencyObj.symbol,
+          balance: Utils.removeZeroEnd(account.balance),
+          total: SafeMath.plus(account.balance, account.locked),
+          locked: Utils.removeZeroEnd(account.locked),
+        }
+      });
+     
       this.accountBook.updateAll(memberId, accounts);
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] getAccounts error`, error);
