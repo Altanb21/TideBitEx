@@ -80,6 +80,7 @@
     flex-direction: column;
     align-items: end;
     position: relative;
+    z-index: 100;
     &--dropdown {
       display: none;
       position: absolute;
