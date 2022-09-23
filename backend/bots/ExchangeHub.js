@@ -991,10 +991,10 @@ class ExchangeHub extends Bot {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
     }
-    const { id: bid } = this.currencies.find(
+    const { id: bid } = this.coinsSettings.find(
       (curr) => curr.key === query.market.quote_unit
     );
-    const { id: ask } = this.currencies.find(
+    const { id: ask } = this.coinsSettings.find(
       (curr) => curr.key === query.market.base_unit
     );
     if (!bid) {
@@ -1709,7 +1709,7 @@ class ExchangeHub extends Bot {
               let _updateAccount = {
                 balance: SafeMath.plus(account.balance, orderData.balance),
                 locked: SafeMath.plus(account.locked, orderData.locked),
-                currency: this.currencies.find(
+                currency: this.coinsSettings.find(
                   (curr) => curr.id === account.currency
                 )?.symbol,
                 total: SafeMath.plus(
@@ -2047,7 +2047,7 @@ class ExchangeHub extends Bot {
           updateAccount = {
             balance: SafeMath.plus(account.balance, balance),
             locked: SafeMath.plus(account.locked, locked),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === account.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -2522,10 +2522,10 @@ class ExchangeHub extends Bot {
       // TODO: ++ 6. add trade
       // -- CAUTION!!! skip now, tradeId use okex tradeId,
       // because it need columns 'ask_member_id' and 'bid_member_id' with foreign key
-      const base_unit = this.currencies.find(
+      const base_unit = this.coinsSettings.find(
         (curr) => curr.id === order.ask
       )?.key;
-      const quote_unit = this.currencies.find(
+      const quote_unit = this.coinsSettings.find(
         (curr) => curr.id === order.bid
       )?.key;
       if (!base_unit || !quote_unit)
@@ -2611,7 +2611,7 @@ class ExchangeHub extends Bot {
       let _updateAcc = {
         balance: SafeMath.plus(accountAsk.balance, balanceA),
         locked: SafeMath.plus(accountAsk.balance, lockedA), //++ TODO verify => SafeMath.plus(accountAsk.balance, lockedA)
-        currency: this.currencies.find(
+        currency: this.coinsSettings.find(
           (curr) => curr.id === accountAsk.currency
         )?.symbol,
         total: SafeMath.plus(
@@ -2647,7 +2647,7 @@ class ExchangeHub extends Bot {
       _updateAcc = {
         balance: SafeMath.plus(accountBid.balance, balanceB),
         locked: SafeMath.plus(accountBid.balance, lockedB),
-        currency: this.currencies.find(
+        currency: this.coinsSettings.find(
           (curr) => curr.id === accountBid.currency
         )?.symbol,
         total: SafeMath.plus(
@@ -2687,7 +2687,7 @@ class ExchangeHub extends Bot {
           _updateAcc = {
             balance: SafeMath.plus(accountAsk.balance, changeLocked),
             locked: SafeMath.plus(accountAsk.balance, changeBalance),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === accountAsk.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -2721,7 +2721,7 @@ class ExchangeHub extends Bot {
           _updateAcc = {
             balance: SafeMath.plus(accountBid.balance, changeLocked),
             locked: SafeMath.plus(accountBid.balance, changeBalance),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === accountBid.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -2755,10 +2755,10 @@ class ExchangeHub extends Bot {
     if (!market) {
       throw new Error(`this.tidebitMarkets.instId ${body.instId} not found.`);
     }
-    const { id: bid } = this.currencies.find(
+    const { id: bid } = this.coinsSettings.find(
       (curr) => curr.key === market.quote_unit
     );
-    const { id: ask } = this.currencies.find(
+    const { id: ask } = this.coinsSettings.find(
       (curr) => curr.key === market.base_unit
     );
     if (!bid) {

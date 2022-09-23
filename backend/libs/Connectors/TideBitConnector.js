@@ -79,7 +79,7 @@ class TibeBitConnector extends ConnectorBase {
     this.markets = markets;
     this.database = database;
     this.redis = redis;
-    this.currencies = currencies;
+    // this.currencies = currencies;
     this.depthBook = depthBook;
     this.tickerBook = tickerBook;
     this.tradeBook = tradeBook;
@@ -637,7 +637,7 @@ class TibeBitConnector extends ConnectorBase {
       const _accounts = await this.database.getAccounts();
       const accounts = {};
       _accounts.forEach((account) => {
-        let currency = this.currencies.find(
+        let currency = this.coinsSettings.find(
           (curr) => curr.id === account.currency
         ).symbol;
         if (!accounts[currency]) {
@@ -696,15 +696,15 @@ class TibeBitConnector extends ConnectorBase {
     try {
       const _accounts = await this.database.getAccountsByMemberId(memberId);
       const accounts = _accounts.map((account) => {
-        let currencyObj = this.currencies?.find(
+        let currencyObj = this.coinsSettings.find(
           (curr) => curr?.id === account?.currency
         );
         if (!currencyObj) {
-          // this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency, this.coinsSettings, this.currencies);
-          currencyObj = this.coinsSettings.find(
-            (coin) => coin.id.toString() === account?.currency.toString()
-          );
-          this.logger.log(`currencyObj`, currencyObj);
+          this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency);
+          // currencyObj = this.coinsSettings.find(
+          //   (coin) => coin.id.toString() === account?.currency.toString()
+          // );
+          // this.logger.log(`currencyObj`, currencyObj);
         }
         return {
           currency: currencyObj?.symbol,
@@ -768,10 +768,10 @@ class TibeBitConnector extends ConnectorBase {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
     }
-    const { id: bid } = this.currencies.find(
+    const { id: bid } = this.coinsSettings.find(
       (curr) => curr.key === query.market.quote_unit
     );
-    const { id: ask } = this.currencies.find(
+    const { id: ask } = this.coinsSettings.find(
       (curr) => curr.key === query.market.base_unit
     );
     if (!bid) {
