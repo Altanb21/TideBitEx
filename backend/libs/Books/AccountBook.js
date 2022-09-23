@@ -26,7 +26,7 @@ class AccountBook extends BookBase {
             curr.code === "try"
               ? this._ratio.try
               : this.priceList[curr.code]
-              ? SafeMath.mult(this.priceList[curr.key], this._ratio.usd)
+              ? SafeMath.mult(this.priceList[curr.code], this._ratio.usd)
               : 0,
         };
         return prev;
