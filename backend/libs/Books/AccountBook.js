@@ -12,23 +12,25 @@ class AccountBook extends BookBase {
     try: 1.4637,
   };
   exchangeRates = {};
-  constructor({ logger, markets, currencies, priceList }) {
+  constructor({ logger, markets, coinsSettings, priceList }) {
     super({ logger, markets });
     this._config = { remove: false, add: false, update: true };
-    this.currencies = currencies;
+    this.coinsSettings = coinsSettings;
     this.priceList = priceList;
-    this.exchangeRates = this.currencies.reduce((prev, curr) => {
-      prev[curr.symbol] = {
-        ...curr,
-        rate:
-          curr.key === "try"
-            ? this._ratio.try
-            : this.priceList[curr.key]
-            ? SafeMath.mult(this.priceList[curr.key], this._ratio.usd)
-            : 0,
-      };
-      return prev;
-    }, {});
+    this.exchangeRates = this.coinsSettings
+      .filter((coin) => coin.visible)
+      .reduce((prev, curr) => {
+        prev[curr.code.toUpperCase()] = {
+          ...curr,
+          rate:
+            curr.code === "try"
+              ? this._ratio.try
+              : this.priceList[curr.code]
+              ? SafeMath.mult(this.priceList[curr.key], this._ratio.usd)
+              : 0,
+        };
+        return prev;
+      }, {});
     this.logger.log(`this.exchangeRates `, this.exchangeRates);
 
     this.name = `AccountBook`;

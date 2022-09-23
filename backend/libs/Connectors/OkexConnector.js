@@ -49,7 +49,6 @@ class OkexConnector extends ConnectorBase {
     tradeBook,
     accountBook,
     orderBook,
-    currencies,
     database,
     tidebitMarkets,
   }) {
@@ -65,7 +64,6 @@ class OkexConnector extends ConnectorBase {
     this.tradeBook = tradeBook;
     this.accountBook = accountBook;
     this.orderBook = orderBook;
-    this.currencies = currencies;
     this.database = database;
     this.tidebitMarkets = tidebitMarkets;
     await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });

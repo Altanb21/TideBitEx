@@ -49,8 +49,6 @@ class ExchangeHub extends Bot {
         this.depositsSettings = this._getDepositsSettings();
         this.withdrawsSettings = this._getWithdrawsSettings();
         this.priceList = await this.getPriceList();
-        this.currencies = await this.database.getCurrencies();
-        this.currenciesSymbol = await this.database.getCurrenciesSymbol();
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
@@ -70,7 +68,7 @@ class ExchangeHub extends Bot {
         this.accountBook = new AccountBook({
           logger,
           markets: this.tidebitMarkets,
-          currencies: this.currenciesSymbol,
+          coinsSettings: this.coinsSettings,
           priceList: this.priceList,
         });
       })
@@ -96,7 +94,6 @@ class ExchangeHub extends Bot {
           orderBook: this.orderBook,
           accountBook: this.accountBook,
           tidebitMarkets: this.tidebitMarkets,
-          currencies: this.currencies,
           coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
@@ -115,7 +112,6 @@ class ExchangeHub extends Bot {
           tradeBook: this.tradeBook,
           orderBook: this.orderBook,
           accountBook: this.accountBook,
-          currencies: this.currencies,
           database: this.database,
           tidebitMarkets: this.tidebitMarkets,
         });
@@ -244,7 +240,7 @@ class ExchangeHub extends Bot {
         coinsSettings = Utils.fileParser(p);
         this.coinsSettings = coinsSettings.map((coinSetting) => ({
           ...coinSetting,
-          visible: coinSetting.visible === false ? false : true, // default: true
+          visible: coinSetting.c === false ? false : true, // default: true
         }));
       } catch (error) {
         this.logger.error(error);

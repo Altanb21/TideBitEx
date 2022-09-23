@@ -62,7 +62,6 @@ class TibeBitConnector extends ConnectorBase {
     accountBook,
     orderBook,
     tidebitMarkets,
-    currencies,
     coinsSettings,
     websocketDomain,
   }) {
@@ -79,7 +78,6 @@ class TibeBitConnector extends ConnectorBase {
     this.markets = markets;
     this.database = database;
     this.redis = redis;
-    // this.currencies = currencies;
     this.depthBook = depthBook;
     this.tickerBook = tickerBook;
     this.tradeBook = tradeBook;
