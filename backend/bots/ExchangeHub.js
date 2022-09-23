@@ -992,10 +992,10 @@ class ExchangeHub extends Bot {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
     }
     const { id: bid } = this.coinsSettings.find(
-      (curr) => curr.key === query.market.quote_unit
+      (curr) => curr.code === query.market.quote_unit
     );
     const { id: ask } = this.coinsSettings.find(
-      (curr) => curr.key === query.market.base_unit
+      (curr) => curr.code === query.market.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found${query.market.quote_unit}`);
@@ -2756,10 +2756,10 @@ class ExchangeHub extends Bot {
       throw new Error(`this.tidebitMarkets.instId ${body.instId} not found.`);
     }
     const { id: bid } = this.coinsSettings.find(
-      (curr) => curr.key === market.quote_unit
+      (curr) => curr.code === market.quote_unit
     );
     const { id: ask } = this.coinsSettings.find(
-      (curr) => curr.key === market.base_unit
+      (curr) => curr.code === market.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found`);

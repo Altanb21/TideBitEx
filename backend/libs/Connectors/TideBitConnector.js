@@ -697,17 +697,13 @@ class TibeBitConnector extends ConnectorBase {
       const _accounts = await this.database.getAccountsByMemberId(memberId);
       const accounts = _accounts.map((account) => {
         let currencyObj = this.coinsSettings.find(
-          (curr) => curr?.id === account?.currency
+          (curr) => curr.id === account.currency
         );
         if (!currencyObj) {
           this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency);
-          // currencyObj = this.coinsSettings.find(
-          //   (coin) => coin.id.toString() === account?.currency.toString()
-          // );
-          // this.logger.log(`currencyObj`, currencyObj);
         }
         return {
-          currency: currencyObj?.symbol,
+          currency: currencyObj?.code.toUpperCase(),
           balance: Utils.removeZeroEnd(account.balance),
           total: SafeMath.plus(account.balance, account.locked),
           locked: Utils.removeZeroEnd(account.locked),
@@ -769,10 +765,10 @@ class TibeBitConnector extends ConnectorBase {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
     }
     const { id: bid } = this.coinsSettings.find(
-      (curr) => curr.key === query.market.quote_unit
+      (curr) => curr.code === query.market.quote_unit
     );
     const { id: ask } = this.coinsSettings.find(
-      (curr) => curr.key === query.market.base_unit
+      (curr) => curr.code === query.market.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found${query.market.quote_unit}`);
