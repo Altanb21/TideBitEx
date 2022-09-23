@@ -97,6 +97,7 @@ class ExchangeHub extends Bot {
           accountBook: this.accountBook,
           tidebitMarkets: this.tidebitMarkets,
           currencies: this.currencies,
+          coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
         this.okexConnector = new OkexConnector({ logger });

@@ -63,6 +63,7 @@ class TibeBitConnector extends ConnectorBase {
     orderBook,
     tidebitMarkets,
     currencies,
+    coinsSettings,
     websocketDomain,
   }) {
     await super.init();
@@ -85,6 +86,7 @@ class TibeBitConnector extends ConnectorBase {
     this.accountBook = accountBook;
     this.orderBook = orderBook;
     this.tidebitMarkets = tidebitMarkets;
+    this.coinsSettings = coinsSettings;
     this.websocketDomain = websocketDomain;
     this.websocket.init({
       url: `${this.wsProtocol}://${this.wsHost}:${this.wsPort}/app/${this.key}?protocol=7&client=js&version=2.2.0&flash=false`,
@@ -694,18 +696,24 @@ class TibeBitConnector extends ConnectorBase {
     try {
       const _accounts = await this.database.getAccountsByMemberId(memberId);
       const accounts = _accounts.map((account) => {
-        let currencyObj = this.currencies?.find((curr) => curr?.id === account?.currency);
-        if(!currencyObj){
-          this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency);
+        let currencyObj = this.currencies?.find(
+          (curr) => curr?.id === account?.currency
+        );
+        if (!currencyObj) {
+          // this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency, this.coinsSettings, this.currencies);
+          currencyObj = this.coinsSettings.find(
+            (coin) => coin.id.toString() === account?.currency.toString()
+          );
+          this.logger.log(`currencyObj`, currencyObj);
         }
         return {
-          currency: currencyObj.symbol,
+          currency: currencyObj?.symbol,
           balance: Utils.removeZeroEnd(account.balance),
           total: SafeMath.plus(account.balance, account.locked),
           locked: Utils.removeZeroEnd(account.locked),
-        }
+        };
       });
-     
+
       this.accountBook.updateAll(memberId, accounts);
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] getAccounts error`, error);
