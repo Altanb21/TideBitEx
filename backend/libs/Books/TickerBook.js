@@ -177,18 +177,46 @@ class TickerBook extends BookBase {
     this._difference = {};
     try {
       Object.values(this._tickersSettings || {}).forEach((tickerSetting) => {
+        let ticker;
+
         switch (tickerSetting?.source) {
           case SupportedExchange.OKEX:
-            this._snapshot[tickerSetting?.instId] =
-              okexTickers[tickerSetting?.id];
-            this._difference[tickerSetting?.instId] =
-              okexTickers[tickerSetting?.id];
+            ticker = okexTickers[tickerSetting?.id] || {
+              ...tickerSetting,
+              market: tickerSetting.id,
+              buy: "0.0",
+              sell: "0.0",
+              low: "0.0",
+              high: "0.0",
+              last: "0.0",
+              open: "0.0",
+              volume: "0.0",
+              change: "0.0",
+              changePct: "0.0",
+              at: 0,
+              ts: 0,
+            };
+            this._snapshot[tickerSetting?.instId] = ticker;
+            this._difference[tickerSetting?.instId] = ticker;
             break;
           case SupportedExchange.TIDEBIT:
-            this._snapshot[tickerSetting?.instId] =
-              tidebitTickers[tickerSetting?.id];
-            this._difference[tickerSetting?.instId] =
-              tidebitTickers[tickerSetting?.id];
+            ticker = tidebitTickers[tickerSetting?.id] || {
+              ...tickerSetting,
+              market: tickerSetting.id,
+              buy: "0.0",
+              sell: "0.0",
+              low: "0.0",
+              high: "0.0",
+              last: "0.0",
+              open: "0.0",
+              volume: "0.0",
+              change: "0.0",
+              changePct: "0.0",
+              at: 0,
+              ts: 0,
+            };
+            this._snapshot[tickerSetting?.instId] = ticker;
+            this._difference[tickerSetting?.instId] = ticker;
             break;
           default:
             break;
