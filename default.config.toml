@@ -97,4 +97,11 @@ pathname = [
   "post | /api/v1/admin/admin-users | Bot.ExchangeHub.addAdminUser",
   "put | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.updateAdminUser",
   "delete | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.deleteAdminUser",
+
+ # analysis - coins
+  "get | /api/v1/coins/coins-settings | Bot.ExchangeHub.getCoinsSettings",
+  "put | /api/v1/coins/coins-settings | Bot.ExchangeHub.updateCoinsSettings",
+  "put | /api/v1/coins/coins-settings/:id | Bot.ExchangeHub.updateCoinSetting",
+  "put | /api/v1/coins/deposits-settings/:id | Bot.ExchangeHub.updateDepositSetting",
+  "put | /api/v1/coins/withdraws-settings/:id | Bot.ExchangeHub.updateWithdrawSetting",
 ]

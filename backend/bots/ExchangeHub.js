@@ -19,6 +19,7 @@ const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 const Database = require("../constants/Database");
 const ROLES = require("../constants/Roles");
+const { COIN_SETTING_TYPE } = require("../constants/CoinSetting");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -26,6 +27,10 @@ class ExchangeHub extends Bot {
   systemMemberId;
   okexBrokerId;
   updateDatas = [];
+  adminUsers;
+  coinsSettings;
+  depositsSettings;
+  withdrawsSettings;
   constructor() {
     super();
     this.name = "ExchangeHub";
@@ -40,9 +45,10 @@ class ExchangeHub extends Bot {
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
         this.adminUsers = this._getAdminUsers();
+        this.coinsSettings = this._getCoinsSettings();
+        this.depositsSettings = this._getDepositsSettings();
+        this.withdrawsSettings = this._getWithdrawsSettings();
         this.priceList = await this.getPriceList();
-        this.currencies = await this.database.getCurrencies();
-        this.currenciesSymbol = await this.database.getCurrenciesSymbol();
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
@@ -62,7 +68,7 @@ class ExchangeHub extends Bot {
         this.accountBook = new AccountBook({
           logger,
           markets: this.tidebitMarkets,
-          currencies: this.currenciesSymbol,
+          coinsSettings: this.coinsSettings,
           priceList: this.priceList,
         });
       })
@@ -88,7 +94,7 @@ class ExchangeHub extends Bot {
           orderBook: this.orderBook,
           accountBook: this.accountBook,
           tidebitMarkets: this.tidebitMarkets,
-          currencies: this.currencies,
+          coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
         this.okexConnector = new OkexConnector({ logger });
@@ -106,7 +112,6 @@ class ExchangeHub extends Bot {
           tradeBook: this.tradeBook,
           orderBook: this.orderBook,
           accountBook: this.accountBook,
-          currencies: this.currencies,
           database: this.database,
           tidebitMarkets: this.tidebitMarkets,
         });
@@ -174,13 +179,14 @@ class ExchangeHub extends Bot {
   }
 
   _getAdminUsers() {
+    let users, adminUsers;
     try {
       const p = path.join(
         this.config.base.TideBitLegacyPath,
         "config/roles.yml"
       );
-      const users = Utils.fileParser(p);
-      const formatUsers = users.reduce((prev, user) => {
+      users = Utils.fileParser(p);
+      adminUsers = users.reduce((prev, user) => {
         const index = prev.findIndex((_usr) => _usr.email === user.email);
         if (index === -1) {
           prev = [
@@ -199,16 +205,19 @@ class ExchangeHub extends Bot {
         }
         return prev;
       }, []);
-      // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
-      return formatUsers;
+      this.adminUsers = adminUsers;
     } catch (error) {
       this.logger.error(error);
       process.exit(1);
     }
+    return adminUsers;
   }
 
   async getAdminUsers({ query }) {
-    this.logger.debug(`*********** [${this.name}] getAdminUsers ************`);
+    if (!this.adminUsers) {
+      this.adminUsers = this._getAdminUsers();
+    }
+    // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, adminUsers);
     return Promise.resolve(
       new ResponseFormat({
         message: "getAdminUsers",
@@ -217,6 +226,487 @@ class ExchangeHub extends Bot {
         },
       })
     );
+  }
+
+  // _getCoinsSettings({ query }) {
+  _getCoinsSettings() {
+    let coinsSettings;
+    if (!this.coinsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/markets/coins.yml"
+        );
+        coinsSettings = Utils.fileParser(p);
+        this.coinsSettings = coinsSettings.map((coinSetting) => ({
+          ...coinSetting,
+          visible: coinSetting.c === false ? false : true, // default: true
+        }));
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    // this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
+    return this.coinsSettings;
+  }
+
+  // _getDepositsSettings({ query }) {
+  _getDepositsSettings() {
+    let depositsSettings, formatDepositsSettings;
+    if (!this.depositsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/markets/deposits.yml"
+        );
+        depositsSettings = Utils.fileParser(p);
+        formatDepositsSettings = depositsSettings.reduce((prev, deposit) => {
+          if (!prev[deposit.id.toString()])
+            prev[deposit.id.toString()] = {
+              ...deposit,
+              visible: deposit.visible === false ? false : true, // default: true
+              disable: deposit.disable === true ? true : false, // default: false
+            };
+          else
+            this.logger.error(
+              `[config/deposits.yml] duplicate deposit`,
+              prev[deposit.id.toString()],
+              deposit
+            );
+          return prev;
+        }, {});
+        // this.logger.log(`-*-*-*-*- getDepositsSettings -*-*-*-*-`, depositsSettings);
+        this.depositsSettings = formatDepositsSettings;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.depositsSettings;
+    // return Promise.resolve(
+    //   new ResponseFormat({
+    //     message: "getDepositsSettings",
+    //     payload: {
+    //       depositsSettings: this.depositsSettings,
+    //     },
+    //   })
+    // );
+  }
+
+  // getWithdrawsSettings({ query }) {
+  _getWithdrawsSettings() {
+    let withdrawsSettings, formatWithdrawsSettings;
+    if (!this.withdrawsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/markets/withdraws.yml"
+        );
+        withdrawsSettings = Utils.fileParser(p);
+        formatWithdrawsSettings = withdrawsSettings.reduce((prev, withdraw) => {
+          if (!prev[withdraw.id.toString()])
+            prev[withdraw.id.toString()] = {
+              ...withdraw,
+              visible: withdraw.visible === false ? false : true, // default: true
+              disable: withdraw.disable === true ? true : false, // default: false
+            };
+          else
+            this.logger.error(
+              `[config/withdraws.yml] duplicate withdraw`,
+              prev[withdraw.id.toString()],
+              withdraw
+            );
+          return prev;
+        }, {});
+        // this.logger.log(`-*-*-*-*- getWithdrawsSettings -*-*-*-*-`, withdrawsSettings);
+        this.withdrawsSettings = formatWithdrawsSettings;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.withdrawsSettings;
+    // return Promise.resolve(
+    //   new ResponseFormat({
+    //     message: "getWithdrawsSettings",
+    //     payload: {
+    //       withdrawsSettings:  this.withdrawsSettings,
+    //     },
+    //   })
+    // );
+  }
+
+  formatCoinsSettings() {
+    let coins;
+    if (!this.coinsSettings) this._getCoinsSettings();
+    if (!this.depositsSettings) this._getDepositsSettings();
+    if (!this.withdrawsSettings) this._getWithdrawsSettings();
+    coins = this.coinsSettings
+      .filter((coin) => coin.coin && coin.marketing_category)
+      .map((coin) => {
+        const formatCoin = {
+          id: coin.id,
+          key: coin.key,
+          code: coin.code,
+          symbol: coin.symbol,
+          coin: coin.coin,
+          visible: coin.visible,
+          marketingCategory: coin.marketing_category,
+          precision: coin.id || 2,
+          selfTransfer: coin.self_transfer,
+          minConfirm: this.depositsSettings[coin.id]?.min_confirm,
+          maxConfirm: this.depositsSettings[coin.id]?.max_confirm,
+          deposit:
+            this.depositsSettings[coin.id]?.visible &&
+            !this.depositsSettings[coin.id]?.disable,
+          depositFee: this.depositsSettings[coin.id]?.fee || "0",
+          withdraw:
+            this.withdrawsSettings[coin.id]?.visible &&
+            !this.withdrawsSettings[coin.id]?.disable,
+          withdrawFee: this.withdrawsSettings[coin.id]?.fee || "0",
+          alert: coin.code === "btc", // ++ TODO
+        };
+        return formatCoin;
+      });
+    return coins;
+  }
+
+  getCoinsSettings({ query }) {
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getCoinsSettings",
+        payload: {
+          coins: this.formatCoinsSettings(),
+        },
+      })
+    );
+  }
+
+  async updateCoinSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateCoinSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        let index = this.coinsSettings.findIndex(
+          (coin) => coin.id.toString() === params.id.toString()
+        );
+        this.logger.log(`index`, index);
+        if (index !== -1) {
+          let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+            ...coin,
+          }));
+          updatedCoinsSettings[index] = {
+            ...updatedCoinsSettings[index],
+            visible: visible,
+          };
+          this.logger.log(
+            `updatedCoinsSettings[${index}]`,
+            updatedCoinsSettings[index]
+          );
+          try {
+            Utils.yamlUpdate(updatedCoinsSettings, p);
+            this.coinsSettings = updatedCoinsSettings;
+            result = new ResponseFormat({
+              message: "updateCoinSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateCoinSetting`,
+              updatedCoinsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update coins settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateCoinsSettings({ email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateCoinSetting ************`
+    );
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+          ...coin,
+          visible,
+        }));
+        try {
+          Utils.yamlUpdate(updatedCoinsSettings, p);
+          this.coinsSettings = updatedCoinsSettings;
+          result = new ResponseFormat({
+            message: "updateCoinsSettings",
+            payload: {
+              coins: this.formatCoinsSettings(),
+            },
+          });
+        } catch (e) {
+          this.logger.error(
+            `yamlUpdate updateCoinsSettings`,
+            updatedCoinsSettings,
+            e
+          );
+          result = new ResponseFormat({
+            message: "Internal server error",
+            code: Codes.UNKNOWN_ERROR,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update coins settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinsSettings`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateDepositSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/deposits.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateDepositSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      updatedDepositCoin;
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { type, data } = body;
+      this.logger.log(`updateDepositCoin`, type, data);
+      if (currentUser.roles?.includes("root")) {
+        updatedDepositCoin = this.depositsSettings[params.id];
+        this.logger.log(`updatedDepositCoin`, updatedDepositCoin);
+        if (updatedDepositCoin) {
+          let updatedDepositsSettings = Object.values(
+            this.depositsSettings
+          ).reduce((prev, deposit) => {
+            prev[deposit.id.toString()] = { ...deposit };
+            return prev;
+          }, {});
+          switch (type) {
+            case COIN_SETTING_TYPE.FEE:
+              updatedDepositsSettings[params.id] = {
+                ...updatedDepositCoin,
+                fee: data.fee,
+              };
+              break;
+            case COIN_SETTING_TYPE.DEPOSIT:
+              updatedDepositsSettings[params.id] = {
+                ...updatedDepositCoin,
+                disable: data.disable,
+                visible: data.disable === false ? true : false,
+              };
+              break;
+            default:
+          }
+
+          this.logger.log(
+            `updatedDepositsSettings[${params.id}]`,
+            updatedDepositsSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedDepositsSettings), p);
+            this.depositsSettings = updatedDepositsSettings;
+            result = new ResponseFormat({
+              message: "updateDepositSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateDepositSetting`,
+              updatedDepositsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update deposit settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateDepositSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateWithdrawSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/withdraws.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateWithdrawSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      updatedWithdrawCoin;
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { type, data } = body;
+      this.logger.log(`updateWithdrawCoin`, type, data);
+      if (currentUser.roles?.includes("root")) {
+        updatedWithdrawCoin = this.withdrawsSettings[params.id];
+        this.logger.log(`updatedWithdrawCoin`, updatedWithdrawCoin);
+        if (updatedWithdrawCoin) {
+          let updatedWithdrawsSettings = Object.values(
+            this.withdrawsSettings
+          ).reduce((prev, withdraw) => {
+            prev[withdraw.id.toString()] = { ...withdraw };
+            return prev;
+          }, {});
+          switch (type) {
+            case COIN_SETTING_TYPE.FEE:
+              updatedWithdrawsSettings[params.id] = {
+                ...updatedWithdrawCoin,
+                fee: data.fee,
+              };
+              break;
+            case COIN_SETTING_TYPE.WITHDRAW:
+              updatedWithdrawsSettings[params.id] = {
+                ...updatedWithdrawCoin,
+                disable: data.disable,
+                visible: data.disable === false ? true : false,
+              };
+              break;
+            default:
+          }
+          this.logger.log(
+            `updatedWithdrawsSettings[${params.id}]`,
+            updatedWithdrawsSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedWithdrawsSettings), p);
+            this.withdrawsSettings = updatedWithdrawsSettings;
+            result = new ResponseFormat({
+              message: "updateWithdrawSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateWithdrawSetting`,
+              updatedWithdrawsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update withdraw settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateWithdrawSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
   async addAdminUser({ email, body }) {
@@ -497,11 +987,11 @@ class ExchangeHub extends Bot {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
     }
-    const { id: bid } = this.currencies.find(
-      (curr) => curr.key === query.market.quote_unit
+    const { id: bid } = this.coinsSettings.find(
+      (curr) => curr.code === query.market.quote_unit
     );
-    const { id: ask } = this.currencies.find(
-      (curr) => curr.key === query.market.base_unit
+    const { id: ask } = this.coinsSettings.find(
+      (curr) => curr.code === query.market.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found${query.market.quote_unit}`);
@@ -1215,7 +1705,7 @@ class ExchangeHub extends Bot {
               let _updateAccount = {
                 balance: SafeMath.plus(account.balance, orderData.balance),
                 locked: SafeMath.plus(account.locked, orderData.locked),
-                currency: this.currencies.find(
+                currency: this.coinsSettings.find(
                   (curr) => curr.id === account.currency
                 )?.symbol,
                 total: SafeMath.plus(
@@ -1553,7 +2043,7 @@ class ExchangeHub extends Bot {
           updateAccount = {
             balance: SafeMath.plus(account.balance, balance),
             locked: SafeMath.plus(account.locked, locked),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === account.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -1821,6 +2311,9 @@ class ExchangeHub extends Bot {
   }
 
   getAdminUser({ memberId, email }) {
+    if (!this.adminUsers) {
+      this.adminUsers = this._getAdminUsers();
+    }
     let roles, name;
     if (email) {
       let user = this.adminUsers.find((user) => user.email === email);
@@ -2025,10 +2518,10 @@ class ExchangeHub extends Bot {
       // TODO: ++ 6. add trade
       // -- CAUTION!!! skip now, tradeId use okex tradeId,
       // because it need columns 'ask_member_id' and 'bid_member_id' with foreign key
-      const base_unit = this.currencies.find(
+      const base_unit = this.coinsSettings.find(
         (curr) => curr.id === order.ask
       )?.key;
-      const quote_unit = this.currencies.find(
+      const quote_unit = this.coinsSettings.find(
         (curr) => curr.id === order.bid
       )?.key;
       if (!base_unit || !quote_unit)
@@ -2114,7 +2607,7 @@ class ExchangeHub extends Bot {
       let _updateAcc = {
         balance: SafeMath.plus(accountAsk.balance, balanceA),
         locked: SafeMath.plus(accountAsk.balance, lockedA), //++ TODO verify => SafeMath.plus(accountAsk.balance, lockedA)
-        currency: this.currencies.find(
+        currency: this.coinsSettings.find(
           (curr) => curr.id === accountAsk.currency
         )?.symbol,
         total: SafeMath.plus(
@@ -2150,7 +2643,7 @@ class ExchangeHub extends Bot {
       _updateAcc = {
         balance: SafeMath.plus(accountBid.balance, balanceB),
         locked: SafeMath.plus(accountBid.balance, lockedB),
-        currency: this.currencies.find(
+        currency: this.coinsSettings.find(
           (curr) => curr.id === accountBid.currency
         )?.symbol,
         total: SafeMath.plus(
@@ -2190,7 +2683,7 @@ class ExchangeHub extends Bot {
           _updateAcc = {
             balance: SafeMath.plus(accountAsk.balance, changeLocked),
             locked: SafeMath.plus(accountAsk.balance, changeBalance),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === accountAsk.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -2224,7 +2717,7 @@ class ExchangeHub extends Bot {
           _updateAcc = {
             balance: SafeMath.plus(accountBid.balance, changeLocked),
             locked: SafeMath.plus(accountBid.balance, changeBalance),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === accountBid.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -2258,11 +2751,11 @@ class ExchangeHub extends Bot {
     if (!market) {
       throw new Error(`this.tidebitMarkets.instId ${body.instId} not found.`);
     }
-    const { id: bid } = this.currencies.find(
-      (curr) => curr.key === market.quote_unit
+    const { id: bid } = this.coinsSettings.find(
+      (curr) => curr.code === market.quote_unit
     );
-    const { id: ask } = this.currencies.find(
-      (curr) => curr.key === market.base_unit
+    const { id: ask } = this.coinsSettings.find(
+      (curr) => curr.code === market.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found`);

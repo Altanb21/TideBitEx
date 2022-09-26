@@ -62,7 +62,7 @@ class TibeBitConnector extends ConnectorBase {
     accountBook,
     orderBook,
     tidebitMarkets,
-    currencies,
+    coinsSettings,
     websocketDomain,
   }) {
     await super.init();
@@ -78,13 +78,13 @@ class TibeBitConnector extends ConnectorBase {
     this.markets = markets;
     this.database = database;
     this.redis = redis;
-    this.currencies = currencies;
     this.depthBook = depthBook;
     this.tickerBook = tickerBook;
     this.tradeBook = tradeBook;
     this.accountBook = accountBook;
     this.orderBook = orderBook;
     this.tidebitMarkets = tidebitMarkets;
+    this.coinsSettings = coinsSettings;
     this.websocketDomain = websocketDomain;
     this.websocket.init({
       url: `${this.wsProtocol}://${this.wsHost}:${this.wsPort}/app/${this.key}?protocol=7&client=js&version=2.2.0&flash=false`,
@@ -635,7 +635,7 @@ class TibeBitConnector extends ConnectorBase {
       const _accounts = await this.database.getAccounts();
       const accounts = {};
       _accounts.forEach((account) => {
-        let currency = this.currencies.find(
+        let currency = this.coinsSettings.find(
           (curr) => curr.id === account.currency
         ).symbol;
         if (!accounts[currency]) {
@@ -693,17 +693,21 @@ class TibeBitConnector extends ConnectorBase {
     );
     try {
       const _accounts = await this.database.getAccountsByMemberId(memberId);
-      const accounts = _accounts.map((account) => ({
-        currency: this.currencies.find((curr) => curr.id === account.currency)
-          .symbol,
-        balance: Utils.removeZeroEnd(account.balance),
-        total: SafeMath.plus(account.balance, account.locked),
-        locked: Utils.removeZeroEnd(account.locked),
-      }));
-      // this.logger.log(
-      //   `[${this.constructor.name}] getAccounts accounts`,
-      //   accounts
-      // );
+      const accounts = _accounts.map((account) => {
+        let currencyObj = this.coinsSettings.find(
+          (curr) => curr.id === account.currency
+        );
+        if (!currencyObj) {
+          this.logger.error(`[${this.constructor.name}] getAccounts currencyObj is null, account?.currency`, account?.currency);
+        }
+        return {
+          currency: currencyObj?.code.toUpperCase(),
+          balance: Utils.removeZeroEnd(account.balance),
+          total: SafeMath.plus(account.balance, account.locked),
+          locked: Utils.removeZeroEnd(account.locked),
+        };
+      });
+
       this.accountBook.updateAll(memberId, accounts);
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] getAccounts error`, error);
@@ -758,11 +762,11 @@ class TibeBitConnector extends ConnectorBase {
     if (!query.market) {
       throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
     }
-    const { id: bid } = this.currencies.find(
-      (curr) => curr.key === query.market.quote_unit
+    const { id: bid } = this.coinsSettings.find(
+      (curr) => curr.code === query.market.quote_unit
     );
-    const { id: ask } = this.currencies.find(
-      (curr) => curr.key === query.market.base_unit
+    const { id: ask } = this.coinsSettings.find(
+      (curr) => curr.code === query.market.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found${query.market.quote_unit}`);

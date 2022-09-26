@@ -15,6 +15,15 @@
   "home": "首頁",
   "history": "交易歷史",
   "settings": "設定",
+  "setting": "設定",
+  "deposit": "入金",
+  "withdraw": "出金",
+  "deposit-fee": "入金手續費",
+  "withdraw-fee": "出金手續費",
+  "deposit-current-fee": "當前入金手續費",
+  "withdraw-current-fee": "當前出金手續費",
+  "deposit-external-fee": "外部入金手續費",
+  "withdraw-external-fee": "外部出金手續費",
   "change": "漲跌幅",
   "24_change": "24h漲跌",
   "24_high": "24h最高價",
@@ -196,5 +205,6 @@
   "error-happen": "發生錯誤",
   "success-update": "修改成功",
   "invail-email": "*E-mail 輸入錯誤，請檢查後重新輸入",
-  "no-access": "沒有訪問權限"
+  "no-access": "沒有訪問權限",
+  "current-external-fee": "外部當前手續費"
 }

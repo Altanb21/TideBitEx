@@ -15,6 +15,15 @@
   "home": "Home",
   "history": "History",
   "settings": "Settings",
+  "setting": "Setting",
+  "deposit": "Deposit",
+  "withdraw": "Withdraw",
+  "deposit-fee": "Deposit Fee",
+  "withdraw-fee": "Withdraw Fee",
+  "deposit-current-fee": "Deposit Current Fee",
+  "withdraw-current-fee": "Withdraw Current Fee",
+  "deposit-external-fee": "Deposit External Fee",
+  "withdraw-external-fee": "Withdraw External Fee",
   "change": "Change",
   "24_change": "24h Change",
   "24_high": "24h High",
@@ -197,5 +206,6 @@
   "error-happen": "Error happens!",
   "success-update": "Success update!",
   "invail-email": "*Invalid email address, please check and re-enter",
-  "no-access": "You do not have the authority to access this page!"
+  "no-access": "You do not have the authority to access this page!",
+  "current-external-fee": "Current external fee"
 }
