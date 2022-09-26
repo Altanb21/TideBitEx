@@ -54,6 +54,7 @@ class ExchangeHub extends Bot {
           logger,
           markets: this.tidebitMarkets,
         });
+        this.tickerBook.updateTickersSettings(this.tickersSettings);
         this.depthBook = new DepthBook({
           logger,
           markets: this.tidebitMarkets,
@@ -253,7 +254,6 @@ class ExchangeHub extends Bot {
         };
         return prev;
       }, {});
-      this.tickerBook.updateTickersSettings(this.tickersSettings);
     } catch (error) {
       this.logger.error(error);
       process.exit(1);
