@@ -305,10 +305,10 @@ const StoreProvider = (props) => {
 
   // TODO get latest snapshot of orders, trades, accounts
   const cancelOrders = useCallback(
-    async (instId, type) => {
+    async (id, type) => {
       const _options = {
         type,
-        instId,
+        id,
         // "X-CSRF-Token": token,
       };
       try {

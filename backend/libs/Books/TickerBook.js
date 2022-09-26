@@ -5,6 +5,7 @@ const Utils = require("../Utils");
 
 class TickerBook extends BookBase {
   _instruments;
+  _tickersSettings;
   constructor({ logger, markets }) {
     super({ logger, markets });
     this.name = `TickerBook`;
@@ -29,11 +30,14 @@ class TickerBook extends BookBase {
   }
 
   formatTicker(data, source) {
-    let id, change, changePct, ticker, tbMarket = this._markets[data.instId]["market"], instrument;
+    let change,
+      changePct,
+      ticker,
+      tickerSetting = this._tickersSettings[data.id],
+      instrument;
     switch (source) {
       case SupportedExchange.OKEX:
         instrument = this.instruments[data.instId];
-        id = data.instId.replace("-", "").toLowerCase();
         change = SafeMath.minus(data.last, data.open24h);
         changePct = SafeMath.gt(data.open24h, "0")
           ? SafeMath.div(change, data.open24h)
@@ -41,12 +45,8 @@ class TickerBook extends BookBase {
           ? "0"
           : "1";
         ticker = {
-          id,
-          market: id,
-          instId: data.instId,
-          name: data.instId.replace("-", "/"),
-          base_unit: data.instId.split("-")[0].toLowerCase(),
-          quote_unit: data.instId.split("-")[1].toLowerCase(),
+          ...tickerSetting,
+          market: data.id,
           last: data.last,
           change,
           changePct,
@@ -58,15 +58,13 @@ class TickerBook extends BookBase {
           at: parseInt(SafeMath.div(data.ts, "1000")),
           ts: parseInt(data.ts),
           source,
-          pricescale: tbMarket["price_group_fixed"],
-          group: tbMarket["tab_category"],
           tickSz: Math.max(
             parseFloat(instrument.tickSz),
-            parseFloat(Utils.getDecimal(tbMarket["bid"]["fixed"]))
+            parseFloat(Utils.getDecimal(tickerSetting["bid"]["fixed"]))
           ).toString(),
           lotSz: Math.max(
             parseFloat(instrument.lotSz),
-            parseFloat(Utils.getDecimal(tbMarket["ask"]["fixed"]))
+            parseFloat(Utils.getDecimal(tickerSetting["ask"]["fixed"]))
           ).toString(),
           minSz: instrument.minSz,
           sell: data.askPx, // [about to decrepted]
@@ -91,20 +89,13 @@ class TickerBook extends BookBase {
           ? "0"
           : "1";
         ticker = {
+          ...tickerSetting,
           ...data,
-          name: tbMarket?.name || data?.name,
-          base_unit: tbMarket?.base_unit || data?.base_unit,
-          quote_unit: tbMarket?.quote_unit || data?.quote_unit,
           change,
           changePct,
           at: parseInt(data.at),
           ts: parseInt(SafeMath.mult(data.at, "1000")),
           source: SupportedExchange.TIDEBIT,
-          pricescale: tbMarket?.price_group_fixed,
-          group: tbMarket?.group,
-          tickSz: Utils.getDecimal(tbMarket?.bid?.fixed),
-          lotSz: Utils.getDecimal(tbMarket?.ask?.fixed),
-          minSz: Utils.getDecimal(tbMarket?.ask?.fixed),
           ticker: {
             // [about to decrepted]
             buy: data.buy,
@@ -160,28 +151,48 @@ class TickerBook extends BookBase {
   }
 
   updateByDifference(instId, ticker) {
+    let result = false;
     this._difference = {};
     try {
       if (this._compareFunction(this._snapshot[instId], ticker)) {
-        this._difference[instId] = { ...this._difference[instId], ...ticker };
-        this._snapshot[instId] = { ...this._snapshot[instId], ...ticker };
-        return true;
-      } else {
-        return false;
+        const tickerSetting = this._tickersSettings[ticker.id];
+        if (tickerSetting?.source === ticker.source) {
+          this._difference[instId] = { ...this._difference[instId], ...ticker };
+          this._snapshot[instId] = { ...this._snapshot[instId], ...ticker };
+          result = true;
+        }
       }
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] error`, error);
-      return false;
     }
+    return result;
   }
 
-  updateAll(tickers) {
+  updateTickersSettings(tickersSettings) {
+    this._tickersSettings = tickersSettings;
+  }
+
+  updateAll(okexTickers, tidebitTickers) {
     // this.logger.log(`[${this.constructor.name}] updateAll tickers`, tickers);
     this._difference = {};
     try {
-      Object.values(tickers).forEach((ticker) => {
-        this._snapshot[ticker.instId] = ticker;
-        this._difference[ticker.instId] = ticker;
+      Object.values(this._tickersSettings || {}).forEach((tickerSetting) => {
+        switch (tickerSetting?.source) {
+          case SupportedExchange.OKEX:
+            this._snapshot[tickerSetting?.instId] =
+              okexTickers[tickerSetting?.id];
+            this._difference[tickerSetting?.instId] =
+              okexTickers[tickerSetting?.id];
+            break;
+          case SupportedExchange.TIDEBIT:
+            this._snapshot[tickerSetting?.instId] =
+              tidebitTickers[tickerSetting?.id];
+            this._difference[tickerSetting?.instId] =
+              tidebitTickers[tickerSetting?.id];
+            break;
+          default:
+            break;
+        }
       });
       return true;
     } catch (error) {

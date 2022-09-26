@@ -44,6 +44,7 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
+        this.tickersSettings = this._getTickersSettings();
         this.adminUsers = this._getAdminUsers();
         this.coinsSettings = this._getCoinsSettings();
         this.depositsSettings = this._getDepositsSettings();
@@ -86,14 +87,13 @@ class ExchangeHub extends Bot {
           encrypted: this.config.pusher.encrypted,
           peatio: this.config.peatio.domain,
           redis: this.config.redis.domain,
-          markets: this.config.markets,
           database: database,
           tickerBook: this.tickerBook,
           depthBook: this.depthBook,
           tradeBook: this.tradeBook,
           orderBook: this.orderBook,
           accountBook: this.accountBook,
-          tidebitMarkets: this.tidebitMarkets,
+          tickersSettings: this.tickersSettings,
           coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
@@ -106,14 +106,13 @@ class ExchangeHub extends Bot {
           brokerId: this.config.okex.brokerId,
           wssPublic: this.config.okex.wssPublic,
           wssPrivate: this.config.okex.wssPrivate,
-          markets: this.config.markets,
           tickerBook: this.tickerBook,
           depthBook: this.depthBook,
           tradeBook: this.tradeBook,
           orderBook: this.orderBook,
           accountBook: this.accountBook,
           database: this.database,
-          tidebitMarkets: this.tidebitMarkets,
+          tickersSettings: this.tickersSettings,
         });
         this.exchangeHubService = new ExchangeHubService({
           database,
@@ -226,6 +225,40 @@ class ExchangeHub extends Bot {
         },
       })
     );
+  }
+
+  _getTickersSettings() {
+    let tickersSettings;
+    try {
+      const p = path.join(
+        this.config.base.TideBitLegacyPath,
+        "config/markets/markets.yml"
+      );
+      const obj = Utils.fileParser(p);
+      tickersSettings = obj.reduce((prev, ticker) => {
+        const instId = ticker.name.split("/").join("-").toUpperCase();
+        prev[ticker.id] = {
+          ...ticker,
+          visible: ticker.visible !== false ? true : false,
+          instId,
+          instType: "",
+          group: ticker.tab_category,
+          pricescale: ticker.price_group_fixed,
+          source: !ticker.source
+            ? SupportedExchange.TIDEBIT
+            : SupportedExchange.OKEX,
+          tickSz: Utils.getDecimal(ticker?.bid?.fixed),
+          lotSz: Utils.getDecimal(ticker?.ask?.fixed),
+          minSz: Utils.getDecimal(ticker?.ask?.fixed),
+        };
+        return prev;
+      }, {});
+      this.tickerBook.updateTickersSettings(this.tickersSettings);
+    } catch (error) {
+      this.logger.error(error);
+      process.exit(1);
+    }
+    return tickersSettings;
   }
 
   // _getCoinsSettings({ query }) {
@@ -383,6 +416,263 @@ class ExchangeHub extends Bot {
     );
   }
 
+  async updateTickerStatus({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/markets.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateTickerStatus ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        if (this.tickersSettings[params.id]) {
+          let updatedTickersSettings = { ...this.tickersSettings };
+          updatedTickersSettings[params.id] = {
+            ...updatedTickersSettings[params.id],
+            visible: visible,
+          };
+          this.logger.log(
+            `updatedTickersSettings[${params.id}]`,
+            updatedTickersSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedTickersSettings), p);
+            this.tickersSettings = updatedTickersSettings;
+            this.tickerBook.updateTickersSettings(this.tickersSettings);
+            result = new ResponseFormat({
+              message: "updateTickerStatus",
+              payload: {
+                tickers: this.tickerBook.getSnapshot(),
+              },
+            });
+            if (
+              updatedTickersSettings[params.id].source ===
+              SupportedExchange.OKEX
+            ) {
+              if (visible)
+                this.okexConnector.subscribeTicker(
+                  updatedTickersSettings[params.id].instId
+                );
+              else
+                this.okexConnector.unsubscribeTicker(
+                  updatedTickersSettings[params.id].instId
+                );
+            }
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateTickerStatus`,
+              updatedTickersSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update ticker is not existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update ticker settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateTickerStatus`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateTickerSource({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/markets.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateTickerStatus ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { source } = body;
+      this.logger.log(`source`, source);
+      if (currentUser.roles?.includes("root")) {
+        if (this.tickersSettings[params.id]) {
+          let updatedTickersSettings = { ...this.tickersSettings };
+          if (source === SupportedExchange.OKEX)
+            this.okexConnector.subscribeTicker(
+              updatedTickersSettings[params.id].instId
+            );
+          else if (
+            source !== SupportedExchange.OKEX &&
+            updatedTickersSettings[params.id].source === SupportedExchange.OKEX
+          )
+            this.okexConnector.unsubscribeTicker(
+              updatedTickersSettings[params.id].instId
+            );
+          updatedTickersSettings[params.id] = {
+            ...updatedTickersSettings[params.id],
+            source: source,
+          };
+          this.logger.log(
+            `updatedTickersSettings[${params.id}]`,
+            updatedTickersSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedTickersSettings), p);
+            this.tickersSettings = updatedTickersSettings;
+            this.tickerBook.updateTickersSettings(this.tickersSettings);
+            result = new ResponseFormat({
+              message: "updateTickerSource",
+              payload: {
+                tickers: this.tickerBook.getSnapshot(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateTickerSource`,
+              updatedTickersSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update ticker is not existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update ticker settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateTickerSource`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateTickerFee({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/markets.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateTickerStatus ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { takerFee, marketFee } = body;
+      this.logger.log(`takerFee`, takerFee);
+      this.logger.log(`marketFee`, marketFee);
+      if (currentUser.roles?.includes("root")) {
+        if (this.tickersSettings[params.id]) {
+          let updatedTickersSettings = { ...this.tickersSettings };
+          updatedTickersSettings[params.id] = {
+            ...updatedTickersSettings[params.id],
+            bid: {
+              ...updatedTickersSettings[params.id].bid,
+              fee: takerFee.default,
+              hero_fee: takerFee.hero,
+              vip_fee: takerFee.vip,
+            },
+            ask: {
+              ...updatedTickersSettings[params.id].ask,
+              fee: marketFee.default,
+              hero_fee: marketFee.hero,
+              vip_fee: marketFee.vip,
+            },
+          };
+          this.logger.log(
+            `updatedTickersSettings[${params.id}]`,
+            updatedTickersSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedTickersSettings), p);
+            this.tickersSettings = updatedTickersSettings;
+            this.tickerBook.updateTickersSettings(this.tickersSettings);
+            result = new ResponseFormat({
+              message: "updateTickerFee",
+              payload: {
+                tickers: this.tickerBook.getSnapshot(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateTickerFee`,
+              updatedTickersSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update ticker is not existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update ticker settings user",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateTickerFee`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
   async updateCoinSetting({ params, email, body }) {
     const p = path.join(
       this.config.base.TideBitLegacyPath,
@@ -985,7 +1275,7 @@ class ExchangeHub extends Bot {
 
   async getOrdersFromDb(query) {
     if (!query.market) {
-      throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
+      throw new Error(`${query.market} is undefined.`);
     }
     const { id: bid } = this.coinsSettings.find(
       (curr) => curr.code === query.market.quote_unit
@@ -1152,12 +1442,9 @@ class ExchangeHub extends Bot {
 
   async getTicker({ params, query }) {
     this.logger.debug(`*********** [${this.name}] getTicker ************`);
-    const instId = this._findInstId(query.id);
-    const index = this.tidebitMarkets.findIndex(
-      (market) => instId === market.instId
-    );
-    if (index !== -1) {
-      const source = this._findSource(instId);
+    const tickerSetting = this.tickersSettings[query.id];
+    if (tickerSetting) {
+      const source = tickerSetting.source;
       this.logger.log(
         `[${this.constructor.name}] getTicker ticketSource`,
         source
@@ -1166,14 +1453,12 @@ class ExchangeHub extends Bot {
         case SupportedExchange.OKEX:
           return this.okexConnector.router("getTicker", {
             params,
-            query: { ...query, instId },
-            optional: { market: this.tidebitMarkets[index] },
+            query: { ...query, instId: tickerSetting.instId },
           });
         case SupportedExchange.TIDEBIT:
           return this.tideBitConnector.router("getTicker", {
             params,
-            query: { ...query, instId },
-            optional: { market: this.tidebitMarkets[index] },
+            query: { ...query, instId: tickerSetting.instId },
           });
         default:
           return new ResponseFormat({
@@ -1192,14 +1477,14 @@ class ExchangeHub extends Bot {
   async getTickers({ query }) {
     this.logger.debug(`*********** [${this.name}] getTickers ************`);
     if (!this.fetchedTickers) {
-      let filteredOkexTickers,
-        filteredTBTickers = {};
+      let okexTickers,
+        tidebitTickers = {};
       try {
         const okexRes = await this.okexConnector.router("getTickers", {
           query,
         });
         if (okexRes.success) {
-          filteredOkexTickers = okexRes.payload;
+          okexTickers = okexRes.payload;
         } else {
           this.logger.error(okexRes);
           return new ResponseFormat({
@@ -1214,18 +1499,13 @@ class ExchangeHub extends Bot {
           code: Codes.API_UNKNOWN_ERROR,
         });
       }
-      // this.logger.log(`this.tidebitMarkets`, this.tidebitMarkets);
       try {
-        const tideBitOnlyMarkets = Utils.marketFilterExclude(
-          Object.values(filteredOkexTickers),
-          this.tidebitMarkets
+        const tBTickersRes = await this.tideBitConnector.router(
+          "getTickers",
+          {}
         );
-        // this.logger.log(`tideBitOnlyMarkets`, tideBitOnlyMarkets);
-        const tBTickersRes = await this.tideBitConnector.router("getTickers", {
-          optional: { mask: tideBitOnlyMarkets },
-        });
         if (tBTickersRes.success) {
-          filteredTBTickers = tBTickersRes.payload;
+          tidebitTickers = tBTickersRes.payload;
         } else {
           this.logger.error(tBTickersRes);
           return new ResponseFormat({
@@ -1233,15 +1513,7 @@ class ExchangeHub extends Bot {
             code: Codes.API_UNKNOWN_ERROR,
           });
         }
-        // this.logger.log(`filteredOkexTickers`, filteredOkexTickers);
-        // this.logger.log(`filteredTBTickers`, filteredTBTickers);
-        this.tickerBook.updateAll({
-          ...filteredOkexTickers,
-          ...filteredTBTickers,
-        });
-        // this.logger.debug(
-        //   `*********** [${this.name}] getTickers [END] ************`
-        // );
+        this.tickerBook.updateAll(okexTickers, tidebitTickers);
       } catch (error) {
         this.logger.error(error);
         return new ResponseFormat({
@@ -1253,7 +1525,10 @@ class ExchangeHub extends Bot {
     }
     return new ResponseFormat({
       message: "getTickers",
-      payload: this.tickerBook.getSnapshot(),
+      payload:
+        query.filter === false
+          ? this.tickerBook.getSnapshot()
+          : this.tickerBook.getSnapshot().filter((ticker) => ticker.visible),
     });
   }
 
@@ -1262,15 +1537,15 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getDepthBooks ************`,
       query
     );
-    const instId = this._findInstId(query.market);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.id];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getDepthBooks", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getDepthBooks", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       default:
         return new ResponseFormat({
@@ -1300,17 +1575,26 @@ class ExchangeHub extends Bot {
       query
     );
     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
-    const instId = this._findInstId(id);
-    const market = this.tidebitMarkets.find((market) => market.id === id);
-    // this.logger.log(`getTradingViewSymbol market`, market);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.id];
+    this.logger.log(`getTradingViewSymbol tickerSetting`, tickerSetting);
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTradingViewSymbol", {
-          query: { ...query, instId, id, market },
+          query: {
+            ...query,
+            instId: tickerSetting?.instId,
+            id,
+            market: tickerSetting,
+          },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTradingViewSymbol", {
-          query: { ...query, instId, id, market },
+          query: {
+            ...query,
+            instId: tickerSetting?.instId,
+            id,
+            market: tickerSetting,
+          },
         });
       default:
         return new ResponseFormat({
@@ -1325,15 +1609,15 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getTradingViewConfig ************`,
       query
     );
-    const instId = this._findInstId(query.symbol);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.id];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTradingViewHistory", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTradingViewHistory", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       default:
         return new ResponseFormat({
@@ -1344,16 +1628,17 @@ class ExchangeHub extends Bot {
   }
 
   async getCandlesticks({ query }) {
-    switch (this._findSource(query.instId)) {
-      case SupportedExchange.OKEX:
-        return this.okexConnector.router("getCandlesticks", { query });
-      case SupportedExchange.TIDEBIT:
-      default:
-        return new ResponseFormat({
-          message: "getCandlesticks",
-          payload: [],
-        });
-    }
+    // decrepted
+    // switch (this._findSource(query.instId)) {
+    //   case SupportedExchange.OKEX:
+    //     return this.okexConnector.router("getCandlesticks", { query });
+    //   case SupportedExchange.TIDEBIT:
+    //   default:
+    //     return new ResponseFormat({
+    //       message: "getCandlesticks",
+    //       payload: [],
+    //     });
+    // }
   }
 
   async getTrades({ query }) {
@@ -1361,15 +1646,15 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getTrades ************`,
       query
     );
-    const instId = this._findInstId(query.market);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.id];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTrades", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTrades", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       default:
         return new ResponseFormat({
@@ -1415,7 +1700,9 @@ class ExchangeHub extends Bot {
             orderId = parsedClOrdId.orderId,
             askFeeRate,
             bidFeeRate,
-            market = this._findMarket(trade.instId),
+            tickerSetting = this.tickersSettings(
+              trade.instId.toLowerCase().replace("-", "")
+            ),
             memberTag = _trade.member_tag,
             fee,
             processTrade,
@@ -1424,18 +1711,18 @@ class ExchangeHub extends Bot {
             if (
               memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
             ) {
-              askFeeRate = market.ask.vip_fee;
-              bidFeeRate = market.bid.vip_fee;
+              askFeeRate = tickerSetting.ask.vip_fee;
+              bidFeeRate = tickerSetting.bid.vip_fee;
             }
             if (
               memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
             ) {
-              askFeeRate = market.ask.hero_fee;
-              bidFeeRate = market.bid.hero_fee;
+              askFeeRate = tickerSetting.ask.hero_fee;
+              bidFeeRate = tickerSetting.bid.hero_fee;
             }
           } else {
-            askFeeRate = market.ask.fee;
-            bidFeeRate = market.bid.fee;
+            askFeeRate = tickerSetting.ask.fee;
+            bidFeeRate = tickerSetting.bid.fee;
           }
           fee =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
@@ -1585,7 +1872,8 @@ class ExchangeHub extends Bot {
     // 5. add account_version
     // 6. update account balance and locked
     // 7. post okex placeOrder
-    switch (this._findSource(body.instId)) {
+    const tickerSetting = this.tickersSettings[body.id];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         let orderData,
           order,
@@ -1610,7 +1898,11 @@ class ExchangeHub extends Bot {
            * orderData.balance: locked value * -1
            *******************************************/
           //  * 2. 建立 TideBit order 單
-          orderData = await this._getPlaceOrderData(memberId, body);
+          orderData = await this._getPlaceOrderData(
+            memberId,
+            body,
+            tickerSetting
+          );
           order = await this.database.insertOrder({
             ...orderData,
             dbTransaction: t,
@@ -1764,7 +2056,7 @@ class ExchangeHub extends Bot {
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("postPlaceOrder", {
           header,
-          body: { ...body, market: this._findMarket(body.instId) },
+          body: { ...body, market: tickerSetting },
         });
       default:
         return new ResponseFormat({
@@ -1779,20 +2071,18 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOrders memberId:[${memberId}]************`,
       query
     );
-    const instId = this._findInstId(query.market);
-    const market = this._findMarket(instId);
-    const source = this._findSource(instId);
+    const tickerSetting = this.tickersSettings[query.id];
     if (memberId && memberId !== -1) {
       let pendingOrders, orderHistories, orders;
-      switch (source) {
+      switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           const pendingOrdersRes = await this.okexConnector.router(
             "getOrderList",
             {
               query: {
                 ...query,
-                instId,
-                market,
+                instId: tickerSetting?.instId,
+                market: tickerSetting,
                 memberId,
               },
             }
@@ -1804,32 +2094,38 @@ class ExchangeHub extends Bot {
           orderHistories = await this.getOrdersFromDb({
             ...query,
             memberId,
-            instId,
-            market,
+            instId: tickerSetting?.instId,
+            market: tickerSetting,
           });
           orderHistories = orderHistories.filter(
             (order) => order.state_code !== Database.ORDER_STATE_CODE.WAIT
           );
           this.orderBook.updateAll(
             memberId,
-            instId,
+            tickerSetting?.instId,
             pendingOrders.concat(orderHistories)
           );
           return new ResponseFormat({
             message: "getOrders",
-            payload: this.orderBook.getSnapshot(memberId, instId),
+            payload: this.orderBook.getSnapshot(
+              memberId,
+              tickerSetting?.instId
+            ),
           });
         case SupportedExchange.TIDEBIT:
           orders = await this.getOrdersFromDb({
             ...query,
             memberId,
-            instId,
-            market,
+            instId: tickerSetting?.instId,
+            market: tickerSetting,
           });
-          this.orderBook.updateAll(memberId, instId, orders);
+          this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
           return new ResponseFormat({
             message: "getOrders",
-            payload: this.orderBook.getSnapshot(memberId, instId),
+            payload: this.orderBook.getSnapshot(
+              memberId,
+              tickerSetting?.instId
+            ),
           });
         default:
           return new ResponseFormat({
@@ -1849,17 +2145,15 @@ class ExchangeHub extends Bot {
       `-------------[${this.constructor.name} getOrderList]----------`
     );
     this.logger.log(` memberId:`, memberId);
-    const instId = this._findInstId(query.market);
-    const market = this._findMarket(instId);
-    const source = this._findSource(instId);
+    const tickerSetting = this.tickersSettings[query.id];
     if (memberId !== -1) {
-      switch (source) {
+      switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           const res = await this.okexConnector.router("getOrderList", {
             query: {
               ...query,
-              instId,
-              market,
+              instId: tickerSetting?.instId,
+              market: tickerSetting,
               memberId,
             },
           });
@@ -1875,9 +2169,12 @@ class ExchangeHub extends Bot {
           if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
           let ts = Date.now();
           if (
-            !this.fetchedOrders[memberId][instId] ||
+            !this.fetchedOrders[memberId][tickerSetting?.instId] ||
             SafeMath.gt(
-              SafeMath.minus(ts, this.fetchedOrders[memberId][instId]),
+              SafeMath.minus(
+                ts,
+                this.fetchedOrders[memberId][tickerSetting?.instId]
+              ),
               this.fetchedOrdersInterval
             )
           )
@@ -1885,11 +2182,11 @@ class ExchangeHub extends Bot {
               const orders = await this.getOrdersFromDb({
                 ...query,
                 memberId,
-                instId,
-                market,
+                instId: tickerSetting?.instId,
+                market: tickerSetting,
               });
-              this.orderBook.updateAll(memberId, instId, orders);
-              this.fetchedOrders[memberId][instId] = ts;
+              this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+              this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
             } catch (error) {
               this.logger.error(error);
               const message = error.message;
@@ -1900,7 +2197,11 @@ class ExchangeHub extends Bot {
             }
           return new ResponseFormat({
             message: "getOrderList",
-            payload: this.orderBook.getSnapshot(memberId, instId, "pending"),
+            payload: this.orderBook.getSnapshot(
+              memberId,
+              tickerSetting?.instId,
+              "pending"
+            ),
           });
         default:
           return new ResponseFormat({
@@ -1916,23 +2217,25 @@ class ExchangeHub extends Bot {
   }
 
   async getOrderHistory({ query, memberId }) {
-    const instId = this._findInstId(query.market);
-    const market = this._findMarket(instId);
+    const tickerSetting = this.tickersSettings[query.id];
     if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "getOrderHistory",
         payload: null,
       });
     }
-    switch (this._findSource(instId)) {
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
       case SupportedExchange.TIDEBIT:
         if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
         let ts = Date.now();
         if (
-          !this.fetchedOrders[memberId][instId] ||
+          !this.fetchedOrders[memberId][tickerSetting?.instId] ||
           SafeMath.gt(
-            SafeMath.minus(ts, this.fetchedOrders[memberId][instId]),
+            SafeMath.minus(
+              ts,
+              this.fetchedOrders[memberId][tickerSetting?.instId]
+            ),
             this.fetchedOrdersInterval
           )
         ) {
@@ -1940,11 +2243,11 @@ class ExchangeHub extends Bot {
             const orders = await this.getOrdersFromDb({
               ...query,
               memberId,
-              instId,
-              market,
+              instId: tickerSetting?.instId,
+              market: tickerSetting,
             });
-            this.orderBook.updateAll(memberId, instId, orders);
-            this.fetchedOrders[memberId][instId] = ts;
+            this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+            this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
           } catch (error) {
             this.logger.error(error);
             const message = error.message;
@@ -1956,7 +2259,11 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOrderHistory",
-          payload: this.orderBook.getSnapshot(memberId, instId, "history"),
+          payload: this.orderBook.getSnapshot(
+            memberId,
+            tickerSetting?.instId,
+            "history"
+          ),
         });
       default:
         return new ResponseFormat({
@@ -2066,7 +2373,8 @@ class ExchangeHub extends Bot {
   }
   // ++ TODO: fix multi return
   async postCancelOrder({ header, params, query, body, memberId }) {
-    const source = this._findSource(body.instId);
+    const tickerSetting = this.tickersSettings[body.market];
+    const source = tickerSetting?.source;
     // const t = await this.database.transaction();
     try {
       // 1. get orderId from body.clOrdId
@@ -2113,7 +2421,7 @@ class ExchangeHub extends Bot {
         case SupportedExchange.TIDEBIT:
           return this.tideBitConnector.router(`postCancelOrder`, {
             header,
-            body: { ...body, orderId, market: this._findMarket(body.instId) },
+            body: { ...body, orderId, market: tickerSetting },
           });
 
         default:
@@ -2136,14 +2444,15 @@ class ExchangeHub extends Bot {
   // ++ TODO
   // get pending orders by snapshot
   async cancelOrders({ header, body, memberId }) {
-    const source = this._findSource(body.instId);
+    const tickerSetting = this.tickersSettings[body.id];
+    const source = tickerSetting?.source;
     try {
       switch (source) {
         case SupportedExchange.OKEX:
           // get pending orders by snapshot
           const _orders = await this.getOrdersFromDb({
             ...body,
-            market: this._findMarket(body.instId),
+            market: tickerSetting,
             memberId,
             // state: Database.ORDER_STATE_CODE.WAIT,
             // orderType: Database.ORD_TYPE.LIMIT,
@@ -2212,7 +2521,7 @@ class ExchangeHub extends Bot {
           if (functionName) {
             return this.tideBitConnector.router(`${functionName}`, {
               header,
-              body: { ...body, market: this._findMarket(body.instId) },
+              body: { ...body, market: tickerSetting },
             });
           } else
             return new ResponseFormat({
@@ -2746,16 +3055,15 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
 
-  async _getPlaceOrderData(memberId, body) {
-    const market = this._findMarket(body.instId);
-    if (!market) {
-      throw new Error(`this.tidebitMarkets.instId ${body.instId} not found.`);
+  async _getPlaceOrderData(memberId, body, tickerSetting) {
+    if (!tickerSetting) {
+      throw new Error(`this ticker ${body.instId} can be found.`);
     }
     const { id: bid } = this.coinsSettings.find(
-      (curr) => curr.code === market.quote_unit
+      (curr) => curr.code === tickerSetting.quote_unit
     );
     const { id: ask } = this.coinsSettings.find(
-      (curr) => curr.code === market.base_unit
+      (curr) => curr.code === tickerSetting.base_unit
     );
     if (!bid) {
       throw new Error(`bid not found`);
@@ -2763,7 +3071,7 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found`);
     }
-    const currency = market.code;
+    const currency = tickerSetting.code;
     const type =
       body.kind === Database.ORDER_KIND.BID
         ? Database.TYPE.ORDER_BID
@@ -3109,18 +3417,6 @@ class ExchangeHub extends Bot {
     return (
       Utils.marketFilterInclude(this.tidebitMarkets, [{ instId }]).length > 0
     );
-  }
-
-  _findInstId(id) {
-    return this.config.markets[id.toUpperCase()];
-  }
-
-  _findSource(instId) {
-    return this.config.markets[`tb${instId}`];
-  }
-
-  _findMarket(instId) {
-    return this.tidebitMarkets.find((m) => m.instId === instId);
   }
 }
 

@@ -43,14 +43,13 @@ class OkexConnector extends ConnectorBase {
     brokerId,
     wssPublic,
     wssPrivate,
-    markets,
     tickerBook,
     depthBook,
     tradeBook,
     accountBook,
     orderBook,
     database,
-    tidebitMarkets,
+    tickersSettings,
   }) {
     await super.init();
     this.domain = domain;
@@ -58,14 +57,13 @@ class OkexConnector extends ConnectorBase {
     this.secretKey = secretKey;
     this.passPhrase = passPhrase;
     this.brokerId = brokerId;
-    this.markets = markets;
     this.depthBook = depthBook;
     this.tickerBook = tickerBook;
     this.tradeBook = tradeBook;
     this.accountBook = accountBook;
     this.orderBook = orderBook;
     this.database = database;
-    this.tidebitMarkets = tidebitMarkets;
+    this.tickersSettings = tickersSettings;
     await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
     await this.websocketPrivate.init({
       url: wssPrivate,
@@ -76,10 +74,10 @@ class OkexConnector extends ConnectorBase {
 
   async start() {
     this._okexWsEventListener();
-    Object.keys(this.markets).forEach((key) => {
-      if (this.markets[key] === SupportedExchange.OKEX) {
-        const instId = key.replace("tb", "");
-        this.instIds.push(instId);
+    Object.keys(this.tickersSettings).forEach((id) => {
+      if (this.tickersSettings[id]?.source === SupportedExchange.OKEX) {
+        this.instIds.push(this.tickersSettings[id].instId);
+        this.subscribeTicker(this.tickersSettings[id].instId);
       }
     });
     let instruments,
@@ -94,7 +92,6 @@ class OkexConnector extends ConnectorBase {
       }, {});
     }
     this.tickerBook.instruments = instruments;
-    this._subscribeTickers(this.instIds);
     this._wsPrivateLogin();
   }
 
@@ -131,7 +128,7 @@ class OkexConnector extends ConnectorBase {
    * @property {string} fee "-0.001913376"
    * @property {string} ordd "467755654093094921"
    * @property {string} insType "SPOT"
-   * @property {string} insId "ETH-USDT"
+   * @property {string} instId "ETH-USDT"
    * @property {string} clOdId "377bd372412fSCDE2m332576077o"
    * @property {string} poside "net"
    * @property {string} bilId "467871903972212805"
@@ -656,7 +653,10 @@ class OkexConnector extends ConnectorBase {
         });
       }
       const [data] = res.data.data;
-      const ticker = this.tickerBook.formatTicker(data, SupportedExchange.OKEX);
+      const ticker = this.tickerBook.formatTicker(
+        { id: data.instId.replace("-", "").toLowerCase(), ...data },
+        SupportedExchange.OKEX
+      );
       this.logger.log(`[${this.constructor.name}] getTicker`, ticker);
       return new ResponseFormat({
         message: "getTicker",
@@ -699,26 +699,27 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      const tickers = this.instIds.map((instId) =>
-        res.data.data.find((data) => data.instId === instId)
-      );
-      const formatedTickers = tickers.reduce((prev, data) => {
-        prev[data.instId] = this.tickerBook.formatTicker(
-          data,
+      // const tickers = this.instIds.map((instId) =>
+      //   res.data.data.find((data) => data.instId === instId)
+      // );
+      const tickers = res.data.data.reduce((prev, data) => {
+        const formatedTicker = this.tickerBook.formatTicker(
+          { id: data.instId.replace("-", "").toLowerCase(), ...data },
           SupportedExchange.OKEX
         );
+        prev[formatedTicker.id] = formatedTicker;
         return prev;
       }, {});
       // this.logger.log(
       //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
       // );
-      // this.logger.log(`formatedTickers`, formatedTickers);
+      // this.logger.log(`tickers`, tickers);
       // this.logger.log(
       //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
       // );
       return new ResponseFormat({
         message: "getTickers from OKEx",
-        payload: formatedTickers,
+        payload: tickers,
       });
     } catch (error) {
       this.logger.error(error);
@@ -1647,7 +1648,7 @@ class OkexConnector extends ConnectorBase {
           instIds.push(inst.instId);
         }
       });
-      this._subscribeTickers(instIds);
+      // this._subscribeTickers(instIds); -- decrepted
     }
     this.okexWsChannels[channel][instType] = instData;
   }
@@ -1742,8 +1743,14 @@ class OkexConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   _updateTickers(data) {
     data.forEach((d) => {
-      if (this._findSource(d.instId) === SupportedExchange.OKEX) {
-        const ticker = this.tickerBook.formatTicker(d, SupportedExchange.OKEX);
+      if (
+        this.tickersSettings[d.instId.replace("-", "").toLowerCase()]
+          ?.source === SupportedExchange.OKEX
+      ) {
+        const ticker = this.tickerBook.formatTicker(
+          { id: d.instId.replace("-", "").toLowerCase(), ...d },
+          SupportedExchange.OKEX
+        );
         const result = this.tickerBook.updateByDifference(d.instId, ticker);
         if (result)
           EventBus.emit(Events.tickers, this.tickerBook.getDifference());
@@ -1814,24 +1821,42 @@ class OkexConnector extends ConnectorBase {
     );
   }
 
-  _subscribeTickers(instIds) {
+  subscribeTicker(instId) {
     const channel = Events.tickers;
-    const args = instIds.map((instId) => {
-      if (!this.okexWsChannels[channel]) this.okexWsChannels[channel] = {};
-      if (!this.okexWsChannels[channel][instId])
-        this.okexWsChannels[channel][instId] = {};
-      return {
-        channel,
-        instId,
-      };
-    });
-    this.logger.debug(`[${this.constructor.name}]_subscribeTickers`, args);
+    if (!this.okexWsChannels[channel]) this.okexWsChannels[channel] = {};
+    if (!this.okexWsChannels[channel][instId])
+      this.okexWsChannels[channel][instId] = {};
+    this.logger.debug(
+      `[${this.constructor.name}]subscribeTicker[channel: ${channel}]`,
+      instId
+    );
     this.websocket.ws.send(
       JSON.stringify({
         op: Events.subscribe,
-        args,
+        args: {
+          channel,
+          instId,
+        },
       })
     );
+  }
+
+  unsubscribeTicker(instId) {
+    const channel = Events.tickers;
+    this.logger.debug(
+      `[${this.constructor.name}]unsubscribeTicker[channel: ${channel}]`,
+      instId
+    );
+    this.websocket.ws.send(
+      JSON.stringify({
+        op: Events.unsubscribe,
+        args: {
+          channel,
+          instId,
+        },
+      })
+    );
+    delete this.okexWsChannels[channel][instId];
   }
 
   _unsubscribeTrades(instId) {
@@ -1924,17 +1949,18 @@ class OkexConnector extends ConnectorBase {
 
   // TideBitEx ws
   _subscribeMarket(market, wsId, lotSz) {
-    const instId = this._findInstId(market);
-    if (this._findSource(instId) === SupportedExchange.OKEX) {
+    const tickerSetting = this.tickersSettings[market];
+    if (tickerSetting?.source === SupportedExchange.OKEX) {
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [START] ++++++`
       );
-      this.logger.log(`instId`, instId);
+      this.logger.log(`(tickerSetting`, tickerSetting);
       this.logger.log(`market`, market);
       this.logger.log(`lotSz`, lotSz);
-      this._subscribeTrades(instId);
-      this._subscribeBook(instId);
-      this.okexWsChannels[Events.tickers][instId]["lotSz"] = lotSz;
+      this._subscribeTrades(tickerSetting?.instId);
+      this._subscribeBook(tickerSetting?.instId);
+      this.okexWsChannels[Events.tickers][tickerSetting?.instId]["lotSz"] =
+        lotSz;
       // this._subscribeCandle1m(instId);
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [END] ++++++`
@@ -1943,15 +1969,15 @@ class OkexConnector extends ConnectorBase {
   }
 
   _unsubscribeMarket(market) {
-    const instId = this._findInstId(market);
-    if (this._findSource(instId) === SupportedExchange.OKEX) {
+    const tickerSetting = this.tickersSettings[market];
+    if (tickerSetting?.source === SupportedExchange.OKEX) {
       this.logger.log(
         `---------- [${this.constructor.name}]  _unsubscribeMarket [START] ----------`
       );
       this.logger.log(`_unsubscribeMarket market`, market);
-      this.logger.log(`_unsubscribeMarket instId`, instId);
-      this._unsubscribeTrades(instId);
-      this._unsubscribeBook(instId);
+      this.logger.log(`_unsubscribeMarket instId`, tickerSetting?.instId);
+      this._unsubscribeTrades(tickerSetting?.instId);
+      this._unsubscribeBook(tickerSetting?.instId);
       // this._unsubscribeCandle1m(instId);
       this.logger.log(
         `---------- [${this.constructor.name}]  _unsubscribeMarket [END] ----------`
@@ -1962,14 +1988,5 @@ class OkexConnector extends ConnectorBase {
   _subscribeUser() {}
 
   _unsubscribeUser() {}
-  // TideBitEx ws end
-
-  _findInstId(id) {
-    return this.markets[id.toUpperCase()];
-  }
-
-  _findSource(instId) {
-    return this.markets[`tb${instId}`];
-  }
 }
 module.exports = OkexConnector;
