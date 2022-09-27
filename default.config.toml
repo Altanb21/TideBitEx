@@ -98,10 +98,13 @@ pathname = [
   "put | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.updateAdminUser",
   "delete | /api/v1/admin/admin-users/:id | Bot.ExchangeHub.deleteAdminUser",
 
- # analysis - coins
-  "get | /api/v1/coins/coins-settings | Bot.ExchangeHub.getCoinsSettings",
-  "put | /api/v1/coins/coins-settings | Bot.ExchangeHub.updateCoinsSettings",
-  "put | /api/v1/coins/coins-settings/:id | Bot.ExchangeHub.updateCoinSetting",
-  "put | /api/v1/coins/deposits-settings/:id | Bot.ExchangeHub.updateDepositSetting",
-  "put | /api/v1/coins/withdraws-settings/:id | Bot.ExchangeHub.updateWithdrawSetting",
+  "get | /api/v1/admin/coins-settings | Bot.ExchangeHub.getCoinsSettings",
+  "put | /api/v1/admin/coins-settings | Bot.ExchangeHub.updateCoinsSettings",
+  "put | /api/v1/admin/coins-settings/:id | Bot.ExchangeHub.updateCoinSetting",
+  "put | /api/v1/admin/deposits-settings/:id | Bot.ExchangeHub.updateDepositSetting",
+  "put | /api/v1/admin/withdraws-settings/:id | Bot.ExchangeHub.updateWithdrawSetting",
+
+  "get | /api/v1/admin/tickers-settings | Bot.ExchangeHub.getTickersSettings",
+  "put | /api/v1/admin/tickers-settings/:id | Bot.ExchangeHub.updateTickerSetting",
+
 ]

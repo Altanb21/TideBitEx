@@ -255,6 +255,8 @@ const StoreContext = React.createContext({
   updateCoinsSettings: async () => {},
   updateDepositSetting: async (id, type, data) => {},
   updateWithdrawSetting: async (id, type, data) => {},
+  getTickersSettings: async () => {},
+  updateTickerSetting: async (id, type, data) => {},
 });
 
 export default StoreContext;

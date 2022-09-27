@@ -222,8 +222,7 @@ class TibeBitConnector extends ConnectorBase {
     }
     let tickers = {};
     const tBTickers = tBTickersRes.data;
-    Object.keys(tBTickers)
-    .forEach((id) => {
+    Object.keys(tBTickers).forEach((id) => {
       const tickerObj = tBTickers[id];
       let formatedTicker = this.tickerBook.formatTicker(
         {
@@ -715,35 +714,36 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   async tbGetOrderList(query) {
-    if (!query.market) {
-      throw new Error(`${query.market} is undefined.`);
+    const { instId, memberId, tickerSetting } = query;
+    if (!tickerSetting) {
+      throw new Error(`${tickerSetting} is undefined.`);
     }
     const { id: bid } = this.coinsSettings.find(
-      (curr) => curr.code === query.market.quote_unit
+      (curr) => curr.code === tickerSetting.quoteUnit
     );
     const { id: ask } = this.coinsSettings.find(
-      (curr) => curr.code === query.market.base_unit
+      (curr) => curr.code === tickerSetting.baseUnit
     );
     if (!bid) {
-      throw new Error(`bid not found${query.market.quote_unit}`);
+      throw new Error(`bid not found${tickerSetting.quoteUnit}`);
     }
     if (!ask) {
-      throw new Error(`ask not found${query.market.base_unit}`);
+      throw new Error(`ask not found${tickerSetting.baseUnit}`);
     }
     let orderList;
-    // if (query.memberId) {
+    // if (memberId) {
     orderList = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       // state: query.state,
-      memberId: query.memberId,
+      memberId: memberId,
       // orderType: query.orderType,
     });
     /*
     const vouchers = await this.database.getVouchers({
-      memberId: query.memberId,
-      ask: query.market.base_unit,
-      bid: query.market.quote_unit,
+      memberId: memberId,
+      ask: tickerSetting.baseUnit,
+      bid: tickerSetting.quoteUnit,
     });
     */
     // } else {
@@ -763,7 +763,7 @@ class TibeBitConnector extends ConnectorBase {
           at: parseInt(
             SafeMath.div(new Date(order.updated_at).getTime(), "1000")
           ),
-          market: query.instId.replace("-", "").toLowerCase(),
+          market: instId.replace("-", "").toLowerCase(),
           kind: order.type === "OrderAsk" ? "ask" : "bid",
           price:
             order.ordType === "market"
@@ -777,7 +777,7 @@ class TibeBitConnector extends ConnectorBase {
           state: "done",
           state_text: "Done",
           clOrdId: order.id,
-          instId: query.instId,
+          instId: instId,
           ordType: order.ord_type,
           filled: order.volume !== order.origin_volume,
         };
@@ -789,7 +789,7 @@ class TibeBitConnector extends ConnectorBase {
         at: parseInt(
           SafeMath.div(new Date(order.updated_at).getTime(), "1000")
         ),
-        market: query.instId.replace("-", "").toLowerCase(),
+        market: tickerSetting?.market,
         kind:
           order.type === Database.TYPE.ORDER_ASK
             ? Database.ORDER_KIND.ASK
@@ -812,7 +812,7 @@ class TibeBitConnector extends ConnectorBase {
           ? Database.ORDER_STATE_TEXT.DONE
           : Database.ORDER_STATE_TEXT.UNKNOWN,
         clOrdId: order.id,
-        instId: query.instId,
+        instId,
         ordType: order.ord_type,
         filled: order.volume !== order.origin_volume,
       };

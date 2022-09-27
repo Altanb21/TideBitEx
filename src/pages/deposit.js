@@ -145,7 +145,7 @@ const Deposit = () => {
 
   const filter = useCallback(
     ({ filterCoinsSettings, visible, keyword }) => {
-      if (visible) setIsVisible(visible);
+      if (visible !== undefined) setIsVisible(visible);
       let _option = visible || isVisible,
         _keyword = keyword === undefined ? filterKey : keyword,
         _coinsSettngs = filterCoinsSettings || coinsSettngs;
@@ -281,6 +281,7 @@ const Deposit = () => {
   const toggleStatus = useCallback(
     async (type, id, value) => {
       console.log(`toggleStatus`, type, id, value);
+      setIsLoading(true);
       let result, updateCoinsSettings;
       try {
         switch (type) {
@@ -406,7 +407,7 @@ const Deposit = () => {
                 className={`screen__display-option${
                   isVisible === null ? " active" : ""
                 }`}
-                onClick={() => filter("all")}
+                onClick={() => filter({ visible: null })}
               >
                 全部
               </li>
@@ -414,7 +415,7 @@ const Deposit = () => {
                 className={`screen__display-option${
                   isVisible === true ? " active" : ""
                 }`}
-                onClick={() => filter("open")}
+                onClick={() => filter({ visible: true })}
               >
                 已開啟
               </li>
@@ -422,7 +423,7 @@ const Deposit = () => {
                 className={`screen__display-option${
                   isVisible === false ? " active" : ""
                 }`}
-                onClick={() => filter("close")}
+                onClick={() => filter({ visible: false })}
               >
                 未開啟
               </li>

@@ -237,7 +237,7 @@ class TickerBook extends BookBase {
     //   this._snapshot
     // );
     if (instId) return this._snapshot[instId];
-    else return Object.values(this._snapshot);
+    else return this._snapshot;
   }
 }
 

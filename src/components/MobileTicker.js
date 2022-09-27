@@ -65,7 +65,7 @@ const MobileTicker = (props) => {
                 : formateDecimal(storeCtx.selectedTicker?.volume, {
                     decimalLength: storeCtx?.lotSz,
                   })
-            }${storeCtx.selectedTicker?.base_unit?.toUpperCase() || "--"}`}
+            }${storeCtx.selectedTicker?.baseUnit?.toUpperCase() || "--"}`}
           </div>
         </div>
       </div>

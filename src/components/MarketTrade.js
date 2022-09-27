@@ -82,7 +82,7 @@ const TradeForm = (props) => {
           volume,
           SafeMath.div(
             storeCtx.accounts?.accounts[
-              storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+              storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
             ]?.balance,
             props.ordType === "market"
               ? storeCtx.selectedTicker?.last
@@ -91,19 +91,19 @@ const TradeForm = (props) => {
         )
       ) {
         setErrorMessage(
-          `Available ${storeCtx.selectedTicker?.quote_unit?.toUpperCase()} is not enough`
+          `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
         );
       } else if (
         props.kind === "ask" &&
         SafeMath.gt(
           volume,
           storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
           ]?.balance
         )
       ) {
         setErrorMessage(
-          `Available ${storeCtx.selectedTicker?.base_unit?.toUpperCase()} is not enough`
+          `Available ${storeCtx.selectedTicker?.baseUnit?.toUpperCase()} is not enough`
         );
       } else setErrorMessage(null);
     },
@@ -141,18 +141,18 @@ const TradeForm = (props) => {
             : formatedValue,
           props.kind === "bid"
             ? storeCtx.accounts?.accounts[
-                storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
               ]?.balance
             : storeCtx.accounts?.accounts[
-                storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                storeCtx.selectedTicker?.baseUnit?.toUpperCase()
               ]?.balance
         )
       )
         setErrorMessage(
           `Available ${
             props.kind === "bid"
-              ? storeCtx.selectedTicker?.quote_unit?.toUpperCase()
-              : storeCtx.selectedTicker?.base_unit?.toUpperCase()
+              ? storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
+              : storeCtx.selectedTicker?.baseUnit?.toUpperCase()
           } is not enough`
         );
       else setErrorMessage(null);
@@ -269,17 +269,17 @@ const TradeForm = (props) => {
             ? formateDecimal(
                 props.kind === "bid"
                   ? storeCtx.accounts?.accounts[
-                      storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                      storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
                     ]?.balance
                   : storeCtx.accounts?.accounts[
-                      storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                      storeCtx.selectedTicker?.baseUnit?.toUpperCase()
                     ]?.balance,
                 { decimalLength: 8 }
               )
             : "--"}
           {props.kind === "bid"
-            ? storeCtx.selectedTicker?.quote_unit?.toUpperCase() || "--"
-            : storeCtx.selectedTicker?.base_unit?.toUpperCase() || "--"}
+            ? storeCtx.selectedTicker?.quoteUnit?.toUpperCase() || "--"
+            : storeCtx.selectedTicker?.baseUnit?.toUpperCase() || "--"}
           {/* = 0 USD */}
         </span>
       </p>
@@ -313,7 +313,7 @@ const TradeForm = (props) => {
           {!props.readyOnly && (
             <div className="market-trade__input-group--append input-group-append">
               <span className="input-group-text">
-                {storeCtx.selectedTicker?.quote_unit?.toUpperCase() || "--"}
+                {storeCtx.selectedTicker?.quoteUnit?.toUpperCase() || "--"}
               </span>
             </div>
           )}
@@ -344,7 +344,7 @@ const TradeForm = (props) => {
           />
           <div className="market-trade__input-group--append input-group-append">
             <span className="input-group-text">
-              {storeCtx.selectedTicker?.base_unit?.toUpperCase() || "--"}
+              {storeCtx.selectedTicker?.baseUnit?.toUpperCase() || "--"}
             </span>
           </div>
         </div>
@@ -369,7 +369,7 @@ const TradeForm = (props) => {
           />
           <div className="market-trade__input-group--append input-group-append">
             <span className="input-group-text">
-              {storeCtx.selectedTicker?.quote_unit?.toUpperCase() || "--"}
+              {storeCtx.selectedTicker?.quoteUnit?.toUpperCase() || "--"}
             </span>
           </div>
         </div>
@@ -393,11 +393,11 @@ const TradeForm = (props) => {
                     "0.25",
                     props.kind === "bid"
                       ? storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
                         ]?.balance
                       : SafeMath.div(
                           storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
                           ]?.balance,
                           price || storeCtx.selectedTicker?.last
                         )
@@ -418,11 +418,11 @@ const TradeForm = (props) => {
                     "0.5",
                     props.kind === "bid"
                       ? storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
                         ]?.balance
                       : SafeMath.div(
                           storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
                           ]?.balance,
                           price || storeCtx.selectedTicker?.last
                         )
@@ -443,11 +443,11 @@ const TradeForm = (props) => {
                     "0.75",
                     props.kind === "bid"
                       ? storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                          storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
                         ]?.balance
                       : SafeMath.div(
                           storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
                           ]?.balance,
                           price || storeCtx.selectedTicker?.last
                         )
@@ -466,11 +466,11 @@ const TradeForm = (props) => {
                 formatSize(
                   props.kind === "bid"
                     ? storeCtx.accounts?.accounts[
-                        storeCtx.selectedTicker?.quote_unit?.toUpperCase()
+                        storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
                       ]?.balance
                     : SafeMath.div(
                         storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.base_unit?.toUpperCase()
+                          storeCtx.selectedTicker?.baseUnit?.toUpperCase()
                         ]?.balance,
                         price || storeCtx.selectedTicker?.last
                       )
@@ -513,7 +513,7 @@ const TradeForm = (props) => {
         }
       >
         {props.kind === "bid" ? t("buy") : t("sell")}
-        {` ${storeCtx.selectedTicker?.base_unit?.toUpperCase() ?? ""}`}
+        {` ${storeCtx.selectedTicker?.baseUnit?.toUpperCase() ?? ""}`}
       </button>
     </form>
   );
