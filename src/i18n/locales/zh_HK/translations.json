@@ -206,5 +206,17 @@
   "success-update": "修改成功",
   "invail-email": "*E-mail 輸入錯誤，請檢查後重新輸入",
   "no-access": "沒有訪問權限",
-  "current-external-fee": "外部當前手續費"
+  "current-external-fee": "外部當前手續費",
+  "ask-default-fee": "默認買入手續費",
+  "ask-hero-fee": "Hero買入手續費",
+  "ask-vip-fee": "VIP買入手續費",
+  "current-ask-default-fee": "當前默認買入手續費",
+  "current-ask-hero-fee": "當前Hero買入手續費",
+  "current-ask-vip-fee": "當前VIP買入手續費",
+  "bid-default-fee": "默認賣出手續費",
+  "bid-hero-fee": "Hero賣出手續費",
+  "bid-vip-fee": "VIP賣出手續費",
+  "current-bid-default-fee": "當前默認賣出手續費",
+  "current-bid-hero-fee": "當前Hero賣出手續費",
+  "current-bid-vip-fee": "當前VIP賣出手續費"
 }

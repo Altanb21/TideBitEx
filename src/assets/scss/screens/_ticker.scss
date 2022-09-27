@@ -41,4 +41,16 @@
   & .screen__table-item:nth-child(6) {
     min-width: 160px;
   }
+  & .screen__table-header {
+    cursor: default;
+    &--icon,
+    &--text {
+      cursor: default;
+    }
+  }
+  & .screen__table-headers,
+  & .screen__table-row{
+    justify-content: unset;
+    gap: 5px;
+  }
 }

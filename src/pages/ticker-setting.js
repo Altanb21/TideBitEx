@@ -20,6 +20,7 @@ const groups = {
   INNO: ["INNO"],
   USD: ["USD"],
   ALTS: ["USX"],
+  OTHERS: ["BTC"],
 };
 
 const FeeControlDialog = (props) => {
@@ -43,29 +44,29 @@ const FeeControlDialog = (props) => {
 
   return (
     <Dialog
-      className="deposit__dialog"
+      className="screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
       onCancel={props.onCancel}
       onConfirm={onConfirm}
     >
-      <div className="deposit__dialog-content">
-        <div className="deposit__dialog-content--title">
-          {props.currency.code.toUpperCase()}
+      <div className="screen__dialog-content">
+        <div className="screen__dialog-content--title">
+          {props.ticker.name}
         </div>
-        <div className="deposit__dialog-content--body">
-          <div className="deposit__dialog-inputs">
-            <div className="deposit__dialog-input-group">
+        <div className="screen__dialog-content--body">
+          <div className="screen__dialog-inputs">
+            <div className="screen__dialog-input-group">
               <label
-                className="deposit__dialog-input-label"
+                className="screen__dialog-input-label"
                 htmlFor={`${props.side}-default-fee`}
               >
                 {t(`${props.side}-default-fee`)}:
               </label>
-              <div className="deposit__dialog-input-box">
-                <div className="deposit__dialog-input-column">
+              <div className="screen__dialog-input-box">
+                <div className="screen__dialog-input-column">
                   <input
-                    className="deposit__dialog-input"
+                    className="screen__dialog-input"
                     name={`${props.side}-default-fee`}
                     type="number"
                     min="0"
@@ -77,28 +78,27 @@ const FeeControlDialog = (props) => {
                       setDefaultFee(fee);
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(
-                    // `${props.type}-current-fee`
-                    `${props.side}-default-fee`
+                  <div className="screen__dialog-input-caption">{`${t(
+                    `current-${props.side}-default-fee`
                   )}: ${SafeMath.mult(
                     props.ticker[props.side].fee,
                     100
                   )}%`}</div>
                 </div>
-                <div className="deposit__dialog-input-suffix">%</div>
+                <div className="screen__dialog-input-suffix">%</div>
               </div>
             </div>
-            <div className="deposit__dialog-input-group">
+            <div className="screen__dialog-input-group">
               <label
-                className="deposit__dialog-input-label"
-                htmlFor={`${props.side}-default-fee`}
+                className="screen__dialog-input-label"
+                htmlFor={`${props.side}-vip-fee`}
               >
-                {t(`${props.side}-default-fee`)}:
+                {t(`${props.side}-vip-fee`)}:
               </label>
-              <div className="deposit__dialog-input-box">
-                <div className="deposit__dialog-input-column">
+              <div className="screen__dialog-input-box">
+                <div className="screen__dialog-input-column">
                   <input
-                    className="deposit__dialog-input"
+                    className="screen__dialog-input"
                     name={`${props.side}-vip-fee`}
                     type="number"
                     min="0"
@@ -110,28 +110,27 @@ const FeeControlDialog = (props) => {
                       setVIPFee(fee);
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(
-                    // `${props.type}-current-fee`
-                    `${props.side}-vip-fee`
+                  <div className="screen__dialog-input-caption">{`${t(
+                    `current-${props.side}-vip-fee`
                   )}: ${SafeMath.mult(
                     props.ticker[props.side].fee,
                     100
                   )}%`}</div>
                 </div>
-                <div className="deposit__dialog-input-suffix">%</div>
+                <div className="screen__dialog-input-suffix">%</div>
               </div>
             </div>
-            <div className="deposit__dialog-input-group">
+            <div className="screen__dialog-input-group">
               <label
-                className="deposit__dialog-input-label"
-                htmlFor={`${props.side}-default-fee`}
+                className="screen__dialog-input-label"
+                htmlFor={`${props.side}-hero-fee`}
               >
-                {t(`${props.side}-default-fee`)}:
+                {t(`${props.side}-hero-fee`)}:
               </label>
-              <div className="deposit__dialog-input-box">
-                <div className="deposit__dialog-input-column">
+              <div className="screen__dialog-input-box">
+                <div className="screen__dialog-input-column">
                   <input
-                    className="deposit__dialog-input"
+                    className="screen__dialog-input"
                     name={`${props.side}-hero-fee`}
                     type="number"
                     min="0"
@@ -143,15 +142,14 @@ const FeeControlDialog = (props) => {
                       setHeroFee(fee);
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(
-                    // `${props.type}-current-fee`
-                    `${props.side}-hero-fee`
+                  <div className="screen__dialog-input-caption">{`${t(
+                    `current-${props.side}-hero-fee`
                   )}: ${SafeMath.mult(
                     props.ticker[props.side].fee,
                     100
                   )}%`}</div>
                 </div>
-                <div className="deposit__dialog-input-suffix">%</div>
+                <div className="screen__dialog-input-suffix">%</div>
               </div>
             </div>
           </div>
@@ -182,18 +180,25 @@ const TickerSetting = () => {
 
   const filter = useCallback(
     ({ keyword, visible, filterGroup, filterTickers }) => {
+      // console.log(`keyword`, keyword);
+      // console.log(`visible`, visible);
+      // console.log(`filterGroup`, filterGroup);
+      // console.log(`filterTickers`, filterTickers);
       if (visible !== undefined) setIsVisible(visible);
       if (filterGroup) setGroup(filterGroup);
       let _tickers = filterTickers || tickers,
-        _option = visible || isVisible,
+        _option = visible !== undefined ? visible : isVisible,
         _keyword = keyword === undefined ? filterKey : keyword,
-        _group = group || filterGroup;
+        _group = filterGroup || group;
       if (_tickers) {
         _tickers = Object.values(_tickers).filter((ticker) => {
+          // console.log(`ticker`, ticker);
+          // console.log(`groups[${_group}]`, ticker.group);
+          // console.log(`_option[${_option}]`, ticker.visible);
           let condition =
             ticker.name.includes(_keyword) &&
-            groups[_group].includes(ticker.group);
-          if (_option !== "all")
+            _group === ticker.group.toUpperCase();
+          if (_option !== null)
             condition = condition && ticker.visible === _option;
           return condition;
         });
@@ -205,7 +210,6 @@ const TickerSetting = () => {
 
   const getTickersSettings = useCallback(async () => {
     let tickersSettings = await storeCtx.getTickersSettings();
-    console.log(tickersSettings);
     return tickersSettings;
   }, [storeCtx]);
 
@@ -248,7 +252,6 @@ const TickerSetting = () => {
       if (!prev) {
         const tickers = await getTickersSettings();
         setTickers(tickers);
-        console.log(tickers);
         filter({ filterTickers: tickers });
         return !prev;
       } else return prev;
@@ -286,7 +289,7 @@ const TickerSetting = () => {
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"
-            selectHandler={(option) => filter({ quote: option })}
+            selectHandler={(option) => filter({ filterGroup: option })}
             options={Object.keys(groups)}
             selected={group}
           />

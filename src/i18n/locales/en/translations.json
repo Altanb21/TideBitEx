@@ -207,5 +207,17 @@
   "success-update": "Success update!",
   "invail-email": "*Invalid email address, please check and re-enter",
   "no-access": "You do not have the authority to access this page!",
-  "current-external-fee": "Current external fee"
+  "current-external-fee": "Current external fee",
+  "ask-default-fee": "Default Ask Fee",
+  "ask-hero-fee": "Hero Ask Fee",
+  "ask-vip-fee": "VIP Ask Fee",
+  "current-ask-default-fee": "Current Default Ask Fee",
+  "current-ask-hero-fee": "Current Hero Ask Fee",
+  "current-ask-vip-fee": "Current VIP Ask Fee",
+  "bid-default-fee": "Default Bid Fee",
+  "bid-hero-fee": "Hero Bid Fee",
+  "bid-vip-fee": "VIP Bid Fee",
+  "current-bid-default-fee": "Current Default Bid Fee",
+  "current-bid-hero-fee": "Current Hero Bid Fee",
+  "current-bid-vip-fee": "Current VIP Bid Fee"
 }

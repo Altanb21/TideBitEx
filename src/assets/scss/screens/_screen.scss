@@ -4,6 +4,60 @@
   flex: auto;
   overflow: hidden;
   margin-top: 70px;
+  &__dialog-content {
+    &--title {
+      color: #767676;
+      font-size: 20px;
+      font-weight: bold;
+      padding-top: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #767676;
+    }
+    &--body {
+      padding-top: 32px;
+    }
+  }
+  &__dialog-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  &__dialog-input-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &__dialog-input-box {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+  }
+  &__dialog-input {
+    display: block;
+    border: 1px solid #707070;
+    border-radius: 5px;
+    height: 32px;
+    width: 254px;
+    padding: 0 10px;
+  }
+  &__dialog-input-label,
+  &__dialog-input-suffix {
+    font-size: 16px;
+    font-weight: 400;
+    color: #767676;
+  }
+  &__dialog-input-column {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+  }
+  &__dialog-input-caption {
+    font-size: 14px;
+    color: #3c3c3c;
+  }
   &__filter {
     position: relative;
     display: flex;

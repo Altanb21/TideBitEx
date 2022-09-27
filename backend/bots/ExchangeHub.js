@@ -268,7 +268,7 @@ class ExchangeHub extends Bot {
           primary: ticker.primary,
           visible: ticker.visible !== false ? true : false,
           instType: "",
-          group: ticker.tab_category,
+          group: ticker.tab_category || 'others',
           pricescale: ticker.price_group_fixed,
           source: !ticker.source ? SupportedExchange.TIDEBIT : ticker.source,
           exchanges: !ticker.exchanges
@@ -1450,7 +1450,7 @@ class ExchangeHub extends Bot {
         tidebitTickers = {};
       try {
         const okexRes = await this.okexConnector.router("getTickers", {
-          query,
+          query: { ...query, instType: "SPOT" },
         });
         if (okexRes.success) {
           okexTickers = okexRes.payload;

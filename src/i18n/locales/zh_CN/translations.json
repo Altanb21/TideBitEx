@@ -206,5 +206,17 @@
   "success-update": "修改成功",
   "invail-email": "*E-mail 输入错误，请检查后重新输入",
   "no-access": "沒有访问权限",
-  "current-external-fee": "外部当前手续费"
+  "current-external-fee": "外部当前手续费",
+  "ask-default-fee": "默认买入手续费",
+  "ask-hero-fee": "Hero买入手续费",
+  "ask-vip-fee": "VIP买入手续费",
+  "current-ask-default-fee": "当前默认买入手续费",
+  "current-ask-hero-fee": "当前Hero买入手续费",
+  "current-ask-vip-fee": "当前VIP买入手续费",
+  "bid-default-fee": "默认卖出手续费",
+  "bid-hero-fee": "Hero卖出手续费",
+  "bid-vip-fee": "VIP卖出手续费",
+  "current-bid-default-fee": "当前默认卖出手续费",
+  "current-bid-hero-fee": "当前Hero卖出手续费",
+  "current-bid-vip-fee": "当前VIP卖出手续费"
 }
