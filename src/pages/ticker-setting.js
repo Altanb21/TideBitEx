@@ -198,7 +198,7 @@ const TickerSetting = () => {
           let condition =
             ticker.name.includes(_keyword) &&
             _group === ticker.group.toUpperCase();
-          if (_option !== null)
+          if (_option !== null && _option !== undefined)
             condition = condition && ticker.visible === _option;
           return condition;
         });
