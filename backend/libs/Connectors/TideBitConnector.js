@@ -220,26 +220,26 @@ class TibeBitConnector extends ConnectorBase {
         code: Codes.API_UNKNOWN_ERROR,
       });
     }
+    let tickers = {};
     const tBTickers = tBTickersRes.data;
-    const formatTickers = Object.keys(tBTickers)
-      .filter((id) => !!this.tickersSettings[id])
-      .reduce((prev, id) => {
-        const tickerObj = tBTickers[id];
-        prev[id] = this.tickerBook.formatTicker(
-          {
-            ...tickerObj.ticker,
-            volume: tickerObj.ticker.vol,
-            id: id,
-            market: id,
-            at: tickerObj.at,
-          },
-          SupportedExchange.TIDEBIT
-        );
-        return prev;
-      }, {});
+    Object.keys(tBTickers)
+    .forEach((id) => {
+      const tickerObj = tBTickers[id];
+      let formatedTicker = this.tickerBook.formatTicker(
+        {
+          ...tickerObj.ticker,
+          volume: tickerObj.ticker.vol,
+          id: id,
+          market: id,
+          at: tickerObj.at,
+        },
+        SupportedExchange.TIDEBIT
+      );
+      if (formatedTicker) tickers[formatedTicker.id] = formatedTicker;
+    });
     return new ResponseFormat({
       message: "getTickers from TideBit",
-      payload: formatTickers,
+      payload: tickers,
     });
   }
 

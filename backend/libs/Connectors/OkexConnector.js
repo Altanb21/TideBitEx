@@ -73,7 +73,6 @@ class OkexConnector extends ConnectorBase {
   }
 
   async start() {
-    this._okexWsEventListener();
     Object.keys(this.tickersSettings).forEach((id) => {
       if (this.tickersSettings[id]?.source === SupportedExchange.OKEX) {
         this.instIds.push(this.tickersSettings[id].instId);
@@ -92,6 +91,7 @@ class OkexConnector extends ConnectorBase {
       }, {});
     }
     this.tickerBook.instruments = instruments;
+    this._okexWsEventListener();
     this._wsPrivateLogin();
   }
 
@@ -702,14 +702,14 @@ class OkexConnector extends ConnectorBase {
       // const tickers = this.instIds.map((instId) =>
       //   res.data.data.find((data) => data.instId === instId)
       // );
-      const tickers = res.data.data.reduce((prev, data) => {
+      let tickers = {};
+      res.data.data.forEach((data) => {
         const formatedTicker = this.tickerBook.formatTicker(
           { id: data.instId.replace("-", "").toLowerCase(), ...data },
           SupportedExchange.OKEX
         );
-        prev[formatedTicker.id] = formatedTicker;
-        return prev;
-      }, {});
+        if (formatedTicker) tickers[formatedTicker.id] = formatedTicker;
+      });
       // this.logger.log(
       //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
       // );

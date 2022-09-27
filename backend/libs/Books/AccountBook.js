@@ -31,7 +31,7 @@ class AccountBook extends BookBase {
         };
         return prev;
       }, {});
-    this.logger.log(`this.exchangeRates `, this.exchangeRates);
+    // this.logger.log(`this.exchangeRates `, this.exchangeRates);
 
     this.name = `AccountBook`;
     return this;

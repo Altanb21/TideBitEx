@@ -22,7 +22,7 @@ class TickerBook extends BookBase {
    */
   set instruments(data) {
     this._instruments = data;
-    // this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
+    this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
   }
 
   get instruments() {
@@ -35,81 +35,83 @@ class TickerBook extends BookBase {
       ticker,
       tickerSetting = this._tickersSettings[data.id],
       instrument;
-    switch (source) {
-      case SupportedExchange.OKEX:
-        instrument = this.instruments[data.instId];
-        change = SafeMath.minus(data.last, data.open24h);
-        changePct = SafeMath.gt(data.open24h, "0")
-          ? SafeMath.div(change, data.open24h)
-          : SafeMath.eq(change, "0")
-          ? "0"
-          : "1";
-        ticker = {
-          ...tickerSetting,
-          market: data.id,
-          last: data.last,
-          change,
-          changePct,
-          open: data.open24h,
-          high: data.high24h,
-          low: data.low24h,
-          volume: data.vol24h,
-          // volumeCcy: data.volCcy24h,
-          at: parseInt(SafeMath.div(data.ts, "1000")),
-          ts: parseInt(data.ts),
-          source,
-          tickSz: Math.max(
-            parseFloat(instrument.tickSz),
-            parseFloat(Utils.getDecimal(tickerSetting["bid"]["fixed"]))
-          ).toString(),
-          lotSz: Math.max(
-            parseFloat(instrument.lotSz),
-            parseFloat(Utils.getDecimal(tickerSetting["ask"]["fixed"]))
-          ).toString(),
-          minSz: instrument.minSz,
-          sell: data.askPx, // [about to decrepted]
-          buy: data.bidPx, // [about to decrepted]
-          ticker: {
-            // [about to decrepted]
-            buy: data.bidPx,
-            sell: data.askPx,
-            low: data.low24h,
-            high: data.high24h,
+    if (tickerSetting) {
+      switch (source) {
+        case SupportedExchange.OKEX:
+          instrument = this.instruments[data.instId];
+          change = SafeMath.minus(data.last, data.open24h);
+          changePct = SafeMath.gt(data.open24h, "0")
+            ? SafeMath.div(change, data.open24h)
+            : SafeMath.eq(change, "0")
+            ? "0"
+            : "1";
+          ticker = {
+            ...tickerSetting,
+            market: data.id,
             last: data.last,
+            change,
+            changePct,
             open: data.open24h,
-            vol: data.vol24h,
-          },
-        };
-        break;
-      case SupportedExchange.TIDEBIT:
-        change = SafeMath.minus(data.last, data.open);
-        changePct = SafeMath.gt(data.open, "0")
-          ? SafeMath.div(change, data.open)
-          : SafeMath.eq(change, "0")
-          ? "0"
-          : "1";
-        ticker = {
-          ...tickerSetting,
-          ...data,
-          change,
-          changePct,
-          at: parseInt(data.at),
-          ts: parseInt(SafeMath.mult(data.at, "1000")),
-          source: SupportedExchange.TIDEBIT,
-          ticker: {
-            // [about to decrepted]
-            buy: data.buy,
-            sell: data.sell,
-            low: data.low,
-            high: data.high,
-            last: data.last,
-            open: data.open,
-            vol: data.volume,
-          },
-        };
-        break;
-      default:
-        break;
+            high: data.high24h,
+            low: data.low24h,
+            volume: data.vol24h,
+            // volumeCcy: data.volCcy24h,
+            at: parseInt(SafeMath.div(data.ts, "1000")),
+            ts: parseInt(data.ts),
+            source,
+            tickSz: Math.max(
+              parseFloat(instrument.tickSz),
+              parseFloat(Utils.getDecimal(tickerSetting["bid"]["fixed"]))
+            ).toString(),
+            lotSz: Math.max(
+              parseFloat(instrument.lotSz),
+              parseFloat(Utils.getDecimal(tickerSetting["ask"]["fixed"]))
+            ).toString(),
+            minSz: instrument.minSz,
+            sell: data.askPx, // [about to decrepted]
+            buy: data.bidPx, // [about to decrepted]
+            ticker: {
+              // [about to decrepted]
+              buy: data.bidPx,
+              sell: data.askPx,
+              low: data.low24h,
+              high: data.high24h,
+              last: data.last,
+              open: data.open24h,
+              vol: data.vol24h,
+            },
+          };
+          break;
+        case SupportedExchange.TIDEBIT:
+          change = SafeMath.minus(data.last, data.open);
+          changePct = SafeMath.gt(data.open, "0")
+            ? SafeMath.div(change, data.open)
+            : SafeMath.eq(change, "0")
+            ? "0"
+            : "1";
+          ticker = {
+            ...tickerSetting,
+            ...data,
+            change,
+            changePct,
+            at: parseInt(data.at),
+            ts: parseInt(SafeMath.mult(data.at, "1000")),
+            source: SupportedExchange.TIDEBIT,
+            ticker: {
+              // [about to decrepted]
+              buy: data.buy,
+              sell: data.sell,
+              low: data.low,
+              high: data.high,
+              last: data.last,
+              open: data.open,
+              vol: data.volume,
+            },
+          };
+          break;
+        default:
+          break;
+      }
     }
 
     return ticker;
