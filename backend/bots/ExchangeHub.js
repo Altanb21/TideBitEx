@@ -1526,7 +1526,7 @@ class ExchangeHub extends Bot {
       payload:
         query.filter === false
           ? this.tickerBook.getSnapshot()
-          : this.tickerBook.getSnapshot().filter((ticker) => ticker.visible),
+          : this.tickerBook.getSnapshot()?.filter((ticker) => ticker.visible),
     });
   }
 
@@ -1535,7 +1535,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getDepthBooks ************`,
       query
     );
-    const tickerSetting = this.tickersSettings[query.id];
+    const tickerSetting = this.tickersSettings[query.market];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getDepthBooks", {
@@ -1569,12 +1569,11 @@ class ExchangeHub extends Bot {
 
   async getTradingViewSymbol({ query }) {
     this.logger.debug(
-      `*********** [${this.name}] getTradingViewConfig ************`,
+      `*********** [${this.name}] getTradingViewSymbol ************`,
       query
     );
     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
-    const tickerSetting = this.tickersSettings[query.id];
-    this.logger.log(`getTradingViewSymbol tickerSetting`, tickerSetting);
+    const tickerSetting = this.tickersSettings[id];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTradingViewSymbol", {
@@ -1604,10 +1603,10 @@ class ExchangeHub extends Bot {
 
   async getTradingViewHistory({ query }) {
     this.logger.debug(
-      `*********** [${this.name}] getTradingViewConfig ************`,
+      `*********** [${this.name}] getTradingViewHistory ************`,
       query
     );
-    const tickerSetting = this.tickersSettings[query.id];
+    const tickerSetting = this.tickersSettings[query.symbol];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTradingViewHistory", {
@@ -1644,7 +1643,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getTrades ************`,
       query
     );
-    const tickerSetting = this.tickersSettings[query.id];
+    const tickerSetting = this.tickersSettings[query.market];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTrades", {
@@ -2069,7 +2068,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOrders memberId:[${memberId}]************`,
       query
     );
-    const tickerSetting = this.tickersSettings[query.id];
+    const tickerSetting = this.tickersSettings[query.market];
     if (memberId && memberId !== -1) {
       let pendingOrders, orderHistories, orders;
       switch (tickerSetting?.source) {

@@ -22,7 +22,7 @@ class TickerBook extends BookBase {
    */
   set instruments(data) {
     this._instruments = data;
-    this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
+    // this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
   }
 
   get instruments() {
@@ -228,6 +228,16 @@ class TickerBook extends BookBase {
     } catch (error) {
       return false;
     }
+  }
+
+  getSnapshot(instId) {
+    // this.logger.log(
+    //   `[${this.constructor.name}] getSnapshot(${instId})`,
+    //   this._snapshot[instId],
+    //   this._snapshot
+    // );
+    if (instId) return this._snapshot[instId];
+    else return Object.values(this._snapshot);
   }
 }
 

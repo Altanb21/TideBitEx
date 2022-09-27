@@ -269,9 +269,9 @@ class OkexConnector extends ConnectorBase {
     tryOnce = 1,
   }) {
     const { instType, begin, end, before, sz } = query;
-    this.logger.log(
-      `[${this.constructor.name}] fetchTradeFillsHistoryRecords [START]`
-    );
+    // this.logger.log(
+    //   `[${this.constructor.name}] fetchTradeFillsHistoryRecords [START]`
+    // );
     let result,
       arr = [],
       newBefore,
@@ -308,24 +308,24 @@ class OkexConnector extends ConnectorBase {
         data: JSON.stringify(trade),
       }));
       this.logger.log(`[${this.constructor.name}] data.length[${data.length}]`);
-      this.logger.log(
-        `[${this.constructor.name}][${new Date(
-          parseInt(data[0].ts)
-        )}] data[0].ts range in begin(>begin ${
-          parseInt(data[0].ts) > begin
-        }) and end(>end ${parseInt(data[0].ts) < end}) data[0]`,
-        data[0]
-      );
-      this.logger.log(
-        `[${this.constructor.name}][${new Date(
-          parseInt(data[data.length - 1].ts)
-        )}] data[data.length-1].ts range in begin(>begin ${
-          parseInt(data[data.length - 1].ts) > begin
-        }) and end(>end ${
-          parseInt(data[data.length - 1].ts) < end
-        }) data[data.length-1]`,
-        data[data.length - 1]
-      );
+      // this.logger.log(
+      //   `[${this.constructor.name}][${new Date(
+      //     parseInt(data[0].ts)
+      //   )}] data[0].ts range in begin(>begin ${
+      //     parseInt(data[0].ts) > begin
+      //   }) and end(>end ${parseInt(data[0].ts) < end}) data[0]`,
+      //   data[0]
+      // );
+      // this.logger.log(
+      //   `[${this.constructor.name}][${new Date(
+      //     parseInt(data[data.length - 1].ts)
+      //   )}] data[data.length-1].ts range in begin(>begin ${
+      //     parseInt(data[data.length - 1].ts) > begin
+      //   }) and end(>end ${
+      //     parseInt(data[data.length - 1].ts) < end
+      //   }) data[data.length-1]`,
+      //   data[data.length - 1]
+      // );
       results = data.concat(results);
       // this.logger.log(
       //   `[${this.constructor.name}]data.length:[${
@@ -846,8 +846,8 @@ class OkexConnector extends ConnectorBase {
       minmov: 1,
       minmove2: 0,
       volume_precision: 8,
-      pricescale: query.market?.price_group_fixed
-        ? 10 ** query.market.price_group_fixed
+      pricescale: query.market?.pricescale
+        ? 10 ** query.market.pricescale
         : 10000,
       has_intraday: true,
       has_daily: true,
