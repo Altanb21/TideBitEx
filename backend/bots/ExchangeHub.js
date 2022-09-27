@@ -268,7 +268,7 @@ class ExchangeHub extends Bot {
           primary: ticker.primary,
           visible: ticker.visible !== false ? true : false,
           instType: "",
-          group: ticker.tab_category || 'others',
+          group: ticker.tab_category || "others",
           pricescale: ticker.price_group_fixed,
           source: !ticker.source ? SupportedExchange.TIDEBIT : ticker.source,
           exchanges: !ticker.exchanges
@@ -465,7 +465,40 @@ class ExchangeHub extends Bot {
       this.logger.log(`data`, data);
       if (currentUser.roles?.includes("root")) {
         if (this.tickersSettings[params.id]) {
-          let updatedTickersSettings = { ...this.tickersSettings };
+          let updatedTickersSettings = Object.values(
+            this.tickersSettings
+          ).reduce((prev, tickerSetting) => {
+            prev[tickerSetting.id.toString()] = {
+              id: tickerSetting.id,
+              code: tickerSetting.code,
+              name: tickerSetting.name,
+              base_unit: tickerSetting.baseUnit,
+              quote_unit: tickerSetting.quoteUnit,
+              bid: {
+                fee: tickerSetting.bid.fee,
+                currency: tickerSetting.bid.currency,
+                fixed: tickerSetting.bid.fixed,
+                hero_fee: tickerSetting.bid.heroFee,
+                vip_fee: tickerSetting.bid.vipFee,
+              },
+              ask: {
+                fee: tickerSetting.ask.fee,
+                currency: tickerSetting.ask.currency,
+                fixed: tickerSetting.ask.fixed,
+                hero_fee: tickerSetting.ask.heroFee,
+                vip_fee: tickerSetting.ask.vipFee,
+              },
+              sort_order: tickerSetting.sortOrder,
+              tab_category: tickerSetting.group,
+              primary: tickerSetting.primary,
+              visible: tickerSetting.visible,
+              price_group_fixed: tickerSetting.pricescale,
+              source: tickerSetting.source,
+              exchanges: tickerSetting.exchanges,
+            };
+            return prev;
+          }, {});
+
           switch (type) {
             case TICKER_SETTING_TYPE.VISIBLE:
               if (
