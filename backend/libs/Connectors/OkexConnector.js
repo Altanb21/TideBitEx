@@ -1833,10 +1833,12 @@ class OkexConnector extends ConnectorBase {
     this.websocket.ws.send(
       JSON.stringify({
         op: Events.subscribe,
-        args: {
-          channel,
-          instId,
-        },
+        args: [
+          {
+            channel,
+            instId,
+          },
+        ],
       })
     );
   }
@@ -1850,10 +1852,12 @@ class OkexConnector extends ConnectorBase {
     this.websocket.ws.send(
       JSON.stringify({
         op: Events.unsubscribe,
-        args: {
-          channel,
-          instId,
-        },
+        args: [
+          {
+            channel,
+            instId,
+          },
+        ],
       })
     );
     delete this.okexWsChannels[channel][instId];
@@ -1970,10 +1974,14 @@ class OkexConnector extends ConnectorBase {
 
   _unsubscribeMarket(market) {
     const tickerSetting = this.tickersSettings[market];
+    this.logger.log(
+      `_unsubscribeMarket tickerSetting[market: ${market}]`,
+      tickerSetting
+    );
+    this.logger.log(
+      `---------- [${this.constructor.name}]  _unsubscribeMarket [START] ----------`
+    );
     if (tickerSetting?.source === SupportedExchange.OKEX) {
-      this.logger.log(
-        `---------- [${this.constructor.name}]  _unsubscribeMarket [START] ----------`
-      );
       this.logger.log(`_unsubscribeMarket market`, market);
       this.logger.log(`_unsubscribeMarket instId`, tickerSetting?.instId);
       this._unsubscribeTrades(tickerSetting?.instId);

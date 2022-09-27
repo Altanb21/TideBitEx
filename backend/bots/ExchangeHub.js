@@ -245,9 +245,7 @@ class ExchangeHub extends Bot {
           instType: "",
           group: ticker.tab_category,
           pricescale: ticker.price_group_fixed,
-          source: !ticker.source
-            ? SupportedExchange.TIDEBIT
-            : SupportedExchange.OKEX,
+          source: !ticker.source ? SupportedExchange.TIDEBIT : ticker.source,
           tickSz: Utils.getDecimal(ticker?.bid?.fixed),
           lotSz: Utils.getDecimal(ticker?.ask?.fixed),
           minSz: Utils.getDecimal(ticker?.ask?.fixed),
@@ -616,7 +614,7 @@ class ExchangeHub extends Bot {
             ...updatedTickersSettings[params.id],
             bid: {
               ...updatedTickersSettings[params.id].bid,
-              fee: takerFee.default,
+              fee: takerFee.default, // +TODO 需要確認
               hero_fee: takerFee.hero,
               vip_fee: takerFee.vip,
             },
