@@ -6,13 +6,14 @@ const Utils = require("../Utils");
 class TickerBook extends BookBase {
   _instruments;
   _tickersSettings;
-  constructor({ logger, markets }) {
+  constructor({ logger, markets, tickersSettings }) {
     super({ logger, markets });
     this.name = `TickerBook`;
     this._config = { remove: false, add: false, update: true };
+    this._tickersSettings = tickersSettings;
     this.markets.forEach((market) => {
-      this._snapshot[market.instId] = null;
-      this._difference[market.instId] = null;
+      this._snapshot[market.instId] = { ...tickersSettings[market.id] };
+      this._difference[market.instId] = { ...tickersSettings[market.id] };
     });
     return this;
   }
@@ -172,6 +173,37 @@ class TickerBook extends BookBase {
 
   updateTickersSettings(tickersSettings) {
     this._tickersSettings = tickersSettings;
+    this._snapshot = Object.values(this._snapshot).reduce((prev, ticker) => {
+      prev[ticker.instId] = {
+        ...ticker,
+        source: this._tickersSettings[ticker.id].source,
+        visible: this._tickersSettings[ticker.id].visible,
+        ask: {
+          ...this._tickersSettings[ticker.id].ask,
+        },
+        bid: {
+          ...this._tickersSettings[ticker.id].bid,
+        },
+      };
+      return prev;
+    }, {});
+    this._difference = Object.values(this._difference).reduce(
+      (prev, ticker) => {
+        prev[ticker.instId] = {
+          ...ticker,
+          source: this._tickersSettings[ticker.id].source,
+          visible: this._tickersSettings[ticker.id].visible,
+          ask: {
+            ...this._tickersSettings[ticker.id].ask,
+          },
+          bid: {
+            ...this._tickersSettings[ticker.id].bid,
+          },
+        };
+        return prev;
+      },
+      {}
+    );
   }
 
   updateAll(okexTickers, tidebitTickers) {

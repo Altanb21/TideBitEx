@@ -53,4 +53,7 @@
     justify-content: unset;
     gap: 5px;
   }
+  & .screen__dialog-input-box{
+    align-items: baseline;
+  }
 }

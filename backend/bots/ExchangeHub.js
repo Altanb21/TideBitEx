@@ -57,8 +57,8 @@ class ExchangeHub extends Bot {
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
+          tickersSettings: this.tickersSettings,
         });
-        this.tickerBook.updateTickersSettings(this.tickersSettings);
         this.depthBook = new DepthBook({
           logger,
           markets: this.tidebitMarkets,
@@ -448,7 +448,7 @@ class ExchangeHub extends Bot {
       "config/markets/markets.yml"
     );
     this.logger.debug(
-      `*********** [${this.name}] updateTickerStatus ************`
+      `*********** [${this.name}] updateTickerSetting ************`
     );
     this.logger.log(`params.id`, params.id);
     this.logger.log(`email`, email);
@@ -544,9 +544,9 @@ class ExchangeHub extends Bot {
                     ...updatedTickersSettings[params.id],
                     bid: {
                       ...updatedTickersSettings[params.id].bid,
-                      fee: data.fee.defaultFee, // +TODO 需要確認
-                      hero_fee: data.fee.heroFee,
-                      vip_fee: data.fee.vipFee,
+                      fee: parseFloat(data.fee.defaultFee), // +TODO 需要確認
+                      hero_fee: parseFloat(data.fee.heroFee),
+                      vip_fee: parseFloat(data.fee.vipFee),
                     },
                   };
                   break;
@@ -555,9 +555,9 @@ class ExchangeHub extends Bot {
                     ...updatedTickersSettings[params.id],
                     ask: {
                       ...updatedTickersSettings[params.id].ask,
-                      fee: data.fee.defaultFee, // +TODO 需要確認
-                      hero_fee: data.fee.heroFee,
-                      vip_fee: data.fee.vipFee,
+                      fee: parseFloat(data.fee.defaultFee), // +TODO 需要確認
+                      hero_fee: parseFloat(data.fee.heroFee),
+                      vip_fee: parseFloat(data.fee.vipFee),
                     },
                   };
                   break;
@@ -575,17 +575,59 @@ class ExchangeHub extends Bot {
           );
           try {
             Utils.yamlUpdate(Object.values(updatedTickersSettings), p);
-            this.tickersSettings = updatedTickersSettings;
+            this.tickersSettings = Object.values(updatedTickersSettings).reduce(
+              (prev, ticker) => {
+                const instId = ticker.name.split("/").join("-").toUpperCase();
+                prev[ticker.id] = {
+                  id: ticker.id,
+                  instId,
+                  code: ticker.code,
+                  name: ticker.name,
+                  market: ticker.id,
+                  baseUnit: ticker.base_unit,
+                  quoteUnit: ticker.quote_unit,
+                  ask: {
+                    fee: ticker.ask?.fee,
+                    currency: ticker.ask?.currency,
+                    fixed: ticker.ask?.fixed,
+                    heroFee: ticker.ask?.hero_fee,
+                    vipFee: ticker.ask?.vip_fee,
+                  },
+                  bid: {
+                    fee: ticker.bid?.fee,
+                    currency: ticker.bid?.currency,
+                    fixed: ticker.bid?.fixed,
+                    heroFee: ticker.bid?.hero_fee,
+                    vipFee: ticker.bid?.vip_fee,
+                  },
+                  sortOrder: ticker.sort_order,
+                  primary: ticker.primary,
+                  visible: ticker.visible !== false ? true : false,
+                  instType: "",
+                  group: ticker.tab_category || "others",
+                  pricescale: ticker.price_group_fixed,
+                  source: !ticker.source
+                    ? SupportedExchange.TIDEBIT
+                    : ticker.source,
+                  exchanges: !ticker.exchanges
+                    ? [SupportedExchange.TIDEBIT]
+                    : ticker.exchanges,
+                  tickSz: Utils.getDecimal(ticker?.bid?.fixed),
+                  lotSz: Utils.getDecimal(ticker?.ask?.fixed),
+                  minSz: Utils.getDecimal(ticker?.ask?.fixed),
+                };
+                return prev;
+              },
+              {}
+            );
             this.tickerBook.updateTickersSettings(this.tickersSettings);
             result = new ResponseFormat({
-              message: "updateTickerStatus",
-              payload: {
-                tickers: this.tickerBook.getSnapshot(),
-              },
+              message: "updateTickerSetting",
+              payload: this.tickerBook.getSnapshot(),
             });
           } catch (e) {
             this.logger.error(
-              `yamlUpdate updateTickerStatus`,
+              `yamlUpdate updateTickerSetting`,
               updatedTickersSettings,
               e
             );
@@ -607,7 +649,7 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateTickerStatus`, e);
+      this.logger.error(`updateTickerSetting`, e);
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1385,7 +1427,7 @@ class ExchangeHub extends Bot {
 
   async getTicker({ params, query }) {
     this.logger.debug(`*********** [${this.name}] getTicker ************`);
-    this.tickersSettings = this._getTickersSettings();
+    // this.tickersSettings = this._getTickersSettings();
     const tickerSetting = this.tickersSettings[query.id];
     if (tickerSetting) {
       const source = tickerSetting.source;
@@ -1420,7 +1462,7 @@ class ExchangeHub extends Bot {
 
   async getTickers({ query }) {
     this.logger.debug(`*********** [${this.name}] getTickers ************`);
-    this.tickersSettings = this._getTickersSettings();
+    // this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
       let okexTickers,
         tidebitTickers = {};
@@ -1480,7 +1522,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] getTickersSettings ************`
     );
-    this.tickersSettings = this._getTickersSettings();
+    // this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
       let okexTickers,
         tidebitTickers = {};

@@ -34,9 +34,15 @@ const FeeControlDialog = (props) => {
       props.onConfirm({
         side: props.side,
         fee: {
-          defaultFee: defaultFee || props.ticker[props.side].fee,
-          vipFee: vipFee || props.ticker[props.side].vipFee,
-          heroFee: heroFee || props.ticker[props.side].heroFee,
+          defaultFee: defaultFee
+            ? SafeMath.div(defaultFee, 100)
+            : SafeMath.div(props.ticker[props.side].fee, 100),
+          vipFee: vipFee
+            ? SafeMath.div(vipFee, 100)
+            : SafeMath.div(props.ticker[props.side].vipFee, 100),
+          heroFee: heroFee
+            ? SafeMath.div(heroFee, 100)
+            : SafeMath.div(props.ticker[props.side].heroFee, 100),
         },
       });
     }
@@ -69,11 +75,10 @@ const FeeControlDialog = (props) => {
                     type="number"
                     min="0"
                     inputMode="decimal"
-                    value={defaultFee ? SafeMath.mult(defaultFee, 100) : null}
+                    value={defaultFee}
                     onChange={(e) => {
                       const value = Math.abs(e.target.value);
-                      const fee = SafeMath.div(value, 100);
-                      setDefaultFee(fee);
+                      setDefaultFee(value);
                     }}
                   />
                   <div className="screen__dialog-input-caption">{`${t(
@@ -101,17 +106,16 @@ const FeeControlDialog = (props) => {
                     type="number"
                     min="0"
                     inputMode="decimal"
-                    value={vipFee ? SafeMath.mult(vipFee, 100) : null}
+                    value={vipFee}
                     onChange={(e) => {
                       const value = Math.abs(e.target.value);
-                      const fee = SafeMath.div(value, 100);
-                      setVIPFee(fee);
+                      setVIPFee(value);
                     }}
                   />
                   <div className="screen__dialog-input-caption">{`${t(
                     `current-${props.side}-vip-fee`
                   )}: ${SafeMath.mult(
-                    props.ticker[props.side].fee,
+                    props.ticker[props.side].vipFee,
                     100
                   )}%`}</div>
                 </div>
@@ -133,17 +137,16 @@ const FeeControlDialog = (props) => {
                     type="number"
                     min="0"
                     inputMode="decimal"
-                    value={heroFee ? SafeMath.mult(heroFee, 100) : null}
+                    value={heroFee}
                     onChange={(e) => {
                       const value = Math.abs(e.target.value);
-                      const fee = SafeMath.div(value, 100);
-                      setHeroFee(fee);
+                      setHeroFee(value);
                     }}
                   />
                   <div className="screen__dialog-input-caption">{`${t(
                     `current-${props.side}-hero-fee`
                   )}: ${SafeMath.mult(
-                    props.ticker[props.side].fee,
+                    props.ticker[props.side].heroFee,
                     100
                   )}%`}</div>
                 </div>
@@ -182,25 +185,30 @@ const TickerSetting = () => {
       // console.log(`visible`, visible);
       // console.log(`filterGroup`, filterGroup);
       // console.log(`filterTickers`, filterTickers);
-      if (visible !== undefined) setIsVisible(visible);
-      if (filterGroup) setGroup(filterGroup);
-      let _tickers = filterTickers || tickers,
-        _option = visible !== undefined ? visible : isVisible,
-        _keyword = keyword === undefined ? filterKey : keyword,
-        _group = filterGroup || group;
-      if (_tickers) {
-        _tickers = Object.values(_tickers).filter((ticker) => {
-          // console.log(`ticker`, ticker);
-          // console.log(`groups[${_group}]`, ticker.group);
-          // console.log(`_option[${_option}]`, ticker.visible);
-          let condition =
-            ticker.name.includes(_keyword) &&
-            _group === ticker.group.toUpperCase();
-          if (_option !== null && _option !== undefined)
-            condition = condition && ticker.visible === _option;
-          return condition;
-        });
-        setFilterTickers(_tickers);
+      try {
+        if (visible !== undefined) setIsVisible(visible);
+        if (filterGroup) setGroup(filterGroup);
+        let _tickers = filterTickers || tickers,
+          _option = visible !== undefined ? visible : isVisible,
+          _keyword = keyword === undefined ? filterKey : keyword,
+          _group = filterGroup || group;
+        if (_tickers) {
+          _tickers = Object.values(_tickers).filter((ticker) => {
+            // console.log(`ticker`, ticker, ticker.name);
+            // console.log(`groups[${_group}]`, ticker.group);
+            // console.log(`_option[${_option}]`, ticker.visible);
+            let condition =
+              (ticker.name?.includes(_keyword) ||
+                ticker.instId?.includes(_keyword)) &&
+              _group === ticker.group.toUpperCase();
+            if (_option !== null && _option !== undefined)
+              condition = condition && ticker.visible === _option;
+            return condition;
+          });
+          setFilterTickers(_tickers);
+        }
+      } catch (e) {
+        console.error(e);
       }
     },
     [filterKey, group, isVisible, tickers]
@@ -242,6 +250,7 @@ const TickerSetting = () => {
         });
       }
       setIsLoading(false);
+      setOpenFeeControlDialog(false);
     },
     [enqueueSnackbar, filter, storeCtx, t]
   );
@@ -549,7 +558,7 @@ const TickerSetting = () => {
                     toggleStatus={() =>
                       updateTickerSetting(
                         ticker.id,
-                        TICKER_SETTING_TYPE.SOURCE,
+                        TICKER_SETTING_TYPE.VISIBLE,
                         { visible: !ticker.visible }
                       )
                     }
