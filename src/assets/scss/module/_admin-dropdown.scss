@@ -8,6 +8,7 @@
   &__options {
     display: none;
     flex-direction: column;
+    cursor: pointer;
   }
   &--float &__options {
     position: absolute;
@@ -19,6 +20,7 @@
   &__option {
     padding: 8px 20px;
     border-left: 5px solid transparent;
+    cursor: pointer;
   }
   &__option.active {
     color: #2699fb;

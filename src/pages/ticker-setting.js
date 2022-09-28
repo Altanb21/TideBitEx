@@ -51,9 +51,7 @@ const FeeControlDialog = (props) => {
       onConfirm={onConfirm}
     >
       <div className="screen__dialog-content">
-        <div className="screen__dialog-content--title">
-          {props.ticker.name}
-        </div>
+        <div className="screen__dialog-content--title">{props.ticker.name}</div>
         <div className="screen__dialog-content--body">
           <div className="screen__dialog-inputs">
             <div className="screen__dialog-input-group">
@@ -220,10 +218,11 @@ const TickerSetting = () => {
       setIsLoading(true);
       console.log(`updateTickerSetting`, type, id, data);
       try {
-        let updateTickersSettings = await storeCtx.updateTickerSetting(id, {
+        let updateTickersSettings = await storeCtx.updateTickerSetting(
+          id,
           type,
-          data,
-        });
+          data
+        );
         setTickers(updateTickersSettings);
         filter({ filterTickers: updateTickersSettings });
         enqueueSnackbar(`${t("success-update")}`, {

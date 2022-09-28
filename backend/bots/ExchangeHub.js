@@ -507,11 +507,11 @@ class ExchangeHub extends Bot {
               ) {
                 if (data.visible)
                   this.okexConnector.subscribeTicker(
-                    updatedTickersSettings[params.id].instId
+                    this.tickersSettings[params.id].instId
                   );
                 else
                   this.okexConnector.unsubscribeTicker(
-                    updatedTickersSettings[params.id].instId
+                    this.tickersSettings[params.id].instId
                   );
               }
               updatedTickersSettings[params.id] = {
@@ -522,7 +522,7 @@ class ExchangeHub extends Bot {
             case TICKER_SETTING_TYPE.SOURCE:
               if (data.source === SupportedExchange.OKEX)
                 this.okexConnector.subscribeTicker(
-                  updatedTickersSettings[params.id].instId
+                  this.tickersSettings[params.id].instId
                 );
               else if (
                 data.source !== SupportedExchange.OKEX &&
@@ -530,7 +530,7 @@ class ExchangeHub extends Bot {
                   SupportedExchange.OKEX
               )
                 this.okexConnector.unsubscribeTicker(
-                  updatedTickersSettings[params.id].instId
+                  this.tickersSettings[params.id].instId
                 );
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
@@ -1385,6 +1385,7 @@ class ExchangeHub extends Bot {
 
   async getTicker({ params, query }) {
     this.logger.debug(`*********** [${this.name}] getTicker ************`);
+    this.tickersSettings = this._getTickersSettings();
     const tickerSetting = this.tickersSettings[query.id];
     if (tickerSetting) {
       const source = tickerSetting.source;
@@ -1419,6 +1420,7 @@ class ExchangeHub extends Bot {
 
   async getTickers({ query }) {
     this.logger.debug(`*********** [${this.name}] getTickers ************`);
+    this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
       let okexTickers,
         tidebitTickers = {};
@@ -1478,6 +1480,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] getTickersSettings ************`
     );
+    this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
       let okexTickers,
         tidebitTickers = {};
