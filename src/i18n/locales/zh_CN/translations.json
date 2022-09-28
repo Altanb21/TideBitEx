@@ -196,5 +196,7 @@
   "error-happen": "发生错误",
   "success-update": "修改成功",
   "invail-email": "*E-mail 输入错误，请检查后重新输入",
-  "no-access": "沒有访问权限"
+  "no-access": "沒有访问权限",
+  "asset-maximun": "资产存量上限",
+  "asset-minimun": "资产存量下限"
 }

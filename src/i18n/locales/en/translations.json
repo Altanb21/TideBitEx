@@ -197,5 +197,7 @@
   "error-happen": "Error happens!",
   "success-update": "Success update!",
   "invail-email": "*Invalid email address, please check and re-enter",
-  "no-access": "You do not have the authority to access this page!"
+  "no-access": "You do not have the authority to access this page!",
+  "asset-maximun": "資產存量上限",
+  "asset-minimun": "資產存量下限"
 }
