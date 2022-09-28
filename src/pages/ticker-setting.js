@@ -36,13 +36,13 @@ const FeeControlDialog = (props) => {
         fee: {
           defaultFee: defaultFee
             ? SafeMath.div(defaultFee, 100)
-            : SafeMath.div(props.ticker[props.side].fee, 100),
+            : props.ticker[props.side].fee,
           vipFee: vipFee
             ? SafeMath.div(vipFee, 100)
-            : SafeMath.div(props.ticker[props.side].vipFee, 100),
+            : props.ticker[props.side].vipFee,
           heroFee: heroFee
             ? SafeMath.div(heroFee, 100)
-            : SafeMath.div(props.ticker[props.side].heroFee, 100),
+            : props.ticker[props.side].heroFee,
         },
       });
     }
