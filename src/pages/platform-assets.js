@@ -164,7 +164,7 @@ const AssetSettingTile = (props) => {
       ).some((source) => (source.alertLevel > 0 ? " alert" : ""))}`}
     >
       <div className="platform-assets__icon platform-assets__icon--alert"></div>
-      <div className="platform-assets__icon platform-assets__icon--setting"></div>
+      <div className="platform-assets__icon platform-assets__icon--setting" onClick={props.settingDialogHandler}></div>
       <div className="platform-assets__detail">
         <div className="platform-assets__leading">
           <div className="platform-assets__leading--icon">
