@@ -301,6 +301,7 @@ class ExchangeHub extends Bot {
         this.coinsSettings = coinsSettings.map((coinSetting) => ({
           ...coinSetting,
           visible: coinSetting.visible === false ? false : true, // default: true
+          disable: coinSetting.disable === true ? true : false, // default: false
         }));
       } catch (error) {
         this.logger.error(error);
@@ -449,30 +450,30 @@ class ExchangeHub extends Bot {
     );
     let result = null,
       coins = {},
-      coinsSettings = {},
-      sources = {}; //,
+      coinsSettings,
+      sources = {},
+      hasError = false; //,
     // currentUser = this.adminUsers.find((user) => user.email === email);
     // this.logger.log(
     //   `currentUser[${currentUser.roles?.includes("root")}]`,
     //   currentUser
     // );
     // if (currentUser.roles?.includes("root")) {
-    for (let exchange in Object.keys(SupportedExchange)) {
-      let source = exchange.toLowerCase();
+
+    for (let exchange of Object.keys(SupportedExchange)) {
+      let source = SupportedExchange[exchange];
+
       switch (source) {
         // okx api 拿 balance 的資料
         case SupportedExchange.OKEX:
-          let response = this.okexConnector.router("getBalances", {
+          let response = await this.okexConnector.router("getBalances", {
             query: {},
           });
           if (response.success) {
-            sources[source] = response.payload;
-            this.logger.log(
-              `getPlatformAssets sources[${source}]`,
-              sources[source]
-            );
+            sources[exchange] = response.payload;
           } else {
             this.logger.error(response);
+            hasError = true;
             result = new ResponseFormat({
               message: "",
               code: Codes.API_UNKNOWN_ERROR,
@@ -484,18 +485,17 @@ class ExchangeHub extends Bot {
         default:
       }
     }
-    if (result.success) {
+    if (!hasError) {
       try {
-        coinsSettings = this.coinsSettings.reduce((prev, curr) => {
-          prev[curr.id.toString()] = curr;
-          return curr;
+        coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+          if (!prev[coinSetting.id.toString()])
+            prev[coinSetting.id.toString()] = { ...coinSetting };
+          return prev;
         }, {});
-        this.logger.log(`getPlatformAssets coinsSettings`, coinsSettings);
         // 需拿交易所所有用戶餘額各幣種的加總
         const _accounts = await this.database.getAccounts();
-        for (let _account in _accounts) {
+        for (let _account of _accounts) {
           let coinSetting = coinsSettings[_account.currency.toString()];
-          this.logger.log(`getPlatformAssets coinSetting`, coinSetting);
           if (!coins[coinSetting.code]) {
             coins[coinSetting.code] = {
               id: coinSetting.id,
@@ -510,20 +510,29 @@ class ExchangeHub extends Bot {
               sum: "0",
               RRRRatio: coinSetting.RRRRatio || 0.35,
               MPARatio: coinSetting.MPARatio || 0.65,
+              sources: {},
             };
-            for (let exchange in Object.keys(SupportedExchange)) {
-              let source = exchange.toLowerCase();
-              switch (source) {
+            // this.logger.log(
+            //   `getPlatformAssets coins[${coinSetting.code}]`,
+            //   coins[coinSetting.code]
+            // );
+            for (let exchange of Object.keys(SupportedExchange)) {
+              switch (SupportedExchange[exchange]) {
                 case SupportedExchange.OKEX:
-                  coins[coinSetting.code][source] = {
-                    balance: sources[source][coinSetting.code].balance,
-                    locked: sources[source][coinSetting.code].locked,
+                  // this.logger.log(
+                  //   `getPlatformAssets  sources[${exchange}][${coinSetting.code}]`,
+                  //   sources[exchange][coinSetting.code]
+                  // );
+                  coins[coinSetting.code]["sources"][exchange.toLowerCase()] = {
+                    balance:
+                      sources[exchange][coinSetting.code]?.balance || "0",
+                    locked: sources[exchange][coinSetting.code]?.locked || "0",
                     alertLevel: undefined,
                   };
                   break;
                 case SupportedExchange.TIDEBIT:
                   // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
-                  coins[coinSetting.code][source] = {
+                  coins[coinSetting.code]["sources"][exchange.toLowerCase()] = {
                     balance: "0",
                     locked: "0",
                     alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
@@ -536,7 +545,7 @@ class ExchangeHub extends Bot {
           coins[coinSetting.code].accounts = {
             ...coins[coinSetting.code].accounts,
           };
-          coins[coinSetting.code].accounts[_account.memberId] = _account;
+          coins[coinSetting.code].accounts[_account.member_id] = _account;
           let sum = SafeMath.plus(_account.balance, _account.locked);
           coins[coinSetting.code].sum = SafeMath.plus(
             coins[coinSetting.code].sum,
@@ -544,6 +553,12 @@ class ExchangeHub extends Bot {
           );
         }
         this.logger.log(`getPlatformAssets coins`, coins);
+        result = new ResponseFormat({
+          message: "getCoinsSettings",
+          payload: {
+            coins: this.formatCoinsSettings(),
+          },
+        });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
       } catch (error) {
         this.logger.error(error);
@@ -554,7 +569,13 @@ class ExchangeHub extends Bot {
         });
       }
     }
+    // }else{
+    //   result = new ResponseFormat({
+    //     message: "Current user is not allow to update ticker settings",
+    //     code: Codes.INVALID_INPUT,
+    //   });
     // }
+    return result;
   }
 
   async updateTickerSetting({ params, email, body }) {

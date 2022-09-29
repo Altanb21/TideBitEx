@@ -649,7 +649,6 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-
       if (res.data && res.data.code !== "0") {
         const [message] = res.data.data;
         this.logger.trace(res.data);
@@ -658,14 +657,15 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
       }
-      const balances = res.data.data.details.reduce((prev, balance) => {
+      const [data] = res.data.data;
+      const balances = data.details.reduce((prev, balance) => {
         prev[balance.ccy.toLowerCase()] = {
           balance: balance.availBal,
           locked: balance.frozenBal,
           sum: SafeMath.plus(balance.availBal, balance.frozenBal),
         };
         return prev;
-      });
+      }, {});
       result = new ResponseFormat({
         message: "getBalances",
         payload: balances,
