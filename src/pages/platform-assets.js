@@ -42,19 +42,27 @@ const AssetSettingDialog = (props) => {
   const { t } = useTranslation();
   const [maximun, setMaximun] = useState(null);
   const [minimun, setMinimun] = useState(null);
-  const [MPA, setMPA] = useState(props.asset.MPA, 100);
-  const [RRR, setRRR] = useState(props.asset.RRR, 100);
+  const [MPARatio, setMPARatio] = useState(
+    SafeMath.mult(SafeMath.div(props.asset.MPA, props.asset.base), 100)
+  );
+  const [RRRRatio, setRRRRatio] = useState(
+    SafeMath.mult(SafeMath.div(props.asset.RRR, props.asset.base), 100)
+  );
 
   const onConfirm = useCallback(() => {
-    if (maximun || minimun || MPA || RRR) {
+    if (maximun || minimun || MPARatio || RRRRatio) {
       props.onConfirm({
         maximun: maximun ? maximun : props.asset.maximun,
         minimun: minimun ? minimun : props.asset.minimun,
-        MPA: MPA ? MPA : props.asset.MPA,
-        RRR: RRR ? RRR : props.asset.RRR,
+        MPA: MPARatio
+          ? SafeMath.mult(SafeMath.div(MPARatio, 100), props.asset.base)
+          : props.asset.MPA,
+        RRR: RRRRatio
+          ? SafeMath.mult(SafeMath.div(RRRRatio, 100), props.asset.base)
+          : props.asset.RRR,
       });
     }
-  }, [MPA, RRR, maximun, minimun, props]);
+  }, [MPARatio, RRRRatio, maximun, minimun, props]);
 
   return (
     <Dialog
@@ -141,8 +149,8 @@ const AssetSettingDialog = (props) => {
               <InputRange
                 min="0"
                 max="100"
-                setValue={setMPA}
-                value={MPA}
+                setValue={setMPARatio}
+                value={MPARatio}
                 type="MPA"
               />
             </div>
@@ -153,8 +161,8 @@ const AssetSettingDialog = (props) => {
               <InputRange
                 min="0"
                 max="100"
-                setValue={setRRR}
-                value={RRR}
+                setValue={setRRRRatio}
+                value={RRRRatio}
                 type="RRR"
               />
             </div>
@@ -220,6 +228,9 @@ const AssetSettingTile = (props) => {
             return (
               <div className={`platform-assets__source ${alertTag}`}>
                 <div className="platform-assets__bar">
+                  <div className="platform-assets__inner-text">
+                    {totalBalance}
+                  </div>
                   <div
                     className="platform-assets__inner-bar"
                     style={{
@@ -232,9 +243,7 @@ const AssetSettingTile = (props) => {
                           : "0"
                       }%`,
                     }}
-                  >
-                    {totalBalance}
-                  </div>
+                  ></div>
                   <div
                     className="platform-assets__warning-bar"
                     style={{
