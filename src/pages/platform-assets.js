@@ -8,6 +8,7 @@ import { useSnackbar } from "notistack";
 import { PLATFORM_ASSET } from "../constant/PlatformAsset";
 
 const InputRange = (props) => {
+  const [init, setInit] = useState(false);
   const onInput = (e) => {
     const newValue = Number(
         ((e.target.value - props.min) * 100) / (props.max - props.min)
@@ -19,6 +20,19 @@ const InputRange = (props) => {
     );
     props.setValue(newValue);
   };
+  useEffect(() => {
+    if (!init) {
+      const newValue = Number(
+          ((props.value - props.min) * 100) / (props.max - props.min)
+        ),
+        newPosition = 16 - newValue * 0.32;
+      document.documentElement.style.setProperty(
+        `--range-progress-${props.type}`,
+        `calc(${newValue}% + (${newPosition}px))`
+      );
+      setInit(true);
+    }
+  }, [init, props.max, props.min, props.type, props.value]);
   return (
     <div className="input-range">
       <input
