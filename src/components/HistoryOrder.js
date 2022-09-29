@@ -194,7 +194,7 @@ export const PendingOrders = (props) => {
       storeCtx.cancelOrder(order);
     }
   };
-  const cancelOrders = (instId, type) => {
+  const cancelOrders = (id, type) => {
     const text =
       type !== "all"
         ? type === "bid"
@@ -207,7 +207,7 @@ export const PendingOrders = (props) => {
         : t("cancel-all-limit-order-confirm");
     const confirm = window.confirm(text);
     if (confirm) {
-      storeCtx.cancelOrders(instId, type);
+      storeCtx.cancelOrders(id, type);
     }
   };
   const { t } = useTranslation();
@@ -238,17 +238,17 @@ export const PendingOrders = (props) => {
       {storeCtx.selectedTicker?.source === "TideBit" && (
         <div className="pending-orders__box">
           <div
-            onClick={() => cancelOrders(storeCtx.selectedTicker.instId, "all")}
+            onClick={() => cancelOrders(storeCtx.selectedTicker.id, "all")}
           >
             {t("cancel_all")}
           </div>
           <div
-            onClick={() => cancelOrders(storeCtx.selectedTicker.instId, "ask")}
+            onClick={() => cancelOrders(storeCtx.selectedTicker.id, "ask")}
           >
             {t("cancel_all_asks")}
           </div>
           <div
-            onClick={() => cancelOrders(storeCtx.selectedTicker.instId, "bid")}
+            onClick={() => cancelOrders(storeCtx.selectedTicker.id, "bid")}
           >
             {t("cancel_all_bids")}
           </div>

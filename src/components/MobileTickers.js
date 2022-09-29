@@ -19,14 +19,14 @@ const TickerTile = (props) => {
     >
       <div className="mobile-tickers__icon">
         <img
-          src={`/icons/${props.ticker.base_unit}.png`}
-          alt={props.ticker.base_unit}
+          src={`/icons/${props.ticker.baseUnit}.png`}
+          alt={props.ticker.baseUnit}
         />
       </div>
       <div className="mobile-tickers__detail">
         <div className="mobile-tickers__name">{props.ticker.name}</div>
         <div className="mobile-tickers__currency">
-          {t(props.ticker?.base_unit)?.toUpperCase()}
+          {t(props.ticker?.baseUnit)?.toUpperCase()}
         </div>
       </div>
       <div className="mobile-tickers__price">

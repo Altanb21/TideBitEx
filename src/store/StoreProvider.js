@@ -123,6 +123,33 @@ const StoreProvider = (props) => {
     return await middleman.updateAdminUser(updateUser);
   };
 
+  const getCoinsSettings = async () => {
+    return await middleman.getCoinsSettings();
+  };
+
+  const updateCoinsSettings = async (visible) => {
+    return await middleman.updateCoinsSettings(visible);
+  };
+  const updateCoinSetting = async (id, visible) => {
+    return await middleman.updateCoinSetting(id, visible);
+  };
+
+  const updateDepositSetting = async (id, type, data) => {
+    return await middleman.updateDepositSetting(id, type, data);
+  };
+
+  const updateWithdrawSetting = async (id, type, data) => {
+    return await middleman.updateWithdrawSetting(id, type, data);
+  };
+
+  const getTickersSettings = async () => {
+    return await middleman.getTickersSettings();
+  };
+
+  const updateTickerSetting = async (id, type, data) => {
+    return await middleman.updateTickerSetting(id, type, data);
+  };
+
   const getUsersAccounts = useCallback(async () => {
     let usersAccounts = {};
     try {
@@ -167,52 +194,6 @@ const StoreProvider = (props) => {
       };
       try {
         const result = await middleman.postOrder(_order);
-        // let amount,
-        //   quoteAccount,
-        //   baseAccount,
-        //   updateQuoteAccount,
-        //   updateBaseAccount;
-        // if (order.kind === "bid") {
-        //   quoteAccount = accounts[selectedTicker?.quote_unit.toUpperCase()];
-        //   if (quoteAccount) {
-        //     updateQuoteAccount = {
-        //       ...quoteAccount,
-        //     };
-        //     amount = SafeMath.mult(order.price, order.volume);
-        //     updateQuoteAccount.balance = SafeMath.minus(
-        //       quoteAccount.balance,
-        //       amount
-        //     );
-        //     updateQuoteAccount.locked = SafeMath.plus(
-        //       quoteAccount.locked,
-        //       amount
-        //     );
-        //     const updateAccounts = {...accounts}
-        //     updateAccounts[selectedTicker?.quote_unit.toUpperCase()] =
-        //       updateQuoteAccount;
-        //     middleman.updateAccounts(updateQuoteAccount);
-        //     setAccounts(updateAccounts);
-        //   }
-        // } else {
-        //   baseAccount = accounts[selectedTicker?.base_unit.toUpperCase()];
-        //   if (baseAccount) {
-        //     updateBaseAccount = { ...baseAccount };
-        //     amount = order.volume;
-        //     updateBaseAccount.balance = SafeMath.minus(
-        //       baseAccount.balance,
-        //       amount
-        //     );
-        //     updateBaseAccount.locked = SafeMath.plus(
-        //       baseAccount.locked,
-        //       amount
-        //     );
-        //     const updateAccounts = {...accounts}
-        //     updateAccounts[selectedTicker?.base_unit.toUpperCase()] =
-        //       updateBaseAccount;
-        //     middleman.updateAccounts(updateBaseAccount);
-        //     setAccounts(updateAccounts);
-        //   }
-        // }
         enqueueSnackbar(
           `${order.kind === "bid" ? "Bid" : "Ask"} ${order.volume} ${
             order.instId.split("-")[0]
@@ -286,10 +267,10 @@ const StoreProvider = (props) => {
 
   // TODO get latest snapshot of orders, trades, accounts
   const cancelOrders = useCallback(
-    async (instId, type) => {
+    async (id, type) => {
       const _options = {
         type,
-        instId,
+        id,
         // "X-CSRF-Token": token,
       };
       try {
@@ -518,7 +499,14 @@ const StoreProvider = (props) => {
         addAdminUser,
         deleteAdminUser,
         updateAdminUser,
-        getExchangeRates
+        getExchangeRates,
+        getTickersSettings,
+        getCoinsSettings,
+        updateCoinSetting,
+        updateCoinsSettings,
+        updateDepositSetting,
+        updateWithdrawSetting,
+        updateTickerSetting
       }}
     >
       {props.children}

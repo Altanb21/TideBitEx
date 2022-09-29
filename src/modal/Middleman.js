@@ -69,6 +69,81 @@ class Middleman {
     }
   }
 
+  async getCoinsSettings() {
+    try {
+      const response = await this.communicator.getCoinsSettings();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateCoinsSettings(visible) {
+    try {
+      const response = await this.communicator.updateCoinsSettings(visible);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateCoinSetting(id, visible) {
+    try {
+      const response = await this.communicator.updateCoinSetting(id, visible);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateDepositSetting(id, type, data) {
+    try {
+      const response = await this.communicator.updateDepositSetting(
+        id,
+        type,
+        data
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateWithdrawSetting(id, type, data) {
+    try {
+      const response = await this.communicator.updateWithdrawSetting(
+        id,
+        type,
+        data
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getTickersSettings() {
+    try {
+      const response = await this.communicator.getTickersSettings();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateTickerSetting(id, type, data) {
+    try {
+      const response = await this.communicator.updateTickerSetting(
+        id,
+        type,
+        data
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addAdminUser(newUser) {
     try {
       const response = await this.communicator.addAdminUser(newUser);
@@ -203,8 +278,7 @@ class Middleman {
 
     try {
       rawTickers = await this.communicator.tickers(instType, from, limit);
-      Object.values(rawTickers)
-        .filter((t) => !!t)
+      rawTickers
         .forEach((t) => {
           const ticker = {
             ...t,
