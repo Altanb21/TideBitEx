@@ -557,24 +557,33 @@ class ExchangeHub extends Bot {
             sum
           );
         }
-        coins = coins.map((coin) => {
+        this.logger.log(`getPlatformAssets coins`, coins);
+        coins = Object.values(coins).reduce((prev, coin) => {
           const RRR = SafeMath.mult(coin.RRRRatio, coin.sum);
           const MPA = SafeMath.mult(coin.MPARatio, coin.sum);
-          let sources = Object.keys(coin.sources).reduce((prev, source) => {
-            let alertLevel;
-            if (SafeMath.lte(coin.sources[source].sum, MPA)) {
-              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
-            } else if (SafeMath.lte(coin.sources[source].sum, RRR)) {
-              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3;
-            } else if (SafeMath.eq(coin.sources[source].sum, 0)) {
-              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
-            } else {
-              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
-            }
-            return (prev[source] = { ...coin.sources[source], alertLevel });
-          }, {});
-          return { ...coin, sources };
-        });
+          let sources = Object.keys(coin.sources).reduce(
+            (prevSources, source) => {
+              let alertLevel;
+              if (SafeMath.lte(coin.sources[source].sum, MPA)) {
+                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+              } else if (SafeMath.lte(coin.sources[source].sum, RRR)) {
+                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3;
+              } else if (SafeMath.eq(coin.sources[source].sum, 0)) {
+                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+              } else {
+                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+              }
+              prevSources[source] = {
+                ...coin.sources[source],
+                alertLevel,
+              };
+              return prevSources;
+            },
+            {}
+          );
+          prev[coin.code] = { ...coin, sources };
+          return prev;
+        }, {});
         this.logger.log(`getPlatformAssets coins`, coins);
         result = new ResponseFormat({
           message: "getCoinsSettings",
