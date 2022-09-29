@@ -48,26 +48,13 @@
       cursor: default;
     }
   }
-  & .screen__table-headers,
-  & .screen__table-row {
-    justify-content: unset;
-    gap: 5px;
-  }
   & .screen__dialog-input-box {
     align-items: baseline;
   }
   & .screen__table-item--text {
     gap: 5px;
   }
-  & .screen__table-switch,
-  & .screen__table-header:nth-child(7) {
-    flex: auto;
-  }
   & .screen__table-header:nth-child(7) > .screen__table-header--text {
-    min-width: 54px;
-  }
-  & .screen__table-headers,
-  & .screen__table-row {
-    gap: 20px;
+    min-width: 154px;
   }
 }

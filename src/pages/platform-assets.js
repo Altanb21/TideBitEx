@@ -159,9 +159,13 @@ const AssetSettingDialog = (props) => {
 const AssetSettingTile = (props) => {
   return (
     <div
-      className={`platform-assets__tile${Object.values(
-        props.asset.sources
-      ).some((source) => (source.alertLevel > 0 ? " alert" : ""))}`}
+      className={`platform-assets__tile${
+        Object.values(props.asset.sources).some(
+          (source) => source.alertLevel > 0
+        )
+          ? " alert"
+          : ""
+      }`}
       key={props.asset.name + props.asset.symbol}
     >
       <div className="platform-assets__icon platform-assets__icon--alert"></div>

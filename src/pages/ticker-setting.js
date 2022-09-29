@@ -445,9 +445,7 @@ const TickerSetting = () => {
               全部開啟
             </button>
           </li> */}
-            <li className="screen__table-header">
-              <div className="screen__table-header--text">{`${t("show")}`}</div>
-            </li>
+            <li className="screen__table-header">{`${t("show")}`}</li>
           </ul>
           <ul className="screen__table-rows">
             {filterTickers &&
