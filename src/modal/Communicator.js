@@ -694,6 +694,43 @@ class Communicator {
     }
   }
 
+  async getPlatformAssets() {
+    try {
+      const url = `/admin/platform-assets`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getPlatformAssets] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updatePlatformAsset(id, data) {
+    try {
+      const url = `/admin/platform-assets/${id}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updatePlatformAsset] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
   // use for need jwt request
   async _get(url) {
     try {

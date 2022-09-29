@@ -144,6 +144,24 @@ class Middleman {
     }
   }
 
+  async getPlatformAssets() {
+    try {
+      const response = await this.communicator.getPlatformAssets();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updatePlatformAsset(id, data) {
+    try {
+      const response = await this.communicator.updatePlatformAsset(id, data);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addAdminUser(newUser) {
     try {
       const response = await this.communicator.addAdminUser(newUser);
@@ -278,18 +296,17 @@ class Middleman {
 
     try {
       rawTickers = await this.communicator.tickers(instType, from, limit);
-      rawTickers
-        .forEach((t) => {
-          const ticker = {
-            ...t,
-            tickSz: t.tickSz || "0.01", //下單價格精度，如 0.0001
-            lotSz: t.lotSz || "0.01", //下單數量精度，如 BTC-USDT-SWAP：1
-            minSz: t.minSz || "0.01", //最小下單數量
-            maxLmtSz: t.maxLmtSz || "10000", //合約或現貨限價單的單筆最大委託數量
-            maxMktSz: t.maxMktSz || "99999", //合約或現貨市價單的單筆最大委託數量
-          };
-          tickers[ticker.instId] = ticker;
-        });
+      rawTickers.forEach((t) => {
+        const ticker = {
+          ...t,
+          tickSz: t.tickSz || "0.01", //下單價格精度，如 0.0001
+          lotSz: t.lotSz || "0.01", //下單數量精度，如 BTC-USDT-SWAP：1
+          minSz: t.minSz || "0.01", //最小下單數量
+          maxLmtSz: t.maxLmtSz || "10000", //合約或現貨限價單的單筆最大委託數量
+          maxMktSz: t.maxMktSz || "99999", //合約或現貨市價單的單筆最大委託數量
+        };
+        tickers[ticker.instId] = ticker;
+      });
       this.tickerBook.updateAll(tickers);
     } catch (error) {
       console.error(`get tickers error`, error);

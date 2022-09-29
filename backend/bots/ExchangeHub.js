@@ -24,6 +24,7 @@ const {
   TICKER_SETTING_TYPE,
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
+const { PLATFORM_ASSET } = require("../../src/constant/PlatformAsset");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -299,7 +300,7 @@ class ExchangeHub extends Bot {
         coinsSettings = Utils.fileParser(p);
         this.coinsSettings = coinsSettings.map((coinSetting) => ({
           ...coinSetting,
-          visible: coinSetting.c === false ? false : true, // default: true
+          visible: coinSetting.visible === false ? false : true, // default: true
         }));
       } catch (error) {
         this.logger.error(error);
@@ -440,6 +441,120 @@ class ExchangeHub extends Bot {
         },
       })
     );
+  }
+
+  async getPlatformAssets({ email, query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getPlatformAssets ************`
+    );
+    let result = null,
+      coins = {},
+      coinsSettings = {},
+      sources = {}; //,
+    // currentUser = this.adminUsers.find((user) => user.email === email);
+    // this.logger.log(
+    //   `currentUser[${currentUser.roles?.includes("root")}]`,
+    //   currentUser
+    // );
+    // if (currentUser.roles?.includes("root")) {
+    for (let exchange in Object.keys(SupportedExchange)) {
+      let source = exchange.toLowerCase();
+      switch (source) {
+        // okx api 拿 balance 的資料
+        case SupportedExchange.OKEX:
+          let response = this.okexConnector.router("getBalances", {
+            query: {},
+          });
+          if (response.success) {
+            sources[source] = response.payload;
+            this.logger.log(
+              `getPlatformAssets sources[${source}]`,
+              sources[source]
+            );
+          } else {
+            this.logger.error(response);
+            result = new ResponseFormat({
+              message: "",
+              code: Codes.API_UNKNOWN_ERROR,
+            });
+          }
+          break;
+        case SupportedExchange.TIDEBIT:
+          break;
+        default:
+      }
+    }
+    if (result.success) {
+      try {
+        coinsSettings = this.coinsSettings.reduce((prev, curr) => {
+          prev[curr.id.toString()] = curr;
+          return curr;
+        }, {});
+        this.logger.log(`getPlatformAssets coinsSettings`, coinsSettings);
+        // 需拿交易所所有用戶餘額各幣種的加總
+        const _accounts = await this.database.getAccounts();
+        for (let _account in _accounts) {
+          let coinSetting = coinsSettings[_account.currency.toString()];
+          this.logger.log(`getPlatformAssets coinSetting`, coinSetting);
+          if (!coins[coinSetting.code]) {
+            coins[coinSetting.code] = {
+              id: coinSetting.id,
+              key: coinSetting.key,
+              code: coinSetting.code,
+              symbol: coinSetting.symbol,
+              coin: coinSetting.coin,
+              visible: coinSetting.visible,
+              disable: coinSetting.disable,
+              group: coinSetting.marketing_category,
+              accounts: {},
+              sum: "0",
+              RRRRatio: coinSetting.RRRRatio || 0.35,
+              MPARatio: coinSetting.MPARatio || 0.65,
+            };
+            for (let exchange in Object.keys(SupportedExchange)) {
+              let source = exchange.toLowerCase();
+              switch (source) {
+                case SupportedExchange.OKEX:
+                  coins[coinSetting.code][source] = {
+                    balance: sources[source][coinSetting.code].balance,
+                    locked: sources[source][coinSetting.code].locked,
+                    alertLevel: undefined,
+                  };
+                  break;
+                case SupportedExchange.TIDEBIT:
+                  // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
+                  coins[coinSetting.code][source] = {
+                    balance: "0",
+                    locked: "0",
+                    alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+                  };
+                  break;
+                default:
+              }
+            }
+          }
+          coins[coinSetting.code].accounts = {
+            ...coins[coinSetting.code].accounts,
+          };
+          coins[coinSetting.code].accounts[_account.memberId] = _account;
+          let sum = SafeMath.plus(_account.balance, _account.locked);
+          coins[coinSetting.code].sum = SafeMath.plus(
+            coins[coinSetting.code].sum,
+            sum
+          );
+        }
+        this.logger.log(`getPlatformAssets coins`, coins);
+        // 需要有紀錄水位限制的檔案，預計加在 coins.yml
+      } catch (error) {
+        this.logger.error(error);
+        let message = error.message;
+        result = new ResponseFormat({
+          message,
+          code: Codes.API_UNKNOWN_ERROR,
+        });
+      }
+    }
+    // }
   }
 
   async updateTickerSetting({ params, email, body }) {

@@ -146,6 +146,14 @@ const StoreProvider = (props) => {
     return await middleman.getTickersSettings();
   };
 
+  const getPlatformAssets = async () => {
+    return await middleman.getPlatformAssets();
+  };
+
+  const updatePlatformAsset = async (id, data) => {
+    return await middleman.updatePlatformAsset(id, data);
+  };
+
   const updateTickerSetting = async (id, type, data) => {
     return await middleman.updateTickerSetting(id, type, data);
   };
@@ -506,7 +514,9 @@ const StoreProvider = (props) => {
         updateCoinsSettings,
         updateDepositSetting,
         updateWithdrawSetting,
-        updateTickerSetting
+        updateTickerSetting,
+        getPlatformAssets,
+        updatePlatformAsset
       }}
     >
       {props.children}

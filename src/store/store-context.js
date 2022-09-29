@@ -257,6 +257,8 @@ const StoreContext = React.createContext({
   updateWithdrawSetting: async (id, type, data) => {},
   getTickersSettings: async () => {},
   updateTickerSetting: async (id, type, data) => {},
+  getPlatformAssets: async () => {},
+  updatePlatformAsset: async (id, data) => {},
 });
 
 export default StoreContext;

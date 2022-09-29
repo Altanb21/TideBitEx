@@ -629,6 +629,61 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
+  async getBalances({ query }) {
+    const method = "GET";
+    const path = "/api/v5/account/balance";
+    const { ccy } = query;
+    let result;
+    const arr = [];
+    if (ccy) arr.push(`ccy=${ccy}`);
+    const qs = !!arr.length ? `?${arr.join("&")}` : "";
+    const timeString = new Date().toISOString();
+    const okAccessSign = await this.okAccessSign({
+      timeString,
+      method,
+      path: `${path}${qs}`,
+    });
+    try {
+      const res = await axios({
+        method: method.toLocaleLowerCase(),
+        url: `${this.domain}${path}${qs}`,
+        headers: this.getHeaders(true, { timeString, okAccessSign }),
+      });
+
+      if (res.data && res.data.code !== "0") {
+        const [message] = res.data.data;
+        this.logger.trace(res.data);
+        return new ResponseFormat({
+          message: message.sMsg,
+          code: Codes.THIRD_PARTY_API_ERROR,
+        });
+      }
+      const balances = res.data.data.details.reduce((prev, balance) => {
+        prev[balance.ccy.toLowerCase()] = {
+          balance: balance.availBal,
+          locked: balance.frozenBal,
+          sum: SafeMath.plus(balance.availBal, balance.frozenBal),
+        };
+        return prev;
+      });
+      result = new ResponseFormat({
+        message: "getBalances",
+        payload: balances,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      let message = error.message;
+      if (error.response && error.response.data)
+        message = error.response.data.msg;
+      result = new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+
+    return result;
+  }
+
   async getTicker({ query }) {
     const method = "GET";
     const path = "/api/v5/market/ticker";

@@ -107,4 +107,6 @@ pathname = [
   "get | /api/v1/admin/tickers-settings | Bot.ExchangeHub.getTickersSettings",
   "put | /api/v1/admin/tickers-settings/:id | Bot.ExchangeHub.updateTickerSetting",
 
+  "get | /api/v1/admin/platform-assets | Bot.ExchangeHub.getPlatformAssets",
+  "put | /api/v1/admin/platform-assets/:id | Bot.ExchangeHub.updatePlatformAsset",
 ]

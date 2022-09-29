@@ -5,7 +5,7 @@ import Dialog from "../components/Dialog";
 import LoadingDialog from "../components/LoadingDialog";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
-import { PLATFORMASSET } from "../constant/PlatformAsset";
+import { PLATFORM_ASSET } from "../constant/PlatformAsset";
 
 const InputRange = (props) => {
   const onInput = (e) => {
@@ -43,10 +43,12 @@ const AssetSettingDialog = (props) => {
   const [maximun, setMaximun] = useState(null);
   const [minimun, setMinimun] = useState(null);
   const [MPARatio, setMPARatio] = useState(
-    SafeMath.mult(SafeMath.div(props.asset.MPA, props.asset.base), 100)
+    // SafeMath.mult(SafeMath.div(props.asset.MPA, props.asset.sum), 100)
+    SafeMath.mult(props.asset.MPARatio, 100)
   );
   const [RRRRatio, setRRRRatio] = useState(
-    SafeMath.mult(SafeMath.div(props.asset.RRR, props.asset.base), 100)
+    // SafeMath.mult(SafeMath.div(props.asset.RRR, props.asset.sum), 100)
+    SafeMath.mult(props.asset.RRRRatio, 100)
   );
 
   const onConfirm = useCallback(() => {
@@ -54,12 +56,14 @@ const AssetSettingDialog = (props) => {
       props.onConfirm({
         maximun: maximun ? maximun : props.asset.maximun,
         minimun: minimun ? minimun : props.asset.minimun,
-        MPA: MPARatio
-          ? SafeMath.mult(SafeMath.div(MPARatio, 100), props.asset.base)
-          : props.asset.MPA,
-        RRR: RRRRatio
-          ? SafeMath.mult(SafeMath.div(RRRRatio, 100), props.asset.base)
-          : props.asset.RRR,
+        MPARatio: MPARatio
+          ? // ? SafeMath.mult(SafeMath.div(MPARatio, 100), props.asset.sum)
+            SafeMath.div(MPARatio, 100)
+          : props.asset.MPARatio,
+        RRRRatio: RRRRatio
+          ? // ? SafeMath.mult(SafeMath.div(RRRRatio, 100), props.asset.sum)
+            SafeMath.div(RRRRatio, 100)
+          : props.asset.RRRRatio,
       });
     }
   }, [MPARatio, RRRRatio, maximun, minimun, props]);
@@ -76,12 +80,12 @@ const AssetSettingDialog = (props) => {
         <div className="screen__dialog-content--title">
           <div className="screen__dialog-content--icon">
             <img
-              src={`/icons/${props.asset.symbol.toLowerCase()}.png`}
-              alt={props.asset.symbol}
+              src={`/icons/${props.asset.code}.png`}
+              alt={props.asset.code}
             />
           </div>
           <div className="screen__dialog-content--value">
-            {props.asset.symbol}
+            {props.asset.code.toUpperCase()}
           </div>
         </div>
         <div className="screen__dialog-content--body">
@@ -110,7 +114,7 @@ const AssetSettingDialog = (props) => {
                   <div className="screen__dialog-input-caption"></div>
                 </div>
                 <div className="screen__dialog-input-suffix">
-                  {props.asset.symbol}
+                  {props.asset.code.toUpperCase()}
                 </div>
               </div>
             </div>
@@ -138,7 +142,7 @@ const AssetSettingDialog = (props) => {
                   <div className="screen__dialog-input-caption"></div>
                 </div>
                 <div className="screen__dialog-input-suffix">
-                  {props.asset.symbol}
+                  {props.asset.code.toUpperCase()}
                 </div>
               </div>
             </div>
@@ -183,7 +187,7 @@ const AssetSettingTile = (props) => {
           ? " alert"
           : ""
       }`}
-      key={props.asset.name + props.asset.symbol}
+      key={props.asset.key + props.asset.code}
     >
       <div className="platform-assets__icon platform-assets__icon--alert"></div>
       <div
@@ -194,12 +198,12 @@ const AssetSettingTile = (props) => {
         <div className="platform-assets__leading">
           <div className="platform-assets__leading--icon">
             <img
-              src={`/icons/${props.asset.symbol.toLowerCase()}.png`}
-              alt={props.asset.symbol}
+              src={`/icons/${props.asset.code}.png`}
+              alt={props.asset.code}
             />
           </div>
           <div className="platform-assets__leading--value">
-            {props.asset.symbol}
+            {props.asset.code.toUpperCase()}
           </div>
         </div>
         <div className="platform-assets__sources">
@@ -210,16 +214,16 @@ const AssetSettingTile = (props) => {
             );
             let alertTag;
             switch (props.asset.sources[source].alertLevel) {
-              case PLATFORMASSET.WARNING_LEVEL.LEVEL_1:
+              case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1:
                 alertTag = "normal";
                 break;
-              case PLATFORMASSET.WARNING_LEVEL.LEVEL_2:
+              case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2:
                 alertTag = "warn";
                 break;
-              case PLATFORMASSET.WARNING_LEVEL.LEVEL_3:
+              case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3:
                 alertTag = "alert";
                 break;
-              case PLATFORMASSET.WARNING_LEVEL.NULL:
+              case PLATFORM_ASSET.WARNING_LEVEL.NULL:
                 alertTag = "unset";
                 break;
               default:
@@ -237,7 +241,7 @@ const AssetSettingTile = (props) => {
                       width: `${
                         alertTag !== "unset"
                           ? SafeMath.mult(
-                              SafeMath.div(totalBalance, props.asset.base),
+                              SafeMath.div(totalBalance, props.asset.sum),
                               100
                             )
                           : "0"
@@ -250,7 +254,8 @@ const AssetSettingTile = (props) => {
                       left: `${
                         alertTag !== "unset"
                           ? SafeMath.mult(
-                              SafeMath.div(props.asset.RRR, props.asset.base),
+                              // SafeMath.div(props.asset.RRR, props.asset.sum),
+                              props.asset.RRRRatio,
                               100
                             )
                           : "0"
@@ -268,7 +273,8 @@ const AssetSettingTile = (props) => {
                       left: `${
                         alertTag !== "unset"
                           ? SafeMath.mult(
-                              SafeMath.div(props.asset.MPA, props.asset.base),
+                              // SafeMath.div(props.asset.MPA, props.asset.sum),
+                              props.asset.MPARatio,
                               100
                             )
                           : "0"
@@ -304,401 +310,8 @@ const PlatformAssets = () => {
   const [filterKey, setFilterKey] = useState("");
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const getPlatformAssets = useCallback(async () => {
-    return Promise.resolve({
-      BTC: {
-        symbol: "BTC",
-        name: "Bitcoin",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      ETH: {
-        symbol: "ETH",
-        name: "Ethereum",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      XRP: {
-        symbol: "XRP",
-        name: "XRP",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      USDC: {
-        symbol: "USDC",
-        name: "USD Coin",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      USDT: {
-        symbol: "USDT",
-        name: "Tether",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      BNB: {
-        symbol: "BNB",
-        name: "Build and Build",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      BUSD: {
-        symbol: "BUSD",
-        name: "Binance USD",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      ADA: {
-        symbol: "ADA",
-        name: "Cardano",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      SOL: {
-        symbol: "SOL",
-        name: "Solana",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-      DOGE: {
-        symbol: "DOGE",
-        name: "Dogecoin",
-        RRR: "333",
-        MPA: "666",
-        base: "1222",
-        sources: {
-          tidebit: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          okex: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-          exchange01: {
-            balance: "0",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.NULL,
-          },
-          exchange02: {
-            balance: "568.39572",
-            locked: "0",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_2,
-          },
-          exchange03: {
-            balance: "62.4576",
-            locked: "37.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_3,
-          },
-          exchange04: {
-            balance: "862.46132",
-            locked: "137.9344",
-            alertLevel: PLATFORMASSET.WARNING_LEVEL.LEVEL_1,
-          },
-        },
-      },
-    });
-  }, []);
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { t } = useTranslation();
 
   const filter = useCallback(
     ({ filterAssets, alert, keyword }) => {
@@ -710,8 +323,8 @@ const PlatformAssets = () => {
         if (_assets) {
           _assets = Object.values(_assets).filter((asset) => {
             let condition =
-              asset.name?.includes(_keyword) ||
-              asset.symbol?.includes(_keyword);
+              asset.key?.includes(_keyword.toLowerCase()) ||
+              asset.code?.includes(_keyword.toLowerCase());
             if (_option !== null && _option !== undefined)
               condition =
                 condition &&
@@ -729,7 +342,436 @@ const PlatformAssets = () => {
     [assets, filterKey]
   );
 
-  const updateAssetSetting = useCallback(() => {}, []);
+  const updatePlatformAsset = useCallback(
+    async (id, data) => {
+      setIsLoading(true);
+      console.log(`updatePlatformAsset`, id, data);
+      try {
+        const updatedPlatformAssets = await storeCtx.updatePlatformAsset(
+          id,
+          data
+        );
+        setAssets(updatedPlatformAssets);
+        filter({ filterAssets: updatedPlatformAssets });
+        enqueueSnackbar(`${t("success-update")}`, {
+          variant: "success",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      } catch (error) {
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      }
+      setIsLoading(false);
+      setOpenSettingDialog(false);
+    },
+    [enqueueSnackbar, filter, storeCtx, t]
+  );
+
+  const getPlatformAssets = useCallback(async () => {
+    const platformAssets = await storeCtx.getPlatformAssets();
+    console.log(`platformAssets`, platformAssets);
+    // return platformAssets;
+    return Promise.resolve({
+      BTC: {
+        symbol: "BTC",
+        name: "Bitcoin",
+        RRRRatio: 0.35,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      ETH: {
+        symbol: "ETH",
+        name: "Ethereum",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      XRP: {
+        symbol: "XRP",
+        name: "XRP",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      USDC: {
+        symbol: "USDC",
+        name: "USD Coin",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      USDT: {
+        symbol: "USDT",
+        name: "Tether",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      BNB: {
+        symbol: "BNB",
+        name: "Build and Build",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      BUSD: {
+        symbol: "BUSD",
+        name: "Binance USD",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      ADA: {
+        symbol: "ADA",
+        name: "Cardano",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      SOL: {
+        symbol: "SOL",
+        name: "Solana",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+      DOGE: {
+        symbol: "DOGE",
+        name: "Dogecoin",
+        RRRRatio: 0.3,
+        MPARatio: 0.65,
+        base: "1222",
+        sources: {
+          tidebit: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          okex: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+          exchange01: {
+            balance: "0",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+          },
+          exchange02: {
+            balance: "568.39572",
+            locked: "0",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+          },
+          exchange03: {
+            balance: "62.4576",
+            locked: "37.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3,
+          },
+          exchange04: {
+            balance: "862.46132",
+            locked: "137.9344",
+            alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1,
+          },
+        },
+      },
+    });
+  }, [storeCtx]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -758,7 +800,7 @@ const PlatformAssets = () => {
           onCancel={() => {
             setOpenSettingDialog(false);
           }}
-          onConfirm={(data) => updateAssetSetting(data)}
+          onConfirm={(data) => updatePlatformAsset(selectedAsset.id, data)}
         />
       )}
       <section className="screen__section platform-assets">
