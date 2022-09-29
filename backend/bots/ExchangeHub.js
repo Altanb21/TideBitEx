@@ -527,6 +527,7 @@ class ExchangeHub extends Bot {
                     balance:
                       sources[exchange][coinSetting.code]?.balance || "0",
                     locked: sources[exchange][coinSetting.code]?.locked || "0",
+                    sum: sources[exchange][coinSetting.code]?.sum || "0",
                     alertLevel: undefined,
                   };
                   break;
@@ -545,19 +546,39 @@ class ExchangeHub extends Bot {
           coins[coinSetting.code].accounts = {
             ...coins[coinSetting.code].accounts,
           };
-          coins[coinSetting.code].accounts[_account.member_id] = _account;
+          coins[coinSetting.code].accounts[_account.member_id] = {
+            balance: Utils.removeZeroEnd(_account.balance),
+            locked: Utils.removeZeroEnd(_account.locked),
+            updatedAt: _account.updated_at,
+          };
           let sum = SafeMath.plus(_account.balance, _account.locked);
           coins[coinSetting.code].sum = SafeMath.plus(
             coins[coinSetting.code].sum,
             sum
           );
         }
+        coins = coins.map((coin) => {
+          const RRR = SafeMath.mult(coin.RRRRatio, coin.sum);
+          const MPA = SafeMath.mult(coin.MPARatio, coin.sum);
+          let sources = Object.keys(coin.sources).reduce((prev, source) => {
+            let alertLevel;
+            if (SafeMath.lte(coin.sources[source].sum, MPA)) {
+              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+            } else if (SafeMath.lte(coin.sources[source].sum, RRR)) {
+              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3;
+            } else if (SafeMath.eq(coin.sources[source].sum, 0)) {
+              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+            } else {
+              alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+            }
+            return (prev[source] = { ...coin.sources[source], alertLevel });
+          }, {});
+          return { ...coin, sources };
+        });
         this.logger.log(`getPlatformAssets coins`, coins);
         result = new ResponseFormat({
           message: "getCoinsSettings",
-          payload: {
-            coins: this.formatCoinsSettings(),
-          },
+          payload: coins,
         });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
       } catch (error) {
