@@ -1,4 +1,4 @@
 module.exports = {
   TIDEBIT: "TideBit",
-  OKEX: "OKEx",
+  OKEX: "OKX",
 };
