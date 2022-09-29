@@ -105,7 +105,7 @@ const AssetSettingDialog = (props) => {
                   <div className="screen__dialog-input-caption"></div>
                 </div>
                 <div className="screen__dialog-input-suffix">
-                  {props.ticker.symbol}
+                  {props.asset.symbol}
                 </div>
               </div>
             </div>
@@ -133,7 +133,7 @@ const AssetSettingDialog = (props) => {
                   <div className="screen__dialog-input-caption"></div>
                 </div>
                 <div className="screen__dialog-input-suffix">
-                  {props.ticker.symbol}
+                  {props.asset.symbol}
                 </div>
               </div>
             </div>
@@ -162,9 +162,13 @@ const AssetSettingTile = (props) => {
       className={`platform-assets__tile${Object.values(
         props.asset.sources
       ).some((source) => (source.alertLevel > 0 ? " alert" : ""))}`}
+      key={props.asset.name + props.asset.symbol}
     >
       <div className="platform-assets__icon platform-assets__icon--alert"></div>
-      <div className="platform-assets__icon platform-assets__icon--setting" onClick={props.settingDialogHandler}></div>
+      <div
+        className="platform-assets__icon platform-assets__icon--setting"
+        onClick={props.settingDialogHandler}
+      ></div>
       <div className="platform-assets__detail">
         <div className="platform-assets__leading">
           <div className="platform-assets__leading--icon">
@@ -806,20 +810,15 @@ const PlatformAssets = () => {
           </div>
         </div>
         <div className={`screen__table${showMore ? " show" : ""}`}>
-          <div className="currency-settings__rows">
+          <div className="platform-assets__rows">
             {filterAssets?.map((asset) => (
-              <div
-                className="currency-dropdown admin-dropdown"
-                key={asset.name + asset.symbol}
-              >
-                <AssetSettingTile
-                  asset={asset}
-                  settingDialogHandler={(open) => {
-                    setSelectedAsset(asset);
-                    setOpenSettingDialog(open);
-                  }}
-                />
-              </div>
+              <AssetSettingTile
+                asset={asset}
+                settingDialogHandler={() => {
+                  setSelectedAsset(asset);
+                  setOpenSettingDialog(true);
+                }}
+              />
             ))}
           </div>
           <div

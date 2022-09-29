@@ -9,6 +9,8 @@
     padding: 12px;
     padding-right: 54px;
     display: flex;
+    align-items: center;
+    background-color: #fff;
   }
   &__icon {
     position: absolute;
@@ -60,5 +62,16 @@
   }
   &__source {
     gap: 8px;
+  }
+  & .screen__table {
+    border: none;
+  }
+  &__rows {
+    display: flex;
+    flex-direction: column;
+    flex: auto;
+    overflow: auto;
+    gap: 20px;
+    margin-bottom: 10px;
   }
 }
