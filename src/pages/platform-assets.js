@@ -196,9 +196,12 @@ const AssetSettingTile = (props) => {
         </div>
         <div className="platform-assets__sources">
           {Object.keys(props.asset.sources).map((source) => {
-            let totalBalance = SafeMath.plus(source.balance, source.locked);
+            let totalBalance = SafeMath.plus(
+              props.asset.sources[source].balance,
+              props.asset.sources[source].locked
+            );
             let alertTag;
-            switch (source.alertLevel) {
+            switch (props.asset.sources[source].alertLevel) {
               case PLATFORMASSET.WARNING_LEVEL.LEVEL_1:
                 alertTag = "normal";
                 break;
@@ -269,7 +272,9 @@ const AssetSettingTile = (props) => {
                     </div>
                   </div>
                 </div>
-                <div className="platform-assets__source--label">{source}</div>
+                <div className="platform-assets__source--label">{`${source
+                  .substring(0, 1)
+                  .toUpperCase()}${source.substring(1)}`}</div>
               </div>
             );
           })}

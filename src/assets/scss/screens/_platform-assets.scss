@@ -6,8 +6,7 @@
     position: relative;
     border-radius: 11px;
     border: 1px solid #707070;
-    padding: 12px;
-    padding-right: 54px;
+    padding: 18px 54px 18px 12px;
     background-color: #fff;
   }
   &__icon {
@@ -35,6 +34,8 @@
   &__sources {
     display: flex;
     flex-direction: column;
+    flex: auto;
+    gap: 18px;
   }
   &__source,
   &__detail,
@@ -61,13 +62,26 @@
   }
   &__source {
     gap: 8px;
+    &--label {
+      min-width: 90px;
+      text-align: right;
+      font-size: 16px;
+    }
   }
   &__bar {
     flex: auto;
     position: relative;
+    border: 1px solid #707070;
+    border-radius: 11px;
+    height: 15px;
   }
   &__inner-bar {
     color: #767676;
+    border-radius: 11px;
+    height: 13px;
+    text-align: center;
+    font-size: 12px;
+    line-height: 1;
   }
   &__source.normal &__inner-bar {
     background-color: #2699fb;
@@ -86,23 +100,28 @@
   &__source.unset &__warning-bar {
     opacity: 0;
   }
-  &__warning-bar{
+  &__warning-bar {
     position: absolute;
-    background-color: #767676;
     color: #767676;
     top: 0px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    &--line{
-        width: 2px;
-        height: 15px;
+    &--line {
+      width: 3px;
+      height: 15px;
+      border-radius: 3px;
+      margin-top: -1px;
+      background-color: #767676;
     }
   }
   &__source.warn &__warning-bar:nth-child(2),
   &__source.alert &__warning-bar {
-    background-color: #dc484e;
     color: #dc484e;
+  }
+  &__source.warn &__warning-bar:nth-child(2) > &__warning-bar--line,
+  &__source.alert &__warning-bar > &__warning-bar--line {
+    background-color: #dc484e;
   }
   & .screen__table {
     border: none;
