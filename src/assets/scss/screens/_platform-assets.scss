@@ -131,12 +131,12 @@
       background-color: #767676;
     }
   }
-  & &__source.warn &__warning-bar:nth-child(2),
-  & &__source.alert &__warning-bar {
+  &__source.warn &__warning-bar:nth-child(2),
+  &__source.alert &__warning-bar {
     color: #dc484e;
   }
-  & &__source.warn &__warning-bar:nth-child(2) > &__warning-bar--line,
-  & &__source.alert &__warning-bar > &__warning-bar--line {
+  &__source.warn &__warning-bar:nth-child(2) > &__warning-bar--line,
+  &__source.alert &__warning-bar > &__warning-bar--line {
     background-color: #dc484e;
   }
   & .screen__table {

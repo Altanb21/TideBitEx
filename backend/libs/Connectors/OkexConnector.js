@@ -73,7 +73,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   async start() {
-    this.logger.log(`${this.name} domain`, this.domain)
+    this.logger.log(`[${this.constructor.name}] domain`, this.domain)
     Object.keys(this.tickersSettings).forEach((id) => {
       if (this.tickersSettings[id]?.source === SupportedExchange.OKEX) {
         this.instIds.push(this.tickersSettings[id].instId);
