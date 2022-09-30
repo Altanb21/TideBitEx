@@ -26,7 +26,6 @@ const {
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
 
-
 class ExchangeHub extends Bot {
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
@@ -509,8 +508,10 @@ class ExchangeHub extends Bot {
               group: coinSetting.marketing_category,
               accounts: {},
               sum: "0",
-              RRRRatio: coinSetting.RRRRatio || 0.35,
-              MPARatio: coinSetting.MPARatio || 0.65,
+              RRRRatio: coinSetting.RRR_ratio || 0.35,
+              MPARatio: coinSetting.MPA_ratio || 0.65,
+              maximun: coinSetting.maximun,
+              minimun: coinSetting.minimun,
               sources: {},
             };
             // this.logger.log(
@@ -624,6 +625,83 @@ class ExchangeHub extends Bot {
     //   });
     // }
     return result;
+  }
+
+  async updatePlatformAsset({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updatePlatformAsset ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { data } = body;
+      this.logger.log(`data`, data);
+      if (currentUser.roles?.includes("root")) {
+        let index = this.coinsSettings.findIndex(
+          (coin) => coin.id.toString() === params.id.toString()
+        );
+        this.logger.log(`index`, index);
+        if (index !== -1) {
+          let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+            ...coin,
+          }));
+          updatedCoinsSettings[index] = {
+            ...updatedCoinsSettings[index],
+            RRR_ratio: data.RRRRatio,
+            MPA_ratio: data.MPARatio,
+            maximun: data.maximun,
+            minimun: data.minimun,
+          };
+          this.logger.log(
+            `updatePlatformAsset[${index}]`,
+            updatedCoinsSettings[index]
+          );
+          try {
+            Utils.yamlUpdate(updatedCoinsSettings, p);
+            this.coinsSettings = updatedCoinsSettings;
+            result = await this.getPlatformAssets({ query: {} });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updatePlatformAsset`,
+              updatedCoinsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update asset is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update platform asset",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
   async updateTickerSetting({ params, email, body }) {
@@ -907,7 +985,7 @@ class ExchangeHub extends Bot {
         }
       } else {
         result = new ResponseFormat({
-          message: "Current user is not allow to update coins settings user",
+          message: "Current user is not allow to update coins settings",
           code: Codes.INVALID_INPUT,
         });
       }
@@ -967,7 +1045,7 @@ class ExchangeHub extends Bot {
         }
       } else {
         result = new ResponseFormat({
-          message: "Current user is not allow to update coins settings user",
+          message: "Current user is not allow to update coins settings",
           code: Codes.INVALID_INPUT,
         });
       }
