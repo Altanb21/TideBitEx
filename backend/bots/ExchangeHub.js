@@ -2345,15 +2345,6 @@ class ExchangeHub extends Bot {
             code: Codes.DB_OPERATION_ERROR,
           });
         }
-        // -- WORKAROUND
-        setTimeout(() => {
-          this.exchangeHubService.sync(
-            SupportedExchange.OKEX,
-            updateOrder,
-            true
-          );
-        }, 2000);
-        // -- WORKAROUND
         return response;
       /* !!! HIGH RISK (end) !!! */
       case SupportedExchange.TIDEBIT:
@@ -2992,366 +2983,182 @@ class ExchangeHub extends Bot {
 
   async _updateOrderDetail(formatOrder) {
     this.logger.log(
-      `---------- [${this.constructor.name}]  _updateOrderDetail [START] ----------`
+      ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
     );
-    const t = await this.database.transaction();
-    /* !!! HIGH RISK (start) !!! */
-    // 1. get orderId from body
-    // 2. get order data from table
-    // 3. find and lock account
-    // 4. update order state
-    // 5. get balance and locked value from order
-    // 6. add trade // -- CAUTION!!! skip now, tradeId use okex tradeId ++ TODO
-    // 7. add vouchers
-    // 8. add account_version
-    // 9. update account balance and locked
-    try {
-      const {
-        ordType,
-        instId,
-        accFillSz,
-        clOrdId,
-        tradeId,
-        state,
-        side,
-        fillPx,
-        fillSz,
-        sz,
-        fee,
-        uTime,
-        ordId,
-      } = formatOrder;
-      // get orderId from formatOrder.clOrdId
-      const { memberId, orderId } = Utils.parseClOrdId(clOrdId);
-      const order = await this.database.getOrder(orderId, { dbTransaction: t });
-      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
-        await t.rollback();
-        this.logger.error(`[${this.constructor.name}], order has been closed`);
-      }
-      const currencyId =
-        order.type === Database.TYPE.ORDER_ASK ? order.ask : order.bid;
-      const accountAsk = await this.database.getAccountByMemberIdCurrency(
+    this.logger.debug(`formatOrder`, formatOrder);
+    let member,
+      memberTag,
+      askFeeRate,
+      bidFeeRate,
+      baseAccBalDiff,
+      baseAccBal,
+      baseLocDiff,
+      baseLoc,
+      quoteLocDiff,
+      quoteLoc,
+      quoteAccBalDiff,
+      quoteAccBal,
+      tmp = Utils.parseClOrdId(formatOrder.clOrdId),
+      coinSetting = this.coinsSettings.find(
+        (coinSetting) => coinSetting.instId === formatOrder.instId
+      ),
+      volume = SafeMath.minus(formatOrder.sz, formatOrder.accFillSz),
+      filled = formatOrder.state === Database.ORDER_STATE.FILLED,
+      updateOrder,
+      memberId = tmp.memberId,
+      orderId = tmp.orderId,
+      updateAccounts = this.accountBook.getSnapshot(
         memberId,
-        order.ask,
-        { dbTransaction: t }
-      );
-      const accountBid = await this.database.getAccountByMemberIdCurrency(
-        memberId,
-        order.bid,
-        { dbTransaction: t }
-      );
-
-      /*******************************************
-       * formatOrder.clOrdId: custom orderId for okex
-       * formatOrder.accFillSz: valume which already matched
-       * formatOrder.state: 'live', 'canceled', 'filled', 'partially_filled', but 'cancel' may not enter this function
-       * lockedA: Ask locked value, this value would be negative
-       *   if formatOrder.side === 'sell', formatOrder.fillSz || '0'
-       * feeA: Ask fee value
-       *   if formatOrder.side === 'buy', formatOrder.fee - all this order ask vouchers.fee || 0
-       * balanceA: Ask Balance, this value would be positive;
-       *   if formatOrder.side === 'buy', formatOrder.fillSz - feeA || '0'
-       * lockedB: Bid locked value, this value would be negative
-       *   if formatOrder.side === 'buy',value = formatOrder.fillSz * formatOrder.fillPx - feeA, else value = '0'
-       * feeB: Bid fee value
-       *   if formatOrder.side === 'sell', formatOrder.fee - all this order bid vouchers.fee || 0
-       * balanceB: Bid Blance, this value would be positive;
-       *   if formatOrder.side === 'sell',value = formatOrder.fillSz * formatOrder.fillPx - feeB, else value = '0'
-       * newOrderVolume: remain volume to be matched
-       * newOrderLocked: remain locked to be matched
-       * newFundReceive:
-       *   if formatOrder.side === 'sell': formatOrder.fillSz * formatOrder.fillPx
-       *   if formatOrder.side === 'buy': formatOrder.fillSz
-       * changeBalance: if order is done, euqal to newOrderLocked
-       * changeLocked: if order is done, euqal to newOrderLocked * -1
-       *******************************************/
-
-      let orderState = Database.ORDER_STATE_CODE.WAIT;
-      if (state === Database.ORDER_STATE.FILLED) {
-        orderState = Database.ORDER_STATE_CODE.DONE;
-      }
-
-      const lockedA =
-        side === Database.ORDER_SIDE.SELL ? SafeMath.mult(fillSz, "-1") : "0";
-      const totalFee = SafeMath.abs(fee);
-      const feeA =
-        side === Database.ORDER_SIDE.BUY
-          ? await this._calculateFee(
-              orderId,
-              Database.ORDER_KIND.ASK,
-              totalFee,
-              t
-            )
-          : "0";
-      const balanceA =
-        side === Database.ORDER_SIDE.BUY ? SafeMath.minus(fillSz, feeA) : "0";
-
-      const value = SafeMath.mult(fillPx, fillSz);
-      const lockedB =
-        side === Database.ORDER_SIDE.BUY ? SafeMath.mult(value, "-1") : "0";
-      const feeB =
-        side === Database.ORDER_SIDE.SELL
-          ? await this._calculateFee(
-              orderId,
-              Database.ORDER_KIND.BID,
-              totalFee,
-              t
-            )
-          : "0";
-      const balanceB =
-        side === Database.ORDER_SIDE.SELL ? SafeMath.minus(value, feeB) : "0";
-
-      const newOrderVolume = SafeMath.minus(order.origin_volume, accFillSz);
-      const newOrderLocked = SafeMath.plus(
-        order.locked,
-        side === Database.ORDER_SIDE.BUY ? lockedB : lockedA
-      );
-      const newFundReceive = side === Database.ORDER_SIDE.BUY ? fillSz : value;
-
-      const changeBalance = newOrderLocked;
-      const changeLocked = SafeMath.mult(newOrderLocked, "-1");
-
-      const created_at = new Date().toISOString();
-      const updated_at = created_at;
-
-      const newOrder = {
-        id: orderId,
-        volume: newOrderVolume,
-        state: orderState,
-        locked: newOrderLocked,
-        funds_received: newFundReceive,
-        trades_count: order.trades_count + 1,
-      };
-
-      // TODO: ++ 6. add trade
-      // -- CAUTION!!! skip now, tradeId use okex tradeId,
-      // because it need columns 'ask_member_id' and 'bid_member_id' with foreign key
-      const base_unit = this.coinsSettings.find(
-        (curr) => curr.id === order.ask
-      )?.key;
-      const quote_unit = this.coinsSettings.find(
-        (curr) => curr.id === order.bid
-      )?.key;
-      if (!base_unit || !quote_unit)
-        throw Error(
-          `order base_unit[order.ask: ${order.ask}] or quote_unit[order.bid: ${order.bid}] not found`
-        );
-      await this.database.insertVouchers(
-        memberId,
-        orderId,
-        tradeId, // ++ TODO reference step6 trade.id
-        null,
-        base_unit, // -- need change
-        quote_unit, // -- need change
-        fillPx,
-        fillSz,
-        value,
-        order.type === Database.TYPE.ORDER_ASK
-          ? Database.ORDER_KIND.ASK
-          : Database.ORDER_KIND.BID,
-        order.type === Database.TYPE.ORDER_ASK ? feeB : "0", // get bid, so fee is bid
-        order.type === Database.TYPE.ORDER_ASK ? "0" : feeA, // get ask, so fee is ask
-        created_at,
-        { dbTransaction: t }
-      );
-
-      await this.database.updateOrder(newOrder, { dbTransaction: t });
-
-      const _updateOrder = {
-        id: ordId,
-        at: parseInt(SafeMath.div(uTime, "1000")),
-        ts: parseInt(uTime),
-        market: instId.replace("-", "").toLowerCase(),
-        kind:
-          side === Database.ORDER_SIDE.BUY
-            ? Database.ORDER_KIND.BID
-            : Database.ORDER_KIND.ASK,
-        price: null, // market prcie
-        origin_volume: sz,
-        clOrdId: clOrdId,
-        state:
-          state === Database.ORDER_STATE.CANCEL
-            ? Database.ORDER_STATE.CANCEL
-            : state === Database.ORDER_STATE.FILLED
-            ? Database.ORDER_STATE.DONE
-            : Database.ORDER_STATE.WAIT,
-        state_text:
-          state === Database.ORDER_STATE.CANCEL
-            ? Database.ORDER_STATE_TEXT.CANCEL
-            : state === Database.ORDER_STATE.FILLED
-            ? Database.ORDER_STATE_TEXT.DONE
-            : Database.ORDER_STATE_TEXT.WAIT,
-        volume: SafeMath.minus(sz, fillSz),
-        instId: instId,
-        ordType: ordType,
-        filled: state === Database.ORDER_STATE.FILLED,
-      };
-      this.logger.log(
-        `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] updateOrder ln:1092`,
-        _updateOrder
-      );
-      this.orderBook.updateByDifference(memberId, instId, {
-        add: [_updateOrder],
-      });
-      let market = instId.replace("-", "").toLowerCase();
-      EventBus.emit(Events.order, memberId, market, {
-        market,
-        difference: this.orderBook.getDifference(memberId, instId),
-      });
-      await this._updateAccount({
-        account: accountAsk,
-        dbTransaction: t,
-        balance: balanceA,
-        locked: lockedA,
-        fee: feeA,
-        modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-        modifiableId: tradeId,
-        createdAt: created_at,
-        fun:
-          order.type === Database.TYPE.ORDER_ASK
-            ? Database.FUNC.UNLOCK_AND_SUB_FUNDS
-            : Database.FUNC.PLUS_FUNDS,
-      });
-      let _updateAcc = {
-        balance: SafeMath.plus(accountAsk.balance, balanceA),
-        locked: SafeMath.plus(accountAsk.balance, lockedA), //++ TODO verify => SafeMath.plus(accountAsk.balance, lockedA)
-        currency: this.coinsSettings.find(
-          (curr) => curr.id === accountAsk.currency
-        )?.symbol,
-        total: SafeMath.plus(
-          SafeMath.plus(accountAsk.balance, balanceA),
-          SafeMath.plus(accountAsk.balance, lockedA) //++ TODO verify => SafeMath.plus(accountAsk.balance, lockedA)
-        ),
-      };
-      this.accountBook.updateByDifference(memberId, _updateAcc);
-      EventBus.emit(
-        Events.account,
-        memberId,
-        this.accountBook.getDifference(memberId)
-      );
-
-      this.logger.log(
-        `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1057`,
-        _updateAcc
-      );
-      await this._updateAccount({
-        account: accountBid,
-        dbTransaction: t,
-        balance: balanceB,
-        locked: lockedB,
-        fee: feeB,
-        modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-        modifiableId: tradeId,
-        createdAt: created_at,
-        fun:
-          order.type === Database.TYPE.ORDER_ASK
-            ? Database.FUNC.PLUS_FUNDS
-            : Database.FUNC.UNLOCK_AND_SUB_FUNDS,
-      });
-      _updateAcc = {
-        balance: SafeMath.plus(accountBid.balance, balanceB),
-        locked: SafeMath.plus(accountBid.balance, lockedB),
-        currency: this.coinsSettings.find(
-          (curr) => curr.id === accountBid.currency
-        )?.symbol,
-        total: SafeMath.plus(
-          SafeMath.plus(accountBid.balance, balanceB),
-          SafeMath.plus(accountBid.balance, lockedB)
-        ),
-      };
-      this.accountBook.updateByDifference(memberId, _updateAcc);
-      EventBus.emit(
-        Events.account,
-        memberId,
-        this.accountBook.getDifference(memberId)
-      );
-
-      this.logger.log(
-        `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1086`,
-        _updateAcc
-      );
-      // order 完成，解鎖剩餘沒用完的
-      if (
-        orderState === Database.ORDER_STATE_CODE.DONE &&
-        SafeMath.gt(newOrderLocked, "0")
-      ) {
-        if (order.type === Database.TYPE.ORDER_ASK) {
-          // ++ TODO reference step6 trade.id
-          await this._updateAccount({
-            account: accountAsk,
-            dbTransaction: t,
-            balance: changeLocked,
-            locked: changeBalance,
-            fee: 0,
-            modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-            modifiableId: tradeId,
-            createdAt: created_at,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-          });
-          _updateAcc = {
-            balance: SafeMath.plus(accountAsk.balance, changeLocked),
-            locked: SafeMath.plus(accountAsk.balance, changeBalance),
-            currency: this.coinsSettings.find(
-              (curr) => curr.id === accountAsk.currency
-            )?.symbol,
-            total: SafeMath.plus(
-              SafeMath.plus(accountAsk.balance, changeLocked),
-              SafeMath.plus(accountAsk.balance, changeBalance)
-            ),
-          };
-          this.accountBook.updateByDifference(memberId, _updateAcc);
-          EventBus.emit(
-            Events.account,
-            memberId,
-            this.accountBook.getDifference(memberId)
-          );
-          this.logger.log(
-            `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1120`,
-            _updateAcc
-          );
-        } else if (order.type === Database.TYPE.ORDER_BID) {
-          // ++ TODO reference step6 trade.id
-          await this._updateAccount({
-            account: accountBid,
-            dbTransaction: t,
-            balance: changeLocked,
-            locked: changeBalance,
-            fee: 0,
-            modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-            modifiableId: tradeId,
-            createdAt: created_at,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-          });
-          _updateAcc = {
-            balance: SafeMath.plus(accountBid.balance, changeLocked),
-            locked: SafeMath.plus(accountBid.balance, changeBalance),
-            currency: this.coinsSettings.find(
-              (curr) => curr.id === accountBid.currency
-            )?.symbol,
-            total: SafeMath.plus(
-              SafeMath.plus(accountBid.balance, changeLocked),
-              SafeMath.plus(accountBid.balance, changeBalance)
-            ),
-          };
-          this.accountBook.updateByDifference(memberId, _updateAcc);
-          EventBus.emit(
-            Events.account,
-            memberId,
-            this.accountBook.getDifference(memberId)
-          );
-          this.logger.log(
-            `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1149`,
-            _updateAcc
-          );
+        formatOrder.instId
+      ),
+      updateBaseAccount = updateAccounts[0],
+      updateQuoteAccount = updateAccounts[1];
+      this.logger.debug(`memberId${memberId}, orderId${orderId}`);
+    this.logger.debug(`volume`, volume);
+    this.logger.debug(`filled`, filled);
+    this.logger.debug(`coinSetting`, coinSetting);
+    this.logger.debug(`updateBaseAccount`, updateBaseAccount);
+    this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
+    if (memberId && orderId) {
+      member = await this.database.getMemberById(memberId);
+      if (member) {
+        memberTag = member.member_tag;
+        this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+        if (memberTag) {
+          if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
+            askFeeRate = coinSetting.ask.vip_fee;
+            bidFeeRate = coinSetting.bid.vip_fee;
+          }
+          if (
+            memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
+          ) {
+            askFeeRate = coinSetting.ask.hero_fee;
+            bidFeeRate = coinSetting.bid.hero_fee;
+          }
+        } else {
+          askFeeRate = coinSetting.ask.fee;
+          bidFeeRate = coinSetting.bid.fee;
         }
+        updateOrder = {
+          instId: formatOrder.instId,
+          ordType: formatOrder.ordType,
+          id: orderId,
+          ordId: formatOrder.ordId,
+          clOrdId: formatOrder.clOrdId,
+          at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
+          ts: parseInt(formatOrder.uTime),
+          market: coinSetting.id,
+          kind:
+            formatOrder.side === Database.ORDER_SIDE.BUY
+              ? Database.ORDER_KIND.BID
+              : Database.ORDER_KIND.ASK,
+          price: formatOrder.fillPx,
+          origin_volume: formatOrder.sz,
+          volume,
+          filled,
+          state_text: filled
+            ? Database.ORDER_STATE_TEXT.DONE
+            : formatOrder.state === Database.ORDER_STATE_TEXT.CANCEL
+            ? Database.ORDER_STATE_TEXT.CANCEL
+            : Database.ORDER_STATE_TEXT.WAIT,
+          state: filled
+            ? Database.ORDER_STATE.DONE
+            : formatOrder.state === Database.ORDER_STATE.CANCEL
+            ? Database.ORDER_STATE.CANCEL
+            : Database.ORDER_STATE.WAIT,
+          state_code: filled
+            ? Database.ORDER_STATE_CODE.DONE
+            : formatOrder.state === Database.ORDER_STATE.CANCEL
+            ? Database.ORDER_STATE_CODE.CANCEL
+            : Database.ORDER_STATE_CODE.WAIT,
+        };
+        this.logger.debug(`updateOrder`, updateOrder);
+        this._emitUpdateOrder({
+          memberId,
+          instId: coinSetting.instId,
+          market: coinSetting.id,
+          order: updateOrder,
+        });
+        if (formatOrder.side === Database.ORDER_SIDE.BUY) {
+          baseAccBalDiff = SafeMath.minus(
+            formatOrder.fillSz,
+            SafeMath.mult(formatOrder.fillSz, bidFeeRate)
+          );
+          this.logger.debug(`baseAccBalDiff`, baseAccBalDiff);
+          baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
+          this.logger.debug(`baseAccBal`, baseAccBal);
+          baseLocDiff = 0;
+          baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
+          updateBaseAccount = {
+            balance: baseAccBal,
+            locked: baseLoc,
+            currency: coinSetting.ask.currency.toUpperCase(),
+            total: SafeMath.plus(baseAccBal, baseLoc),
+          };
+          quoteAccBalDiff = 0;
+          quoteAccBal = SafeMath.plus(
+            updateQuoteAccount.balance,
+            quoteAccBalDiff
+          );
+          quoteLocDiff = SafeMath.mult(
+            SafeMath.mult(formatOrder.px, formatOrder.fillSz),
+            "-1"
+          );
+          this.logger.debug(`quoteLocDiff`, quoteLocDiff);
+          quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
+          updateQuoteAccount = {
+            balance: quoteAccBal,
+            locked: quoteLoc,
+            currency: coinSetting.bid.currency.toUpperCase(),
+            total: SafeMath.plus(quoteAccBal, quoteLoc),
+          };
+        } else {
+          baseAccBalDiff = 0;
+          baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
+          baseLocDiff = SafeMath.mult(formatOrder.fillSz, "-1");
+          this.logger.debug(`baseLocDiff`, baseLocDiff);
+          baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
+          updateBaseAccount = {
+            balance: baseAccBal,
+            locked: baseLoc,
+            currency: coinSetting.ask.currency.toUpperCase(),
+            total: SafeMath.plus(baseAccBal, baseLoc),
+          };
+          quoteAccBalDiff = SafeMath.minus(
+            SafeMath.mult(formatOrder.fillPx, formatOrder.fillSz),
+            SafeMath.mult(
+              SafeMath.mult(formatOrder.fillPx, formatOrder.fillSz),
+              askFeeRate
+            )
+          );
+          this.logger.debug(`quoteAccBalDiff`, quoteAccBalDiff);
+          quoteAccBal = SafeMath.plus(
+            updateQuoteAccount.balance,
+            quoteAccBalDiff
+          );
+          this.logger.debug(`quoteAccBal`, quoteAccBal);
+          quoteLocDiff = 0;
+          quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
+          updateQuoteAccount = {
+            balance: quoteAccBal,
+            locked: quoteLoc,
+            currency: coinSetting.bid.currency.toUpperCase(),
+            total: SafeMath.plus(quoteAccBal, quoteLoc),
+          };
+        }
+        this._emitUpdateAccount({
+          memberId,
+          account: updateBaseAccount,
+        });
+        this._emitUpdateAccount({
+          memberId,
+          account: updateQuoteAccount,
+        });
       }
-
-      await t.commit();
-    } catch (error) {
-      this.logger.error(error);
-      await t.rollback();
     }
-    /* !!! HIGH RISK (end) !!! */
+    this.logger.log(
+      ` ------------- [${this.constructor.name}] _updateOrderDetail [END]---------------`
+    );
   }
 
   async _getPlaceOrderData(memberId, body, tickerSetting) {
@@ -3657,8 +3464,8 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
-            // await this._updateOrderDetail(formatOrder);
-            await this.exchangeHubService.sync(
+            await this._updateOrderDetail(formatOrder);
+            this.exchangeHubService.sync(
               SupportedExchange.OKEX,
               formatOrder,
               true

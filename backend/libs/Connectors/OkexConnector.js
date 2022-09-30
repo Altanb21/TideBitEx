@@ -73,7 +73,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   async start() {
-    this.logger.log(`[${this.constructor.name}] domain`, this.domain)
+    this.logger.log(`[${this.constructor.name}] domain`, this.domain);
     Object.keys(this.tickersSettings).forEach((id) => {
       if (this.tickersSettings[id]?.source === SupportedExchange.OKEX) {
         this.instIds.push(this.tickersSettings[id].instId);
@@ -1719,16 +1719,33 @@ class OkexConnector extends ConnectorBase {
     this.logger.log(`-------------- _updateOrderDetails ---------------`);
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
-        formatOrders.push({
+        const formatOrder = {
+          // side: data.side,
+          // fillSz: data.fillSz,
+          // fillPx: data.fillPx,
+          // fee: data.fee,
+          // ordId: data.ordId,
+          // instType: data.instType,
+          // instId: data.instId,
+          // clOrdId: data.clOrdId,
+          // posSide: data?.posSide,
+          // // billId: data?.billId,
+          // tag: data.tag,
+          // execType: data.execType,
+          // // tradeId: data?.tradeId,
+          // feeCcy: data.feeCcy,
+          // ts: data.utime,
+          // status: 0,
+          // exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
+          // updatedAt: new Date(parseInt(data.utime)).toISOString(),
+          //data:
           ...data,
-          cTime: parseInt(data.cTime),
-          fillTime: parseInt(data.fillTime),
-          uTime: parseInt(data.uTime),
-        });
+        };
+        formatOrders.push(formatOrder);
       }
     });
-    this.logger.log(`formatOrders`, formatOrders);
-    this.logger.log(`-------------- [END] _updateOrderDetails ---------------`);
+    // this.logger.log(`formatOrders`, formatOrders);
+    // this.logger.log(`-------------- [END] _updateOrderDetails ---------------`);
     EventBus.emit(Events.orderDetailUpdate, instType, formatOrders);
   }
 
