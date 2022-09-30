@@ -459,7 +459,12 @@ class ExchangeHub extends Bot {
     //   currentUser
     // );
     // if (currentUser.roles?.includes("root")) {
-
+    const _accounts = await this.database.getAccounts();
+    coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+      if (!prev[coinSetting.id.toString()])
+        prev[coinSetting.id.toString()] = { ...coinSetting };
+      return prev;
+    }, {});
     for (let exchange of Object.keys(SupportedExchange)) {
       let source = SupportedExchange[exchange];
 
@@ -487,13 +492,7 @@ class ExchangeHub extends Bot {
     }
     if (!hasError) {
       try {
-        coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-          if (!prev[coinSetting.id.toString()])
-            prev[coinSetting.id.toString()] = { ...coinSetting };
-          return prev;
-        }, {});
         // 需拿交易所所有用戶餘額各幣種的加總
-        const _accounts = await this.database.getAccounts();
         for (let _account of _accounts) {
           let coinSetting = coinsSettings[_account.currency.toString()];
           if (!coins[coinSetting.code]) {
