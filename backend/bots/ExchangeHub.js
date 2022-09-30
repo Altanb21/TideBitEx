@@ -2999,9 +2999,8 @@ class ExchangeHub extends Bot {
       quoteAccBalDiff,
       quoteAccBal,
       tmp = Utils.parseClOrdId(formatOrder.clOrdId),
-      tickerSetting = this.tickersSettings.find(
-        (tickerSetting) => tickerSetting.instId === formatOrder.instId
-      ),
+      tickerSetting =
+        this.tickersSettings[formatOrder.instId.toLowerCase().replace("-", "")],
       volume = SafeMath.minus(formatOrder.sz, formatOrder.accFillSz),
       filled = formatOrder.state === Database.ORDER_STATE.FILLED,
       updateOrder,
@@ -3011,19 +3010,61 @@ class ExchangeHub extends Bot {
         memberId,
         formatOrder.instId
       ),
-      updateBaseAccount = updateAccounts[0],
-      updateQuoteAccount = updateAccounts[1];
+      updateBaseAccount = updateAccounts ? updateAccounts[0] : null,
+      updateQuoteAccount = updateAccounts ? updateAccounts[1] : null;
     this.logger.debug(`memberId: ${memberId}, orderId: ${orderId}`);
     this.logger.debug(`volume`, volume);
     this.logger.debug(`filled`, filled);
     this.logger.debug(`tickerSetting`, tickerSetting);
     this.logger.debug(`updateBaseAccount`, updateBaseAccount);
     this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
-    if (memberId && orderId && tickerSetting) {
+    if (orderId && tickerSetting && memberId) {
+      updateOrder = {
+        instId: formatOrder.instId,
+        ordType: formatOrder.ordType,
+        id: orderId,
+        ordId: formatOrder.ordId,
+        clOrdId: formatOrder.clOrdId,
+        at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
+        ts: parseInt(formatOrder.uTime),
+        market: tickerSetting.id,
+        kind:
+          formatOrder.side === Database.ORDER_SIDE.BUY
+            ? Database.ORDER_KIND.BID
+            : Database.ORDER_KIND.ASK,
+        price: formatOrder.fillPx,
+        origin_volume: formatOrder.sz,
+        volume,
+        filled,
+        state_text: filled
+          ? Database.ORDER_STATE_TEXT.DONE
+          : formatOrder.state === Database.ORDER_STATE_TEXT.CANCEL
+          ? Database.ORDER_STATE_TEXT.CANCEL
+          : Database.ORDER_STATE_TEXT.WAIT,
+        state: filled
+          ? Database.ORDER_STATE.DONE
+          : formatOrder.state === Database.ORDER_STATE.CANCEL
+          ? Database.ORDER_STATE.CANCEL
+          : Database.ORDER_STATE.WAIT,
+        state_code: filled
+          ? Database.ORDER_STATE_CODE.DONE
+          : formatOrder.state === Database.ORDER_STATE.CANCEL
+          ? Database.ORDER_STATE_CODE.CANCEL
+          : Database.ORDER_STATE_CODE.WAIT,
+      };
+      this.logger.debug(`updateOrder`, updateOrder);
+      this._emitUpdateOrder({
+        memberId,
+        instId: tickerSetting.instId,
+        market: tickerSetting.id,
+        order: updateOrder,
+      });
+    }
+    if (tickerSetting && memberId && updateBaseAccount && updateQuoteAccount) {
       member = await this.database.getMemberById(memberId);
       if (member) {
         memberTag = member.member_tag;
-        this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+        this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
         if (memberTag) {
           if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
             askFeeRate = tickerSetting.ask.vip_fee;
@@ -3039,46 +3080,7 @@ class ExchangeHub extends Bot {
           askFeeRate = tickerSetting.ask.fee;
           bidFeeRate = tickerSetting.bid.fee;
         }
-        updateOrder = {
-          instId: formatOrder.instId,
-          ordType: formatOrder.ordType,
-          id: orderId,
-          ordId: formatOrder.ordId,
-          clOrdId: formatOrder.clOrdId,
-          at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
-          ts: parseInt(formatOrder.uTime),
-          market: tickerSetting.id,
-          kind:
-            formatOrder.side === Database.ORDER_SIDE.BUY
-              ? Database.ORDER_KIND.BID
-              : Database.ORDER_KIND.ASK,
-          price: formatOrder.fillPx,
-          origin_volume: formatOrder.sz,
-          volume,
-          filled,
-          state_text: filled
-            ? Database.ORDER_STATE_TEXT.DONE
-            : formatOrder.state === Database.ORDER_STATE_TEXT.CANCEL
-            ? Database.ORDER_STATE_TEXT.CANCEL
-            : Database.ORDER_STATE_TEXT.WAIT,
-          state: filled
-            ? Database.ORDER_STATE.DONE
-            : formatOrder.state === Database.ORDER_STATE.CANCEL
-            ? Database.ORDER_STATE.CANCEL
-            : Database.ORDER_STATE.WAIT,
-          state_code: filled
-            ? Database.ORDER_STATE_CODE.DONE
-            : formatOrder.state === Database.ORDER_STATE.CANCEL
-            ? Database.ORDER_STATE_CODE.CANCEL
-            : Database.ORDER_STATE_CODE.WAIT,
-        };
-        this.logger.debug(`updateOrder`, updateOrder);
-        this._emitUpdateOrder({
-          memberId,
-          instId: tickerSetting.instId,
-          market: tickerSetting.id,
-          order: updateOrder,
-        });
+
         if (formatOrder.side === Database.ORDER_SIDE.BUY) {
           baseAccBalDiff = SafeMath.minus(
             formatOrder.fillSz,

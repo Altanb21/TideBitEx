@@ -83,14 +83,29 @@ class OrderBook extends BookBase {
       if (!this._snapshot[memberId]) this._snapshot[memberId] = {};
       if (!this._snapshot[memberId][instId])
         this._snapshot[memberId][instId] = [];
-      this._difference[memberId][instId] = difference;
+      this._difference[memberId][instId] = {
+        add: [],
+      };
       let updateSnapshot = this._snapshot[memberId][instId].map((data) => ({
         ...data,
       }));
       for (let data of difference.add) {
         let i = updateSnapshot.findIndex((_d) => _d.id === data.id);
-        if (i !== -1) updateSnapshot.push(data);
-        else updateSnapshot[i] = data;
+        if (i === -1) updateSnapshot.push(data);
+        else {
+          if (
+            updateSnapshot[i].price !== data.price ||
+            updateSnapshot[i].volume !== data.volume ||
+            updateSnapshot[i].state !== data.state
+          ) {
+            this._difference[memberId][instId] = difference;
+            updateSnapshot[i] = data;
+            this._difference[memberId][instId].add = [
+              ...this._difference[memberId][instId].add,
+              data,
+            ];
+          }
+        }
       }
       this._snapshot[memberId][instId] = this._trim(instId, updateSnapshot);
     } catch (error) {
