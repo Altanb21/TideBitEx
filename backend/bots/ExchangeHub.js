@@ -645,8 +645,6 @@ class ExchangeHub extends Bot {
       currentUser
     );
     try {
-      const { data } = body;
-      this.logger.log(`data`, data);
       if (currentUser.roles?.includes("root")) {
         let index = this.coinsSettings.findIndex(
           (coin) => coin.id.toString() === params.id.toString()
@@ -658,10 +656,10 @@ class ExchangeHub extends Bot {
           }));
           updatedCoinsSettings[index] = {
             ...updatedCoinsSettings[index],
-            RRR_ratio: data.RRRRatio,
-            MPA_ratio: data.MPARatio,
-            maximun: data.maximun,
-            minimun: data.minimun,
+            RRR_ratio: body.RRRRatio,
+            MPA_ratio: body.MPARatio,
+            maximun: body.maximun,
+            minimun: body.minimun,
           };
           this.logger.log(
             `updatePlatformAsset[${index}]`,
