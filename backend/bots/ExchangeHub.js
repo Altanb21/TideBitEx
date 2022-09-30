@@ -2999,8 +2999,8 @@ class ExchangeHub extends Bot {
       quoteAccBalDiff,
       quoteAccBal,
       tmp = Utils.parseClOrdId(formatOrder.clOrdId),
-      coinSetting = this.coinsSettings.find(
-        (coinSetting) => coinSetting.instId === formatOrder.instId
+      tickerSetting = this.tickersSettings.find(
+        (tickerSetting) => tickerSetting.instId === formatOrder.instId
       ),
       volume = SafeMath.minus(formatOrder.sz, formatOrder.accFillSz),
       filled = formatOrder.state === Database.ORDER_STATE.FILLED,
@@ -3013,31 +3013,31 @@ class ExchangeHub extends Bot {
       ),
       updateBaseAccount = updateAccounts[0],
       updateQuoteAccount = updateAccounts[1];
-      this.logger.debug(`memberId${memberId}, orderId${orderId}`);
+    this.logger.debug(`memberId: ${memberId}, orderId: ${orderId}`);
     this.logger.debug(`volume`, volume);
     this.logger.debug(`filled`, filled);
-    this.logger.debug(`coinSetting`, coinSetting);
+    this.logger.debug(`tickerSetting`, tickerSetting);
     this.logger.debug(`updateBaseAccount`, updateBaseAccount);
     this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
-    if (memberId && orderId) {
+    if (memberId && orderId && tickerSetting) {
       member = await this.database.getMemberById(memberId);
       if (member) {
         memberTag = member.member_tag;
         this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
         if (memberTag) {
           if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
-            askFeeRate = coinSetting.ask.vip_fee;
-            bidFeeRate = coinSetting.bid.vip_fee;
+            askFeeRate = tickerSetting.ask.vip_fee;
+            bidFeeRate = tickerSetting.bid.vip_fee;
           }
           if (
             memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
           ) {
-            askFeeRate = coinSetting.ask.hero_fee;
-            bidFeeRate = coinSetting.bid.hero_fee;
+            askFeeRate = tickerSetting.ask.hero_fee;
+            bidFeeRate = tickerSetting.bid.hero_fee;
           }
         } else {
-          askFeeRate = coinSetting.ask.fee;
-          bidFeeRate = coinSetting.bid.fee;
+          askFeeRate = tickerSetting.ask.fee;
+          bidFeeRate = tickerSetting.bid.fee;
         }
         updateOrder = {
           instId: formatOrder.instId,
@@ -3047,7 +3047,7 @@ class ExchangeHub extends Bot {
           clOrdId: formatOrder.clOrdId,
           at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
           ts: parseInt(formatOrder.uTime),
-          market: coinSetting.id,
+          market: tickerSetting.id,
           kind:
             formatOrder.side === Database.ORDER_SIDE.BUY
               ? Database.ORDER_KIND.BID
@@ -3075,8 +3075,8 @@ class ExchangeHub extends Bot {
         this.logger.debug(`updateOrder`, updateOrder);
         this._emitUpdateOrder({
           memberId,
-          instId: coinSetting.instId,
-          market: coinSetting.id,
+          instId: tickerSetting.instId,
+          market: tickerSetting.id,
           order: updateOrder,
         });
         if (formatOrder.side === Database.ORDER_SIDE.BUY) {
@@ -3092,7 +3092,7 @@ class ExchangeHub extends Bot {
           updateBaseAccount = {
             balance: baseAccBal,
             locked: baseLoc,
-            currency: coinSetting.ask.currency.toUpperCase(),
+            currency: tickerSetting.ask.currency.toUpperCase(),
             total: SafeMath.plus(baseAccBal, baseLoc),
           };
           quoteAccBalDiff = 0;
@@ -3109,7 +3109,7 @@ class ExchangeHub extends Bot {
           updateQuoteAccount = {
             balance: quoteAccBal,
             locked: quoteLoc,
-            currency: coinSetting.bid.currency.toUpperCase(),
+            currency: tickerSetting.bid.currency.toUpperCase(),
             total: SafeMath.plus(quoteAccBal, quoteLoc),
           };
         } else {
@@ -3121,7 +3121,7 @@ class ExchangeHub extends Bot {
           updateBaseAccount = {
             balance: baseAccBal,
             locked: baseLoc,
-            currency: coinSetting.ask.currency.toUpperCase(),
+            currency: tickerSetting.ask.currency.toUpperCase(),
             total: SafeMath.plus(baseAccBal, baseLoc),
           };
           quoteAccBalDiff = SafeMath.minus(
@@ -3142,7 +3142,7 @@ class ExchangeHub extends Bot {
           updateQuoteAccount = {
             balance: quoteAccBal,
             locked: quoteLoc,
-            currency: coinSetting.bid.currency.toUpperCase(),
+            currency: tickerSetting.bid.currency.toUpperCase(),
             total: SafeMath.plus(quoteAccBal, quoteLoc),
           };
         }
