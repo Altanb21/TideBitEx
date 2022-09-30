@@ -99,6 +99,13 @@
     font-size: 12px;
     line-height: 1;
   }
+  & &__source.notice > &__bar {
+    background-color: #dc484d34;
+    border-color: #dc484e;
+  }
+  & &__source.notice &__inner-text{
+    color: #dc484e;
+  }
   & &__source.normal &__inner-bar {
     background-color: #2699fb;
     color: #fff;
@@ -131,11 +138,11 @@
       background-color: #767676;
     }
   }
-  &__source.warn &__warning-bar:nth-child(2),
+  &__source.warn &__warning-bar:last-child,
   &__source.alert &__warning-bar {
     color: #dc484e;
   }
-  &__source.warn &__warning-bar:nth-child(2) > &__warning-bar--line,
+  &__source.warn &__warning-bar:last-child > &__warning-bar--line,
   &__source.alert &__warning-bar > &__warning-bar--line {
     background-color: #dc484e;
   }

@@ -24,7 +24,8 @@ const {
   TICKER_SETTING_TYPE,
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
-const { PLATFORM_ASSET } = require("../../src/constant/PlatformAsset");
+const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -564,19 +565,36 @@ class ExchangeHub extends Bot {
           let sources = Object.keys(coin.sources).reduce(
             (prevSources, source) => {
               let alertLevel;
-              if (SafeMath.lte(coin.sources[source].sum, MPA)) {
-                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
-              } else if (SafeMath.lte(coin.sources[source].sum, RRR)) {
-                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3;
-              } else if (SafeMath.eq(coin.sources[source].sum, 0)) {
-                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
-              } else {
-                alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+              switch (SupportedExchange[source.toUpperCase()]) {
+                case SupportedExchange.OKEX:
+                  if (SafeMath.eq(coin.sources[source].sum, 0)) {
+                    if (SafeMath.eq(coin.sum, 0))
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+                    else if (SafeMath.gt(coin.sum, 0))
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+                  } else {
+                    if (SafeMath.gt(coin.sources[source].sum, MPA)) {
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+                    } else {
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+                    }
+                    if (SafeMath.lte(coin.sources[source].sum, RRR)) {
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3;
+                    }
+                  }
+                  prevSources[source] = {
+                    ...coin.sources[source],
+                    alertLevel,
+                  };
+                  break;
+                case SupportedExchange.TIDEBIT:
+                  prevSources[source] = {
+                    ...coin.sources[source],
+                  };
+                  break;
+                default:
+                  break;
               }
-              prevSources[source] = {
-                ...coin.sources[source],
-                alertLevel,
-              };
               return prevSources;
             },
             {}

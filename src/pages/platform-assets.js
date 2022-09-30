@@ -237,6 +237,9 @@ const AssetSettingTile = (props) => {
               case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3:
                 alertTag = "alert";
                 break;
+              case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4:
+                alertTag = "alert notice";
+                break;
               case PLATFORM_ASSET.WARNING_LEVEL.NULL:
                 alertTag = "unset";
                 break;
