@@ -1,5 +1,6 @@
 const Database = require("../../constants/Database");
 const BookBase = require("../BookBase");
+const SafeMath = require("../SafeMath");
 
 class OrderBook extends BookBase {
   constructor({ logger, markets }) {
@@ -16,7 +17,7 @@ class OrderBook extends BookBase {
     const update = arrayB.filter((arrayBValue) =>
       arrayA.some(
         (arrayAValue) =>
-          arrayBValue.id === arrayAValue.id &&
+          arrayBValue.id.toString() === arrayAValue.id.toString() &&
           (arrayBValue.price !== arrayAValue.price ||
             arrayBValue.volume !== arrayAValue.volume ||
             arrayBValue.state !== arrayAValue.state)
@@ -74,10 +75,6 @@ class OrderBook extends BookBase {
   }
 
   updateByDifference(memberId, instId, difference) {
-    this.logger.log(
-      `[${this.constructor.name}] updateByDifference difference`,
-      difference
-    );
     try {
       if (!this._difference[memberId]) this._difference[memberId] = {};
       if (!this._snapshot[memberId]) this._snapshot[memberId] = {};
@@ -90,15 +87,24 @@ class OrderBook extends BookBase {
         ...data,
       }));
       for (let data of difference.add) {
-        let i = updateSnapshot.findIndex((_d) => _d.id === data.id);
-        if (i === -1) updateSnapshot.push(data);
-        else {
+        let i = updateSnapshot.findIndex((_d) => _d.id.toString() === data.id.toString());
+        this.logger.debug(`[${this.constructor.name}]findIndex ${i}`);
+        if (i === -1) {
+          updateSnapshot.push(data);
+          this._difference[memberId][instId].add = [
+            ...this._difference[memberId][instId].add,
+            data,
+          ];
+        } else {
+          this.logger.debug(
+            `[${this.constructor.name}]updateSnapshot[${i}]`,
+            updateSnapshot[i]
+          );
           if (
-            updateSnapshot[i].price !== data.price ||
-            updateSnapshot[i].volume !== data.volume ||
+            // !SafeMath.eq(updateSnapshot[i].price ,data.price) ||
+            !SafeMath.eq(updateSnapshot[i].volume ,data.volume) ||
             updateSnapshot[i].state !== data.state
           ) {
-            this._difference[memberId][instId] = difference;
             updateSnapshot[i] = data;
             this._difference[memberId][instId].add = [
               ...this._difference[memberId][instId].add,
@@ -107,6 +113,10 @@ class OrderBook extends BookBase {
           }
         }
       }
+      this.logger.debug(
+        `[${this.constructor.name}] this._difference[${memberId}][${instId}]`,
+        this._difference[memberId][instId]
+      );
       this._snapshot[memberId][instId] = this._trim(instId, updateSnapshot);
     } catch (error) {
       this.logger.error(

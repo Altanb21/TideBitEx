@@ -3032,7 +3032,7 @@ class ExchangeHub extends Bot {
           formatOrder.side === Database.ORDER_SIDE.BUY
             ? Database.ORDER_KIND.BID
             : Database.ORDER_KIND.ASK,
-        price: formatOrder.fillPx,
+        price: formatOrder.px,
         origin_volume: formatOrder.sz,
         volume,
         filled,
