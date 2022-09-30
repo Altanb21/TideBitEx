@@ -580,7 +580,7 @@ class ExchangeHub extends Bot {
                       alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
                     }
                     if (SafeMath.lte(coin.sources[source].sum, RRR)) {
-                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3;
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
                     }
                   }
                   prevSources[source] = {
