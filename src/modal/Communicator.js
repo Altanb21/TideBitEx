@@ -552,7 +552,7 @@ class Communicator {
 
   async getCoinsSettings() {
     try {
-      const url = `/coins/coins-settings`;
+      const url = `/admin/coins-settings`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",
@@ -570,7 +570,7 @@ class Communicator {
 
   async updateCoinsSettings(visible) {
     try {
-      const url = `/coins/coins-settings/`;
+      const url = `/admin/coins-settings/`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "PUT",
@@ -591,7 +591,7 @@ class Communicator {
 
   async updateCoinSetting(id, visible) {
     try {
-      const url = `/coins/coins-settings/${id}`;
+      const url = `/admin/coins-settings/${id}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "PUT",
@@ -612,7 +612,7 @@ class Communicator {
 
   async updateDepositSetting(id, type, data) {
     try {
-      const url = `/coins/deposits-settings/${id}`;
+      const url = `/admin/deposits-settings/${id}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "PUT",
@@ -634,7 +634,7 @@ class Communicator {
 
   async updateWithdrawSetting(id, type, data) {
     try {
-      const url = `/coins/withdraws-settings/${id}`;
+      const url = `/admin/withdraws-settings/${id}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "PUT",
@@ -650,6 +650,83 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       console.error(`[updateCoinSetting] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getTickersSettings() {
+    try {
+      const url = `/admin/tickers-settings`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getTickersSettings] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updateTickerSetting(id, type, data) {
+    try {
+      const url = `/admin/tickers-settings/${id}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: {
+          type,
+          data,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updateTickerSetting] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getPlatformAssets() {
+    try {
+      const url = `/admin/platform-assets`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getPlatformAssets] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async updatePlatformAsset(id, data) {
+    try {
+      const url = `/admin/platform-assets/${id}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[updatePlatformAsset] error`, error);
       return Promise.reject({ ...error });
     }
   }

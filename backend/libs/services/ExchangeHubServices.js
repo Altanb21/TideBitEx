@@ -68,7 +68,7 @@ class ExchangeHubService {
     this.logger.log(`data`, data);
     let time = Date.now(),
       updateData,
-      result,
+      // result,
       clOrdId = data?.clOrdId;
     // 1. 定期（10mins）執行工作
     if (
@@ -77,22 +77,21 @@ class ExchangeHubService {
       !this._isStarted
     ) {
       // 2. 從 API 取 outerTrades 並寫入 DB
-      result = await this._syncOuterTrades(
-        exchange || SupportedExchange.OKEX,
-        clOrdId
-      );
+      await this._syncOuterTrades(exchange || SupportedExchange.OKEX, clOrdId);
+
       this._lastSyncTime = Date.now();
       // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
       updateData = await this._processOuterTrades(SupportedExchange.OKEX);
 
-      // 4. 休息
+      // 4. 通知前端
+      this.emitUpdateData(updateData);
+      // 5. 休息
       clearTimeout(this.timer);
       this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
     }
     this.logger.log(
       `------------- [${this.constructor.name}] sync [END] -------------`
     );
-    this.emitUpdateData(updateData);
   }
 
   // ++ TODO

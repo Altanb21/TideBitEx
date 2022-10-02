@@ -236,7 +236,7 @@ const StoreContext = React.createContext({
    * @returns {Promise<Object>}
    */
   cancelOrder: async (order) => {},
-  cancelOrders: async (type) => {},
+  cancelOrders: async (id, type) => {},
   activePageHandler: () => {},
   getExAccounts: async (exchange) => {},
   getUsersAccounts: async () => {},
@@ -255,6 +255,10 @@ const StoreContext = React.createContext({
   updateCoinsSettings: async () => {},
   updateDepositSetting: async (id, type, data) => {},
   updateWithdrawSetting: async (id, type, data) => {},
+  getTickersSettings: async () => {},
+  updateTickerSetting: async (id, type, data) => {},
+  getPlatformAssets: async () => {},
+  updatePlatformAsset: async (id, data) => {},
 });
 
 export default StoreContext;

@@ -41,4 +41,20 @@
   & .screen__table-item:nth-child(6) {
     min-width: 160px;
   }
+  & .screen__table-header {
+    cursor: default;
+    &--icon,
+    &--text {
+      cursor: default;
+    }
+  }
+  & .screen__dialog-input-box {
+    align-items: baseline;
+  }
+  & .screen__table-item--text {
+    gap: 5px;
+  }
+  & .screen__table-header:nth-child(7) > .screen__table-header--text {
+    min-width: 154px;
+  }
 }

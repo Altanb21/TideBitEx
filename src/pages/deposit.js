@@ -25,31 +25,31 @@ const FeeControlDialog = (props) => {
 
   return (
     <Dialog
-      className="deposit__dialog"
+      className="screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
       onCancel={props.onCancel}
       onConfirm={onConfirm}
     >
-      <div className="deposit__dialog-content">
-        <div className="deposit__dialog-content--title">
+      <div className="screen__dialog-content">
+        <div className="screen__dialog-content--title">
           {props.currency.code.toUpperCase()}
         </div>
-        <div className="deposit__dialog-content--body">
-          <div className="deposit__dialog-inputs">
-            <div className="deposit__dialog-input-group">
+        <div className="screen__dialog-content--body">
+          <div className="screen__dialog-inputs">
+            <div className="screen__dialog-input-group">
               <label
-                className="deposit__dialog-input-label"
+                className="screen__dialog-input-label"
                 // htmlFor={`${props.type}-current-fee`}
                 htmlFor={`${props.type}-fee`}
               >
                 {/* {t(`${props.type}-current-fee`)}: */}
                 {t(`${props.type}-fee`)}:
               </label>
-              <div className="deposit__dialog-input-box">
-                <div className="deposit__dialog-input-column">
+              <div className="screen__dialog-input-box">
+                <div className="screen__dialog-input-column">
                   <input
-                    className="deposit__dialog-input"
+                    className="screen__dialog-input"
                     // name={`${props.type}-current-fee`}
                     name={`${props.type}-fee`}
                     type="number"
@@ -62,7 +62,7 @@ const FeeControlDialog = (props) => {
                       setFee(fee);
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(
+                  <div className="screen__dialog-input-caption">{`${t(
                     // `${props.type}-current-fee`
                     `${props.type}-fee`
                   )}: ${SafeMath.mult(
@@ -73,20 +73,20 @@ const FeeControlDialog = (props) => {
                     100
                   )}%`}</div>
                 </div>
-                <div className="deposit__dialog-input-suffix">%</div>
+                <div className="screen__dialog-input-suffix">%</div>
               </div>
             </div>
-            {/* <div className="deposit__dialog-input-group">
+            {/* <div className="screen__dialog-input-group">
               <label
-                className="deposit__dialog-input-label"
+                className="screen__dialog-input-label"
                 htmlFor={`${props.type}-external-fee`}
               >
                 {t(`${props.type}-external-fee`)}:
               </label>
-              <div className="deposit__dialog-input-box">
-                <div className="deposit__dialog-input-column">
+              <div className="screen__dialog-input-box">
+                <div className="screen__dialog-input-column">
                   <input
-                    className="deposit__dialog-input"
+                    className="screen__dialog-input"
                     name={`${props.type}-external-fee`}
                     type="number"
                     inputMode="decimal"
@@ -98,14 +98,14 @@ const FeeControlDialog = (props) => {
                       setExternalFee(fee);
                     }}
                   />
-                  <div className="deposit__dialog-input-caption">{`${t(
+                  <div className="screen__dialog-input-caption">{`${t(
                     `${props.type}-external-fee`
                   )}: ${SafeMath.mult(
                     props.currency.withdrawFee?.current,
                     100
                   )}%`}</div>
                 </div>
-                <div className="deposit__dialog-input-suffix">%</div>
+                <div className="screen__dialog-input-suffix">%</div>
               </div>
             </div> */}
           </div>
@@ -145,8 +145,8 @@ const Deposit = () => {
 
   const filter = useCallback(
     ({ filterCoinsSettings, visible, keyword }) => {
-      if (visible) setIsVisible(visible);
-      let _option = visible || isVisible,
+      if (visible !== undefined) setIsVisible(visible);
+      let _option = visible !== undefined ? visible : isVisible,
         _keyword = keyword === undefined ? filterKey : keyword,
         _coinsSettngs = filterCoinsSettings || coinsSettngs;
       if (_coinsSettngs) {
@@ -281,6 +281,7 @@ const Deposit = () => {
   const toggleStatus = useCallback(
     async (type, id, value) => {
       console.log(`toggleStatus`, type, id, value);
+      setIsLoading(true);
       let result, updateCoinsSettings;
       try {
         switch (type) {
@@ -406,7 +407,7 @@ const Deposit = () => {
                 className={`screen__display-option${
                   isVisible === null ? " active" : ""
                 }`}
-                onClick={() => filter("all")}
+                onClick={() => filter({ visible: null })}
               >
                 全部
               </li>
@@ -414,7 +415,7 @@ const Deposit = () => {
                 className={`screen__display-option${
                   isVisible === true ? " active" : ""
                 }`}
-                onClick={() => filter("open")}
+                onClick={() => filter({ visible: true })}
               >
                 已開啟
               </li>
@@ -422,7 +423,7 @@ const Deposit = () => {
                 className={`screen__display-option${
                   isVisible === false ? " active" : ""
                 }`}
-                onClick={() => filter("close")}
+                onClick={() => filter({ visible: false })}
               >
                 未開啟
               </li>

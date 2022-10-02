@@ -147,7 +147,7 @@ class Receptor extends Bot {
         };
         // this.logger.log(`inputs`, inputs);
         return operation(inputs).then((rs) => {
-          if (rs.html) {
+          if (rs?.html) {
             ctx.body = rs.html;
             ctx.type = "html";
           } else {
