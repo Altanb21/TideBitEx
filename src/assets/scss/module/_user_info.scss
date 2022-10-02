@@ -41,7 +41,7 @@
     // align-self: center;
     position: relative;
     min-width: 262px;
-    z-index: 100px;
+    z-index: 100;
     &--dropdown {
       display: none;
       position: absolute;
@@ -69,6 +69,7 @@
   & .mobile-account__tile {
     margin: 0;
     padding: 10px 12px;
+    gap: 32px;
   }
   &__accounts {
     &--dropdown.open {
@@ -80,6 +81,7 @@
     flex-direction: column;
     align-items: end;
     position: relative;
+    z-index: 100;
     &--dropdown {
       display: none;
       position: absolute;

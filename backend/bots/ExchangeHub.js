@@ -19,6 +19,12 @@ const AccountBook = require("../libs/Books/AccountBook");
 const ExchangeHubService = require("../libs/services/ExchangeHubServices");
 const Database = require("../constants/Database");
 const ROLES = require("../constants/Roles");
+const { COIN_SETTING_TYPE } = require("../constants/CoinSetting");
+const {
+  TICKER_SETTING_TYPE,
+  TICKER_SETTING_FEE_SIDE,
+} = require("../constants/TickerSetting");
+const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
 
 class ExchangeHub extends Bot {
   fetchedOrders = {};
@@ -26,6 +32,10 @@ class ExchangeHub extends Bot {
   systemMemberId;
   okexBrokerId;
   updateDatas = [];
+  adminUsers;
+  coinsSettings;
+  depositsSettings;
+  withdrawsSettings;
   constructor() {
     super();
     this.name = "ExchangeHub";
@@ -39,13 +49,16 @@ class ExchangeHub extends Bot {
       .init({ config, database, logger, i18n })
       .then(async () => {
         this.tidebitMarkets = this.getTidebitMarkets();
+        this.tickersSettings = this._getTickersSettings();
         this.adminUsers = this._getAdminUsers();
+        this.coinsSettings = this._getCoinsSettings();
+        this.depositsSettings = this._getDepositsSettings();
+        this.withdrawsSettings = this._getWithdrawsSettings();
         this.priceList = await this.getPriceList();
-        this.currencies = await this.database.getCurrencies();
-        this.currenciesSymbol = await this.database.getCurrenciesSymbol();
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
+          tickersSettings: this.tickersSettings,
         });
         this.depthBook = new DepthBook({
           logger,
@@ -62,7 +75,7 @@ class ExchangeHub extends Bot {
         this.accountBook = new AccountBook({
           logger,
           markets: this.tidebitMarkets,
-          currencies: this.currenciesSymbol,
+          coinsSettings: this.coinsSettings,
           priceList: this.priceList,
         });
       })
@@ -80,15 +93,14 @@ class ExchangeHub extends Bot {
           encrypted: this.config.pusher.encrypted,
           peatio: this.config.peatio.domain,
           redis: this.config.redis.domain,
-          markets: this.config.markets,
           database: database,
           tickerBook: this.tickerBook,
           depthBook: this.depthBook,
           tradeBook: this.tradeBook,
           orderBook: this.orderBook,
           accountBook: this.accountBook,
-          tidebitMarkets: this.tidebitMarkets,
-          currencies: this.currencies,
+          tickersSettings: this.tickersSettings,
+          coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
         this.okexConnector = new OkexConnector({ logger });
@@ -100,15 +112,13 @@ class ExchangeHub extends Bot {
           brokerId: this.config.okex.brokerId,
           wssPublic: this.config.okex.wssPublic,
           wssPrivate: this.config.okex.wssPrivate,
-          markets: this.config.markets,
           tickerBook: this.tickerBook,
           depthBook: this.depthBook,
           tradeBook: this.tradeBook,
           orderBook: this.orderBook,
           accountBook: this.accountBook,
-          currencies: this.currencies,
           database: this.database,
-          tidebitMarkets: this.tidebitMarkets,
+          tickersSettings: this.tickersSettings,
         });
         this.exchangeHubService = new ExchangeHubService({
           database,
@@ -174,13 +184,14 @@ class ExchangeHub extends Bot {
   }
 
   _getAdminUsers() {
+    let users, adminUsers;
     try {
       const p = path.join(
         this.config.base.TideBitLegacyPath,
         "config/roles.yml"
       );
-      const users = Utils.fileParser(p);
-      const formatUsers = users.reduce((prev, user) => {
+      users = Utils.fileParser(p);
+      adminUsers = users.reduce((prev, user) => {
         const index = prev.findIndex((_usr) => _usr.email === user.email);
         if (index === -1) {
           prev = [
@@ -199,16 +210,19 @@ class ExchangeHub extends Bot {
         }
         return prev;
       }, []);
-      // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, formatUsers);
-      return formatUsers;
+      this.adminUsers = adminUsers;
     } catch (error) {
       this.logger.error(error);
       process.exit(1);
     }
+    return adminUsers;
   }
 
   async getAdminUsers({ query }) {
-    this.logger.debug(`*********** [${this.name}] getAdminUsers ************`);
+    if (!this.adminUsers) {
+      this.adminUsers = this._getAdminUsers();
+    }
+    // this.logger.log(`-*-*-*-*- getAdminUsers -*-*-*-*-`, adminUsers);
     return Promise.resolve(
       new ResponseFormat({
         message: "getAdminUsers",
@@ -217,6 +231,1016 @@ class ExchangeHub extends Bot {
         },
       })
     );
+  }
+
+  _getTickersSettings() {
+    let tickersSettings;
+    try {
+      const p = path.join(
+        this.config.base.TideBitLegacyPath,
+        "config/markets/markets.yml"
+      );
+      const obj = Utils.fileParser(p);
+      tickersSettings = obj.reduce((prev, ticker) => {
+        const instId = ticker.name.split("/").join("-").toUpperCase();
+        prev[ticker.id] = {
+          id: ticker.id,
+          instId,
+          code: ticker.code,
+          name: ticker.name,
+          market: ticker.id,
+          baseUnit: ticker.base_unit,
+          quoteUnit: ticker.quote_unit,
+          ask: {
+            fee: ticker.ask?.fee,
+            currency: ticker.ask?.currency,
+            fixed: ticker.ask?.fixed,
+            heroFee: ticker.ask?.hero_fee,
+            vipFee: ticker.ask?.vip_fee,
+          },
+          bid: {
+            fee: ticker.bid?.fee,
+            currency: ticker.bid?.currency,
+            fixed: ticker.bid?.fixed,
+            heroFee: ticker.bid?.hero_fee,
+            vipFee: ticker.bid?.vip_fee,
+          },
+          sortOrder: ticker.sort_order,
+          primary: ticker.primary,
+          visible: ticker.visible !== false ? true : false,
+          instType: "",
+          group: ticker.tab_category || "others",
+          pricescale: ticker.price_group_fixed,
+          source: !ticker.source ? SupportedExchange.TIDEBIT : ticker.source,
+          exchanges: !ticker.exchanges
+            ? [SupportedExchange.TIDEBIT]
+            : ticker.exchanges,
+          tickSz: Utils.getDecimal(ticker?.bid?.fixed),
+          lotSz: Utils.getDecimal(ticker?.ask?.fixed),
+          minSz: Utils.getDecimal(ticker?.ask?.fixed),
+        };
+        return prev;
+      }, {});
+    } catch (error) {
+      this.logger.error(error);
+      process.exit(1);
+    }
+    return tickersSettings;
+  }
+
+  // _getCoinsSettings({ query }) {
+  _getCoinsSettings() {
+    let coinsSettings;
+    if (!this.coinsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/markets/coins.yml"
+        );
+        coinsSettings = Utils.fileParser(p);
+        this.coinsSettings = coinsSettings.map((coinSetting) => ({
+          ...coinSetting,
+          visible: coinSetting.visible === false ? false : true, // default: true
+          disable: coinSetting.disable === true ? true : false, // default: false
+        }));
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    // this.logger.log(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
+    return this.coinsSettings;
+  }
+
+  // _getDepositsSettings({ query }) {
+  _getDepositsSettings() {
+    let depositsSettings, formatDepositsSettings;
+    if (!this.depositsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/markets/deposits.yml"
+        );
+        depositsSettings = Utils.fileParser(p);
+        formatDepositsSettings = depositsSettings.reduce((prev, deposit) => {
+          if (!prev[deposit.id.toString()])
+            prev[deposit.id.toString()] = {
+              ...deposit,
+              visible: deposit.visible === false ? false : true, // default: true
+              disable: deposit.disable === true ? true : false, // default: false
+            };
+          else
+            this.logger.error(
+              `[config/deposits.yml] duplicate deposit`,
+              prev[deposit.id.toString()],
+              deposit
+            );
+          return prev;
+        }, {});
+        // this.logger.log(`-*-*-*-*- getDepositsSettings -*-*-*-*-`, depositsSettings);
+        this.depositsSettings = formatDepositsSettings;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.depositsSettings;
+    // return Promise.resolve(
+    //   new ResponseFormat({
+    //     message: "getDepositsSettings",
+    //     payload: {
+    //       depositsSettings: this.depositsSettings,
+    //     },
+    //   })
+    // );
+  }
+
+  // getWithdrawsSettings({ query }) {
+  _getWithdrawsSettings() {
+    let withdrawsSettings, formatWithdrawsSettings;
+    if (!this.withdrawsSettings) {
+      try {
+        const p = path.join(
+          this.config.base.TideBitLegacyPath,
+          "config/markets/withdraws.yml"
+        );
+        withdrawsSettings = Utils.fileParser(p);
+        formatWithdrawsSettings = withdrawsSettings.reduce((prev, withdraw) => {
+          if (!prev[withdraw.id.toString()])
+            prev[withdraw.id.toString()] = {
+              ...withdraw,
+              visible: withdraw.visible === false ? false : true, // default: true
+              disable: withdraw.disable === true ? true : false, // default: false
+            };
+          else
+            this.logger.error(
+              `[config/withdraws.yml] duplicate withdraw`,
+              prev[withdraw.id.toString()],
+              withdraw
+            );
+          return prev;
+        }, {});
+        // this.logger.log(`-*-*-*-*- getWithdrawsSettings -*-*-*-*-`, withdrawsSettings);
+        this.withdrawsSettings = formatWithdrawsSettings;
+      } catch (error) {
+        this.logger.error(error);
+        process.exit(1);
+      }
+    }
+    return this.withdrawsSettings;
+    // return Promise.resolve(
+    //   new ResponseFormat({
+    //     message: "getWithdrawsSettings",
+    //     payload: {
+    //       withdrawsSettings:  this.withdrawsSettings,
+    //     },
+    //   })
+    // );
+  }
+
+  formatCoinsSettings() {
+    let coins;
+    if (!this.coinsSettings) this._getCoinsSettings();
+    if (!this.depositsSettings) this._getDepositsSettings();
+    if (!this.withdrawsSettings) this._getWithdrawsSettings();
+    coins = this.coinsSettings
+      .filter((coin) => coin.coin && coin.marketing_category)
+      .map((coin) => {
+        const formatCoin = {
+          id: coin.id,
+          key: coin.key,
+          code: coin.code,
+          symbol: coin.symbol,
+          coin: coin.coin,
+          visible: coin.visible,
+          marketingCategory: coin.marketing_category,
+          precision: coin.id || 2,
+          selfTransfer: coin.self_transfer,
+          minConfirm: this.depositsSettings[coin.id]?.min_confirm,
+          maxConfirm: this.depositsSettings[coin.id]?.max_confirm,
+          deposit:
+            this.depositsSettings[coin.id]?.visible &&
+            !this.depositsSettings[coin.id]?.disable,
+          depositFee: this.depositsSettings[coin.id]?.fee || "0",
+          withdraw:
+            this.withdrawsSettings[coin.id]?.visible &&
+            !this.withdrawsSettings[coin.id]?.disable,
+          withdrawFee: this.withdrawsSettings[coin.id]?.fee || "0",
+          alert: coin.code === "btc", // ++ TODO
+        };
+        return formatCoin;
+      });
+    return coins;
+  }
+
+  getCoinsSettings({ query }) {
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getCoinsSettings",
+        payload: {
+          coins: this.formatCoinsSettings(),
+        },
+      })
+    );
+  }
+
+  async getPlatformAssets({ email, query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getPlatformAssets ************`
+    );
+    let result = null,
+      coins = {},
+      coinsSettings,
+      sources = {},
+      hasError = false; //,
+    // currentUser = this.adminUsers.find((user) => user.email === email);
+    // this.logger.log(
+    //   `currentUser[${currentUser.roles?.includes("root")}]`,
+    //   currentUser
+    // );
+    // if (currentUser.roles?.includes("root")) {
+    const _accounts = await this.database.getAccounts();
+    coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+      if (!prev[coinSetting.id.toString()])
+        prev[coinSetting.id.toString()] = { ...coinSetting };
+      return prev;
+    }, {});
+    for (let exchange of Object.keys(SupportedExchange)) {
+      let source = SupportedExchange[exchange];
+
+      switch (source) {
+        // okx api 拿 balance 的資料
+        case SupportedExchange.OKEX:
+          let response = await this.okexConnector.router("getBalances", {
+            query: {},
+          });
+          if (response.success) {
+            sources[exchange] = response.payload;
+          } else {
+            this.logger.error(response);
+            hasError = true;
+            result = new ResponseFormat({
+              message: "",
+              code: Codes.API_UNKNOWN_ERROR,
+            });
+          }
+          break;
+        case SupportedExchange.TIDEBIT:
+          break;
+        default:
+      }
+    }
+    if (!hasError) {
+      try {
+        // 需拿交易所所有用戶餘額各幣種的加總
+        for (let _account of _accounts) {
+          let coinSetting = coinsSettings[_account.currency.toString()];
+          if (!coins[coinSetting.code]) {
+            coins[coinSetting.code] = {
+              id: coinSetting.id,
+              key: coinSetting.key,
+              code: coinSetting.code,
+              symbol: coinSetting.symbol,
+              coin: coinSetting.coin,
+              visible: coinSetting.visible,
+              disable: coinSetting.disable,
+              group: coinSetting.marketing_category,
+              accounts: {},
+              sum: "0",
+              RRRRatio: coinSetting.RRR_ratio || 0.35,
+              MPARatio: coinSetting.MPA_ratio || 0.65,
+              maximun: coinSetting.maximun,
+              minimun: coinSetting.minimun,
+              sources: {},
+            };
+            // this.logger.log(
+            //   `getPlatformAssets coins[${coinSetting.code}]`,
+            //   coins[coinSetting.code]
+            // );
+            for (let exchange of Object.keys(SupportedExchange)) {
+              switch (SupportedExchange[exchange]) {
+                case SupportedExchange.OKEX:
+                  // this.logger.log(
+                  //   `getPlatformAssets  sources[${exchange}][${coinSetting.code}]`,
+                  //   sources[exchange][coinSetting.code]
+                  // );
+                  coins[coinSetting.code]["sources"][exchange.toLowerCase()] = {
+                    balance:
+                      sources[exchange][coinSetting.code]?.balance || "0",
+                    locked: sources[exchange][coinSetting.code]?.locked || "0",
+                    sum: sources[exchange][coinSetting.code]?.sum || "0",
+                    alertLevel: undefined,
+                  };
+                  break;
+                case SupportedExchange.TIDEBIT:
+                  // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
+                  coins[coinSetting.code]["sources"][exchange.toLowerCase()] = {
+                    balance: "0",
+                    locked: "0",
+                    alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+                  };
+                  break;
+                default:
+              }
+            }
+          }
+          coins[coinSetting.code].accounts = {
+            ...coins[coinSetting.code].accounts,
+          };
+          coins[coinSetting.code].accounts[_account.member_id] = {
+            balance: Utils.removeZeroEnd(_account.balance),
+            locked: Utils.removeZeroEnd(_account.locked),
+            updatedAt: _account.updated_at,
+          };
+          let sum = SafeMath.plus(_account.balance, _account.locked);
+          coins[coinSetting.code].sum = SafeMath.plus(
+            coins[coinSetting.code].sum,
+            sum
+          );
+        }
+        this.logger.log(`getPlatformAssets coins`, coins);
+        coins = Object.values(coins).reduce((prev, coin) => {
+          const RRR = SafeMath.mult(coin.RRRRatio, coin.sum);
+          const MPA = SafeMath.mult(coin.MPARatio, coin.sum);
+          let sources = Object.keys(coin.sources).reduce(
+            (prevSources, source) => {
+              let alertLevel;
+              switch (SupportedExchange[source.toUpperCase()]) {
+                case SupportedExchange.OKEX:
+                  if (SafeMath.eq(coin.sources[source].sum, 0)) {
+                    if (SafeMath.eq(coin.sum, 0))
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+                    else if (SafeMath.gt(coin.sum, 0))
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+                  } else {
+                    if (SafeMath.gt(coin.sources[source].sum, MPA)) {
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+                    } else {
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+                    }
+                    if (SafeMath.lte(coin.sources[source].sum, RRR)) {
+                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+                    }
+                  }
+                  prevSources[source] = {
+                    ...coin.sources[source],
+                    alertLevel,
+                  };
+                  break;
+                case SupportedExchange.TIDEBIT:
+                  prevSources[source] = {
+                    ...coin.sources[source],
+                  };
+                  break;
+                default:
+                  break;
+              }
+              return prevSources;
+            },
+            {}
+          );
+          prev[coin.code] = { ...coin, sources };
+          return prev;
+        }, {});
+        this.logger.log(`getPlatformAssets coins`, coins);
+        result = new ResponseFormat({
+          message: "getCoinsSettings",
+          payload: coins,
+        });
+        // 需要有紀錄水位限制的檔案，預計加在 coins.yml
+      } catch (error) {
+        this.logger.error(error);
+        let message = error.message;
+        result = new ResponseFormat({
+          message,
+          code: Codes.API_UNKNOWN_ERROR,
+        });
+      }
+    }
+    // }else{
+    //   result = new ResponseFormat({
+    //     message: "Current user is not allow to update ticker settings",
+    //     code: Codes.INVALID_INPUT,
+    //   });
+    // }
+    return result;
+  }
+
+  async updatePlatformAsset({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updatePlatformAsset ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      if (currentUser.roles?.includes("root")) {
+        let index = this.coinsSettings.findIndex(
+          (coin) => coin.id.toString() === params.id.toString()
+        );
+        this.logger.log(`index`, index);
+        if (index !== -1) {
+          let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+            ...coin,
+          }));
+          updatedCoinsSettings[index] = {
+            ...updatedCoinsSettings[index],
+            RRR_ratio: body.RRRRatio,
+            MPA_ratio: body.MPARatio,
+            maximun: body.maximun,
+            minimun: body.minimun,
+          };
+          this.logger.log(
+            `updatePlatformAsset[${index}]`,
+            updatedCoinsSettings[index]
+          );
+          try {
+            Utils.yamlUpdate(updatedCoinsSettings, p);
+            this.coinsSettings = updatedCoinsSettings;
+            result = await this.getPlatformAssets({ query: {} });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updatePlatformAsset`,
+              updatedCoinsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update asset is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update platform asset",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateTickerSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/markets.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateTickerSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { type, data } = body;
+      this.logger.log(`type`, type);
+      this.logger.log(`data`, data);
+      if (currentUser.roles?.includes("root")) {
+        if (this.tickersSettings[params.id]) {
+          let updatedTickersSettings = Object.values(
+            this.tickersSettings
+          ).reduce((prev, tickerSetting) => {
+            prev[tickerSetting.id.toString()] = {
+              id: tickerSetting.id,
+              code: tickerSetting.code,
+              name: tickerSetting.name,
+              base_unit: tickerSetting.baseUnit,
+              quote_unit: tickerSetting.quoteUnit,
+              bid: {
+                fee: tickerSetting.bid.fee,
+                currency: tickerSetting.bid.currency,
+                fixed: tickerSetting.bid.fixed,
+                hero_fee: tickerSetting.bid.heroFee,
+                vip_fee: tickerSetting.bid.vipFee,
+              },
+              ask: {
+                fee: tickerSetting.ask.fee,
+                currency: tickerSetting.ask.currency,
+                fixed: tickerSetting.ask.fixed,
+                hero_fee: tickerSetting.ask.heroFee,
+                vip_fee: tickerSetting.ask.vipFee,
+              },
+              sort_order: tickerSetting.sortOrder,
+              tab_category: tickerSetting.group,
+              primary: tickerSetting.primary,
+              visible: tickerSetting.visible,
+              price_group_fixed: tickerSetting.pricescale,
+              source: tickerSetting.source,
+              exchanges: tickerSetting.exchanges,
+            };
+            return prev;
+          }, {});
+
+          switch (type) {
+            case TICKER_SETTING_TYPE.VISIBLE:
+              if (
+                updatedTickersSettings[params.id].source ===
+                SupportedExchange.OKEX
+              ) {
+                if (data.visible)
+                  this.okexConnector.subscribeTicker(
+                    this.tickersSettings[params.id].instId
+                  );
+                else
+                  this.okexConnector.unsubscribeTicker(
+                    this.tickersSettings[params.id].instId
+                  );
+              }
+              updatedTickersSettings[params.id] = {
+                ...updatedTickersSettings[params.id],
+                visible: data.visible,
+              };
+              break;
+            case TICKER_SETTING_TYPE.SOURCE:
+              if (data.source === SupportedExchange.OKEX)
+                this.okexConnector.subscribeTicker(
+                  this.tickersSettings[params.id].instId
+                );
+              else if (
+                data.source !== SupportedExchange.OKEX &&
+                updatedTickersSettings[params.id].source ===
+                  SupportedExchange.OKEX
+              )
+                this.okexConnector.unsubscribeTicker(
+                  this.tickersSettings[params.id].instId
+                );
+              updatedTickersSettings[params.id] = {
+                ...updatedTickersSettings[params.id],
+                source: data.source,
+              };
+              break;
+            case TICKER_SETTING_TYPE.FEE:
+              switch (data.side) {
+                case TICKER_SETTING_FEE_SIDE.BID:
+                  updatedTickersSettings[params.id] = {
+                    ...updatedTickersSettings[params.id],
+                    bid: {
+                      ...updatedTickersSettings[params.id].bid,
+                      fee: parseFloat(data.fee.defaultFee), // +TODO 需要確認
+                      hero_fee: parseFloat(data.fee.heroFee),
+                      vip_fee: parseFloat(data.fee.vipFee),
+                    },
+                  };
+                  break;
+                case TICKER_SETTING_FEE_SIDE.ASK:
+                  updatedTickersSettings[params.id] = {
+                    ...updatedTickersSettings[params.id],
+                    ask: {
+                      ...updatedTickersSettings[params.id].ask,
+                      fee: parseFloat(data.fee.defaultFee), // +TODO 需要確認
+                      hero_fee: parseFloat(data.fee.heroFee),
+                      vip_fee: parseFloat(data.fee.vipFee),
+                    },
+                  };
+                  break;
+                default:
+                  break;
+              }
+
+              break;
+            default:
+              break;
+          }
+          this.logger.log(
+            `updatedTickersSettings[${params.id}]`,
+            updatedTickersSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedTickersSettings), p);
+            this.tickersSettings = Object.values(updatedTickersSettings).reduce(
+              (prev, ticker) => {
+                const instId = ticker.name.split("/").join("-").toUpperCase();
+                prev[ticker.id] = {
+                  id: ticker.id,
+                  instId,
+                  code: ticker.code,
+                  name: ticker.name,
+                  market: ticker.id,
+                  baseUnit: ticker.base_unit,
+                  quoteUnit: ticker.quote_unit,
+                  ask: {
+                    fee: ticker.ask?.fee,
+                    currency: ticker.ask?.currency,
+                    fixed: ticker.ask?.fixed,
+                    heroFee: ticker.ask?.hero_fee,
+                    vipFee: ticker.ask?.vip_fee,
+                  },
+                  bid: {
+                    fee: ticker.bid?.fee,
+                    currency: ticker.bid?.currency,
+                    fixed: ticker.bid?.fixed,
+                    heroFee: ticker.bid?.hero_fee,
+                    vipFee: ticker.bid?.vip_fee,
+                  },
+                  sortOrder: ticker.sort_order,
+                  primary: ticker.primary,
+                  visible: ticker.visible !== false ? true : false,
+                  instType: "",
+                  group: ticker.tab_category || "others",
+                  pricescale: ticker.price_group_fixed,
+                  source: !ticker.source
+                    ? SupportedExchange.TIDEBIT
+                    : ticker.source,
+                  exchanges: !ticker.exchanges
+                    ? [SupportedExchange.TIDEBIT]
+                    : ticker.exchanges,
+                  tickSz: Utils.getDecimal(ticker?.bid?.fixed),
+                  lotSz: Utils.getDecimal(ticker?.ask?.fixed),
+                  minSz: Utils.getDecimal(ticker?.ask?.fixed),
+                };
+                return prev;
+              },
+              {}
+            );
+            this.tickerBook.updateTickersSettings(this.tickersSettings);
+            result = new ResponseFormat({
+              message: "updateTickerSetting",
+              payload: this.tickerBook.getSnapshot(),
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateTickerSetting`,
+              updatedTickersSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update ticker is not existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update ticker settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateTickerSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateCoinSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateCoinSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        let index = this.coinsSettings.findIndex(
+          (coin) => coin.id.toString() === params.id.toString()
+        );
+        this.logger.log(`index`, index);
+        if (index !== -1) {
+          let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+            ...coin,
+          }));
+          updatedCoinsSettings[index] = {
+            ...updatedCoinsSettings[index],
+            visible: visible,
+          };
+          this.logger.log(
+            `updatedCoinsSettings[${index}]`,
+            updatedCoinsSettings[index]
+          );
+          try {
+            Utils.yamlUpdate(updatedCoinsSettings, p);
+            this.coinsSettings = updatedCoinsSettings;
+            result = new ResponseFormat({
+              message: "updateCoinSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateCoinSetting`,
+              updatedCoinsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update coins settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateCoinsSettings({ email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/coins.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateCoinSetting ************`
+    );
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email);
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { visible } = body;
+      this.logger.log(`visible`, visible);
+      if (currentUser.roles?.includes("root")) {
+        let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
+          ...coin,
+          visible,
+        }));
+        try {
+          Utils.yamlUpdate(updatedCoinsSettings, p);
+          this.coinsSettings = updatedCoinsSettings;
+          result = new ResponseFormat({
+            message: "updateCoinsSettings",
+            payload: {
+              coins: this.formatCoinsSettings(),
+            },
+          });
+        } catch (e) {
+          this.logger.error(
+            `yamlUpdate updateCoinsSettings`,
+            updatedCoinsSettings,
+            e
+          );
+          result = new ResponseFormat({
+            message: "Internal server error",
+            code: Codes.UNKNOWN_ERROR,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update coins settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateCoinsSettings`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateDepositSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/deposits.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateDepositSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      updatedDepositCoin;
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { type, data } = body;
+      this.logger.log(`updateDepositCoin`, type, data);
+      if (currentUser.roles?.includes("root")) {
+        updatedDepositCoin = this.depositsSettings[params.id];
+        this.logger.log(`updatedDepositCoin`, updatedDepositCoin);
+        if (updatedDepositCoin) {
+          let updatedDepositsSettings = Object.values(
+            this.depositsSettings
+          ).reduce((prev, deposit) => {
+            prev[deposit.id.toString()] = { ...deposit };
+            return prev;
+          }, {});
+          switch (type) {
+            case COIN_SETTING_TYPE.FEE:
+              updatedDepositsSettings[params.id] = {
+                ...updatedDepositCoin,
+                fee: data.fee,
+              };
+              break;
+            case COIN_SETTING_TYPE.DEPOSIT:
+              updatedDepositsSettings[params.id] = {
+                ...updatedDepositCoin,
+                disable: data.disable,
+                visible: data.disable === false ? true : false,
+              };
+              break;
+            default:
+          }
+
+          this.logger.log(
+            `updatedDepositsSettings[${params.id}]`,
+            updatedDepositsSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedDepositsSettings), p);
+            this.depositsSettings = updatedDepositsSettings;
+            result = new ResponseFormat({
+              message: "updateDepositSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateDepositSetting`,
+              updatedDepositsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update deposit settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateDepositSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
+  }
+
+  async updateWithdrawSetting({ params, email, body }) {
+    const p = path.join(
+      this.config.base.TideBitLegacyPath,
+      "config/markets/withdraws.yml"
+    );
+    this.logger.debug(
+      `*********** [${this.name}] updateWithdrawSetting ************`
+    );
+    this.logger.log(`params.id`, params.id);
+    this.logger.log(`email`, email);
+    this.logger.log(`body`, body);
+    let result = null,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      updatedWithdrawCoin;
+    this.logger.log(
+      `currentUser[${currentUser.roles?.includes("root")}]`,
+      currentUser
+    );
+    try {
+      const { type, data } = body;
+      this.logger.log(`updateWithdrawCoin`, type, data);
+      if (currentUser.roles?.includes("root")) {
+        updatedWithdrawCoin = this.withdrawsSettings[params.id];
+        this.logger.log(`updatedWithdrawCoin`, updatedWithdrawCoin);
+        if (updatedWithdrawCoin) {
+          let updatedWithdrawsSettings = Object.values(
+            this.withdrawsSettings
+          ).reduce((prev, withdraw) => {
+            prev[withdraw.id.toString()] = { ...withdraw };
+            return prev;
+          }, {});
+          switch (type) {
+            case COIN_SETTING_TYPE.FEE:
+              updatedWithdrawsSettings[params.id] = {
+                ...updatedWithdrawCoin,
+                fee: data.fee,
+              };
+              break;
+            case COIN_SETTING_TYPE.WITHDRAW:
+              updatedWithdrawsSettings[params.id] = {
+                ...updatedWithdrawCoin,
+                disable: data.disable,
+                visible: data.disable === false ? true : false,
+              };
+              break;
+            default:
+          }
+          this.logger.log(
+            `updatedWithdrawsSettings[${params.id}]`,
+            updatedWithdrawsSettings[params.id]
+          );
+          try {
+            Utils.yamlUpdate(Object.values(updatedWithdrawsSettings), p);
+            this.withdrawsSettings = updatedWithdrawsSettings;
+            result = new ResponseFormat({
+              message: "updateWithdrawSetting",
+              payload: {
+                coins: this.formatCoinsSettings(),
+              },
+            });
+          } catch (e) {
+            this.logger.error(
+              `yamlUpdate updateWithdrawSetting`,
+              updatedWithdrawsSettings,
+              e
+            );
+            result = new ResponseFormat({
+              message: "Internal server error",
+              code: Codes.UNKNOWN_ERROR,
+            });
+          }
+        } else {
+          result = new ResponseFormat({
+            message: "Update coin is not  existed",
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "Current user is not allow to update withdraw settings",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+    } catch (e) {
+      this.logger.error(`updateWithdrawSetting`, e);
+      result = new ResponseFormat({
+        message: "Internal server error",
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+    return Promise.resolve(result);
   }
 
   async addAdminUser({ email, body }) {
@@ -494,20 +1518,20 @@ class ExchangeHub extends Bot {
   }
 
   async getOrdersFromDb(query) {
-    if (!query.market) {
-      throw new Error(`this.tidebitMarkets.market ${query.market} not found.`);
+    if (!query.tickerSetting) {
+      throw new Error(`${query.tickerSetting} is undefined.`);
     }
-    const { id: bid } = this.currencies.find(
-      (curr) => curr.key === query.market.quote_unit
+    const { id: bid } = this.coinsSettings.find(
+      (curr) => curr.code === query.tickerSetting?.quoteUnit
     );
-    const { id: ask } = this.currencies.find(
-      (curr) => curr.key === query.market.base_unit
+    const { id: ask } = this.coinsSettings.find(
+      (curr) => curr.code === query.tickerSetting?.baseUnit
     );
     if (!bid) {
-      throw new Error(`bid not found${query.market.quote_unit}`);
+      throw new Error(`bid not found${query.tickerSetting?.quoteUnit}`);
     }
     if (!ask) {
-      throw new Error(`ask not found${query.market.base_unit}`);
+      throw new Error(`ask not found${query.tickerSetting?.baseUnit}`);
     }
     let _orders,
       _doneMarketBidOrders,
@@ -542,7 +1566,7 @@ class ExchangeHub extends Bot {
         at: parseInt(
           SafeMath.div(new Date(_order.updated_at).getTime(), "1000")
         ),
-        market: query.instId.replace("-", "").toLowerCase(),
+        market: query.tickerSetting?.market,
         kind:
           _order.type === Database.TYPE.ORDER_ASK
             ? Database.ORDER_KIND.ASK
@@ -566,7 +1590,7 @@ class ExchangeHub extends Bot {
           ? Database.ORDER_STATE_TEXT.DONE
           : Database.ORDER_STATE_TEXT.UNKNOWN,
         clOrdId: _order.id,
-        instId: query.instId,
+        instId: query.tickerSetting?.instId,
         ordType: _order.ord_type,
         filled: _order.volume !== _order.origin_volume,
       };
@@ -662,12 +1686,10 @@ class ExchangeHub extends Bot {
 
   async getTicker({ params, query }) {
     this.logger.debug(`*********** [${this.name}] getTicker ************`);
-    const instId = this._findInstId(query.id);
-    const index = this.tidebitMarkets.findIndex(
-      (market) => instId === market.instId
-    );
-    if (index !== -1) {
-      const source = this._findSource(instId);
+    // this.tickersSettings = this._getTickersSettings();
+    const tickerSetting = this.tickersSettings[query.id];
+    if (tickerSetting) {
+      const source = tickerSetting.source;
       this.logger.log(
         `[${this.constructor.name}] getTicker ticketSource`,
         source
@@ -676,14 +1698,12 @@ class ExchangeHub extends Bot {
         case SupportedExchange.OKEX:
           return this.okexConnector.router("getTicker", {
             params,
-            query: { ...query, instId },
-            optional: { market: this.tidebitMarkets[index] },
+            query: { ...query, instId: tickerSetting.instId },
           });
         case SupportedExchange.TIDEBIT:
           return this.tideBitConnector.router("getTicker", {
             params,
-            query: { ...query, instId },
-            optional: { market: this.tidebitMarkets[index] },
+            query: { ...query, instId: tickerSetting.instId },
           });
         default:
           return new ResponseFormat({
@@ -701,15 +1721,16 @@ class ExchangeHub extends Bot {
 
   async getTickers({ query }) {
     this.logger.debug(`*********** [${this.name}] getTickers ************`);
+    // this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
-      let filteredOkexTickers,
-        filteredTBTickers = {};
+      let okexTickers,
+        tidebitTickers = {};
       try {
         const okexRes = await this.okexConnector.router("getTickers", {
           query,
         });
         if (okexRes.success) {
-          filteredOkexTickers = okexRes.payload;
+          okexTickers = okexRes.payload;
         } else {
           this.logger.error(okexRes);
           return new ResponseFormat({
@@ -724,18 +1745,13 @@ class ExchangeHub extends Bot {
           code: Codes.API_UNKNOWN_ERROR,
         });
       }
-      // this.logger.log(`this.tidebitMarkets`, this.tidebitMarkets);
       try {
-        const tideBitOnlyMarkets = Utils.marketFilterExclude(
-          Object.values(filteredOkexTickers),
-          this.tidebitMarkets
+        const tBTickersRes = await this.tideBitConnector.router(
+          "getTickers",
+          {}
         );
-        // this.logger.log(`tideBitOnlyMarkets`, tideBitOnlyMarkets);
-        const tBTickersRes = await this.tideBitConnector.router("getTickers", {
-          optional: { mask: tideBitOnlyMarkets },
-        });
         if (tBTickersRes.success) {
-          filteredTBTickers = tBTickersRes.payload;
+          tidebitTickers = tBTickersRes.payload;
         } else {
           this.logger.error(tBTickersRes);
           return new ResponseFormat({
@@ -743,15 +1759,67 @@ class ExchangeHub extends Bot {
             code: Codes.API_UNKNOWN_ERROR,
           });
         }
-        // this.logger.log(`filteredOkexTickers`, filteredOkexTickers);
-        // this.logger.log(`filteredTBTickers`, filteredTBTickers);
-        this.tickerBook.updateAll({
-          ...filteredOkexTickers,
-          ...filteredTBTickers,
+        this.tickerBook.updateAll(okexTickers, tidebitTickers);
+      } catch (error) {
+        this.logger.error(error);
+        return new ResponseFormat({
+          message: error.stack,
+          code: Codes.API_UNKNOWN_ERROR,
         });
-        // this.logger.debug(
-        //   `*********** [${this.name}] getTickers [END] ************`
-        // );
+      }
+      this.fetchedTickers = true;
+    }
+    return new ResponseFormat({
+      message: "getTickers",
+      payload: Object.values(this.tickerBook.getSnapshot())?.filter(
+        (ticker) => ticker.visible
+      ),
+    });
+  }
+
+  async getTickersSettings({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getTickersSettings ************`
+    );
+    // this.tickersSettings = this._getTickersSettings();
+    if (!this.fetchedTickers) {
+      let okexTickers,
+        tidebitTickers = {};
+      try {
+        const okexRes = await this.okexConnector.router("getTickers", {
+          query: { ...query, instType: "SPOT" },
+        });
+        if (okexRes.success) {
+          okexTickers = okexRes.payload;
+        } else {
+          this.logger.error(okexRes);
+          return new ResponseFormat({
+            message: "",
+            code: Codes.API_UNKNOWN_ERROR,
+          });
+        }
+      } catch (error) {
+        this.logger.error(error);
+        return new ResponseFormat({
+          message: error.stack,
+          code: Codes.API_UNKNOWN_ERROR,
+        });
+      }
+      try {
+        const tBTickersRes = await this.tideBitConnector.router(
+          "getTickers",
+          {}
+        );
+        if (tBTickersRes.success) {
+          tidebitTickers = tBTickersRes.payload;
+        } else {
+          this.logger.error(tBTickersRes);
+          return new ResponseFormat({
+            message: "",
+            code: Codes.API_UNKNOWN_ERROR,
+          });
+        }
+        this.tickerBook.updateAll(okexTickers, tidebitTickers);
       } catch (error) {
         this.logger.error(error);
         return new ResponseFormat({
@@ -772,15 +1840,15 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getDepthBooks ************`,
       query
     );
-    const instId = this._findInstId(query.market);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.market];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getDepthBooks", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getDepthBooks", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       default:
         return new ResponseFormat({
@@ -806,21 +1874,29 @@ class ExchangeHub extends Bot {
 
   async getTradingViewSymbol({ query }) {
     this.logger.debug(
-      `*********** [${this.name}] getTradingViewConfig ************`,
+      `*********** [${this.name}] getTradingViewSymbol ************`,
       query
     );
     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
-    const instId = this._findInstId(id);
-    const market = this.tidebitMarkets.find((market) => market.id === id);
-    // this.logger.log(`getTradingViewSymbol market`, market);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[id];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTradingViewSymbol", {
-          query: { ...query, instId, id, market },
+          query: {
+            ...query,
+            instId: tickerSetting?.instId,
+            id,
+            market: tickerSetting,
+          },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTradingViewSymbol", {
-          query: { ...query, instId, id, market },
+          query: {
+            ...query,
+            instId: tickerSetting?.instId,
+            id,
+            market: tickerSetting,
+          },
         });
       default:
         return new ResponseFormat({
@@ -832,18 +1908,18 @@ class ExchangeHub extends Bot {
 
   async getTradingViewHistory({ query }) {
     this.logger.debug(
-      `*********** [${this.name}] getTradingViewConfig ************`,
+      `*********** [${this.name}] getTradingViewHistory ************`,
       query
     );
-    const instId = this._findInstId(query.symbol);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.symbol];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTradingViewHistory", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTradingViewHistory", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       default:
         return new ResponseFormat({
@@ -854,16 +1930,17 @@ class ExchangeHub extends Bot {
   }
 
   async getCandlesticks({ query }) {
-    switch (this._findSource(query.instId)) {
-      case SupportedExchange.OKEX:
-        return this.okexConnector.router("getCandlesticks", { query });
-      case SupportedExchange.TIDEBIT:
-      default:
-        return new ResponseFormat({
-          message: "getCandlesticks",
-          payload: [],
-        });
-    }
+    // decrepted
+    // switch (this._findSource(query.instId)) {
+    //   case SupportedExchange.OKEX:
+    //     return this.okexConnector.router("getCandlesticks", { query });
+    //   case SupportedExchange.TIDEBIT:
+    //   default:
+    //     return new ResponseFormat({
+    //       message: "getCandlesticks",
+    //       payload: [],
+    //     });
+    // }
   }
 
   async getTrades({ query }) {
@@ -871,15 +1948,15 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getTrades ************`,
       query
     );
-    const instId = this._findInstId(query.market);
-    switch (this._findSource(instId)) {
+    const tickerSetting = this.tickersSettings[query.market];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTrades", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("getTrades", {
-          query: { ...query, instId },
+          query: { ...query, instId: tickerSetting?.instId },
         });
       default:
         return new ResponseFormat({
@@ -925,7 +2002,9 @@ class ExchangeHub extends Bot {
             orderId = parsedClOrdId.orderId,
             askFeeRate,
             bidFeeRate,
-            market = this._findMarket(trade.instId),
+            tickerSetting = this.tickersSettings(
+              trade.instId.toLowerCase().replace("-", "")
+            ),
             memberTag = _trade.member_tag,
             fee,
             processTrade,
@@ -934,18 +2013,18 @@ class ExchangeHub extends Bot {
             if (
               memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
             ) {
-              askFeeRate = market.ask.vip_fee;
-              bidFeeRate = market.bid.vip_fee;
+              askFeeRate = tickerSetting.ask.vip_fee;
+              bidFeeRate = tickerSetting.bid.vip_fee;
             }
             if (
               memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
             ) {
-              askFeeRate = market.ask.hero_fee;
-              bidFeeRate = market.bid.hero_fee;
+              askFeeRate = tickerSetting.ask.hero_fee;
+              bidFeeRate = tickerSetting.bid.hero_fee;
             }
           } else {
-            askFeeRate = market.ask.fee;
-            bidFeeRate = market.bid.fee;
+            askFeeRate = tickerSetting.ask.fee;
+            bidFeeRate = tickerSetting.bid.fee;
           }
           fee =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
@@ -1095,7 +2174,8 @@ class ExchangeHub extends Bot {
     // 5. add account_version
     // 6. update account balance and locked
     // 7. post okex placeOrder
-    switch (this._findSource(body.instId)) {
+    const tickerSetting = this.tickersSettings[body.id];
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         let orderData,
           order,
@@ -1120,7 +2200,11 @@ class ExchangeHub extends Bot {
            * orderData.balance: locked value * -1
            *******************************************/
           //  * 2. 建立 TideBit order 單
-          orderData = await this._getPlaceOrderData(memberId, body);
+          orderData = await this._getPlaceOrderData(
+            memberId,
+            body,
+            tickerSetting
+          );
           order = await this.database.insertOrder({
             ...orderData,
             dbTransaction: t,
@@ -1215,7 +2299,7 @@ class ExchangeHub extends Bot {
               let _updateAccount = {
                 balance: SafeMath.plus(account.balance, orderData.balance),
                 locked: SafeMath.plus(account.locked, orderData.locked),
-                currency: this.currencies.find(
+                currency: this.coinsSettings.find(
                   (curr) => curr.id === account.currency
                 )?.symbol,
                 total: SafeMath.plus(
@@ -1260,21 +2344,12 @@ class ExchangeHub extends Bot {
             code: Codes.DB_OPERATION_ERROR,
           });
         }
-        // -- WORKAROUND
-        setTimeout(() => {
-          this.exchangeHubService.sync(
-            SupportedExchange.OKEX,
-            updateOrder,
-            true
-          );
-        }, 2000);
-        // -- WORKAROUND
         return response;
       /* !!! HIGH RISK (end) !!! */
       case SupportedExchange.TIDEBIT:
         return this.tideBitConnector.router("postPlaceOrder", {
           header,
-          body: { ...body, market: this._findMarket(body.instId) },
+          body: { ...body, market: tickerSetting },
         });
       default:
         return new ResponseFormat({
@@ -1289,20 +2364,17 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOrders memberId:[${memberId}]************`,
       query
     );
-    const instId = this._findInstId(query.market);
-    const market = this._findMarket(instId);
-    const source = this._findSource(instId);
+    const tickerSetting = this.tickersSettings[query.market];
     if (memberId && memberId !== -1) {
       let pendingOrders, orderHistories, orders;
-      switch (source) {
+      switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           const pendingOrdersRes = await this.okexConnector.router(
             "getOrderList",
             {
               query: {
                 ...query,
-                instId,
-                market,
+                instId: tickerSetting?.instId,
                 memberId,
               },
             }
@@ -1314,32 +2386,36 @@ class ExchangeHub extends Bot {
           orderHistories = await this.getOrdersFromDb({
             ...query,
             memberId,
-            instId,
-            market,
+            tickerSetting,
           });
           orderHistories = orderHistories.filter(
             (order) => order.state_code !== Database.ORDER_STATE_CODE.WAIT
           );
           this.orderBook.updateAll(
             memberId,
-            instId,
+            tickerSetting?.instId,
             pendingOrders.concat(orderHistories)
           );
           return new ResponseFormat({
             message: "getOrders",
-            payload: this.orderBook.getSnapshot(memberId, instId),
+            payload: this.orderBook.getSnapshot(
+              memberId,
+              tickerSetting?.instId
+            ),
           });
         case SupportedExchange.TIDEBIT:
           orders = await this.getOrdersFromDb({
             ...query,
             memberId,
-            instId,
-            market,
+            tickerSetting,
           });
-          this.orderBook.updateAll(memberId, instId, orders);
+          this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
           return new ResponseFormat({
             message: "getOrders",
-            payload: this.orderBook.getSnapshot(memberId, instId),
+            payload: this.orderBook.getSnapshot(
+              memberId,
+              tickerSetting?.instId
+            ),
           });
         default:
           return new ResponseFormat({
@@ -1359,17 +2435,15 @@ class ExchangeHub extends Bot {
       `-------------[${this.constructor.name} getOrderList]----------`
     );
     this.logger.log(` memberId:`, memberId);
-    const instId = this._findInstId(query.market);
-    const market = this._findMarket(instId);
-    const source = this._findSource(instId);
+    const tickerSetting = this.tickersSettings[query.id];
     if (memberId !== -1) {
-      switch (source) {
+      switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           const res = await this.okexConnector.router("getOrderList", {
             query: {
               ...query,
-              instId,
-              market,
+              instId: tickerSetting?.instId,
+              market: tickerSetting,
               memberId,
             },
           });
@@ -1385,9 +2459,12 @@ class ExchangeHub extends Bot {
           if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
           let ts = Date.now();
           if (
-            !this.fetchedOrders[memberId][instId] ||
+            !this.fetchedOrders[memberId][tickerSetting?.instId] ||
             SafeMath.gt(
-              SafeMath.minus(ts, this.fetchedOrders[memberId][instId]),
+              SafeMath.minus(
+                ts,
+                this.fetchedOrders[memberId][tickerSetting?.instId]
+              ),
               this.fetchedOrdersInterval
             )
           )
@@ -1395,11 +2472,11 @@ class ExchangeHub extends Bot {
               const orders = await this.getOrdersFromDb({
                 ...query,
                 memberId,
-                instId,
-                market,
+                instId: tickerSetting?.instId,
+                market: tickerSetting,
               });
-              this.orderBook.updateAll(memberId, instId, orders);
-              this.fetchedOrders[memberId][instId] = ts;
+              this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+              this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
             } catch (error) {
               this.logger.error(error);
               const message = error.message;
@@ -1410,7 +2487,11 @@ class ExchangeHub extends Bot {
             }
           return new ResponseFormat({
             message: "getOrderList",
-            payload: this.orderBook.getSnapshot(memberId, instId, "pending"),
+            payload: this.orderBook.getSnapshot(
+              memberId,
+              tickerSetting?.instId,
+              "pending"
+            ),
           });
         default:
           return new ResponseFormat({
@@ -1426,23 +2507,25 @@ class ExchangeHub extends Bot {
   }
 
   async getOrderHistory({ query, memberId }) {
-    const instId = this._findInstId(query.market);
-    const market = this._findMarket(instId);
+    const tickerSetting = this.tickersSettings[query.id];
     if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "getOrderHistory",
         payload: null,
       });
     }
-    switch (this._findSource(instId)) {
+    switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
       case SupportedExchange.TIDEBIT:
         if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
         let ts = Date.now();
         if (
-          !this.fetchedOrders[memberId][instId] ||
+          !this.fetchedOrders[memberId][tickerSetting?.instId] ||
           SafeMath.gt(
-            SafeMath.minus(ts, this.fetchedOrders[memberId][instId]),
+            SafeMath.minus(
+              ts,
+              this.fetchedOrders[memberId][tickerSetting?.instId]
+            ),
             this.fetchedOrdersInterval
           )
         ) {
@@ -1450,11 +2533,10 @@ class ExchangeHub extends Bot {
             const orders = await this.getOrdersFromDb({
               ...query,
               memberId,
-              instId,
-              market,
+              tickerSetting,
             });
-            this.orderBook.updateAll(memberId, instId, orders);
-            this.fetchedOrders[memberId][instId] = ts;
+            this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+            this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
           } catch (error) {
             this.logger.error(error);
             const message = error.message;
@@ -1466,7 +2548,11 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOrderHistory",
-          payload: this.orderBook.getSnapshot(memberId, instId, "history"),
+          payload: this.orderBook.getSnapshot(
+            memberId,
+            tickerSetting?.instId,
+            "history"
+          ),
         });
       default:
         return new ResponseFormat({
@@ -1553,7 +2639,7 @@ class ExchangeHub extends Bot {
           updateAccount = {
             balance: SafeMath.plus(account.balance, balance),
             locked: SafeMath.plus(account.locked, locked),
-            currency: this.currencies.find(
+            currency: this.coinsSettings.find(
               (curr) => curr.id === account.currency
             )?.symbol,
             total: SafeMath.plus(
@@ -1576,7 +2662,8 @@ class ExchangeHub extends Bot {
   }
   // ++ TODO: fix multi return
   async postCancelOrder({ header, params, query, body, memberId }) {
-    const source = this._findSource(body.instId);
+    const tickerSetting = this.tickersSettings[body.market];
+    const source = tickerSetting?.source;
     // const t = await this.database.transaction();
     try {
       // 1. get orderId from body.clOrdId
@@ -1623,7 +2710,7 @@ class ExchangeHub extends Bot {
         case SupportedExchange.TIDEBIT:
           return this.tideBitConnector.router(`postCancelOrder`, {
             header,
-            body: { ...body, orderId, market: this._findMarket(body.instId) },
+            body: { ...body, orderId, market: tickerSetting },
           });
 
         default:
@@ -1646,14 +2733,15 @@ class ExchangeHub extends Bot {
   // ++ TODO
   // get pending orders by snapshot
   async cancelOrders({ header, body, memberId }) {
-    const source = this._findSource(body.instId);
+    const tickerSetting = this.tickersSettings[body.id];
+    const source = tickerSetting?.source;
     try {
       switch (source) {
         case SupportedExchange.OKEX:
           // get pending orders by snapshot
           const _orders = await this.getOrdersFromDb({
             ...body,
-            market: this._findMarket(body.instId),
+            tickerSetting,
             memberId,
             // state: Database.ORDER_STATE_CODE.WAIT,
             // orderType: Database.ORD_TYPE.LIMIT,
@@ -1722,7 +2810,7 @@ class ExchangeHub extends Bot {
           if (functionName) {
             return this.tideBitConnector.router(`${functionName}`, {
               header,
-              body: { ...body, market: this._findMarket(body.instId) },
+              body: { ...body, market: tickerSetting },
             });
           } else
             return new ResponseFormat({
@@ -1821,6 +2909,9 @@ class ExchangeHub extends Bot {
   }
 
   getAdminUser({ memberId, email }) {
+    if (!this.adminUsers) {
+      this.adminUsers = this._getAdminUsers();
+    }
     let roles, name;
     if (email) {
       let user = this.adminUsers.find((user) => user.email === email);
@@ -1891,378 +2982,195 @@ class ExchangeHub extends Bot {
 
   async _updateOrderDetail(formatOrder) {
     this.logger.log(
-      `---------- [${this.constructor.name}]  _updateOrderDetail [START] ----------`
+      ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
     );
-    const t = await this.database.transaction();
-    /* !!! HIGH RISK (start) !!! */
-    // 1. get orderId from body
-    // 2. get order data from table
-    // 3. find and lock account
-    // 4. update order state
-    // 5. get balance and locked value from order
-    // 6. add trade // -- CAUTION!!! skip now, tradeId use okex tradeId ++ TODO
-    // 7. add vouchers
-    // 8. add account_version
-    // 9. update account balance and locked
-    try {
-      const {
-        ordType,
-        instId,
-        accFillSz,
-        clOrdId,
-        tradeId,
-        state,
-        side,
-        fillPx,
-        fillSz,
-        sz,
-        fee,
-        uTime,
-        ordId,
-      } = formatOrder;
-      // get orderId from formatOrder.clOrdId
-      const { memberId, orderId } = Utils.parseClOrdId(clOrdId);
-      const order = await this.database.getOrder(orderId, { dbTransaction: t });
-      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
-        await t.rollback();
-        this.logger.error(`[${this.constructor.name}], order has been closed`);
-      }
-      const currencyId =
-        order.type === Database.TYPE.ORDER_ASK ? order.ask : order.bid;
-      const accountAsk = await this.database.getAccountByMemberIdCurrency(
+    this.logger.debug(`formatOrder`, formatOrder);
+    let member,
+      memberTag,
+      askFeeRate,
+      bidFeeRate,
+      baseAccBalDiff,
+      baseAccBal,
+      baseLocDiff,
+      baseLoc,
+      quoteLocDiff,
+      quoteLoc,
+      quoteAccBalDiff,
+      quoteAccBal,
+      tmp = Utils.parseClOrdId(formatOrder.clOrdId),
+      tickerSetting =
+        this.tickersSettings[formatOrder.instId.toLowerCase().replace("-", "")],
+      volume = SafeMath.minus(formatOrder.sz, formatOrder.accFillSz),
+      filled = formatOrder.state === Database.ORDER_STATE.FILLED,
+      updateOrder,
+      memberId = tmp.memberId,
+      orderId = tmp.orderId,
+      updateAccounts = this.accountBook.getSnapshot(
         memberId,
-        order.ask,
-        { dbTransaction: t }
-      );
-      const accountBid = await this.database.getAccountByMemberIdCurrency(
-        memberId,
-        order.bid,
-        { dbTransaction: t }
-      );
-
-      /*******************************************
-       * formatOrder.clOrdId: custom orderId for okex
-       * formatOrder.accFillSz: valume which already matched
-       * formatOrder.state: 'live', 'canceled', 'filled', 'partially_filled', but 'cancel' may not enter this function
-       * lockedA: Ask locked value, this value would be negative
-       *   if formatOrder.side === 'sell', formatOrder.fillSz || '0'
-       * feeA: Ask fee value
-       *   if formatOrder.side === 'buy', formatOrder.fee - all this order ask vouchers.fee || 0
-       * balanceA: Ask Balance, this value would be positive;
-       *   if formatOrder.side === 'buy', formatOrder.fillSz - feeA || '0'
-       * lockedB: Bid locked value, this value would be negative
-       *   if formatOrder.side === 'buy',value = formatOrder.fillSz * formatOrder.fillPx - feeA, else value = '0'
-       * feeB: Bid fee value
-       *   if formatOrder.side === 'sell', formatOrder.fee - all this order bid vouchers.fee || 0
-       * balanceB: Bid Blance, this value would be positive;
-       *   if formatOrder.side === 'sell',value = formatOrder.fillSz * formatOrder.fillPx - feeB, else value = '0'
-       * newOrderVolume: remain volume to be matched
-       * newOrderLocked: remain locked to be matched
-       * newFundReceive:
-       *   if formatOrder.side === 'sell': formatOrder.fillSz * formatOrder.fillPx
-       *   if formatOrder.side === 'buy': formatOrder.fillSz
-       * changeBalance: if order is done, euqal to newOrderLocked
-       * changeLocked: if order is done, euqal to newOrderLocked * -1
-       *******************************************/
-
-      let orderState = Database.ORDER_STATE_CODE.WAIT;
-      if (state === Database.ORDER_STATE.FILLED) {
-        orderState = Database.ORDER_STATE_CODE.DONE;
-      }
-
-      const lockedA =
-        side === Database.ORDER_SIDE.SELL ? SafeMath.mult(fillSz, "-1") : "0";
-      const totalFee = SafeMath.abs(fee);
-      const feeA =
-        side === Database.ORDER_SIDE.BUY
-          ? await this._calculateFee(
-              orderId,
-              Database.ORDER_KIND.ASK,
-              totalFee,
-              t
-            )
-          : "0";
-      const balanceA =
-        side === Database.ORDER_SIDE.BUY ? SafeMath.minus(fillSz, feeA) : "0";
-
-      const value = SafeMath.mult(fillPx, fillSz);
-      const lockedB =
-        side === Database.ORDER_SIDE.BUY ? SafeMath.mult(value, "-1") : "0";
-      const feeB =
-        side === Database.ORDER_SIDE.SELL
-          ? await this._calculateFee(
-              orderId,
-              Database.ORDER_KIND.BID,
-              totalFee,
-              t
-            )
-          : "0";
-      const balanceB =
-        side === Database.ORDER_SIDE.SELL ? SafeMath.minus(value, feeB) : "0";
-
-      const newOrderVolume = SafeMath.minus(order.origin_volume, accFillSz);
-      const newOrderLocked = SafeMath.plus(
-        order.locked,
-        side === Database.ORDER_SIDE.BUY ? lockedB : lockedA
-      );
-      const newFundReceive = side === Database.ORDER_SIDE.BUY ? fillSz : value;
-
-      const changeBalance = newOrderLocked;
-      const changeLocked = SafeMath.mult(newOrderLocked, "-1");
-
-      const created_at = new Date().toISOString();
-      const updated_at = created_at;
-
-      const newOrder = {
+        formatOrder.instId
+      ),
+      updateBaseAccount = updateAccounts ? updateAccounts[0] : null,
+      updateQuoteAccount = updateAccounts ? updateAccounts[1] : null;
+    this.logger.debug(`memberId: ${memberId}, orderId: ${orderId}`);
+    this.logger.debug(`volume`, volume);
+    this.logger.debug(`filled`, filled);
+    this.logger.debug(`tickerSetting`, tickerSetting);
+    this.logger.debug(`updateBaseAccount`, updateBaseAccount);
+    this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
+    if (orderId && tickerSetting && memberId) {
+      updateOrder = {
+        instId: formatOrder.instId,
+        ordType: formatOrder.ordType,
         id: orderId,
-        volume: newOrderVolume,
-        state: orderState,
-        locked: newOrderLocked,
-        funds_received: newFundReceive,
-        trades_count: order.trades_count + 1,
-      };
-
-      // TODO: ++ 6. add trade
-      // -- CAUTION!!! skip now, tradeId use okex tradeId,
-      // because it need columns 'ask_member_id' and 'bid_member_id' with foreign key
-      const base_unit = this.currencies.find(
-        (curr) => curr.id === order.ask
-      )?.key;
-      const quote_unit = this.currencies.find(
-        (curr) => curr.id === order.bid
-      )?.key;
-      if (!base_unit || !quote_unit)
-        throw Error(
-          `order base_unit[order.ask: ${order.ask}] or quote_unit[order.bid: ${order.bid}] not found`
-        );
-      await this.database.insertVouchers(
-        memberId,
-        orderId,
-        tradeId, // ++ TODO reference step6 trade.id
-        null,
-        base_unit, // -- need change
-        quote_unit, // -- need change
-        fillPx,
-        fillSz,
-        value,
-        order.type === Database.TYPE.ORDER_ASK
-          ? Database.ORDER_KIND.ASK
-          : Database.ORDER_KIND.BID,
-        order.type === Database.TYPE.ORDER_ASK ? feeB : "0", // get bid, so fee is bid
-        order.type === Database.TYPE.ORDER_ASK ? "0" : feeA, // get ask, so fee is ask
-        created_at,
-        { dbTransaction: t }
-      );
-
-      await this.database.updateOrder(newOrder, { dbTransaction: t });
-
-      const _updateOrder = {
-        id: ordId,
-        at: parseInt(SafeMath.div(uTime, "1000")),
-        ts: parseInt(uTime),
-        market: instId.replace("-", "").toLowerCase(),
+        ordId: formatOrder.ordId,
+        clOrdId: formatOrder.clOrdId,
+        at: parseInt(SafeMath.div(formatOrder.uTime, "1000")),
+        ts: parseInt(formatOrder.uTime),
+        market: tickerSetting.id,
         kind:
-          side === Database.ORDER_SIDE.BUY
+          formatOrder.side === Database.ORDER_SIDE.BUY
             ? Database.ORDER_KIND.BID
             : Database.ORDER_KIND.ASK,
-        price: null, // market prcie
-        origin_volume: sz,
-        clOrdId: clOrdId,
-        state:
-          state === Database.ORDER_STATE.CANCEL
-            ? Database.ORDER_STATE.CANCEL
-            : state === Database.ORDER_STATE.FILLED
-            ? Database.ORDER_STATE.DONE
-            : Database.ORDER_STATE.WAIT,
-        state_text:
-          state === Database.ORDER_STATE.CANCEL
-            ? Database.ORDER_STATE_TEXT.CANCEL
-            : state === Database.ORDER_STATE.FILLED
-            ? Database.ORDER_STATE_TEXT.DONE
-            : Database.ORDER_STATE_TEXT.WAIT,
-        volume: SafeMath.minus(sz, fillSz),
-        instId: instId,
-        ordType: ordType,
-        filled: state === Database.ORDER_STATE.FILLED,
+        price: formatOrder.px,
+        origin_volume: formatOrder.sz,
+        volume,
+        filled,
+        state_text: filled
+          ? Database.ORDER_STATE_TEXT.DONE
+          : formatOrder.state === Database.ORDER_STATE_TEXT.CANCEL
+          ? Database.ORDER_STATE_TEXT.CANCEL
+          : Database.ORDER_STATE_TEXT.WAIT,
+        state: filled
+          ? Database.ORDER_STATE.DONE
+          : formatOrder.state === Database.ORDER_STATE.CANCEL
+          ? Database.ORDER_STATE.CANCEL
+          : Database.ORDER_STATE.WAIT,
+        state_code: filled
+          ? Database.ORDER_STATE_CODE.DONE
+          : formatOrder.state === Database.ORDER_STATE.CANCEL
+          ? Database.ORDER_STATE_CODE.CANCEL
+          : Database.ORDER_STATE_CODE.WAIT,
       };
-      this.logger.log(
-        `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] updateOrder ln:1092`,
-        _updateOrder
-      );
-      this.orderBook.updateByDifference(memberId, instId, {
-        add: [_updateOrder],
-      });
-      let market = instId.replace("-", "").toLowerCase();
-      EventBus.emit(Events.order, memberId, market, {
-        market,
-        difference: this.orderBook.getDifference(memberId, instId),
-      });
-      await this._updateAccount({
-        account: accountAsk,
-        dbTransaction: t,
-        balance: balanceA,
-        locked: lockedA,
-        fee: feeA,
-        modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-        modifiableId: tradeId,
-        createdAt: created_at,
-        fun:
-          order.type === Database.TYPE.ORDER_ASK
-            ? Database.FUNC.UNLOCK_AND_SUB_FUNDS
-            : Database.FUNC.PLUS_FUNDS,
-      });
-      let _updateAcc = {
-        balance: SafeMath.plus(accountAsk.balance, balanceA),
-        locked: SafeMath.plus(accountAsk.balance, lockedA), //++ TODO verify => SafeMath.plus(accountAsk.balance, lockedA)
-        currency: this.currencies.find(
-          (curr) => curr.id === accountAsk.currency
-        )?.symbol,
-        total: SafeMath.plus(
-          SafeMath.plus(accountAsk.balance, balanceA),
-          SafeMath.plus(accountAsk.balance, lockedA) //++ TODO verify => SafeMath.plus(accountAsk.balance, lockedA)
-        ),
-      };
-      this.accountBook.updateByDifference(memberId, _updateAcc);
-      EventBus.emit(
-        Events.account,
+      this.logger.debug(`updateOrder`, updateOrder);
+      this._emitUpdateOrder({
         memberId,
-        this.accountBook.getDifference(memberId)
-      );
-
-      this.logger.log(
-        `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1057`,
-        _updateAcc
-      );
-      await this._updateAccount({
-        account: accountBid,
-        dbTransaction: t,
-        balance: balanceB,
-        locked: lockedB,
-        fee: feeB,
-        modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-        modifiableId: tradeId,
-        createdAt: created_at,
-        fun:
-          order.type === Database.TYPE.ORDER_ASK
-            ? Database.FUNC.PLUS_FUNDS
-            : Database.FUNC.UNLOCK_AND_SUB_FUNDS,
+        instId: tickerSetting.instId,
+        market: tickerSetting.id,
+        order: updateOrder,
       });
-      _updateAcc = {
-        balance: SafeMath.plus(accountBid.balance, balanceB),
-        locked: SafeMath.plus(accountBid.balance, lockedB),
-        currency: this.currencies.find(
-          (curr) => curr.id === accountBid.currency
-        )?.symbol,
-        total: SafeMath.plus(
-          SafeMath.plus(accountBid.balance, balanceB),
-          SafeMath.plus(accountBid.balance, lockedB)
-        ),
-      };
-      this.accountBook.updateByDifference(memberId, _updateAcc);
-      EventBus.emit(
-        Events.account,
-        memberId,
-        this.accountBook.getDifference(memberId)
-      );
-
-      this.logger.log(
-        `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1086`,
-        _updateAcc
-      );
-      // order 完成，解鎖剩餘沒用完的
-      if (
-        orderState === Database.ORDER_STATE_CODE.DONE &&
-        SafeMath.gt(newOrderLocked, "0")
-      ) {
-        if (order.type === Database.TYPE.ORDER_ASK) {
-          // ++ TODO reference step6 trade.id
-          await this._updateAccount({
-            account: accountAsk,
-            dbTransaction: t,
-            balance: changeLocked,
-            locked: changeBalance,
-            fee: 0,
-            modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-            modifiableId: tradeId,
-            createdAt: created_at,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-          });
-          _updateAcc = {
-            balance: SafeMath.plus(accountAsk.balance, changeLocked),
-            locked: SafeMath.plus(accountAsk.balance, changeBalance),
-            currency: this.currencies.find(
-              (curr) => curr.id === accountAsk.currency
-            )?.symbol,
-            total: SafeMath.plus(
-              SafeMath.plus(accountAsk.balance, changeLocked),
-              SafeMath.plus(accountAsk.balance, changeBalance)
-            ),
-          };
-          this.accountBook.updateByDifference(memberId, _updateAcc);
-          EventBus.emit(
-            Events.account,
-            memberId,
-            this.accountBook.getDifference(memberId)
-          );
-          this.logger.log(
-            `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1120`,
-            _updateAcc
-          );
-        } else if (order.type === Database.TYPE.ORDER_BID) {
-          // ++ TODO reference step6 trade.id
-          await this._updateAccount({
-            account: accountBid,
-            dbTransaction: t,
-            balance: changeLocked,
-            locked: changeBalance,
-            fee: 0,
-            modifiableType: Database.MODIFIABLE_TYPE.TRADE,
-            modifiableId: tradeId,
-            createdAt: created_at,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-          });
-          _updateAcc = {
-            balance: SafeMath.plus(accountBid.balance, changeLocked),
-            locked: SafeMath.plus(accountBid.balance, changeBalance),
-            currency: this.currencies.find(
-              (curr) => curr.id === accountBid.currency
-            )?.symbol,
-            total: SafeMath.plus(
-              SafeMath.plus(accountBid.balance, changeLocked),
-              SafeMath.plus(accountBid.balance, changeBalance)
-            ),
-          };
-          this.accountBook.updateByDifference(memberId, _updateAcc);
-          EventBus.emit(
-            Events.account,
-            memberId,
-            this.accountBook.getDifference(memberId)
-          );
-          this.logger.log(
-            `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _updateAcc ln:1149`,
-            _updateAcc
-          );
-        }
-      }
-
-      await t.commit();
-    } catch (error) {
-      this.logger.error(error);
-      await t.rollback();
     }
-    /* !!! HIGH RISK (end) !!! */
+    if (tickerSetting && memberId && updateBaseAccount && updateQuoteAccount) {
+      member = await this.database.getMemberById(memberId);
+      if (member) {
+        memberTag = member.member_tag;
+        this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+        if (memberTag) {
+          if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
+            askFeeRate = tickerSetting.ask.vip_fee;
+            bidFeeRate = tickerSetting.bid.vip_fee;
+          }
+          if (
+            memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
+          ) {
+            askFeeRate = tickerSetting.ask.hero_fee;
+            bidFeeRate = tickerSetting.bid.hero_fee;
+          }
+        } else {
+          askFeeRate = tickerSetting.ask.fee;
+          bidFeeRate = tickerSetting.bid.fee;
+        }
+
+        if (formatOrder.side === Database.ORDER_SIDE.BUY) {
+          baseAccBalDiff = SafeMath.minus(
+            formatOrder.fillSz,
+            SafeMath.mult(formatOrder.fillSz, bidFeeRate)
+          );
+          this.logger.debug(`baseAccBalDiff`, baseAccBalDiff);
+          baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
+          this.logger.debug(`baseAccBal`, baseAccBal);
+          baseLocDiff = 0;
+          baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
+          updateBaseAccount = {
+            balance: baseAccBal,
+            locked: baseLoc,
+            currency: tickerSetting.ask.currency.toUpperCase(),
+            total: SafeMath.plus(baseAccBal, baseLoc),
+          };
+          quoteAccBalDiff = 0;
+          quoteAccBal = SafeMath.plus(
+            updateQuoteAccount.balance,
+            quoteAccBalDiff
+          );
+          quoteLocDiff = SafeMath.mult(
+            SafeMath.mult(formatOrder.px, formatOrder.fillSz),
+            "-1"
+          );
+          this.logger.debug(`quoteLocDiff`, quoteLocDiff);
+          quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
+          updateQuoteAccount = {
+            balance: quoteAccBal,
+            locked: quoteLoc,
+            currency: tickerSetting.bid.currency.toUpperCase(),
+            total: SafeMath.plus(quoteAccBal, quoteLoc),
+          };
+        } else {
+          baseAccBalDiff = 0;
+          baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
+          baseLocDiff = SafeMath.mult(formatOrder.fillSz, "-1");
+          this.logger.debug(`baseLocDiff`, baseLocDiff);
+          baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
+          updateBaseAccount = {
+            balance: baseAccBal,
+            locked: baseLoc,
+            currency: tickerSetting.ask.currency.toUpperCase(),
+            total: SafeMath.plus(baseAccBal, baseLoc),
+          };
+          quoteAccBalDiff = SafeMath.minus(
+            SafeMath.mult(formatOrder.fillPx, formatOrder.fillSz),
+            SafeMath.mult(
+              SafeMath.mult(formatOrder.fillPx, formatOrder.fillSz),
+              askFeeRate
+            )
+          );
+          this.logger.debug(`quoteAccBalDiff`, quoteAccBalDiff);
+          quoteAccBal = SafeMath.plus(
+            updateQuoteAccount.balance,
+            quoteAccBalDiff
+          );
+          this.logger.debug(`quoteAccBal`, quoteAccBal);
+          quoteLocDiff = 0;
+          quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
+          updateQuoteAccount = {
+            balance: quoteAccBal,
+            locked: quoteLoc,
+            currency: tickerSetting.bid.currency.toUpperCase(),
+            total: SafeMath.plus(quoteAccBal, quoteLoc),
+          };
+        }
+        this._emitUpdateAccount({
+          memberId,
+          account: updateBaseAccount,
+        });
+        this._emitUpdateAccount({
+          memberId,
+          account: updateQuoteAccount,
+        });
+      }
+    }
+    this.logger.log(
+      ` ------------- [${this.constructor.name}] _updateOrderDetail [END]---------------`
+    );
   }
 
-  async _getPlaceOrderData(memberId, body) {
-    const market = this._findMarket(body.instId);
-    if (!market) {
-      throw new Error(`this.tidebitMarkets.instId ${body.instId} not found.`);
+  async _getPlaceOrderData(memberId, body, tickerSetting) {
+    if (!tickerSetting) {
+      throw new Error(`this ticker ${body.instId} can be found.`);
     }
-    const { id: bid } = this.currencies.find(
-      (curr) => curr.key === market.quote_unit
+    const { id: bid } = this.coinsSettings.find(
+      (curr) => curr.code === tickerSetting.quoteUnit
     );
-    const { id: ask } = this.currencies.find(
-      (curr) => curr.key === market.base_unit
+    const { id: ask } = this.coinsSettings.find(
+      (curr) => curr.code === tickerSetting.baseUnit
     );
     if (!bid) {
       throw new Error(`bid not found`);
@@ -2270,7 +3178,7 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found`);
     }
-    const currency = market.code;
+    const currency = tickerSetting.code;
     const type =
       body.kind === Database.ORDER_KIND.BID
         ? Database.TYPE.ORDER_BID
@@ -2557,8 +3465,8 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
-            // await this._updateOrderDetail(formatOrder);
-            await this.exchangeHubService.sync(
+            await this._updateOrderDetail(formatOrder);
+            this.exchangeHubService.sync(
               SupportedExchange.OKEX,
               formatOrder,
               true
@@ -2616,18 +3524,6 @@ class ExchangeHub extends Bot {
     return (
       Utils.marketFilterInclude(this.tidebitMarkets, [{ instId }]).length > 0
     );
-  }
-
-  _findInstId(id) {
-    return this.config.markets[id.toUpperCase()];
-  }
-
-  _findSource(instId) {
-    return this.config.markets[`tb${instId}`];
-  }
-
-  _findMarket(instId) {
-    return this.tidebitMarkets.find((m) => m.instId === instId);
   }
 }
 

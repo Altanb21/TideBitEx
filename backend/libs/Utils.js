@@ -843,10 +843,10 @@ class Utils {
       flowLevel: 3,
       styles: {
         "!!int": "decimal",
-        "!!null": "camelcase",
+        "!!null": "empty",
       },
     });
-    fs.writeFileSync(filePath, editedYaml)
+    fs.writeFileSync(filePath, editedYaml);
   }
 
   static getDecimal(length) {

@@ -177,6 +177,7 @@
   &__content {
     flex: auto;
     max-height: 342px;
+    margin: 0 50px;
   }
   &__footer {
     display: flex;
@@ -195,9 +196,11 @@
   &__cancel-btn {
     color: #3e3e3e;
     background-color: #fff;
+    cursor: pointer;
   }
   &__confirm-btn {
     background-color: #3e3e3e;
     color: #fff;
+    cursor: pointer;
   }
 }

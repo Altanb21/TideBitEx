@@ -34,12 +34,12 @@ class DBOperator {
     return this.database.getAccountsByMemberId(memberId);
   }
 
-  async getCurrencies(currencyId) {
-    return this.database.getCurrencies(currencyId);
+  async getCurrencies() {
+    return this.database.getCurrencies();
   }
 
-  async getCurrenciesSymbol(currencyId) {
-    return this.database.getCurrenciesSymbol(currencyId);
+  async getCurrenciesSymbol() {
+    return this.database.getCurrenciesSymbol();
   }
 
   async getCurrency(currencyId) {
