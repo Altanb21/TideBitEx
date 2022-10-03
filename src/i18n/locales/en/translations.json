@@ -221,5 +221,8 @@
   "current-bid-hero-fee": "Current Hero Bid Fee",
   "current-bid-vip-fee": "Current VIP Bid Fee",
   "asset-maximun": "資產存量上限",
-  "asset-minimun": "資產存量下限"
+  "asset-minimun": "資產存量下限",
+  "done": "Done",
+  "canceled": "Cancel",
+  "wait": "Waiting"
 }

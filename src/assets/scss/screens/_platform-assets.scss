@@ -110,6 +110,9 @@
     background-color: #2699fb;
     color: #fff;
   }
+  & &__source.warn > &__bar {
+    border-color: #eccb2c;
+  }
   & &__source.warn &__inner-bar {
     background-color: #eccb2c;
   }
