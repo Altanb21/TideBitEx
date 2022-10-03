@@ -86,7 +86,7 @@ const Layout = ({ children }) => {
   return (
     <div
       id="layout"
-      className="layout layout--pushable"
+      className="layout layout--pushable scrollbar-custom"
       onClick={(e) => {
         let elementClass = e.target.getAttribute("class");
         if (

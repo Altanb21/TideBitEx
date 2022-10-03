@@ -36,7 +36,7 @@ class TickerBook extends BookBase {
       ticker,
       tickerSetting = this._tickersSettings[data.id],
       instrument;
-    if (tickerSetting) {
+    if (tickerSetting && tickerSetting?.visible) {
       switch (source) {
         case SupportedExchange.OKEX:
           instrument = this.instruments[data.instId];
