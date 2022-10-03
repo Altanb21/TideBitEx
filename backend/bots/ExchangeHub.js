@@ -459,7 +459,7 @@ class ExchangeHub extends Bot {
     //   currentUser
     // );
     // if (currentUser.roles?.includes("root")) {
-    const _accounts = await this.database.getAccounts();
+    const _accounts = await this.database.getTotalAccountsAssets();
     coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
       if (!prev[coinSetting.id.toString()])
         prev[coinSetting.id.toString()] = { ...coinSetting };
@@ -495,114 +495,105 @@ class ExchangeHub extends Bot {
         // 需拿交易所所有用戶餘額各幣種的加總
         for (let _account of _accounts) {
           let coinSetting = coinsSettings[_account.currency.toString()];
-          if (!coins[coinSetting.code]) {
-            coins[coinSetting.code] = {
-              id: coinSetting.id,
-              key: coinSetting.key,
-              code: coinSetting.code,
-              symbol: coinSetting.symbol,
-              coin: coinSetting.coin,
-              visible: coinSetting.visible,
-              disable: coinSetting.disable,
-              group: coinSetting.marketing_category,
-              accounts: {},
-              sum: "0",
-              RRRRatio: coinSetting.RRR_ratio || 0.35,
-              MPARatio: coinSetting.MPA_ratio || 0.65,
-              maximun: coinSetting.maximun,
-              minimun: coinSetting.minimun,
-              sources: {},
-            };
-            // this.logger.log(
-            //   `getPlatformAssets coins[${coinSetting.code}]`,
-            //   coins[coinSetting.code]
-            // );
-            for (let exchange of Object.keys(SupportedExchange)) {
-              switch (SupportedExchange[exchange]) {
-                case SupportedExchange.OKEX:
-                  // this.logger.log(
-                  //   `getPlatformAssets  sources[${exchange}][${coinSetting.code}]`,
-                  //   sources[exchange][coinSetting.code]
-                  // );
-                  coins[coinSetting.code]["sources"][exchange.toLowerCase()] = {
-                    balance:
-                      sources[exchange][coinSetting.code]?.balance || "0",
-                    locked: sources[exchange][coinSetting.code]?.locked || "0",
-                    sum: sources[exchange][coinSetting.code]?.sum || "0",
-                    alertLevel: undefined,
-                  };
-                  break;
-                case SupportedExchange.TIDEBIT:
-                  // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
-                  coins[coinSetting.code]["sources"][exchange.toLowerCase()] = {
-                    balance: "0",
-                    locked: "0",
-                    alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
-                  };
-                  break;
-                default:
+          if (coinSetting) {
+            const sum = SafeMath.plus(
+              _account.total_balace,
+              _account.total_locked
+            );
+            const RRRRatio = coinSetting.RRR_ratio || 0.35;
+            const MPARatio = coinSetting.MPA_ratio || 0.65;
+            const RRR = SafeMath.mult(RRRRatio, sum);
+            const MPA = SafeMath.mult(MPARatio, sum);
+            if (!coins[coinSetting.code]) {
+              coins[coinSetting.code] = {
+                id: coinSetting.id,
+                key: coinSetting.key,
+                code: coinSetting.code,
+                symbol: coinSetting.symbol,
+                coin: coinSetting.coin,
+                visible: coinSetting.visible,
+                disable: coinSetting.disable,
+                group: coinSetting.marketing_category,
+                accounts: {},
+                sum,
+                totalBalace: Utils.removeZeroEnd(_account.total_balace),
+                totalLocked: Utils.removeZeroEnd(_account.total_locked),
+                RRRRatio,
+                MPARatio,
+                maximun: coinSetting.maximun,
+                minimun: coinSetting.minimun,
+                sources: {},
+              };
+              // this.logger.log(
+              //   `getPlatformAssets coins[${coinSetting.code}]`,
+              //   coins[coinSetting.code]
+              // );
+              for (let exchange of Object.keys(SupportedExchange)) {
+                let alertLevel;
+                switch (SupportedExchange[exchange]) {
+                  case SupportedExchange.OKEX:
+                    // this.logger.log(
+                    //   `getPlatformAssets  sources[${exchange}][${coinSetting.code}]`,
+                    //   sources[exchange][coinSetting.code]
+                    // );
+                    if (
+                      SafeMath.eq(sources[exchange][coinSetting.code]?.sum, 0)
+                    ) {
+                      if (SafeMath.eq(sum, 0))
+                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+                      else if (SafeMath.gt(sum, 0))
+                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+                    } else {
+                      if (
+                        SafeMath.gt(
+                          sources[exchange][coinSetting.code]?.sum,
+                          MPA
+                        )
+                      ) {
+                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+                      } else {
+                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+                      }
+                      if (
+                        SafeMath.lte(
+                          sources[exchange][coinSetting.code]?.sum,
+                          RRR
+                        )
+                      ) {
+                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+                      }
+                    }
+                    coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
+                      {
+                        balance:
+                          sources[exchange][coinSetting.code]?.balance || "0",
+                        locked:
+                          sources[exchange][coinSetting.code]?.locked || "0",
+                        sum: sources[exchange][coinSetting.code]?.sum || "0",
+                        alertLevel,
+                      };
+                    break;
+                  case SupportedExchange.TIDEBIT:
+                    // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
+                    coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
+                      {
+                        balance: "0",
+                        locked: "0",
+                        alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+                      };
+                    break;
+                  default:
+                }
               }
             }
+          } else {
+            this.logger.error(
+              `getPlatformAssets notic accounts.currency did not have correspond id in coins.yml but maybe in DB assets.base table`,
+              coins
+            );
           }
-          coins[coinSetting.code].accounts = {
-            ...coins[coinSetting.code].accounts,
-          };
-          coins[coinSetting.code].accounts[_account.member_id] = {
-            balance: Utils.removeZeroEnd(_account.balance),
-            locked: Utils.removeZeroEnd(_account.locked),
-            updatedAt: _account.updated_at,
-          };
-          let sum = SafeMath.plus(_account.balance, _account.locked);
-          coins[coinSetting.code].sum = SafeMath.plus(
-            coins[coinSetting.code].sum,
-            sum
-          );
         }
-        this.logger.log(`getPlatformAssets coins`, coins);
-        coins = Object.values(coins).reduce((prev, coin) => {
-          const RRR = SafeMath.mult(coin.RRRRatio, coin.sum);
-          const MPA = SafeMath.mult(coin.MPARatio, coin.sum);
-          let sources = Object.keys(coin.sources).reduce(
-            (prevSources, source) => {
-              let alertLevel;
-              switch (SupportedExchange[source.toUpperCase()]) {
-                case SupportedExchange.OKEX:
-                  if (SafeMath.eq(coin.sources[source].sum, 0)) {
-                    if (SafeMath.eq(coin.sum, 0))
-                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
-                    else if (SafeMath.gt(coin.sum, 0))
-                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
-                  } else {
-                    if (SafeMath.gt(coin.sources[source].sum, MPA)) {
-                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
-                    } else {
-                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
-                    }
-                    if (SafeMath.lte(coin.sources[source].sum, RRR)) {
-                      alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
-                    }
-                  }
-                  prevSources[source] = {
-                    ...coin.sources[source],
-                    alertLevel,
-                  };
-                  break;
-                case SupportedExchange.TIDEBIT:
-                  prevSources[source] = {
-                    ...coin.sources[source],
-                  };
-                  break;
-                default:
-                  break;
-              }
-              return prevSources;
-            },
-            {}
-          );
-          prev[coin.code] = { ...coin, sources };
-          return prev;
-        }, {});
-        this.logger.log(`getPlatformAssets coins`, coins);
+        this.logger.debug(`getPlatformAssets coins`, coins);
         result = new ResponseFormat({
           message: "getCoinsSettings",
           payload: coins,

@@ -80,6 +80,29 @@ class mysql {
     }
   }
 
+  async getTotalAccountsAssets(){
+    const query = `
+    SELECT
+	    accounts.currency,
+	    SUM(accounts.balance) AS total_balace,
+	    SUM(accounts.locked) AS total_locked
+    FROM
+	    accounts
+    GROUP BY
+	    accounts.currency;
+    `;
+    try {
+      this.logger.log("getTotalAccountsAssets", query);
+      const [currencies] = await this.db.query({
+        query,
+      });
+      return currencies;
+    } catch (error) {
+      this.logger.log(error);
+      return [];
+    }
+  }
+
   async getCurrenciesSymbol() {
     const query = `
     SELECT
