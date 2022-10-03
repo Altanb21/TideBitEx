@@ -1819,9 +1819,11 @@ class OkexConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   _updateTickers(data) {
     data.forEach((d) => {
+      const tickerSetting =
+        this.tickersSettings[d.instId.replace("-", "").toLowerCase()];
       if (
-        this.tickersSettings[d.instId.replace("-", "").toLowerCase()]
-          ?.source === SupportedExchange.OKEX
+        tickerSetting?.source === SupportedExchange.OKEX &&
+        tickerSetting?.visible
       ) {
         const ticker = this.tickerBook.formatTicker(
           { id: d.instId.replace("-", "").toLowerCase(), ...d },
