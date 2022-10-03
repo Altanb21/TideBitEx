@@ -532,11 +532,8 @@ class ExchangeHub extends Bot {
                 let alertLevel;
                 switch (SupportedExchange[exchange]) {
                   case SupportedExchange.OKEX:
-                    // this.logger.log(
-                    //   `getPlatformAssets  sources[${exchange}][${coinSetting.code}]`,
-                    //   sources[exchange][coinSetting.code]
-                    // );
                     if (
+                      !sources[exchange][coinSetting.code] ||
                       SafeMath.eq(sources[exchange][coinSetting.code]?.sum, 0)
                     ) {
                       if (SafeMath.eq(sum, 0))
