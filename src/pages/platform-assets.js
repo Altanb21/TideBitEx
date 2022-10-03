@@ -54,8 +54,8 @@ const InputRange = (props) => {
 
 const AssetSettingDialog = (props) => {
   const { t } = useTranslation();
-  const [maximun, setMaximun] = useState(null);
-  const [minimun, setMinimun] = useState(null);
+  // const [maximun, setMaximun] = useState(null);
+  // const [minimun, setMinimun] = useState(null);
   const [MPARatio, setMPARatio] = useState(
     // SafeMath.mult(SafeMath.div(props.asset.MPA, props.asset.sum), 100)
     SafeMath.mult(props.asset.MPARatio, 100)
@@ -66,10 +66,14 @@ const AssetSettingDialog = (props) => {
   );
 
   const onConfirm = useCallback(() => {
-    if (maximun || minimun || MPARatio || RRRRatio) {
+    if (
+      // maximun || minimun ||
+      MPARatio ||
+      RRRRatio
+    ) {
       props.onConfirm({
-        maximun: maximun ? maximun : props.asset.maximun,
-        minimun: minimun ? minimun : props.asset.minimun,
+        // maximun: maximun ? maximun : props.asset.maximun,
+        // minimun: minimun ? minimun : props.asset.minimun,
         MPARatio: MPARatio
           ? // ? SafeMath.mult(SafeMath.div(MPARatio, 100), props.asset.sum)
             SafeMath.div(MPARatio, 100)
@@ -80,7 +84,7 @@ const AssetSettingDialog = (props) => {
           : props.asset.RRRRatio,
       });
     }
-  }, [MPARatio, RRRRatio, maximun, minimun, props]);
+  }, [MPARatio, RRRRatio, props]);
 
   return (
     <Dialog
@@ -104,7 +108,7 @@ const AssetSettingDialog = (props) => {
         </div>
         <div className="screen__dialog-content--body">
           <div className="screen__dialog-inputs">
-            <div className="screen__dialog-input-group">
+            {/* <div className="screen__dialog-input-group">
               <label
                 className="screen__dialog-input-label"
                 htmlFor={`asset-maximun`}
@@ -159,7 +163,7 @@ const AssetSettingDialog = (props) => {
                   {props.asset.code.toUpperCase()}
                 </div>
               </div>
-            </div>
+            </div> */}
             <div className="screen__dialog-input-group">
               <label className="screen__dialog-input-label" htmlFor="MPA">
                 MPA:
@@ -401,9 +405,11 @@ const PlatformAssets = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
+        setIsLoading(true);
         const assets = await getPlatformAssets();
         setAssets(assets);
         filter({ filterAssets: assets });
+        setIsLoading(false);
         return !prev;
       } else return prev;
     });

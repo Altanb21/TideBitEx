@@ -9,6 +9,7 @@ import { BiLock } from "react-icons/bi";
 
 export const OrderTile = (props) => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
   return (
     <ul
       className="d-flex justify-content-between market-order-item"
@@ -81,7 +82,7 @@ export const OrderTile = (props) => {
           <FaTrashAlt />
         </li>
       ) : (
-        <li>{props.order.state_text}</li>
+        <li>{t(props.order.state)}</li>
       )}
     </ul>
   );

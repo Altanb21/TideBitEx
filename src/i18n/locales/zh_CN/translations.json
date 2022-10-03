@@ -220,5 +220,8 @@
   "current-bid-hero-fee": "当前Hero卖出手续费",
   "current-bid-vip-fee": "当前VIP卖出手续费",
   "asset-maximun": "资产存量上限",
-  "asset-minimun": "资产存量下限"
+  "asset-minimun": "资产存量下限",
+  "done": "完成",
+  "canceled": "等待中",
+  "wait": "取消"
 }

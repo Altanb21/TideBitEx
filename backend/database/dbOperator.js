@@ -30,6 +30,10 @@ class DBOperator {
     return this.database.getAccounts();
   }
 
+  async getTotalAccountsAssets() {
+    return this.database.getTotalAccountsAssets();
+  }
+
   async getAccountsByMemberId(memberId) {
     return this.database.getAccountsByMemberId(memberId);
   }
