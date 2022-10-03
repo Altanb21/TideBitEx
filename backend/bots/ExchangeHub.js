@@ -514,7 +514,7 @@ class ExchangeHub extends Bot {
                 visible: coinSetting.visible,
                 disable: coinSetting.disable,
                 group: coinSetting.marketing_category,
-                accounts: {},
+                // accounts: {},
                 sum,
                 totalBalace: Utils.removeZeroEnd(_account.total_balace),
                 totalLocked: Utils.removeZeroEnd(_account.total_locked),
