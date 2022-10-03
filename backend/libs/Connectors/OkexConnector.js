@@ -75,7 +75,10 @@ class OkexConnector extends ConnectorBase {
   async start() {
     this.logger.log(`[${this.constructor.name}] domain`, this.domain);
     Object.keys(this.tickersSettings).forEach((id) => {
-      if (this.tickersSettings[id]?.source === SupportedExchange.OKEX) {
+      if (
+        this.tickersSettings[id]?.source === SupportedExchange.OKEX &&
+        this.tickersSettings[id]?.visible
+      ) {
         this.instIds.push(this.tickersSettings[id].instId);
         this.subscribeTicker(this.tickersSettings[id].instId);
       }
@@ -1816,9 +1819,11 @@ class OkexConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   _updateTickers(data) {
     data.forEach((d) => {
+      const tickerSetting =
+        this.tickersSettings[d.instId.replace("-", "").toLowerCase()];
       if (
-        this.tickersSettings[d.instId.replace("-", "").toLowerCase()]
-          ?.source === SupportedExchange.OKEX
+        tickerSetting?.source === SupportedExchange.OKEX &&
+        tickerSetting?.visible
       ) {
         const ticker = this.tickerBook.formatTicker(
           { id: d.instId.replace("-", "").toLowerCase(), ...d },

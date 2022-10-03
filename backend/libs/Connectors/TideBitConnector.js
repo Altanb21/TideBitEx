@@ -192,20 +192,23 @@ class TibeBitConnector extends ConnectorBase {
       ? "0"
       : "1";
 
-    const formatTBTicker = {};
+    let formatTBTicker = null;
     const tbTicker = this.tickersSettings[query.id];
-    formatTBTicker[query.id] = {
-      ...tbTicker,
-      ...tickerObj.ticker,
-      market: query.id,
-      at: tickerObj.at,
-      ts: parseInt(SafeMath.mult(tickerObj.at, "1000")),
-      change,
-      changePct,
-      volume: tickerObj.ticker.vol.toString(),
-      source: SupportedExchange.TIDEBIT,
-      ticker: tickerObj.ticker,
-    };
+    if (tbTicker && tbTicker?.visible) {
+      formatTBTicker = {};
+      formatTBTicker[query.id] = {
+        ...tbTicker,
+        ...tickerObj.ticker,
+        market: query.id,
+        at: tickerObj.at,
+        ts: parseInt(SafeMath.mult(tickerObj.at, "1000")),
+        change,
+        changePct,
+        volume: tickerObj.ticker.vol.toString(),
+        source: SupportedExchange.TIDEBIT,
+        ticker: tickerObj.ticker,
+      };
+    }
     return new ResponseFormat({
       message: "getTicker",
       payload: formatTBTicker,
@@ -269,7 +272,10 @@ class TibeBitConnector extends ConnectorBase {
       const market = d.name.replace("/", "").toLowerCase();
       const tickerSetting = this.tickersSettings[market];
       const instId = tickerSetting?.instId;
-      if (tickerSetting?.source === SupportedExchange.TIDEBIT) {
+      if (
+        tickerSetting?.source === SupportedExchange.TIDEBIT &&
+        tickerSetting?.visible
+      ) {
         const ticker = this.tickerBook.formatTicker(
           { ...d, id: market, market, instId },
           SupportedExchange.TIDEBIT
