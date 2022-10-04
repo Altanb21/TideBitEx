@@ -5,17 +5,17 @@
     border: unset;
     border-radius: unset;
   }
-  & &__tile.alert &__icon--alert {
+  &__tile.alert &__icon--alert {
     display: block;
   }
-  & &__tile {
+  &__tile {
     position: relative;
     border-radius: 11px;
     border: 1px solid #707070;
     padding: 18px 54px 18px 12px;
     background-color: #fff;
   }
-  & &__icon {
+  &__icon {
     position: absolute;
     top: 12px;
     width: 20px;
@@ -37,20 +37,20 @@
       cursor: pointer;
     }
   }
-  & &__sources {
+  &__sources {
     display: flex;
     flex-direction: column;
     flex: auto;
     gap: 18px;
   }
-  & &__source,
-  & &__detail,
-  & &__leading {
+  &__source,
+  &__detail,
+  &__leading {
     display: flex;
     gap: 32px;
     align-items: center;
   }
-  & &__leading {
+  &__leading {
     gap: 12px;
     min-width: 108px;
     &--icon {
@@ -67,7 +67,7 @@
       color: #767676;
     }
   }
-  & &__source {
+  &__source {
     gap: 8px;
     &--label {
       min-width: 90px;
@@ -76,7 +76,7 @@
       line-height: 1;
     }
   }
-  & &__bar {
+  &__bar {
     position: relative;
     flex: auto;
     position: relative;
@@ -84,14 +84,14 @@
     border-radius: 11px;
     height: 15px;
   }
-  & &__inner-text {
+  &__inner-text {
     position: absolute;
     line-height: 1;
     transform: translate(-50%, -50%);
     top: 50%;
     left: 50%;
   }
-  & &__inner-bar {
+  &__inner-bar {
     color: #767676;
     border-radius: 11px;
     height: 13px;
@@ -99,34 +99,34 @@
     font-size: 12px;
     line-height: 1;
   }
-  & &__source.notice > &__bar {
+  &__source.notice > &__bar {
     background-color: #dc484d34;
     border-color: #dc484e;
   }
-  & &__source.notice &__inner-text{
+  &__source.notice &__inner-text {
     color: #dc484e;
   }
-  & &__source.normal &__inner-bar {
+  &__source.normal &__inner-bar {
     background-color: #2699fb;
     color: #fff;
   }
-  & &__source.warn > &__bar {
+  &__source.warn > &__bar {
     border-color: #eccb2c;
   }
-  & &__source.warn &__inner-bar {
+  &__source.warn &__inner-bar {
     background-color: #eccb2c;
   }
-  & &__source.alert &__inner-bar {
+  &__source.alert &__inner-bar {
     background-color: #dc484e;
   }
-  & &__source.unset &__inner-bar {
+  &__source.unset &__inner-bar {
     width: 100%;
     background-color: transparent;
   }
-  & &__source.unset &__warning-bar {
+  &__source.unset &__warning-bar {
     opacity: 0;
   }
-  & &__warning-bar {
+  &__warning-bar {
     position: absolute;
     color: #767676;
     top: 0px;
@@ -152,7 +152,7 @@
   & .screen__table {
     border: none;
   }
-  & &__rows {
+  &__rows {
     display: flex;
     flex-direction: column;
     flex: auto;
@@ -160,7 +160,7 @@
     gap: 20px;
     margin-bottom: 10px;
   }
-  & &__dialog .screen__dialog-input-box {
+  &__dialog .screen__dialog-input-box {
     justify-content: space-between;
     width: 300px;
   }

@@ -733,7 +733,7 @@ class Communicator {
 
   async getDashboardData() {
     try {
-      const url = `/admin/dashbord`;
+      const url = `/admin/dashboard`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",

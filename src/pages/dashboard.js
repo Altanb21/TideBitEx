@@ -83,19 +83,19 @@ const Dashboard = (props) => {
     setIsLoading(false);
   }, [storeCtx]);
 
-  const sync = useCallback(() => {
-    setInterval(async () => await getDashboardData(), 1 * 60 * 60 * 1000);
-  }, [getDashboardData]);
+//   const sync = useCallback(() => {
+//     setInterval(async () => await getDashboardData(), 1 * 60 * 60 * 1000);
+//   }, [getDashboardData]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
         await getDashboardData();
-        sync();
+        // sync();
         return !prev;
       } else return prev;
     });
-  }, [getDashboardData, sync]);
+  }, [getDashboardData]);
 
   useEffect(() => {
     if (!isInit) {

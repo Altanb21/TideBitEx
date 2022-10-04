@@ -1480,6 +1480,9 @@ class ExchangeHub extends Bot {
   }
 
   async getDashboardData({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getDashboardData ************`
+    );
     return Promise.resolve(
       new ResponseFormat({
         message: "getDashboardData",
