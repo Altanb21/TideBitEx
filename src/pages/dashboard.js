@@ -42,21 +42,21 @@ const DashboardPannel = (props) => {
     >
       <div className="dashboard__alert-icon"></div>
       <div className="dashboard__pannel--title">{props.name}</div>
-      <div
-        className="dashboard__progress-bar"
-        style={{
-          transform:
-            "rotate(" +
-            (45 + SafeMath.mult(props.profitRatio, 100) * 1.8) +
-            "deg)",
-        }}
-      >
+      <div className="dashboard__progress-bar">
         <div className="dashboard__progress-bar--text">{`${SafeMath.mult(
           props.profitRatio,
           100
         )}%`}</div>
         <div className="dashboard__progress-bar--label-bar"></div>
-        <div className="dashboard__progress-bar--inner-bar"></div>
+        <div
+          className="dashboard__progress-bar--inner-bar"
+          style={{
+            transform:
+              "rotate(" +
+              (45 + SafeMath.mult(props.profitRatio, 100) * 1.8) +
+              "deg)",
+          }}
+        ></div>
       </div>
       <div className="dashboard__pannel--label">{props.label}</div>
       <div className="dashboard__pannel--source">{props.source}</div>
@@ -83,9 +83,9 @@ const Dashboard = (props) => {
     setIsLoading(false);
   }, [storeCtx]);
 
-//   const sync = useCallback(() => {
-//     setInterval(async () => await getDashboardData(), 1 * 60 * 60 * 1000);
-//   }, [getDashboardData]);
+  //   const sync = useCallback(() => {
+  //     setInterval(async () => await getDashboardData(), 1 * 60 * 60 * 1000);
+  //   }, [getDashboardData]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
