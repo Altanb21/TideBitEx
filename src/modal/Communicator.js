@@ -731,6 +731,24 @@ class Communicator {
     }
   }
 
+  async getDashboardData() {
+    try {
+      const url = `/admin/dashbord`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getDashboardData] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
   // use for need jwt request
   async _get(url) {
     try {

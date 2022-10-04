@@ -158,6 +158,10 @@ const StoreProvider = (props) => {
     return await middleman.updateTickerSetting(id, type, data);
   };
 
+  const getDashboardData = async () => {
+    return await middleman.getDashboardData();
+  };
+
   const getUsersAccounts = useCallback(async () => {
     let usersAccounts = {};
     try {
@@ -516,7 +520,8 @@ const StoreProvider = (props) => {
         updateWithdrawSetting,
         updateTickerSetting,
         getPlatformAssets,
-        updatePlatformAsset
+        updatePlatformAsset,
+        getDashboardData
       }}
     >
       {props.children}

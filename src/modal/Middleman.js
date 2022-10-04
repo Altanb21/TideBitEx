@@ -162,6 +162,15 @@ class Middleman {
     }
   }
 
+  async getDashboardData() {
+    try {
+      const response = await this.communicator.getDashboardData();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addAdminUser(newUser) {
     try {
       const response = await this.communicator.addAdminUser(newUser);

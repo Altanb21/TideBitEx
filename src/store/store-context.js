@@ -259,6 +259,7 @@ const StoreContext = React.createContext({
   updateTickerSetting: async (id, type, data) => {},
   getPlatformAssets: async () => {},
   updatePlatformAsset: async (id, data) => {},
+  getDashboardData: async () => {},
 });
 
 export default StoreContext;

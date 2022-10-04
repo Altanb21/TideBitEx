@@ -12,18 +12,49 @@ const padZero = (num) => {
 };
 
 const DashboardPannel = (props) => {
+  let alertTag;
+  switch (props.alertLevel) {
+    case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1:
+      alertTag = "normal";
+      break;
+    case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2:
+      alertTag = "warn";
+      break;
+    case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_3:
+      alertTag = "alert";
+      break;
+    case PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4:
+      alertTag = "alert notice";
+      break;
+    case PLATFORM_ASSET.WARNING_LEVEL.NULL:
+      alertTag = "unset";
+      break;
+    default:
+      break;
+  }
   return (
     <div
       className={`dashboard__pannel dashboard__alert${
         !props.active ? " disabled" : " "
-      }`}
+      } ${alertTag}`}
       key={props.key}
       onClick={props.onClick}
     >
       <div className="dashboard__alert-icon"></div>
       <div className="dashboard__pannel--title">{props.name}</div>
-      <div className="dashboard__progress-bar">
-        <div className="dashboard__progress-bar--text"></div>
+      <div
+        className="dashboard__progress-bar"
+        style={{
+          transform:
+            "rotate(" +
+            (45 + SafeMath.mult(props.profitRatio, 100) * 1.8) +
+            "deg)",
+        }}
+      >
+        <div className="dashboard__progress-bar--text">{`${SafeMath.mult(
+          props.profitRatio,
+          100
+        )}%`}</div>
         <div className="dashboard__progress-bar--label-bar"></div>
         <div className="dashboard__progress-bar--inner-bar"></div>
       </div>
@@ -153,10 +184,15 @@ const Dashboard = (props) => {
                           key={`ticker-${alertTicker.id}`}
                           active={alertTicker.visible}
                           name={alertTicker.name}
-                          fee={alertTicker.fee}
+                          profitRatio={alertTicker.profitRatio}
+                          targetRatio={alertTicker.targetRatio}
+                          alertLevel={alertTicker.alertLevel}
                           label={
-                            alertTicker.visible ? t("fee") : t("ticker-close")
+                            alertTicker.visible
+                              ? t("profit-ratio")
+                              : t("ticker-close")
                           }
+                          source={alertTicker.source}
                           onClick={() => {}}
                         />
                       );
@@ -174,10 +210,17 @@ const Dashboard = (props) => {
                       return (
                         <DashboardPannel
                           key={`coin-${alertCoin.id}`}
-                          name={alertCoin.name}
-                          fee={alertCoin.depositFee}
-                          active={alertCoin.visible}
-                          label={alertCoin.visible ? t("fee") : t("coin-close")}
+                          active={alertCoin.deposit}
+                          name={alertCoin.key}
+                          profitRatio={alertCoin.profitRatio}
+                          targetRatio={alertCoin.targetRatio}
+                          alertLevel={alertCoin.alertLevel}
+                          label={
+                            alertCoin.deposit
+                              ? t("profit-ratio")
+                              : t("coin-close")
+                          }
+                          source={alertCoin.source}
                           onClick={() => {}}
                         />
                       );
@@ -238,12 +281,14 @@ const Dashboard = (props) => {
                           />
                         </div>
                         <div className="platform-assets__leading--value">
-                          {alertAsset.code.toUpperCase()}
+                          {`${alertAsset.key
+                            .substring(0, 1)
+                            .toUpperCase()}${alertAsset.key.substring(1)}`}
                         </div>
                       </td>
-                      <td className="platform-assets__source--label dashboard__table--data">{`${alertAsset.source
-                        .substring(0, 1)
-                        .toUpperCase()}${alertAsset.source.substring(1)}`}</td>
+                      <td className="platform-assets__source--label dashboard__table--data">
+                        {alertAsset.source}
+                      </td>
                       <td className="platform-assets__bar dashboard__table--data">
                         <div className="platform-assets__inner-text">
                           {totalBalance}

@@ -1479,6 +1479,101 @@ class ExchangeHub extends Bot {
     return Promise.resolve(result);
   }
 
+  async getDashboardData({ query }) {
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getDashboardData",
+        payload: {
+          alertAssets: [
+            {
+              balance: 568.39572,
+              locked: 0,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              code: "btc",
+              key: "Bitcoin",
+              source: "OKsub 001",
+              sum: 1079.951868,
+              RRRRatio: 0.35,
+              MPARatio: 0.65,
+            },
+            {
+              balance: 100.392,
+              locked: 0,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              code: "usdt",
+              key: "Tether",
+              source: "OKEx",
+              sum: 1079.951868,
+              RRRRatio: 0.35,
+              MPARatio: 0.65,
+            },
+          ],
+          alertTickers: [
+            {
+              id: "btcusdt",
+              visible: true,
+              name: "BTC/USDT",
+              profitRatio: 0.55,
+              targetRatio: 0.6,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+            {
+              id: "btcusdc",
+              visible: false,
+              name: "BTC/USDC",
+              profitRatio: 0.55,
+              targetRatio: 0.5,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+            {
+              id: "ethusdt",
+              visible: true,
+              name: "ETH/USDT",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+          ],
+          alertCoins: [
+            {
+              id: 2,
+              visible: true,
+              deposit: true,
+              key: "Bitcoin",
+              profitRatio: 0.55,
+              targetRatio: 0.6,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+            {
+              id: 34,
+              visible: true,
+              deposit: false,
+              key: "ethereum",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: 3,
+              visible: true,
+              deposit: true,
+              key: "Tether",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+          ],
+        },
+      })
+    );
+  }
+
   getTidebitMarkets() {
     try {
       const p = path.join(

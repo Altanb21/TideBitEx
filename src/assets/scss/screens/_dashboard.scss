@@ -144,4 +144,36 @@
       color: #767676;
     }
   }
+  &__progress-bar {
+    position: relative;
+    width: 150px;
+    height: 75px;
+    overflow: hidden;
+    margin-bottom: -14px;
+    &--inner-text{
+        display: block;
+        position: absolute;
+        width: 3px;
+        height: 30px;
+        margin: -15px;
+    }
+    &--inner-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 150px;
+      height: 150px; /* full circle! */
+      border-radius: 50%;
+      box-sizing: border-box;
+      border: 24px solid #eee; /* half gray, */
+    }
+  }
+  &__pannel.warn &__progress-bar &__progress-bar--inner-bar {
+    border-bottom-color: #eccb2c; /* half azure */
+    border-right-color: #eccb2c;
+  }
+  &__pannel.alert &__progress-bar &__progress-bar--inner-bar {
+    border-bottom-color: #dc484e; /* half azure */
+    border-right-color: #dc484e;
+  }
 }
