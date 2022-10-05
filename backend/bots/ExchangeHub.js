@@ -1491,7 +1491,7 @@ class ExchangeHub extends Bot {
           totalDeposit: 18000000,
           totalWithdraw: 5000000,
           totalProfit: 2000000,
-          currency: 'HKD',
+          currency: "HKD",
           alertAssets: [
             {
               balance: 568.39572,
@@ -1553,6 +1553,15 @@ class ExchangeHub extends Bot {
               alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
               source: "OKEx",
             },
+            {
+              id: "etcusdt",
+              visible: false,
+              name: "ETC/USDT",
+              profitRatio: 0.55,
+              targetRatio: 0.5,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
           ],
           alertCoins: [
             {
@@ -1593,6 +1602,16 @@ class ExchangeHub extends Bot {
               profitRatio: 0.65,
               targetRatio: 0.7,
               alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: 5,
+              visible: true,
+              deposit: false,
+              key: "ethercls",
+              profitRatio: 0.55,
+              targetRatio: 0.5,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
               source: "OKEx",
             },
           ],
