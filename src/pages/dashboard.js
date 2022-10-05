@@ -208,6 +208,14 @@ const Dashboard = (props) => {
                     colors: ["#3190ff", "#ff719d", "#ffe471"],
                     title: {
                       text: t("platform-assets"),
+                      align: 'center',
+                      offsetY: -352,
+                      style: {
+                        fontSize:  '18px',
+                        fontWeight:  'bold',
+                        // fontFamily:  undefined,
+                        color:  '#333333'
+                      },
                     },
                     toolbar: {
                       show: false,
@@ -227,6 +235,8 @@ const Dashboard = (props) => {
                       labels: {
                         show: false,
                       },
+                      categories: ["平台總資產", "平台出金數", "平台入金數"],
+                      colors: ["#3190ff", "#ff719d", "#ffe471"],
                     },
                     yaxis: {
                       opposite: true,
@@ -239,10 +249,13 @@ const Dashboard = (props) => {
                     },
                     tooltip: {
                       enabled: true,
+                      x: {
+                        show: false,
+                      },
                       y: {
                         formatter: function (y) {
                           if (typeof y !== "undefined") {
-                            return y.toFixed(8) + " HKD";
+                            return y + ` ${currency || "--"}`;
                           }
                           return y;
                         },
@@ -252,7 +265,7 @@ const Dashboard = (props) => {
                 />
               </div>
             </div>
-            <div className="dashboard__content dashboard__content--column dashboard__cards">
+            <div className="dashboard__container dashboard__content dashboard__content--column dashboard__cards">
               <div className="dashboard__card">
                 <div className="dashboard__card--title">交易對管理</div>
                 <div className="dashboard__card--tool">前往交易對設定</div>

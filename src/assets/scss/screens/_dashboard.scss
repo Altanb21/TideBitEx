@@ -1,5 +1,9 @@
 .dashboard {
   padding: 115px 45px 40px;
+  width: 100vw;
+  &__container{
+    width: 100%;
+  }
   &__header {
     color: #142c34;
     text-align: center;
@@ -141,6 +145,7 @@
     padding: 15px !important;
     background-color: #fff;
     width: 207px;
+    min-width: 207px;
     height: 207px;
     display: flex;
     flex-direction: column;
@@ -167,6 +172,8 @@
     flex-direction: row;
     gap: 20px;
     flex: auto;
+    max-width: calc(100vw /5 * 3);
+    overflow: auto;
     &--btn {
       width: 20px;
       height: 20px;
