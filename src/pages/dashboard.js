@@ -42,7 +42,9 @@ const DashboardPannel = (props) => {
       onClick={props.onClick}
     >
       <div className="dashboard__alert-icon"></div>
-      <div className="dashboard__pannel--title">{props.name}</div>
+      <div className="dashboard__pannel--title">{`${props.name
+        .substring(0, 1)
+        .toUpperCase()}${props.name.substring(1)}`}</div>
       <div className="dashboard__progress-bar">
         <div className="dashboard__progress-bar--text">{`${SafeMath.mult(
           props.profitRatio,
@@ -193,17 +195,19 @@ const Dashboard = (props) => {
                       data: currency
                         ? [totalAssets, totalWithdraw, totalDeposit]
                         : [],
-                      name: t("platform-assets"),
                       type: "bar",
                     },
                   ]}
                   options={{
                     chart: {
-                      height: 353,
                       type: "bar",
                       zoom: {
                         enabled: false,
                       },
+                    },
+                    colors: ["#3190ff", "#ff719d", "#ffe471"],
+                    title: {
+                      text: t("platform-assets"),
                     },
                     toolbar: {
                       show: false,
@@ -216,7 +220,6 @@ const Dashboard = (props) => {
                         endingShape: "rounded",
                       },
                     },
-                    colors: ["#3190ff", "#ff719d", "#ffe471"],
                     dataLabels: {
                       enabled: false,
                     },

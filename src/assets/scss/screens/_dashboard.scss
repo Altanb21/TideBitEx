@@ -138,7 +138,7 @@
     text-align: center;
     box-shadow: 0px 3px 6px #00000029;
     border-radius: 20px;
-    padding: 15px;
+    padding: 15px !important;
     background-color: #fff;
     width: 207px;
     height: 207px;
@@ -268,6 +268,9 @@
     padding: unset;
     margin-bottom: unset;
     border: unset;
-    border-radius: unset;
+    // border-radius: unset;
+  }
+  &__chart{
+    height: 352px;
   }
 }
