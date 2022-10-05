@@ -132,7 +132,7 @@ const Dashboard = (props) => {
                 )}:${padZero(lastCheckedTime.getMinutes())}:${padZero(
                   lastCheckedTime.getSeconds()
                 )}`
-              : `${t("unchecked")}`}
+              : `${t("last-checked-time")}: --`}
           </div>
           <button
             className="dashboard__btn dashboard__tool-bar--btn"
@@ -193,7 +193,7 @@ const Dashboard = (props) => {
                       data: currency
                         ? [totalAssets, totalWithdraw, totalDeposit]
                         : [],
-                      name: t("platform-asset"),
+                      name: t("platform-assets"),
                       type: "bar",
                     },
                   ]}
@@ -313,11 +313,13 @@ const Dashboard = (props) => {
             <div className="dashboard__card--tool">前往資產總覽</div>
             <table className="dashboard__table">
               <thead className="dashboard__table--header">
-                <th className="dashboard__table--title">{t("coin")}</th>
+                <th className="dashboard__table--title">{t("currency")}</th>
                 <th className="dashboard__table--title">{`${t("exchange")}/${t(
-                  "subaccount"
+                  "sub-account"
                 )}`}</th>
-                <th className="dashboard__table--title">{t("asset-balace")}</th>
+                <th className="dashboard__table--title">
+                  {t("asset-balance")}
+                </th>
               </thead>
               <tbody className="dashboard__table--rows">
                 {alertAssets.map((alertAsset) => {

@@ -223,5 +223,13 @@
   "asset-minimun": "资产存量下限",
   "done": "完成",
   "canceled": "等待中",
-  "wait": "取消"
+  "wait": "取消",
+  "last-checked-time": "上次检查时间",
+  "check": "Check",
+  "platform-assets": "平台资产",
+  "profit-ratio": "获利率",
+  "ticker-close": "交易对遭关闭",
+  "coin-close": "入金功能关闭",
+  "sub-account": "子账号",
+  "asset-balance": "资产水位"
 }
