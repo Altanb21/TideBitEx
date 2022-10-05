@@ -4,6 +4,7 @@ import LoadingDialog from "../components/LoadingDialog";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { PLATFORM_ASSET } from "../constant/PlatformAsset";
+import ApexCharts from "react-apexcharts";
 
 const padZero = (num) => {
   if (parseInt(num) < 10) {
@@ -69,14 +70,25 @@ const Dashboard = (props) => {
   const [isInit, setIsInit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [lastCheckedTime, setLastCheckedTime] = useState(null);
+  const [totalAssets, setTotalAssets] = useState(null);
+  const [totalDeposit, setTotalDeposit] = useState(null);
+  const [totalWithdraw, setTotalWithdraw] = useState(null);
+  const [totalProfit, setTotalProfit] = useState(null);
+  const [currency, setCurrency] = useState(null);
   const [alertAssets, setAlertAssets] = useState([]);
   const [alertTickers, setAlertTickers] = useState([]);
   const [alertCoins, setAlertCoins] = useState([]);
   const { t } = useTranslation();
+  // ++ TODO SILDER pannel-container
 
   const getDashboardData = useCallback(async () => {
     setIsLoading(true);
     let data = await storeCtx.getDashboardData();
+    setTotalAssets(data.totalAssets);
+    setTotalDeposit(data.totalDeposit);
+    setTotalWithdraw(data.totalWithdraw);
+    setTotalProfit(data.totalProfit);
+    setCurrency(data.currency);
     setAlertAssets(data.alertAssets);
     setAlertTickers(data.alertTickers);
     setAlertCoins(data.alertCoins);
@@ -108,11 +120,12 @@ const Dashboard = (props) => {
       <div className="dashboard">
         <div className="dashboard__header">Dashboard</div>
         <div className="dashboard__tool-bar">
+          {/* https://css-tricks.com/snippets/sass/placing-items-circle/ */}
           <div className="dashboard__tool-bar--label">
             {lastCheckedTime
               ? `${t(
                   "last-checked-time"
-                )}:${lastCheckedTime.getFullYear()}-${padZero(
+                )}: ${lastCheckedTime.getFullYear()}-${padZero(
                   lastCheckedTime.getMonth() + 1
                 )}-${lastCheckedTime.getDate()} ${padZero(
                   lastCheckedTime.getHours()
@@ -141,7 +154,7 @@ const Dashboard = (props) => {
                       平台總資產
                     </div>
                     <div className="dashboard__summary--header-value">
-                      15,000,000 BTC
+                      {`${totalAssets || "--"} ${currency || ""}`}
                     </div>
                   </div>
                 </div>
@@ -153,7 +166,7 @@ const Dashboard = (props) => {
                       平台出金數
                     </div>
                     <div className="dashboard__summary--header-value">
-                      5,000,000 BTC
+                      {`${totalWithdraw || "--"} ${currency || ""}`}
                     </div>
                   </div>
                 </div>
@@ -165,12 +178,75 @@ const Dashboard = (props) => {
                       平台入金數
                     </div>
                     <div className="dashboard__summary--header-value">
-                      5,000,000 BTC
+                      {`${totalDeposit || "--"} ${currency || ""}`}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="dashboard__chart"></div>
+              <div className="dashboard__chart">
+                <ApexCharts
+                  height="40%"
+                  width="100%"
+                  type="bar"
+                  series={[
+                    {
+                      data: currency
+                        ? [totalAssets, totalWithdraw, totalDeposit]
+                        : [],
+                      name: t("platform-asset"),
+                      type: "bar",
+                    },
+                  ]}
+                  options={{
+                    chart: {
+                      height: 48,
+                      type: "bar",
+                      zoom: {
+                        enabled: false,
+                      },
+                    },
+                    toolbar: {
+                      show: false,
+                      enabled: false,
+                    },
+                    plotOptions: {
+                      bar: {
+                        horizontal: false,
+                        columnWidth: "55%",
+                        endingShape: "rounded",
+                      },
+                    },
+                    colors: ["#3190ff", "#ff719d", "#ffe471"],
+                    dataLabels: {
+                      enabled: false,
+                    },
+                    xaxis: {
+                      // categories: props.data.categories ? props.data.categories : [],
+                      type: props.xaxisType,
+                    },
+                    yaxis: {
+                      opposite: true,
+                      labels: {
+                        show: false,
+                      },
+                    },
+                    grid: {
+                      show: false,
+                    },
+                    tooltip: {
+                      enabled: true,
+                      y: {
+                        formatter: function (y) {
+                          if (typeof y !== "undefined") {
+                            return y.toFixed(8) + " HKD";
+                          }
+                          return y;
+                        },
+                      },
+                    },
+                  }}
+                />
+              </div>
             </div>
             <div className="dashboard__content dashboard__content--column dashboard__cards">
               <div className="dashboard__card">
@@ -240,9 +316,7 @@ const Dashboard = (props) => {
                 <th className="dashboard__table--title">{`${t("exchange")}/${t(
                   "subaccount"
                 )}`}</th>
-                <th className="dashboard__table--title">
-                  {t("asset-balace")}
-                </th>
+                <th className="dashboard__table--title">{t("asset-balace")}</th>
               </thead>
               <tbody className="dashboard__table--rows">
                 {alertAssets.map((alertAsset) => {

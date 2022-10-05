@@ -1487,6 +1487,11 @@ class ExchangeHub extends Bot {
       new ResponseFormat({
         message: "getDashboardData",
         payload: {
+          totalAssets: 15000000,
+          totalDeposit: 18000000,
+          totalWithdraw: 5000000,
+          totalProfit: 2000000,
+          currency: 'HKD',
           alertAssets: [
             {
               balance: 568.39572,
@@ -1539,6 +1544,15 @@ class ExchangeHub extends Bot {
               alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
               source: "OKEx",
             },
+            {
+              id: "ethusdc",
+              visible: true,
+              name: "ETH/USDC",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
           ],
           alertCoins: [
             {
@@ -1552,7 +1566,7 @@ class ExchangeHub extends Bot {
               source: "OKEx",
             },
             {
-              id: 34,
+              id: 3,
               visible: true,
               deposit: false,
               key: "ethereum",
@@ -1562,10 +1576,20 @@ class ExchangeHub extends Bot {
               source: "OKEx",
             },
             {
-              id: 3,
+              id: 34,
               visible: true,
               deposit: true,
               key: "Tether",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: 79,
+              visible: true,
+              deposit: true,
+              key: "Tether Coin",
               profitRatio: 0.65,
               targetRatio: 0.7,
               alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
