@@ -8,7 +8,8 @@
   &__tile.alert &__icon--alert {
     display: block;
   }
-  &__tile {
+  &__tile,
+  & &__tile {
     position: relative;
     border-radius: 11px;
     border: 1px solid #707070;
@@ -99,30 +100,38 @@
     font-size: 12px;
     line-height: 1;
   }
+  notice > &__bar,
   &__source.notice > &__bar {
     background-color: #dc484d34;
     border-color: #dc484e;
   }
+  .notice &__inner-text,
   &__source.notice &__inner-text {
     color: #dc484e;
   }
+  .normal &__inner-bar,
   &__source.normal &__inner-bar {
     background-color: #2699fb;
     color: #fff;
   }
+  .warn > &__bar,
   &__source.warn > &__bar {
     border-color: #eccb2c;
   }
+  .warn &__inner-bar,
   &__source.warn &__inner-bar {
     background-color: #eccb2c;
   }
+  .alert &__inner-bar,
   &__source.alert &__inner-bar {
     background-color: #dc484e;
   }
+  .unset &__inner-bar,
   &__source.unset &__inner-bar {
     width: 100%;
     background-color: transparent;
   }
+  .unset &__warning-bar,
   &__source.unset &__warning-bar {
     opacity: 0;
   }
@@ -141,11 +150,15 @@
       background-color: #767676;
     }
   }
+  .warn &__warning-bar:last-child,
   &__source.warn &__warning-bar:last-child,
+  .alert &__warning-bar,
   &__source.alert &__warning-bar {
     color: #dc484e;
   }
+  .warn &__warning-bar:last-child > &__warning-bar--line,
   &__source.warn &__warning-bar:last-child > &__warning-bar--line,
+  .alert &__warning-bar > &__warning-bar--line,
   &__source.alert &__warning-bar > &__warning-bar--line {
     background-color: #dc484e;
   }

@@ -130,7 +130,7 @@ const Dashboard = (props) => {
         </div>
         <div className="dashboard__content dashboard__content--column">
           <div className="dashboard__content dashboard__content--row">
-            <div className="dashboard__card">
+            <div className="dashboard__card dashboard__overview">
               <div className="dashboard__card--title">平台資產管理</div>
               <div className="dashboard__summary">
                 <div className="dashboard__summary--header dashboard__alert">
@@ -172,7 +172,7 @@ const Dashboard = (props) => {
               </div>
               <div className="dashboard__chart"></div>
             </div>
-            <div className="dashboard__content dashboard__content--column">
+            <div className="dashboard__content dashboard__content--column dashboard__cards">
               <div className="dashboard__card">
                 <div className="dashboard__card--title">交易對管理</div>
                 <div className="dashboard__card--tool">前往交易對設定</div>
@@ -235,12 +235,12 @@ const Dashboard = (props) => {
             <div className="dashboard__card--title">資產水位管理</div>
             <div className="dashboard__card--tool">前往資產總覽</div>
             <table className="dashboard__table">
-              <thead className="dashboard__table--headers">
-                <th className="dashboard__table--header">{t("coin")}</th>
-                <th className="dashboard__table--header">{`${t("exchange")}/${t(
+              <thead className="dashboard__table--header">
+                <th className="dashboard__table--title">{t("coin")}</th>
+                <th className="dashboard__table--title">{`${t("exchange")}/${t(
                   "subaccount"
                 )}`}</th>
-                <th className="dashboard__table--header">
+                <th className="dashboard__table--title">
                   {t("asset-balace")}
                 </th>
               </thead>
@@ -271,7 +271,11 @@ const Dashboard = (props) => {
                       break;
                   }
                   return (
-                    <tr className={`dashboard__table--row ${alertTag}`}>
+                    <tr
+                      className={`dashboard__table--row ${alertTag} ${
+                        alertTag !== "unset" ? " dashboard__alert" : ""
+                      }`}
+                    >
                       <td className="dashboard__table--data platform-assets__leading">
                         <div className="dashboard__alert-icon"></div>
                         <div className="platform-assets__leading--icon">
