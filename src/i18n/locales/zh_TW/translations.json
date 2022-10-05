@@ -231,5 +231,6 @@
   "ticker-close": "交易對遭關閉",
   "coin-close": "入金功能關閉",
   "sub-account": "子帳號",
-  "asset-balance": "資產水位"
+  "asset-balance": "資產水位",
+  "value": "數量"
 }

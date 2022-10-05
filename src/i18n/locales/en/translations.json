@@ -232,5 +232,6 @@
   "ticker-close": "Closed ticker",
   "coin-close": "deposit Closed",
   "sub-account": "Sub Account",
-  "asset-balance": "Asset Balance"
+  "asset-balance": "Asset Balance",
+  "value": "Value"
 }

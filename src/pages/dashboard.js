@@ -193,7 +193,11 @@ const Dashboard = (props) => {
                   series={[
                     {
                       data: currency
-                        ? [totalAssets, totalWithdraw, totalDeposit]
+                        ? [
+                            { x: "平台總資產", y: totalAssets },
+                            { x: "平台出金數", y: totalWithdraw },
+                            { x: "平台入金數", y: totalDeposit },
+                          ]
                         : [],
                       type: "bar",
                     },
@@ -235,7 +239,7 @@ const Dashboard = (props) => {
                       labels: {
                         show: false,
                       },
-                      categories: ["平台總資產", "平台出金數", "平台入金數"],
+                      //   categories: ["平台總資產", "平台出金數", "平台入金數"],
                       colors: ["#3190ff", "#ff719d", "#ffe471"],
                     },
                     yaxis: {
@@ -250,11 +254,14 @@ const Dashboard = (props) => {
                     tooltip: {
                       enabled: true,
                       x: {
-                        show: false,
+                        show: true,
                       },
                       y: {
+                        title: {
+                          formatter: (_) => t("value"),
+                        },
                         formatter: function (y) {
-                          if (typeof y !== "undefined") {
+                          if (typeof y !== "undefined" && currency) {
                             return y + ` ${currency ? currency : "--"}`;
                           }
                           return y;
