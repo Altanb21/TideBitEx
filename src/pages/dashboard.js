@@ -185,7 +185,7 @@ const Dashboard = (props) => {
               </div>
               <div className="dashboard__chart">
                 <ApexCharts
-                  height="40%"
+                  height="100%"
                   width="100%"
                   type="bar"
                   series={[
@@ -199,7 +199,7 @@ const Dashboard = (props) => {
                   ]}
                   options={{
                     chart: {
-                      height: 48,
+                      height: 353,
                       type: "bar",
                       zoom: {
                         enabled: false,
@@ -221,8 +221,9 @@ const Dashboard = (props) => {
                       enabled: false,
                     },
                     xaxis: {
-                      // categories: props.data.categories ? props.data.categories : [],
-                      type: props.xaxisType,
+                      labels: {
+                        show: false,
+                      },
                     },
                     yaxis: {
                       opposite: true,

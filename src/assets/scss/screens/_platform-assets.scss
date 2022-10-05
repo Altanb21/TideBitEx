@@ -100,7 +100,7 @@
     font-size: 12px;
     line-height: 1;
   }
-  notice > &__bar,
+  .notice &__bar,
   &__source.notice > &__bar {
     background-color: #dc484d34;
     border-color: #dc484e;
@@ -114,7 +114,7 @@
     background-color: #2699fb;
     color: #fff;
   }
-  .warn > &__bar,
+  .warn &__bar,
   &__source.warn > &__bar {
     border-color: #eccb2c;
   }
