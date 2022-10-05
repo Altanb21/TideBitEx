@@ -206,17 +206,17 @@ const Dashboard = (props) => {
                       },
                     },
                     colors: ["#3190ff", "#ff719d", "#ffe471"],
-                    title: {
-                      text: t("platform-assets"),
-                      align: 'center',
-                      offsetY: -352,
-                      style: {
-                        fontSize:  '18px',
-                        fontWeight:  'bold',
-                        // fontFamily:  undefined,
-                        color:  '#333333'
-                      },
-                    },
+                    // title: {
+                    //   text: t("platform-assets"),
+                    //   align: "center",
+                    //   offsetY: -352,
+                    //   style: {
+                    //     fontSize: "18px",
+                    //     fontWeight: "bold",
+                    //     // fontFamily:  undefined,
+                    //     color: "#333333",
+                    //   },
+                    // },
                     toolbar: {
                       show: false,
                       enabled: false,
@@ -255,7 +255,7 @@ const Dashboard = (props) => {
                       y: {
                         formatter: function (y) {
                           if (typeof y !== "undefined") {
-                            return y + ` ${currency || "--"}`;
+                            return y + ` ${currency ? currency : "--"}`;
                           }
                           return y;
                         },
@@ -263,6 +263,9 @@ const Dashboard = (props) => {
                     },
                   }}
                 />
+                <div className="dashboard__chart--title">
+                  {t("platform-assets")}
+                </div>
               </div>
             </div>
             <div className="dashboard__container dashboard__content dashboard__content--column dashboard__cards">

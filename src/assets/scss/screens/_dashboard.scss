@@ -279,5 +279,12 @@
   }
   &__chart{
     height: 352px;
+    &--title{
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-top: 10px;
+    }
   }
 }
