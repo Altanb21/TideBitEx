@@ -32,7 +32,9 @@ const TickerTile = (props) => {
       <div className="mobile-tickers__price">
         <div>
           {formateDecimal(props.ticker?.last, {
-            decimalLength: props.ticker?.tickSz ? getPrecision(props.ticker?.tickSz) : "0",
+            decimalLength: props.ticker?.tickSz
+              ? getPrecision(props.ticker?.tickSz)
+              : "0",
             pad: true,
           })}
         </div>
@@ -71,11 +73,12 @@ const TickerList = (props) => {
 };
 
 const quoteCcies = {
+  USDT: ["USDT"],
   HKD: ["HKD"],
-  USDX: ["USDC", "USDT", "USDK"],
+  // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],
   USD: ["USD"],
-  ALTS: ["USX"],
+  ALTS: ["ALTS", "USX"],
 };
 
 const MobileTickers = (props) => {
@@ -83,7 +86,9 @@ const MobileTickers = (props) => {
   const [openDialog, setOpenDialog] = useState(false);
   const storeCtx = useContext(StoreContext);
   const [selectedTicker, setSelectedTicker] = useState(null);
-  const [defaultActiveKey, setDefaultActiveKey] = useState("hkd");
+  const [defaultActiveKey, setDefaultActiveKey] = useState(
+    Object.keys(quoteCcies)[0].toLowerCase()
+  );
 
   useEffect(() => {
     if (
@@ -137,8 +142,8 @@ const MobileTickers = (props) => {
               >
                 <TickerList
                   closeDialogHandler={() => setOpenDialog(false)}
-                  tickers={storeCtx.tickers.filter(
-                    (ticker) => ticker.group === quoteCcy.toLowerCase()
+                  tickers={storeCtx.tickers.filter((ticker) =>
+                    quoteCcies[quoteCcy].includes(ticker.group.toUpperCase())
                   )}
                 />
               </Tab>

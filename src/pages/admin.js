@@ -6,8 +6,9 @@ import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
 
-import Manager from "./manager";
 import LoadingDialog from "../components/LoadingDialog";
+import Manager from "./manager";
+import Dashboard from "./dashboard";
 
 const Admin = () => {
   const storeCtx = useContext(StoreContext);
@@ -165,6 +166,9 @@ const Admin = () => {
         {user &&
           user.ability?.canNotRead !== "all" &&
           activePage === "manager" && <Manager user={user} />}
+           {user &&
+          user.ability?.canNotRead !== "all" &&
+          activePage === "dashboard" && <Dashboard user={user} />}
       </div>
     </>
   );

@@ -1,4 +1,4 @@
-import packageJson from '../../package.json';
+import packageJson from "../../package.json";
 import React, { useContext } from "react";
 import {
   FaHome,
@@ -30,7 +30,10 @@ const SideBar = (props) => {
         </a>
       </li>
       <li className="sidebar__item">
-        <a className="sidebar__link" href="/markets/ethhkd">
+        <a
+          className="sidebar__link"
+          href={`/markets/${storeCtx.defaultMarket}`}
+        >
           <BiLineChart size="1.8em" />
           <p>{t("trading")}</p>
         </a>

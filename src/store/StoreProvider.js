@@ -18,6 +18,7 @@ const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
+  const [defaultMarket, setDefaultMarket] = useState("btcusdt");
   const [market, setMarket] = useState(null);
   const [isLogin, setIsLogin] = useState(null);
   const [memberEmail, setMemberEmail] = useState(false);
@@ -156,6 +157,10 @@ const StoreProvider = (props) => {
 
   const updateTickerSetting = async (id, type, data) => {
     return await middleman.updateTickerSetting(id, type, data);
+  };
+
+  const getDashboardData = async () => {
+    return await middleman.getDashboardData();
   };
 
   const getUsersAccounts = useCallback(async () => {
@@ -410,7 +415,6 @@ const StoreProvider = (props) => {
   }, [eventListener, middleman]);
 
   const start = useCallback(async () => {
-    // console.log(`storeCtx start`);
     let market =
       document.cookie
         .split(";")
@@ -419,8 +423,7 @@ const StoreProvider = (props) => {
         ?.split("=")[1] || location.pathname?.includes("/markets/")
         ? location.pathname?.replace("/markets/", "")
         : "";
-    // console.log(`storeCtx market`, market);
-    if (market) {
+    if (market || defaultMarket) {
       middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
       setSelectedTicker(middleman.getTickerSnapshot());
@@ -455,7 +458,7 @@ const StoreProvider = (props) => {
       }
     }
     console.log(`storeCtx start end`);
-  }, [isLogin, location.pathname, middleman]);
+  }, [defaultMarket, isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
@@ -465,6 +468,7 @@ const StoreProvider = (props) => {
   return (
     <StoreContext.Provider
       value={{
+        defaultMarket,
         isLogin,
         tickers,
         books,
@@ -516,7 +520,8 @@ const StoreProvider = (props) => {
         updateWithdrawSetting,
         updateTickerSetting,
         getPlatformAssets,
-        updatePlatformAsset
+        updatePlatformAsset,
+        getDashboardData,
       }}
     >
       {props.children}

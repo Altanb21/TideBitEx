@@ -1479,6 +1479,147 @@ class ExchangeHub extends Bot {
     return Promise.resolve(result);
   }
 
+  async getDashboardData({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getDashboardData ************`
+    );
+    return Promise.resolve(
+      new ResponseFormat({
+        message: "getDashboardData",
+        payload: {
+          totalAssets: 15000000,
+          totalDeposit: 18000000,
+          totalWithdraw: 5000000,
+          totalProfit: 2000000,
+          currency: "HKD",
+          alertAssets: [
+            {
+              balance: 568.39572,
+              locked: 0,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              code: "btc",
+              key: "Bitcoin",
+              source: "OKsub 001",
+              sum: 1079.951868,
+              RRRRatio: 0.35,
+              MPARatio: 0.65,
+            },
+            {
+              balance: 100.392,
+              locked: 0,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              code: "usdt",
+              key: "Tether",
+              source: "OKEx",
+              sum: 1079.951868,
+              RRRRatio: 0.35,
+              MPARatio: 0.65,
+            },
+          ],
+          alertTickers: [
+            {
+              id: "btcusdt",
+              visible: true,
+              name: "BTC/USDT",
+              profitRatio: 0.55,
+              targetRatio: 0.6,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+            {
+              id: "btcusdc",
+              visible: false,
+              name: "BTC/USDC",
+              profitRatio: 0.55,
+              targetRatio: 0.5,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+            {
+              id: "ethusdt",
+              visible: true,
+              name: "ETH/USDT",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: "ethusdc",
+              visible: true,
+              name: "ETH/USDC",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: "etcusdt",
+              visible: false,
+              name: "ETC/USDT",
+              profitRatio: 0.55,
+              targetRatio: 0.5,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+          ],
+          alertCoins: [
+            {
+              id: 2,
+              visible: true,
+              deposit: true,
+              key: "Bitcoin",
+              profitRatio: 0.55,
+              targetRatio: 0.6,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+            {
+              id: 3,
+              visible: true,
+              deposit: false,
+              key: "ethereum",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: 34,
+              visible: true,
+              deposit: true,
+              key: "Tether",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: 79,
+              visible: true,
+              deposit: true,
+              key: "Tether Coin",
+              profitRatio: 0.65,
+              targetRatio: 0.7,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4,
+              source: "OKEx",
+            },
+            {
+              id: 5,
+              visible: true,
+              deposit: false,
+              key: "ethercls",
+              profitRatio: 0.55,
+              targetRatio: 0.5,
+              alertLevel: PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2,
+              source: "OKEx",
+            },
+          ],
+        },
+      })
+    );
+  }
+
   getTidebitMarkets() {
     try {
       const p = path.join(

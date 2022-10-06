@@ -60,14 +60,16 @@ class TickerBook extends BookBase {
             at: parseInt(SafeMath.div(data.ts, "1000")),
             ts: parseInt(data.ts),
             source,
-            tickSz: Math.max(
-              parseFloat(instrument.tickSz),
-              parseFloat(Utils.getDecimal(tickerSetting["bid"]["fixed"]))
-            ).toString(),
-            lotSz: Math.max(
-              parseFloat(instrument.lotSz),
-              parseFloat(Utils.getDecimal(tickerSetting["ask"]["fixed"]))
-            ).toString(),
+            tickSz: instrument.tickSz.toString(),
+            // tickSz: Math.max(
+            //   parseFloat(instrument.tickSz),
+            //   parseFloat(Utils.getDecimal(tickerSetting["bid"]["fixed"]))
+            // ).toString(),
+            lotSz: instrument.lotSz.toString(),
+            // lotSz: Math.max(
+            //   parseFloat(instrument.lotSz),
+            //   parseFloat(Utils.getDecimal(tickerSetting["ask"]["fixed"]))
+            // ).toString(),
             minSz: instrument.minSz,
             sell: data.askPx, // [about to decrepted]
             buy: data.bidPx, // [about to decrepted]
