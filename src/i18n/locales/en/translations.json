@@ -224,5 +224,14 @@
   "asset-minimun": "資產存量下限",
   "done": "Done",
   "canceled": "Cancel",
-  "wait": "Waiting"
+  "wait": "Waiting",
+  "last-checked-time": "Last time checked",
+  "check": "Check",
+  "platform-assets": "Platform Assets",
+  "profit-ratio": "Profit ratio",
+  "ticker-close": "Closed ticker",
+  "coin-close": "deposit Closed",
+  "sub-account": "Sub Account",
+  "asset-balance": "Asset Balance",
+  "value": "Value"
 }

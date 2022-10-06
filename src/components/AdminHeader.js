@@ -11,6 +11,16 @@ const AdminHeader = (props) => {
           height="44px"
         />
       </a>
+      <div
+          className={`admin-header__button${
+            props.activePage === "dashboard" ? " active" : ""
+          }`}
+          onClick={() => {
+            props.onSelected("dashboard");
+          }}
+        >
+          Dashboard
+        </div>
       <div className="admin-header__button-box">
         <div
           className={`admin-header__button${

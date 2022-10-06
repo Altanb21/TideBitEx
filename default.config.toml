@@ -109,4 +109,6 @@ pathname = [
 
   "get | /api/v1/admin/platform-assets | Bot.ExchangeHub.getPlatformAssets",
   "put | /api/v1/admin/platform-assets/:id | Bot.ExchangeHub.updatePlatformAsset",
+  
+  "get | /api/v1/admin/dashboard | Bot.ExchangeHub.getDashboardData",
 ]
