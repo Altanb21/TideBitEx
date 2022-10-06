@@ -7,6 +7,7 @@ TideBit Exchange
 
 - [TideBit-Legacy](https://github.com/CAFECA-IO/TideBit-Lagacy)
 - Node.js: v14.17.6
+- openssl: v1.1.1
 - pm2
 
 ## Getting started
