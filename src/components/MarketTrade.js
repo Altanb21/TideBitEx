@@ -130,8 +130,8 @@ const TradeForm = (props) => {
       // console.log(
       //   `formatedValue:${formatedValue}`)
       setVolume(formatedValue);
-      if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.lotSz))
-        setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.lotSz}`);
+      if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
+        setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
       else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
         setErrorMessage(`Maximum amount is ${storeCtx.selectedTicker?.maxSz}`);
       else if (
