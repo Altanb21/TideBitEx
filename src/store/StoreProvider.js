@@ -18,6 +18,7 @@ const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
+  const [defaultMarket, setDefaultMarket] = useState(null);
   const [market, setMarket] = useState(null);
   const [isLogin, setIsLogin] = useState(null);
   const [memberEmail, setMemberEmail] = useState(false);
@@ -400,6 +401,19 @@ const StoreProvider = (props) => {
 
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
+    let defaultMarket = "btcusdt";
+    setDefaultMarket(defaultMarket);
+    let market =
+      document.cookie
+        .split(";")
+        .filter((v) => /market_id/.test(v))
+        .pop()
+        ?.split("=")[1] || location.pathname?.includes("/markets/")
+        ? location.pathname?.replace("/markets/", "")
+        : "";
+    if (market !== defaultMarket) {
+      document.cookie=`market_id=${defaultMarket}`
+    }
     await middleman.initWs();
     eventListener();
     await middleman.getTickers();
@@ -411,20 +425,10 @@ const StoreProvider = (props) => {
       setMemberEmail(middleman.email);
     }
     // console.log(`storeCtx init end`);
-  }, [eventListener, middleman]);
+  }, [eventListener, location.pathname, middleman]);
 
   const start = useCallback(async () => {
-    // console.log(`storeCtx start`);
-    let market =
-      document.cookie
-        .split(";")
-        .filter((v) => /market_id/.test(v))
-        .pop()
-        ?.split("=")[1] || location.pathname?.includes("/markets/")
-        ? location.pathname?.replace("/markets/", "")
-        : "";
-    // console.log(`storeCtx market`, market);
-    if (market) {
+    if (defaultMarket) {
       middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
       setSelectedTicker(middleman.getTickerSnapshot());
@@ -459,7 +463,7 @@ const StoreProvider = (props) => {
       }
     }
     console.log(`storeCtx start end`);
-  }, [isLogin, location.pathname, middleman]);
+  }, [defaultMarket, isLogin, market, middleman]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
@@ -469,6 +473,7 @@ const StoreProvider = (props) => {
   return (
     <StoreContext.Provider
       value={{
+        defaultMarket,
         isLogin,
         tickers,
         books,
@@ -521,7 +526,7 @@ const StoreProvider = (props) => {
         updateTickerSetting,
         getPlatformAssets,
         updatePlatformAsset,
-        getDashboardData
+        getDashboardData,
       }}
     >
       {props.children}

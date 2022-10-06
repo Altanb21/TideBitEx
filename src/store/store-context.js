@@ -1,6 +1,7 @@
 import React from "react";
 
 const StoreContext = React.createContext({
+  defaultMarket: null,
   exchangeRates: null,
   languageKey: null,
   isLogin: null,
@@ -25,6 +26,7 @@ const StoreContext = React.createContext({
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},
+  init: () => {},
   start: () => {},
   stop: () => {},
   depthBookHandler: (price, amount) => {},
