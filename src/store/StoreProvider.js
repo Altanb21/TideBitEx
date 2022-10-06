@@ -423,15 +423,6 @@ const StoreProvider = (props) => {
         ?.split("=")[1] || location.pathname?.includes("/markets/")
         ? location.pathname?.replace("/markets/", "")
         : "";
-    console.log(`start market`, market);
-    if (market !== defaultMarket) {
-      document.cookie = `market_id=${defaultMarket}`;
-      market = defaultMarket;
-      history.push({
-        pathname: `/markets/${market}`,
-      });
-    }
-    console.log(`defaultMarket`, defaultMarket);
     if (market || defaultMarket) {
       middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
