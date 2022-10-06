@@ -40,11 +40,7 @@ class Receptor extends Bot {
       super
         .start()
         // ++ TODO unsolve error (createPem)
-        // .then(() => this.createPem())
-        .then((options) => {
-          // eslint-disable-next-line no-unused-expressions
-          this.database.leveldb;
-        })
+        .then(() => this.createPem())
         .then((options) => {
           const sessionSecret = dvalue.randomID(24);
           const app = new koa();
@@ -218,8 +214,7 @@ class Receptor extends Bot {
   get servers() {
     return {
       HTTP: this.serverHTTP,
-      // ++ TODO unsolve error (createPem)
-      // HTTPS: this.serverHTTPS,
+      HTTPS: this.serverHTTPS,
     };
   }
 }
