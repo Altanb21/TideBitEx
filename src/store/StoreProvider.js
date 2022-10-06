@@ -412,7 +412,7 @@ const StoreProvider = (props) => {
         ? location.pathname?.replace("/markets/", "")
         : "";
     if (market !== defaultMarket) {
-      document.cookie=`market_id=${defaultMarket}`
+      document.cookie = `market_id=${defaultMarket}`;
     }
     await middleman.initWs();
     eventListener();
@@ -428,7 +428,17 @@ const StoreProvider = (props) => {
   }, [eventListener, location.pathname, middleman]);
 
   const start = useCallback(async () => {
-    if (defaultMarket) {
+    let market =
+      document.cookie
+        .split(";")
+        .filter((v) => /market_id/.test(v))
+        .pop()
+        ?.split("=")[1] || location.pathname?.includes("/markets/")
+        ? location.pathname?.replace("/markets/", "")
+        : "";
+    console.log(`market`, market);
+    console.log(`defaultMarket`, defaultMarket);
+    if (market || defaultMarket) {
       middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
       setSelectedTicker(middleman.getTickerSnapshot());

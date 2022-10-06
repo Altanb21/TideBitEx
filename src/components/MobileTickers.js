@@ -86,7 +86,9 @@ const MobileTickers = (props) => {
   const [openDialog, setOpenDialog] = useState(false);
   const storeCtx = useContext(StoreContext);
   const [selectedTicker, setSelectedTicker] = useState(null);
-  const [defaultActiveKey, setDefaultActiveKey] = useState("hkd");
+  const [defaultActiveKey, setDefaultActiveKey] = useState(
+    Object.keys(quoteCcies)[0].toLowerCase()
+  );
 
   useEffect(() => {
     if (
@@ -140,8 +142,8 @@ const MobileTickers = (props) => {
               >
                 <TickerList
                   closeDialogHandler={() => setOpenDialog(false)}
-                  tickers={storeCtx.tickers.filter(
-                    (ticker) => ticker.group === quoteCcy.toLowerCase()
+                  tickers={storeCtx.tickers.filter((ticker) =>
+                    quoteCcies[quoteCcy].includes(ticker.group.toUpperCase())
                   )}
                 />
               </Tab>

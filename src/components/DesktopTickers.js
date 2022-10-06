@@ -98,7 +98,7 @@ const TickersHeader = (props) => {
 };
 
 const quoteCcies = {
-  USDT: ["USDT"],
+  USDT: ["USDX"],
   HKD: ["HKD"],
   // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],
@@ -110,7 +110,9 @@ const DesktopTickers = (props) => {
   const inputRef = useRef();
   const [isInit, setIsInit] = useState(false);
   const [selectedTicker, setSelectedTicker] = useState(null);
-  const [defaultActiveKey, setDefaultActiveKey] = useState("hkd");
+  const [defaultActiveKey, setDefaultActiveKey] = useState(
+    Object.keys(quoteCcies)[0].toLowerCase()
+  );
   const [filteredTickers, setFilteredTickers] = useState([]);
 
   const filterTickers = useCallback(() => {
@@ -169,8 +171,8 @@ const DesktopTickers = (props) => {
           >
             <TickersHeader />
             <TickerList
-              tickers={filteredTickers.filter(
-                (ticker) => ticker.group === quoteCcy.toLowerCase()
+              tickers={filteredTickers.filter((ticker) =>
+                quoteCcies[quoteCcy].includes(ticker.group.toUpperCase())
               )}
               openTickerListHandler={props.openTickerListHandler}
             />
