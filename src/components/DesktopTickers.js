@@ -103,7 +103,7 @@ const quoteCcies = {
   // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],
   USD: ["USD"],
-  ALTS: ["USX"],
+  ALTS: ["ALTS", "USX"],
 };
 const DesktopTickers = (props) => {
   const storeCtx = useContext(StoreContext);

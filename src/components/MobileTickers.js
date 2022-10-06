@@ -78,7 +78,7 @@ const quoteCcies = {
   // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],
   USD: ["USD"],
-  ALTS: ["USX"],
+  ALTS: ["ALTS", "USX"],
 };
 
 const MobileTickers = (props) => {
