@@ -98,7 +98,7 @@ const TickersHeader = (props) => {
 };
 
 const quoteCcies = {
-  USDT: ["USDX"],
+  USDT: ["USDT", "USDX"],
   HKD: ["HKD"],
   // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],

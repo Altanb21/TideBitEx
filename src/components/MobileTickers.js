@@ -73,7 +73,7 @@ const TickerList = (props) => {
 };
 
 const quoteCcies = {
-  USDT: ["USDT"],
+  USDT: ["USDT", "USDX"],
   HKD: ["HKD"],
   // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],
