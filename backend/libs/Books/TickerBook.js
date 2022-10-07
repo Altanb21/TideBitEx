@@ -23,7 +23,7 @@ class TickerBook extends BookBase {
    */
   set instruments(data) {
     this._instruments = data;
-    // this.logger.log(`[${this.constructor.name}] instruments`, this.instruments);
+    // this.logger.debug(`[${this.constructor.name}] instruments`, this.instruments);
   }
 
   get instruments() {
@@ -209,7 +209,7 @@ class TickerBook extends BookBase {
   }
 
   updateAll(okexTickers, tidebitTickers) {
-    // this.logger.log(`[${this.constructor.name}] updateAll tickers`, tickers);
+    // this.logger.debug(`[${this.constructor.name}] updateAll tickers`, tickers);
     this._difference = {};
     try {
       Object.values(this._tickersSettings || {}).forEach((tickerSetting) => {
@@ -265,7 +265,7 @@ class TickerBook extends BookBase {
   }
 
   getSnapshot(instId) {
-    // this.logger.log(
+    // this.logger.debug(
     //   `[${this.constructor.name}] getSnapshot(${instId})`,
     //   this._snapshot[instId],
     //   this._snapshot

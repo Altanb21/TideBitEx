@@ -98,7 +98,7 @@ const TickersHeader = (props) => {
 };
 
 const quoteCcies = {
-  USDT: ["USDX"],
+  USDT: ["USDT", "USDX"],
   HKD: ["HKD"],
   // USDX: ["USDC", "USDT", "USDK"],
   INNO: ["INNO"],
@@ -171,9 +171,12 @@ const DesktopTickers = (props) => {
           >
             <TickersHeader />
             <TickerList
-              tickers={filteredTickers.filter((ticker) =>
-                quoteCcies[quoteCcy].includes(ticker.group.toUpperCase())
-              )}
+              tickers={filteredTickers?.filter((ticker) => {
+                // if (!ticker.group) console.error(ticker);
+                return quoteCcies[quoteCcy].includes(
+                  ticker.group?.toUpperCase()
+                );
+              })}
               openTickerListHandler={props.openTickerListHandler}
             />
           </Tab>

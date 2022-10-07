@@ -423,7 +423,7 @@ const StoreProvider = (props) => {
         ?.split("=")[1] || location.pathname?.includes("/markets/")
         ? location.pathname?.replace("/markets/", "")
         : "";
-    if (market || defaultMarket) {
+    if (market) {
       middleman.tickerBook.setCurrentMarket(market);
       setMarket(market);
       setSelectedTicker(middleman.getTickerSnapshot());
@@ -457,8 +457,8 @@ const StoreProvider = (props) => {
         setCloseOrders(orders.closedOrders);
       }
     }
-    console.log(`storeCtx start end`);
-  }, [defaultMarket, isLogin, location.pathname, middleman]);
+    // console.log(`storeCtx start end`);
+  }, [isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
     console.log(`stop`);

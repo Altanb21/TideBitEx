@@ -13,6 +13,8 @@ const DBOperator = require(path.resolve(__dirname, "../database/dbOperator"));
 const Codes = require("../constants/Codes");
 const { default: BigNumber } = require("bignumber.js");
 
+let _logger;
+
 class Utils {
   static wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -202,8 +204,8 @@ class Utils {
       .then((config) =>
         Promise.all([
           config,
-          this.initialDB(config),
           this.initialLogger(config),
+          this.initialDB(config),
           this.initiali18n(config),
           this.initialProcess(config),
         ])
@@ -211,8 +213,8 @@ class Utils {
       .then((rs) =>
         Promise.resolve({
           config: rs[0],
-          database: rs[1],
-          logger: rs[2],
+          logger: rs[1],
+          database: rs[2],
           i18n: rs[3],
         })
       )
@@ -497,16 +499,17 @@ class Utils {
     // console.log(`initialDB database`, database);
     const dbPath = path.resolve(homeFolder, "dataset");
     const dbo = new DBOperator();
-    return dbo.init({ dir: dbPath, database }).then(() => dbo);
+    return dbo.init({ dir: dbPath, database, logger: _logger }).then(() => dbo);
   }
 
   static initialLogger({ homeFolder, base }) {
-    return Promise.resolve({
+    _logger = {
       log: console.log,
       debug: base.debug ? console.log : () => {},
       trace: console.trace,
       error: console.error,
-    });
+    };
+    return Promise.resolve(_logger);
   }
 
   static initiali18n() {
@@ -757,9 +760,9 @@ class Utils {
       else memberIdHexR = valueArr[44].slice(2, memberIdL * 2 + 2);
       memberIdBufferR = Buffer.from(memberIdHexR, "hex");
       memberIdBuffer = memberIdBufferR.reverse();
-      console.log(`memberIdBuffer`, memberIdBuffer);
+      // console.log(`memberIdBuffer`, memberIdBuffer);
       memberId = parseInt(memberIdBufferR.toString("hex"), 16);
-      console.log(`memberId`, memberId);
+      // console.log(`memberId`, memberId);
     } else throw Error("Could not decode memberId");
     return memberId;
   }
@@ -800,7 +803,7 @@ class Utils {
     if (!requestRetry && memberId > -1) {
       return memberId;
     } else if (requestRetry && retries > 0) {
-      console.log("getMemberIdFromRedis retries", retries);
+      // console.log("getMemberIdFromRedis retries", retries);
       setTimeout(() => {
         return Utils.getMemberIdFromRedis({
           redisDomain,

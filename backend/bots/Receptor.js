@@ -141,7 +141,6 @@ class Receptor extends Bot {
           memberId: ctx.session.member?.id,
           email: ctx.session.member?.email,
         };
-        // this.logger.log(`inputs`, inputs);
         return operation(inputs).then((rs) => {
           if (rs?.html) {
             ctx.body = rs.html;
