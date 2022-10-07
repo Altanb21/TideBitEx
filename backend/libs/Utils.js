@@ -204,8 +204,8 @@ class Utils {
       .then((config) =>
         Promise.all([
           config,
-          this.initialDB(config),
           this.initialLogger(config),
+          this.initialDB(config),
           this.initiali18n(config),
           this.initialProcess(config),
         ])
