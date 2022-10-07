@@ -13,6 +13,8 @@ const DBOperator = require(path.resolve(__dirname, "../database/dbOperator"));
 const Codes = require("../constants/Codes");
 const { default: BigNumber } = require("bignumber.js");
 
+let _logger;
+
 class Utils {
   static wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -497,16 +499,17 @@ class Utils {
     // console.log(`initialDB database`, database);
     const dbPath = path.resolve(homeFolder, "dataset");
     const dbo = new DBOperator();
-    return dbo.init({ dir: dbPath, database }).then(() => dbo);
+    return dbo.init({ dir: dbPath, database, logger: _logger }).then(() => dbo);
   }
 
   static initialLogger({ homeFolder, base }) {
-    return Promise.resolve({
+    _logger = {
       log: console.log,
       debug: base.debug ? console.log : () => {},
       trace: console.trace,
       error: console.error,
-    });
+    };
+    return Promise.resolve(_logger);
   }
 
   static initiali18n() {
