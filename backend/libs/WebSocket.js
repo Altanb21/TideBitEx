@@ -34,7 +34,7 @@ class WebSocket {
         };
       });
     } catch (e) {
-      console.log(`WebSocket init error:`, e);
+      // console.log(`WebSocket init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init({ url: this.url });

@@ -177,9 +177,9 @@ class WSChannel extends Bot {
       },
       redis
     );
-    console.log(
-      `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
-    );
+    // console.log(
+    //   `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
+    // );
     if (memberId !== -1 && args.CSRFToken) {
       findClient.isPrivate = true;
       findClient.memberId = memberId;

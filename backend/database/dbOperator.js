@@ -230,7 +230,7 @@ class DBOperator {
     trades,
     { dbTransaction }
   ) {
-    console.log(`[DBOperator] insertOuterTrades`);
+    // console.log(`[DBOperator] insertOuterTrades`);
     return this.database.insertOuterTrades(trades, { dbTransaction });
   }
 

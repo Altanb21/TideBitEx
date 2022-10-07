@@ -757,9 +757,9 @@ class Utils {
       else memberIdHexR = valueArr[44].slice(2, memberIdL * 2 + 2);
       memberIdBufferR = Buffer.from(memberIdHexR, "hex");
       memberIdBuffer = memberIdBufferR.reverse();
-      console.log(`memberIdBuffer`, memberIdBuffer);
+      // console.log(`memberIdBuffer`, memberIdBuffer);
       memberId = parseInt(memberIdBufferR.toString("hex"), 16);
-      console.log(`memberId`, memberId);
+      // console.log(`memberId`, memberId);
     } else throw Error("Could not decode memberId");
     return memberId;
   }
@@ -800,7 +800,7 @@ class Utils {
     if (!requestRetry && memberId > -1) {
       return memberId;
     } else if (requestRetry && retries > 0) {
-      console.log("getMemberIdFromRedis retries", retries);
+      // console.log("getMemberIdFromRedis retries", retries);
       setTimeout(() => {
         return Utils.getMemberIdFromRedis({
           redisDomain,
