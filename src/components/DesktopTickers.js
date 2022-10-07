@@ -171,9 +171,12 @@ const DesktopTickers = (props) => {
           >
             <TickersHeader />
             <TickerList
-              tickers={filteredTickers.filter((ticker) =>
-                quoteCcies[quoteCcy].includes(ticker.group.toUpperCase())
-              )}
+              tickers={filteredTickers?.filter((ticker) => {
+                // if (!ticker.group) console.error(ticker);
+                return quoteCcies[quoteCcy].includes(
+                  ticker.group?.toUpperCase()
+                );
+              })}
               openTickerListHandler={props.openTickerListHandler}
             />
           </Tab>

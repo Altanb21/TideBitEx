@@ -142,9 +142,12 @@ const MobileTickers = (props) => {
               >
                 <TickerList
                   closeDialogHandler={() => setOpenDialog(false)}
-                  tickers={storeCtx.tickers.filter((ticker) =>
-                    quoteCcies[quoteCcy].includes(ticker.group.toUpperCase())
-                  )}
+                  tickers={storeCtx.tickers?.filter((ticker) => {
+                    // if (!ticker.group) console.error(ticker);
+                    return quoteCcies[quoteCcy].includes(
+                      ticker.group?.toUpperCase()
+                    );
+                  })}
                 />
               </Tab>
             ))}
