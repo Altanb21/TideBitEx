@@ -73,7 +73,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   async start() {
-    this.logger.log(`[${this.constructor.name}] domain`, this.domain);
+    this.logger.debug(`[${this.constructor.name}] domain`, this.domain);
     Object.keys(this.tickersSettings).forEach((id) => {
       if (
         this.tickersSettings[id]?.source === SupportedExchange.OKEX &&
@@ -273,7 +273,7 @@ class OkexConnector extends ConnectorBase {
     tryOnce = 1,
   }) {
     const { instType, begin, end, before, sz } = query;
-    // this.logger.log(
+    // this.logger.debug(
     //   `[${this.constructor.name}] fetchTradeFillsHistoryRecords [START]`
     // );
     let result,
@@ -312,7 +312,7 @@ class OkexConnector extends ConnectorBase {
         data: JSON.stringify(trade),
       }));
       this.logger.debug(`[${this.constructor.name}] data.length[${data.length}]`);
-      // this.logger.log(
+      // this.logger.debug(
       //   `[${this.constructor.name}][${new Date(
       //     parseInt(data[0].ts)
       //   )}] data[0].ts range in begin(>begin ${
@@ -320,7 +320,7 @@ class OkexConnector extends ConnectorBase {
       //   }) and end(>end ${parseInt(data[0].ts) < end}) data[0]`,
       //   data[0]
       // );
-      // this.logger.log(
+      // this.logger.debug(
       //   `[${this.constructor.name}][${new Date(
       //     parseInt(data[data.length - 1].ts)
       //   )}] data[data.length-1].ts range in begin(>begin ${
@@ -331,7 +331,7 @@ class OkexConnector extends ConnectorBase {
       //   data[data.length - 1]
       // );
       results = data.concat(results);
-      // this.logger.log(
+      // this.logger.debug(
       //   `[${this.constructor.name}]data.length:[${
       //     data.length
       //   }]  parseInt(data[0].ts)[${parseInt(
@@ -425,7 +425,7 @@ class OkexConnector extends ConnectorBase {
 
   async getOrderDetails({ query }) {
     const { instId, ordId } = query;
-    this.logger.log(`[${this.constructor.name}] getOrderDetails`);
+    this.logger.debug(`[${this.constructor.name}] getOrderDetails`);
     let result,
       arr = [];
     const method = "GET";
@@ -769,11 +769,11 @@ class OkexConnector extends ConnectorBase {
         );
         if (formatedTicker) tickers[formatedTicker.id] = formatedTicker;
       });
-      // this.logger.log(
+      // this.logger.debug(
       //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
       // );
-      // this.logger.log(`tickers`, tickers);
-      // this.logger.log(
+      // this.logger.debug(`tickers`, tickers);
+      // this.logger.debug(
       //   `------------------------ [${this.constructor.name}](getTickers) --------------------------`
       // );
       return new ResponseFormat({
@@ -819,15 +819,15 @@ class OkexConnector extends ConnectorBase {
         //   });
         // }
         // const [data] = res.data.data;
-        // this.logger.log(
+        // this.logger.debug(
         //   `----------- [API][RES](${instId}) [START] ----------------`
         // );
-        // this.logger.log(
+        // this.logger.debug(
         //   `[${this.constructor.name}] getDepthBook res`,
         //   `asks[${data.asks.length}]`,
         //   `bids[${data.bids.length}]`
         // );
-        // this.logger.log(
+        // this.logger.debug(
         //   `----------- [API][RES](${instId}) [END] ----------------`
         // );
         this.depthBook.updateAll(instId, lotSz, { asks: [], bids: [] });
@@ -929,7 +929,7 @@ class OkexConnector extends ConnectorBase {
     if (to) arr.push(`after=${parseInt(to) * 1000}`); //6/2
     arr.push(`limit=${300}`);
     let qs = !!arr.length ? `?${arr.join("&")}` : "";
-    // this.logger.log(`getTradingViewHistory arr`, arr);
+    // this.logger.debug(`getTradingViewHistory arr`, arr);
 
     try {
       let res = await axios({
@@ -946,8 +946,8 @@ class OkexConnector extends ConnectorBase {
         });
       }
       let resData = res.data.data;
-      // this.logger.log(`resData[0] 1`, resData[0]);
-      // this.logger.log(
+      // this.logger.debug(`resData[0] 1`, resData[0]);
+      // this.logger.debug(
       //   `resData[resData.length-1] 1`,
       //   resData[resData.length - 1]
       // );
@@ -1061,7 +1061,7 @@ class OkexConnector extends ConnectorBase {
         });
       }
     }
-    // this.logger.log(
+    // this.logger.debug(
     //   `[${this.constructor.name}] getTrades this.tradeBook.getSnapshot(${instId})`,
     //   this.tradeBook.getSnapshot(instId)
     // );
@@ -1074,8 +1074,8 @@ class OkexConnector extends ConnectorBase {
   formateExAccts(subAcctsBals) {
     const exAccounts = {};
     return subAcctsBals.reduce((prev, subAcctsBal) => {
-      // this.logger.log(`formateExAccts prev`, prev);
-      // this.logger.log(`formateExAccts subAcctsBal`, subAcctsBal);
+      // this.logger.debug(`formateExAccts prev`, prev);
+      // this.logger.debug(`formateExAccts subAcctsBal`, subAcctsBal);
       if (!prev[subAcctsBal.currency]) {
         prev[subAcctsBal.currency] = {};
         prev[subAcctsBal.currency]["details"] = [];
@@ -1271,7 +1271,7 @@ class OkexConnector extends ConnectorBase {
 
     const timeString = new Date().toISOString();
 
-    this.logger.log("postPlaceOrder body:", body);
+    this.logger.debug("postPlaceOrder body:", body);
 
     const okAccessSign = await this.okAccessSign({
       timeString,
@@ -1719,7 +1719,7 @@ class OkexConnector extends ConnectorBase {
    */
   _updateOrderDetails(instType, orderData) {
     const formatOrders = [];
-    this.logger.log(`-------------- _updateOrderDetails from [${this.constructor.name}] ---------------`);
+    this.logger.debug(`-------------- _updateOrderDetails from [${this.constructor.name}] ---------------`);
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
         const formatOrder = {
@@ -1747,8 +1747,8 @@ class OkexConnector extends ConnectorBase {
         formatOrders.push(formatOrder);
       }
     });
-    // this.logger.log(`formatOrders`, formatOrders);
-    // this.logger.log(`-------------- [END] _updateOrderDetails ---------------`);
+    // this.logger.debug(`formatOrders`, formatOrders);
+    // this.logger.debug(`-------------- [END] _updateOrderDetails ---------------`);
     EventBus.emit(Events.orderDetailUpdate, instType, formatOrders);
   }
 
@@ -1798,7 +1798,7 @@ class OkexConnector extends ConnectorBase {
     const market = instId.replace("-", "").toLowerCase();
     const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
     if (action === Events.booksActions.snapshot) {
-      this.logger.log(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
+      this.logger.debug(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
       try {
         this.depthBook.updateAll(instId, lotSz, updateBooks);
       } catch (error) {
@@ -2033,7 +2033,7 @@ class OkexConnector extends ConnectorBase {
   _subscribeMarket(market, wsId, lotSz) {
     const tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.OKEX) {
-      this.logger.log(
+      this.logger.debug(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [START] ++++++`
       );
       this.logger.debug(`(tickerSetting`, tickerSetting);
@@ -2052,7 +2052,7 @@ class OkexConnector extends ConnectorBase {
 
   _unsubscribeMarket(market) {
     const tickerSetting = this.tickersSettings[market];
-    this.logger.log(
+    this.logger.debug(
       `_unsubscribeMarket tickerSetting[market: ${market}]`,
       tickerSetting
     );

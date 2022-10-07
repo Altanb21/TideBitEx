@@ -62,7 +62,7 @@ class ExchangeHubService {
   // }
 
   async sync(exchange, data, force = false) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] sync -------------`
     );
     this.logger.debug(`data`, data);
@@ -89,7 +89,7 @@ class ExchangeHubService {
       clearTimeout(this.timer);
       this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
     }
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] sync [END] -------------`
     );
   }
@@ -1230,7 +1230,7 @@ class ExchangeHubService {
     // if (Math.random() < 0.01) {
     //   this.garbageCollection(outerTrades);
     // }
-    this.logger.log(
+    this.logger.debug(
       `need processOuterTrade[${outerTrades.length}]`,
       outerTrades
     );
