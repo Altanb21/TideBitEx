@@ -12,6 +12,7 @@
   align-items: center;
   justify-content: end;
   padding: 4px 2px;
+  z-index: 1;
   & .mobile-account__leading {
     flex-direction: column;
     gap: 0px;

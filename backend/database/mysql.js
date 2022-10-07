@@ -56,7 +56,7 @@ class mysql {
       const [accounts] = await this.db.query({
         query,
       });
-      this.logger.log(query);
+      this.logger.debug(query);
       return accounts;
     } catch (error) {
       this.logger.error(error);
@@ -72,7 +72,7 @@ class mysql {
         query,
         values,
       });
-      this.logger.log(query, values);
+      this.logger.debug(query, values);
       return accounts;
     } catch (error) {
       this.logger.error(error);
@@ -92,13 +92,13 @@ class mysql {
 	    accounts.currency;
     `;
     try {
-      this.logger.log("getTotalAccountsAssets", query);
+      this.logger.debug("getTotalAccountsAssets", query);
       const [currencies] = await this.db.query({
         query,
       });
       return currencies;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -113,13 +113,13 @@ class mysql {
 	    accounts
 	  LEFT JOIN asset_bases ON accounts.currency = asset_bases.id GROUP by accounts.currency;`;
     try {
-      this.logger.log("getCurrenciesSymbol", query);
+      this.logger.debug("getCurrenciesSymbol", query);
       const [currencies] = await this.db.query({
         query,
       });
       return currencies;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -127,13 +127,13 @@ class mysql {
   async getCurrencies() {
     const query = "SELECT * FROM `asset_bases`;";
     try {
-      this.logger.log("getCurrencies", query);
+      this.logger.debug("getCurrencies", query);
       const [currencies] = await this.db.query({
         query,
       });
       return currencies;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -141,7 +141,7 @@ class mysql {
   async getCurrency(currencyId) {
     const query = "SELECT * FROM `asset_bases` WHERE `asset_bases`.`id` = ?;";
     try {
-      this.logger.log("getCurrency", query, currencyId);
+      this.logger.debug("getCurrency", query, currencyId);
       const [[currency]] = await this.db.query({
         query,
         values: [currencyId],
@@ -149,7 +149,7 @@ class mysql {
 
       return currency;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -157,7 +157,7 @@ class mysql {
   async getCurrencyByKey(currencyKey) {
     const query = "SELECT * FROM `asset_bases` WHERE `asset_bases`.`key` = ?;";
     try {
-      this.logger.log("getCurrencyByKey", query, currencyKey);
+      this.logger.debug("getCurrencyByKey", query, currencyKey);
       const [[currency]] = await this.db.query({
         query,
         values: [currencyKey],
@@ -165,7 +165,7 @@ class mysql {
 
       return currency;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -173,13 +173,13 @@ class mysql {
   async getMembers() {
     const query = "SELECT * FROM `members`;";
     try {
-      this.logger.log("getMembers", query);
+      this.logger.debug("getMembers", query);
       const [members] = await this.db.query({
         query,
       });
       return members;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -187,14 +187,14 @@ class mysql {
   async getMemberById(memberId) {
     const query = "SELECT * FROM `members` WHERE `members`.`id` = ?;";
     try {
-      this.logger.log("getMemberById", query, `[${memberId}]`);
+      this.logger.debug("getMemberById", query, `[${memberId}]`);
       const [[member]] = await this.db.query({
         query,
         values: [memberId],
       });
       return member;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -202,14 +202,14 @@ class mysql {
   async getMemberByEmail(memberEmail) {
     const query = "SELECT * FROM `members` WHERE `members`.`email` = ?;";
     try {
-      this.logger.log("getMemberByEmail", query, `[${memberEmail}]`);
+      this.logger.debug("getMemberByEmail", query, `[${memberEmail}]`);
       const [[member]] = await this.db.query({
         query,
         values: [memberEmail],
       });
       return member;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -218,7 +218,7 @@ class mysql {
     const query =
       "SELECT * FROM `accounts` WHERE `accounts`.`member_id` = ? AND `accounts`.`currency` = ?;";
     try {
-      this.logger.log(
+      this.logger.debug(
         "getAccountByMemberIdCurrency",
         query,
         `[${memberId}, ${currencyId}]`
@@ -235,7 +235,7 @@ class mysql {
       );
       return account;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       if (dbTransaction) throw error;
       return [];
     }
@@ -272,14 +272,14 @@ class mysql {
       WHERE
           orders.id = ?;`;
     try {
-      this.logger.log("getDoneOrder", query, `[${orderId}]`);
+      this.logger.debug("getDoneOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query({
         query,
         values: [orderId],
       });
       return order;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -322,7 +322,7 @@ class mysql {
       GROUP BY
 	        orders.id;`;
     try {
-      this.logger.log(
+      this.logger.debug(
         "getDoneOrders",
         query,
         `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
@@ -333,7 +333,7 @@ class mysql {
       });
       return orders;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -345,7 +345,7 @@ class mysql {
     // const query =
     //   "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ? AND `orders`.`ord_type` = ?;";
     try {
-      this.logger.log(
+      this.logger.debug(
         "getOrderList",
         query,
         `[${memberId}, ${quoteCcy}, ${baseCcy}]`
@@ -358,7 +358,7 @@ class mysql {
       });
       return orders;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -367,14 +367,14 @@ class mysql {
     const query =
       "SELECT * FROM `vouchers` WHERE `vouchers`.`member_id` = ? AND `vouchers`.`ask` = ? AND `vouchers`.`bid` = ?;";
     try {
-      this.logger.log("getVouchers", query, `[${memberId}, ${ask}, ${bid}]`);
+      this.logger.debug("getVouchers", query, `[${memberId}, ${ask}, ${bid}]`);
       const [trades] = await this.db.query({
         query,
         values: [memberId, ask, bid],
       });
       return trades;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -382,13 +382,13 @@ class mysql {
   async getOrders() {
     const query = "SELECT * FROM `orders`;";
     try {
-      this.logger.log("getOrders", query);
+      this.logger.debug("getOrders", query);
       const [orders] = await this.db.query({
         query,
       });
       return orders;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -397,14 +397,14 @@ class mysql {
     const query =
       "SELECT `trades`.* FROM `trades`, `orders` WHERE `orders`.`id` = `trades`.`ask_id` AND `trades`.`currency` = ? AND `orders`.`ask` = ?;";
     try {
-      this.logger.log("getTrades", query, `[${quoteCcy}, ${baseCcy}]`);
+      this.logger.debug("getTrades", query, `[${quoteCcy}, ${baseCcy}]`);
       const [trades] = await this.db.query({
         query,
         values: [quoteCcy, baseCcy],
       });
       return trades;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -422,14 +422,14 @@ class mysql {
     WHERE
 	    orders.state = ?;`;
     try {
-      this.logger.log("getOrdersJoinMemberEmail", query, `[${state}]`);
+      this.logger.debug("getOrdersJoinMemberEmail", query, `[${state}]`);
       const [orders] = await this.db.query({
         query,
         values: [state],
       });
       return orders;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -446,7 +446,7 @@ class mysql {
         OR outer_trades.order_id IS NULL
         OR outer_trades.create_at IS NULL);`;
     try {
-      this.logger.log(
+      this.logger.debug(
         "getOuterTradesByStatus",
         query,
         `[${exchangeCode}, ${status}]`
@@ -457,7 +457,7 @@ class mysql {
       });
       return outerTrades;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -478,7 +478,7 @@ class mysql {
     ORDER BY
         outer_trades.create_at DESC;`;
     try {
-      this.logger.log(
+      this.logger.debug(
         "getOuterTradesByDayAfter",
         query,
         `[${exchangeCode}, ${start}, ${end}]`
@@ -489,7 +489,7 @@ class mysql {
       });
       return outerTrades;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -521,7 +521,7 @@ class mysql {
     WHERE outer_trades.exchange_code = ?
         AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);`;
     try {
-      this.logger.log(
+      this.logger.debug(
         "getOuterTradesByDayAfter",
         query,
         `[${exchangeCode}, ${day}]`
@@ -532,7 +532,7 @@ class mysql {
       });
       return outerTrades;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return [];
     }
   }
@@ -540,7 +540,7 @@ class mysql {
   async getOrder(orderId, { dbTransaction }) {
     const query = "SELECT * FROM `orders` WHERE `orders`.`id` = ?;";
     try {
-      this.logger.log("getOrder", query, `[${orderId}]`);
+      this.logger.debug("getOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query(
         {
           query,
@@ -553,7 +553,7 @@ class mysql {
       );
       return order;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       if (dbTransaction) throw error;
       return [];
     }
@@ -562,7 +562,7 @@ class mysql {
   async getVouchersByOrderId(orderId, { dbTransaction }) {
     const query = "SELECT * FROM `vouchers` WHERE `order_id` = ?;";
     try {
-      this.logger.log("getVouchersByOrderId", query, orderId);
+      this.logger.debug("getVouchersByOrderId", query, orderId);
       const [vouchers] = await this.db.query(
         {
           query,
@@ -574,7 +574,7 @@ class mysql {
       );
       return vouchers;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       if (dbTransaction) throw error;
       return [];
     }
@@ -584,7 +584,7 @@ class mysql {
     const query =
       "SELECT * FROM `vouchers` WHERE `order_id` = ? AND trade_id = ?;";
     try {
-      this.logger.log(
+      this.logger.debug(
         "getVoucherByOrderIdAndTradeId",
         query,
         `[${orderId}, ${tradeId}]`
@@ -595,7 +595,7 @@ class mysql {
       });
       return voucher;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return null;
     }
   }
@@ -603,15 +603,15 @@ class mysql {
   async getTradeByTradeFk(tradeFk) {
     const query = "SELECT * FROM `trades` WHERE `trade_fk` = ?;";
     try {
-      this.logger.log("getTradeByTradeFk", query, tradeFk);
+      this.logger.debug("getTradeByTradeFk", query, tradeFk);
       const [[trade]] = await this.db.query({
         query,
         values: [tradeFk],
       });
-      this.logger.log("getTradeByTradeFk trade", trade);
+      this.logger.debug("getTradeByTradeFk trade", trade);
       return trade;
     } catch (error) {
-      this.logger.log(error);
+      this.logger.debug(error);
       return null;
     }
   }
@@ -647,7 +647,7 @@ class mysql {
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     try {
-      this.logger.log(
+      this.logger.debug(
         "insertOrder",
         "DEFAULT",
         query,
@@ -727,7 +727,7 @@ class mysql {
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.log(
+      this.logger.debug(
         "insertAccountVersion",
         query,
         "DEFAULT",
@@ -789,7 +789,7 @@ class mysql {
       index++;
     }
     try {
-      this.logger.log(
+      this.logger.debug(
         "[mysql] insertOuterTrades"
         // , query, values
       );
@@ -829,7 +829,7 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.log(
+      this.logger.debug(
         "insertTrades",
         query,
         "DEFAULT",
@@ -869,7 +869,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertTrades result`, result);
+      this.logger.debug(`insertTrades result`, result);
       tradeId = result[0];
     } catch (error) {
       this.logger.error(error);
@@ -899,7 +899,7 @@ class mysql {
       "INSERT INTO `vouchers` (`id`,`member_id`,`order_id`,`trade_id`,`designated_trading_fee_asset_history_id`,`ask`,`bid`,`price`,`volume`,`value`,`trend`,`ask_fee`,`bid_fee`,`created_at`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.log(
+      this.logger.debug(
         "insertVouchers",
         query,
         "DEFAULT",
@@ -941,7 +941,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      this.logger.log(`insertVouchers result`, result);
+      this.logger.debug(`insertVouchers result`, result);
       voucherId = result[0];
     } catch (error) {
       this.logger.error(error);
@@ -958,7 +958,7 @@ class mysql {
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
       let query =
         "UPDATE `accounts` SET " + set.join(", ") + " WHERE " + where + ";";
-      this.logger.log("updateAccount", query);
+      this.logger.debug("updateAccount", query);
       await this.db.query(
         {
           query,
@@ -981,7 +981,7 @@ class mysql {
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
       let query =
         "UPDATE `orders` SET " + set.join(", ") + " WHERE " + where + ";";
-      this.logger.log("updateOrder", query);
+      this.logger.debug("updateOrder", query);
       await this.db.query(
         {
           query,
@@ -1008,7 +1008,7 @@ class mysql {
       );
       let query =
         "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + ";";
-      this.logger.log("updateOuterTrade", query);
+      this.logger.debug("updateOuterTrade", query);
       await this.db.query(
         {
           query,
@@ -1039,7 +1039,7 @@ class mysql {
         //   lock: dbTransaction.LOCK., // ++ TODO verify
         // }
       );
-      this.logger.log(query, values);
+      this.logger.debug(query, values);
       return result;
     } catch (error) {
       this.logger.error(error);

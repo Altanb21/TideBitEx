@@ -45,10 +45,10 @@ class TideBitLegacyAdapter {
 
     if (peatioSession && memberId === -1) {
       try {
-        console.log(
-          `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
-          redisDomain
-        );
+        // console.log(
+        //   `!!! [TideBitLegacyAdapter parseMemberId] getMemberIdFromRedis`,
+        //   redisDomain
+        // );
         memberId = await Utils.getMemberIdFromRedis({
           redisDomain,
           peatioSession,
@@ -68,7 +68,7 @@ class TideBitLegacyAdapter {
     // let userId = ctx.header.userid;
     // if (!adminUsers) TideBitLegacyAdapter.getAdminUsers(config);
     let peatioSession = Utils.peatioSession(ctx.header);
-    console.log(`getMemberId ctx.url`, ctx.url);
+    // console.log(`getMemberId ctx.url`, ctx.url);
     // if (
     //   ctx.session.member?.id !== ctx?.id ||
     //   ctx.session.member?.email !== ctx?.email
@@ -90,25 +90,25 @@ class TideBitLegacyAdapter {
       (ctx.url === "/accounts" || ctx.url === "/settings") &&
       peatioSession !== ctx.session.token
     ) {
-      console.log(
-        `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
-      );
+      // console.log(
+      //   `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
+      // );
       const parsedResult = await TideBitLegacyAdapter.parseMemberId(
         ctx.header,
         redisDomain
       );
-      console.log(
-        `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
-      );
+      // console.log(
+      //   `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
+      // );
       if (parsedResult.memberId !== -1) {
         let member;
         // , email;
         try {
           member = await database.getMemberById(parsedResult.memberId);
-          console.log(
-            `!!! [TideBitLegacyAdapter getMemberId] getMemberFromDB`,
-            redisDomain
-          );
+          // console.log(
+          //   `!!! [TideBitLegacyAdapter getMemberId] getMemberFromDB`,
+          //   redisDomain
+          // );
           // email = member?.email;
         } catch (error) {
           console.error(`database.getMemberById error`, error);
@@ -130,9 +130,9 @@ class TideBitLegacyAdapter {
       ctx.url === "/signout" ||
       (ctx.url === "/signin" && peatioSession !== ctx.session.token) // -- redirect
     ) {
-      console.log(
-        `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
-      );
+      // console.log(
+      //   `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
+      // );
       delete ctx.session.token;
       delete ctx.session.member;
       // delete ctx.email;

@@ -68,7 +68,7 @@ class BookBase {
    * @returns {Array<Object>}
    */
   getSnapshot(instId) {
-    // this.logger.log(
+    // this.logger.debug(
     //   `[${this.constructor.name}] getSnapshot(${instId})`,
     //   this._snapshot[instId]
     // );
