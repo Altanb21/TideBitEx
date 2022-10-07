@@ -151,7 +151,7 @@ class OkexConnector extends ConnectorBase {
     requests = this.tradeFillsMaxRequestTimes,
     tryOnce = 1,
   }) {
-    this.logger.log(
+    this.logger.debug(
       `[${this.constructor.name}] fetchTradeFillsRecords [START]`
     );
     const { begin, end, before, sz } = query;
@@ -245,7 +245,7 @@ class OkexConnector extends ConnectorBase {
           }
         }
       }
-      this.logger.log(
+      this.logger.debug(
         `[${this.constructor.name}] fetchTradeFillsRecords [END](results.length:${results.length}) results[0]`,
         results[0]
       );
@@ -311,7 +311,7 @@ class OkexConnector extends ConnectorBase {
         updatedAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
-      this.logger.log(`[${this.constructor.name}] data.length[${data.length}]`);
+      this.logger.debug(`[${this.constructor.name}] data.length[${data.length}]`);
       // this.logger.log(
       //   `[${this.constructor.name}][${new Date(
       //     parseInt(data[0].ts)
@@ -406,7 +406,7 @@ class OkexConnector extends ConnectorBase {
         //     parseInt(trade.ts) >= beginDate.getTime()
         // ),
       });
-      this.logger.log(
+      this.logger.debug(
         `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length}) results[0]`,
         results[0]
       );
@@ -472,7 +472,7 @@ class OkexConnector extends ConnectorBase {
     const method = "GET";
     const path = "/api/v5/trade/orders-history";
 
-    this.logger.log(`-------------- [START] sync OrderHistory ---------------`);
+    this.logger.debug(`-------------- [START] sync OrderHistory ---------------`);
     const arr = [];
     if (instType) arr.push(`instType=${instType}`);
     if (instId) arr.push(`instId=${instId}`);
@@ -540,7 +540,7 @@ class OkexConnector extends ConnectorBase {
           ts: parseInt(data.uTime),
         });
       });
-      this.logger.log(`res.data.data`, res.data.data);
+      this.logger.debug(`res.data.data`, res.data.data);
       Object.keys(formatOrdersForLib).forEach((memberId) => {
         this.orderBook.updateAll(
           memberId,
@@ -549,10 +549,10 @@ class OkexConnector extends ConnectorBase {
         );
       });
       EventBus.emit(Events.orderDetailUpdate, instType, formatOrders);
-      this.logger.log(`-------------- [END] sync OrderHistory ---------------`);
+      this.logger.debug(`-------------- [END] sync OrderHistory ---------------`);
     } catch (error) {
       this.logger.error(error);
-      this.logger.log(
+      this.logger.debug(
         `-------------- [ERROR] sync OrderHistory ---------------`
       );
     }
@@ -716,7 +716,7 @@ class OkexConnector extends ConnectorBase {
         { id: data.instId.replace("-", "").toLowerCase(), ...data },
         SupportedExchange.OKEX
       );
-      this.logger.log(`[${this.constructor.name}] getTicker`, ticker);
+      this.logger.debug(`[${this.constructor.name}] getTicker`, ticker);
       return new ResponseFormat({
         message: "getTicker",
         payload: ticker,
@@ -1324,7 +1324,7 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
-    this.logger.log(`getAllOrders query`, query);
+    this.logger.debug(`getAllOrders query`, query);
 
     try {
       const res = await axios({
@@ -1478,7 +1478,7 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
         data: filterBody,
       });
-      this.logger.log(res.data.data);
+      this.logger.debug(res.data.data);
       if (res.data && res.data.code !== "0") {
         const [message] = res.data.data;
         this.logger.trace(res.data);
@@ -1524,7 +1524,7 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
         data: body,
       });
-      this.logger.log(res.data.data);
+      this.logger.debug(res.data.data);
       if (res.data && res.data.code !== "0") {
         const [message] = res.data.data;
         this.logger.trace(res.data);
@@ -1719,7 +1719,7 @@ class OkexConnector extends ConnectorBase {
    */
   _updateOrderDetails(instType, orderData) {
     const formatOrders = [];
-    this.logger.log(`-------------- _updateOrderDetails ---------------`);
+    this.logger.log(`-------------- _updateOrderDetails from [${this.constructor.name}] ---------------`);
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
         const formatOrder = {
@@ -2036,15 +2036,15 @@ class OkexConnector extends ConnectorBase {
       this.logger.log(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [START] ++++++`
       );
-      this.logger.log(`(tickerSetting`, tickerSetting);
-      this.logger.log(`market`, market);
-      this.logger.log(`lotSz`, lotSz);
+      this.logger.debug(`(tickerSetting`, tickerSetting);
+      this.logger.debug(`market`, market);
+      this.logger.debug(`lotSz`, lotSz);
       this._subscribeTrades(tickerSetting?.instId);
       this._subscribeBook(tickerSetting?.instId);
       this.okexWsChannels[Events.tickers][tickerSetting?.instId]["lotSz"] =
         lotSz;
       // this._subscribeCandle1m(instId);
-      this.logger.log(
+      this.logger.debug(
         `++++++++ [${this.constructor.name}]  _subscribeMarket [END] ++++++`
       );
     }
@@ -2056,16 +2056,16 @@ class OkexConnector extends ConnectorBase {
       `_unsubscribeMarket tickerSetting[market: ${market}]`,
       tickerSetting
     );
-    this.logger.log(
+    this.logger.debug(
       `---------- [${this.constructor.name}]  _unsubscribeMarket [START] ----------`
     );
     if (tickerSetting?.source === SupportedExchange.OKEX) {
-      this.logger.log(`_unsubscribeMarket market`, market);
-      this.logger.log(`_unsubscribeMarket instId`, tickerSetting?.instId);
+      this.logger.debug(`_unsubscribeMarket market`, market);
+      this.logger.debug(`_unsubscribeMarket instId`, tickerSetting?.instId);
       this._unsubscribeTrades(tickerSetting?.instId);
       this._unsubscribeBook(tickerSetting?.instId);
       // this._unsubscribeCandle1m(instId);
-      this.logger.log(
+      this.logger.debug(
         `---------- [${this.constructor.name}]  _unsubscribeMarket [END] ----------`
       );
     }

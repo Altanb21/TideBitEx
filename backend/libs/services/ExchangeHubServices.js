@@ -57,7 +57,7 @@ class ExchangeHubService {
   }
 
   // async start() {
-  //   this.logger.log(`[${this.constructor.name}] start`);
+  //   this.logger.debug(`[${this.constructor.name}] start`);
   //   await this.sync();
   // }
 
@@ -65,7 +65,7 @@ class ExchangeHubService {
     this.logger.log(
       `------------- [${this.constructor.name}] sync -------------`
     );
-    this.logger.log(`data`, data);
+    this.logger.debug(`data`, data);
     let time = Date.now(),
       updateData,
       // result,
@@ -110,10 +110,10 @@ class ExchangeHubService {
     update_at,
     dbTransaction,
   }) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateOuterTradeStatus -------------`
     );
-    this.logger.log("data", {
+    this.logger.debug("data", {
       order_id,
       trade_id,
       voucher_id,
@@ -167,7 +167,7 @@ class ExchangeHubService {
     } catch (error) {
       throw error;
     }
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateOuterTradeStatus  [END]-------------`
     );
   }
@@ -230,7 +230,7 @@ class ExchangeHubService {
     dbTransaction,
   }) {
     // ex => ask:eth sell ask:eth => bid:usdt 增加 - (feeCcy bid:usdt) , decrease partial/all locked ask:eth
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateAccByAskTrade -------------`
     );
     let askAccBalDiff,
@@ -293,14 +293,14 @@ class ExchangeHubService {
         total: SafeMath.plus(askAccBal, askLoc),
       };
       // 3.6 update DB
-      this.logger.log(`askAccount`, askAccount);
-      this.logger.log(`askAccBalDiff`, askAccBalDiff);
-      this.logger.log(`askAccBal`, askAccBal);
-      this.logger.log(`askLocDiff`, askLocDiff);
-      this.logger.log(`askLoc`, askLoc);
-      this.logger.log(`askFee`, 0);
-      this.logger.log(`modifiableId`, trade.tradeId);
-      this.logger.log(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
+      this.logger.debug(`askAccount`, askAccount);
+      this.logger.debug(`askAccBalDiff`, askAccBalDiff);
+      this.logger.debug(`askAccBal`, askAccBal);
+      this.logger.debug(`askLocDiff`, askLocDiff);
+      this.logger.debug(`askLoc`, askLoc);
+      this.logger.debug(`askFee`, 0);
+      this.logger.debug(`modifiableId`, trade.tradeId);
+      this.logger.debug(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
       await this._updateAccountsRecord({
         account: askAccount,
         accBalDiff: askAccBalDiff,
@@ -356,17 +356,17 @@ class ExchangeHubService {
         total: SafeMath.plus(bidAccBal, bidLoc),
       };
       // 4.6 update DB
-      this.logger.log(`bidAccount`, bidAccount);
-      this.logger.log(`bidAccBalDiff`, bidAccBalDiff);
-      this.logger.log(`bidAccBal`, bidAccBal);
-      this.logger.log(`bidLocDiff`, bidLocDiff);
-      this.logger.log(`bidLoc`, bidLoc);
-      this.logger.log(
+      this.logger.debug(`bidAccount`, bidAccount);
+      this.logger.debug(`bidAccBalDiff`, bidAccBalDiff);
+      this.logger.debug(`bidAccBal`, bidAccBal);
+      this.logger.debug(`bidLocDiff`, bidLocDiff);
+      this.logger.debug(`bidLoc`, bidLoc);
+      this.logger.debug(
         `bidFee`,
         SafeMath.mult(SafeMath.mult(trade.fillPx, trade.fillSz), askFeeRate)
       );
-      this.logger.log(`modifiableId`, trade.tradeId);
-      this.logger.log(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
+      this.logger.debug(`modifiableId`, trade.tradeId);
+      this.logger.debug(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
       await this._updateAccountsRecord({
         account: bidAccount,
         accBalDiff: bidAccBalDiff,
@@ -387,9 +387,9 @@ class ExchangeHubService {
       this.logger.error(`_updateAccByAskTrade`, error);
       throw error;
     }
-    this.logger.log(`for [FRONTEND] updateAskAccount`, updateAskAccount);
-    this.logger.log(`for [FRONTEND] updateBidAccount`, updateBidAccount);
-    this.logger.log(
+    this.logger.debug(`for [FRONTEND] updateAskAccount`, updateAskAccount);
+    this.logger.debug(`for [FRONTEND] updateBidAccount`, updateBidAccount);
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateAccByAskTrade [END]-------------`
     );
     return { updateAskAccount, updateBidAccount };
@@ -405,7 +405,7 @@ class ExchangeHubService {
     trade,
     dbTransaction,
   }) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateAccByBidTrade -------------`
     );
     // ex => bid:usdt buy ask:eth => decrease partial/all locked bid:usdt , ask:eth - (feeCcy ask:eth)增加
@@ -474,14 +474,14 @@ class ExchangeHubService {
         total: SafeMath.plus(askAccBal, askLoc),
       };
       // 3.6 update DB
-      this.logger.log(`askAccount`, askAccount);
-      this.logger.log(`askAccBalDiff`, askAccBalDiff);
-      this.logger.log(`askAccBal`, askAccBal);
-      this.logger.log(`askLocDiff`, askLocDiff);
-      this.logger.log(`askLoc`, askLoc);
-      this.logger.log(`askFee`, SafeMath.abs(trade.fee));
-      this.logger.log(`modifiableId`, trade.tradeId);
-      this.logger.log(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
+      this.logger.debug(`askAccount`, askAccount);
+      this.logger.debug(`askAccBalDiff`, askAccBalDiff);
+      this.logger.debug(`askAccBal`, askAccBal);
+      this.logger.debug(`askLocDiff`, askLocDiff);
+      this.logger.debug(`askLoc`, askLoc);
+      this.logger.debug(`askFee`, SafeMath.abs(trade.fee));
+      this.logger.debug(`modifiableId`, trade.tradeId);
+      this.logger.debug(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
       await this._updateAccountsRecord({
         account: askAccount,
         accBalDiff: askAccBalDiff,
@@ -509,14 +509,14 @@ class ExchangeHubService {
       // 4.4 bidAccount: balance = SafeMath.plus(bidAccount.balance, balanceDiff)
       bidAccBal = SafeMath.plus(bidAccount.balance, bidAccBalDiff);
       // 4.5 update DB
-      this.logger.log(`bidAccount`, bidAccount);
-      this.logger.log(`bidAccBalDiff`, bidAccBalDiff);
-      this.logger.log(`bidAccBal`, bidAccBal);
-      this.logger.log(`bidLocDiff`, bidLocDiff);
-      this.logger.log(`bidLoc`, bidLoc);
-      this.logger.log(`bidFee`, 0);
-      this.logger.log(`modifiableId`, trade.tradeId);
-      this.logger.log(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
+      this.logger.debug(`bidAccount`, bidAccount);
+      this.logger.debug(`bidAccBalDiff`, bidAccBalDiff);
+      this.logger.debug(`bidAccBal`, bidAccBal);
+      this.logger.debug(`bidLocDiff`, bidLocDiff);
+      this.logger.debug(`bidLoc`, bidLoc);
+      this.logger.debug(`bidFee`, 0);
+      this.logger.debug(`modifiableId`, trade.tradeId);
+      this.logger.debug(`updateAt`, new Date(parseInt(trade.ts)).toISOString());
       await this._updateAccountsRecord({
         account: bidAccount,
         accBalDiff: bidAccBalDiff,
@@ -530,8 +530,8 @@ class ExchangeHubService {
         fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
         dbTransaction,
       });
-      this.logger.log(`order.state_code`, order.state_code);
-      this.logger.log(
+      this.logger.debug(`order.state_code`, order.state_code);
+      this.logger.debug(
         `order.price[${order.price}] > trade.fillPx[${trade.fillPx}]`,
         order.price > trade.fillPx
       );
@@ -593,9 +593,9 @@ class ExchangeHubService {
       this.logger.error(`_updateAccByAskTrade`, error);
       throw error;
     }
-    this.logger.log(`for [FRONTEND] updateAskAccount`, updateAskAccount);
-    this.logger.log(`for [FRONTEND] updateBidAccount`, updateBidAccount);
-    this.logger.log(
+    this.logger.debug(`for [FRONTEND] updateAskAccount`, updateAskAccount);
+    this.logger.debug(`for [FRONTEND] updateBidAccount`, updateBidAccount);
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateAccByBidTrade [END]-------------`
     );
     return { updateAskAccount, updateBidAccount };
@@ -610,10 +610,10 @@ class ExchangeHubService {
     market,
     dbTransaction,
   }) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _insertVouchers -------------`
     );
-    this.logger.log(`insertVouchers trade`, trade);
+    this.logger.debug(`insertVouchers trade`, trade);
     /* !!! HIGH RISK (start) !!! */
     // 1. insert Vouchers to DB
     let id,
@@ -621,8 +621,8 @@ class ExchangeHubService {
       tmp = trade.instId.toLowerCase().split("-"),
       askId = tmp[0],
       bidId = tmp[1];
-    this.logger.log(`askId`, askId);
-    this.logger.log(`bidId`, bidId);
+    this.logger.debug(`askId`, askId);
+    this.logger.debug(`bidId`, bidId);
     if (!askId || !bidId)
       throw Error(
         `order base_unit[order.ask: ${askId}] or quote_unit[order.bid: ${bidId}] not found`
@@ -677,20 +677,20 @@ class ExchangeHubService {
           : SafeMath.mult(trade.fillSz, bidFeeRate),
       feeCcy: trade.feeCcy,
     };
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _insertVouchers [END] (id:${id})-------------`
     );
     return voucher;
   }
 
   async _insertTrades({ memberId, orderId, market, trade, dbTransaction }) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] insertTrades -------------`
     );
     /* !!! HIGH RISK (start) !!! */
     // 1. insert Vouchers to DB
     let id, _trade;
-    // this.logger.log(`market`, market);
+    // this.logger.debug(`market`, market);
     if (!market) throw Error(`market not found`);
     _trade = {
       price: trade.fillPx,
@@ -724,8 +724,8 @@ class ExchangeHubService {
       at: parseInt(SafeMath.div(trade.ts, "1000")),
       ts: trade.ts,
     };
-    this.logger.log(`for [FORNTEND] _updateTrade`, _trade);
-    this.logger.log(
+    this.logger.debug(`for [FORNTEND] _updateTrade`, _trade);
+    this.logger.debug(
       `------------- [${this.constructor.name}] insertTrades [END] -------------`
     );
     return _trade;
@@ -741,14 +741,14 @@ class ExchangeHubService {
     dbTransaction,
   }) {
     let insertTradesResult, insertVouchersResult, newTrade, voucher, _trade;
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _insertTradesRecord -------------`
     );
     /* !!! HIGH RISK (start) !!! */
     try {
       // 1. get _trade By trade_fk
       _trade = await this.database.getTradeByTradeFk(trade.tradeId);
-      this.logger.log(`_trade`, _trade);
+      this.logger.debug(`_trade`, _trade);
       // 2. if _trade is not exist
       if (!_trade) {
         // 3. insert trade to DB
@@ -771,21 +771,21 @@ class ExchangeHubService {
           dbTransaction,
         });
         voucher = insertVouchersResult;
-        this.logger.log(`newTrade`, newTrade);
-        this.logger.log(`voucher`, voucher);
+        this.logger.debug(`newTrade`, newTrade);
+        this.logger.debug(`voucher`, voucher);
       } else {
-        this.logger.log(`this trade is already exist`);
+        this.logger.debug(`this trade is already exist`);
         voucher = await this.database.getVoucherByOrderIdAndTradeId(
           orderId,
           _trade.id
         );
-        this.logger.log(`voucher`, voucher);
+        this.logger.debug(`voucher`, voucher);
       }
     } catch (error) {
       this.logger.error(`_insertTradesRecord`, error);
       throw error;
     }
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _insertTradesRecord [END]-------------`
     );
     return { newTrade, voucher, trade: _trade };
@@ -798,7 +798,7 @@ class ExchangeHubService {
     trade,
     dbTransaction,
   }) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateOrderbyTrade -------------`
     );
     let _order,
@@ -817,10 +817,10 @@ class ExchangeHubService {
       value,
       _orderDetails;
     // get _order data from table
-    this.logger.log(`orderId`, orderId);
+    this.logger.debug(`orderId`, orderId);
     _order = await this.database.getOrder(orderId, { dbTransaction });
-    this.logger.log(`db _order`, _order);
-    this.logger.log(`memberId`, memberId);
+    this.logger.debug(`db _order`, _order);
+    this.logger.debug(`memberId`, memberId);
     try {
       if (
         _order &&
@@ -872,7 +872,7 @@ class ExchangeHubService {
           });
           if (res.success) {
             _orderDetails = res.payload;
-            this.logger.log(`for _orderDetails`, _orderDetails);
+            this.logger.debug(`for _orderDetails`, _orderDetails);
             if (_orderDetails.state === Database.ORDER_STATE.CANCEL) {
               state = _orderDetails.state;
               stateCode = Database.ORDER_STATE_CODE.CANCEL;
@@ -920,7 +920,7 @@ class ExchangeHubService {
           state,
           state_code: stateCode,
         };
-        this.logger.log("_updateOrder for [FRONTEND]", _updateOrder);
+        this.logger.debug("_updateOrder for [FRONTEND]", _updateOrder);
       } else {
         if (_order?.member_id.toString() === memberId)
           this.logger.error(
@@ -937,7 +937,7 @@ class ExchangeHubService {
       this.logger.error(`_updateOrderbyTrade`, error);
       throw error;
     }
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _updateOrderbyTrade [END] -------------`
     );
     return { updateOrder: _updateOrder, order: _order };
@@ -995,7 +995,7 @@ class ExchangeHubService {
    * @param {Trade} trade
    */
   async _processOuterTrade(trade) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _processOuterTrade -------------`
     );
     let tmp,
@@ -1028,7 +1028,7 @@ class ExchangeHubService {
       member = await this.database.getMemberById(memberId);
       if (member) {
         memberTag = member.member_tag;
-        this.logger.log(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+        this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
         if (memberTag) {
           if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
             askFeeRate = market.ask.vip_fee;
@@ -1050,11 +1050,11 @@ class ExchangeHubService {
         // 3. side === 'buy' ? _updateAccByBidTrade : _updateAccByAskTrade
         // 5. _updateOuterTradeStatus
         // ----------
-        this.logger.log(`outerTrade`, trade);
-        this.logger.log(`memberId`, memberId);
-        this.logger.log(`orderId`, orderId);
-        this.logger.log(`askFeeRate`, askFeeRate);
-        this.logger.log(`bidFeeRate`, bidFeeRate);
+        this.logger.debug(`outerTrade`, trade);
+        this.logger.debug(`memberId`, memberId);
+        this.logger.debug(`orderId`, orderId);
+        this.logger.debug(`askFeeRate`, askFeeRate);
+        this.logger.debug(`bidFeeRate`, bidFeeRate);
         try {
           // 1. _updateOrderbyTrade
           resultOnOrderUpdate = await this._updateOrderbyTrade({
@@ -1166,7 +1166,7 @@ class ExchangeHubService {
           this.logger.error(`_processOuterTrade`, error);
           await t.rollback();
         }
-        this.logger.log(
+        this.logger.debug(
           `------------- [${this.constructor.name}] _processOuterTrade [END] -------------`
         );
         result = {
@@ -1221,7 +1221,7 @@ class ExchangeHubService {
   async _processOuterTrades(exchange) {
     let tmp,
       updateData = [];
-    this.logger.log(`[${this.constructor.name}] _processOuterTrades`);
+    this.logger.debug(`[${this.constructor.name}] _processOuterTrades`);
     // 1. get all records from outer_trades table &  fillter records if record.status === 5
     const outerTrades = await this.database.getOuterTradesByStatus(
       Database.EXCHANGE[exchange.toUpperCase()],
@@ -1249,7 +1249,7 @@ class ExchangeHubService {
   async _insertOuterTrades(outerTrades) {
     /* !!! HIGH RISK (start) !!! */
     let result;
-    this.logger.log(`[${this.constructor.name}] insertOuterTrades`);
+    this.logger.debug(`[${this.constructor.name}] insertOuterTrades`);
     // for (let trade of outerTrades) {
     //   result = await this._insertOuterTrade(trade);
     // }
@@ -1263,14 +1263,14 @@ class ExchangeHubService {
       result = false;
       await t.rollback();
     }
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _insertOuterTrade [END] -------------`
     );
     return result;
   }
 
   async _getOuterTradesFromAPI(exchange, clOrdId) {
-    this.logger.log(
+    this.logger.debug(
       `------------- [${this.constructor.name}] _getOuterTradesFromAPI --------------`
     );
     let outerTrades,
@@ -1284,17 +1284,17 @@ class ExchangeHubService {
       ),
       end = endDate.getTime(),
       begin = end - this._maxInterval;
-    this.logger.log(
+    this.logger.debug(
       `[${this.constructor.name}] begin[${begin}]`,
       new Date(begin)
     );
-    this.logger.log(`[${this.constructor.name}] end[${end}]`, new Date(end));
+    this.logger.debug(`[${this.constructor.name}] end[${end}]`, new Date(end));
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
         let okexRes;
         if (!this._isStarted) {
-          this.logger.log(`fetchTradeFillsHistoryRecords`);
+          this.logger.debug(`fetchTradeFillsHistoryRecords`);
           okexRes = await this.okexConnector.router(
             "fetchTradeFillsHistoryRecords",
             {
@@ -1308,7 +1308,7 @@ class ExchangeHubService {
           );
           this._isStarted = true;
         } else {
-          this.logger.log(`fetchTradeFillsRecords`);
+          this.logger.debug(`fetchTradeFillsRecords`);
           okexRes = await this.okexConnector.router("fetchTradeFillsRecords", {
             query: {
               instType: "SPOT",
@@ -1328,37 +1328,37 @@ class ExchangeHubService {
   }
 
   async _getTransactionsDetail(exchange, clOrdId, retry = 3) {
-    this.logger.log(
+    this.logger.debug(
       `--- [${this.constructor.name}] _getTransactionsDetail ---`
     );
     let outerTrades = await this._getOuterTradesFromAPI(exchange, clOrdId);
     let index, newRetry;
     if (clOrdId) {
-      this.logger.log(`clOrdId`, clOrdId);
+      this.logger.debug(`clOrdId`, clOrdId);
       index = outerTrades?.findIndex((trade) => trade.clOrdId === clOrdId);
       if (index === -1 && retry > 0) {
         newRetry = retry - 1;
-        this.logger.log(`_getOuterTradesFromAPI recall newRetry`, newRetry);
+        this.logger.debug(`_getOuterTradesFromAPI recall newRetry`, newRetry);
         await Utils.wait(2500);
         return this._getTransactionsDetail(exchange, clOrdId, newRetry);
       }
     }
-    this.logger.log(`outerTrades[${index}]`, outerTrades[index]);
-    this.logger.log(
+    this.logger.debug(`outerTrades[${index}]`, outerTrades[index]);
+    this.logger.debug(
       `--- [${this.constructor.name}] _getTransactionsDetail [END]---`
     );
     return outerTrades;
   }
 
   async _syncOuterTrades(exchange, clOrdId) {
-    this.logger.log(`[${this.constructor.name}] _syncOuterTrades`);
+    this.logger.debug(`[${this.constructor.name}] _syncOuterTrades`);
     const _outerTrades = await this.database.getOuterTradesByDayAfter(
       Database.EXCHANGE[exchange.toUpperCase()],
       // !this._isStarted ? 180 : 1
       this._maxInterval
     );
     let outerTrades = await this._getTransactionsDetail(exchange, clOrdId);
-    // this.logger.log(`outerTrades`, outerTrades);
+    // this.logger.debug(`outerTrades`, outerTrades);
     const _filtered = outerTrades.filter(
       (trade) =>
         _outerTrades.findIndex(
@@ -1367,7 +1367,7 @@ class ExchangeHubService {
     );
     let result = false;
     if (_filtered.length > 0) {
-      // this.logger.log(`_filtered[${_filtered.length}]`, _filtered);
+      // this.logger.debug(`_filtered[${_filtered.length}]`, _filtered);
       result = await this._insertOuterTrades(_filtered);
     }
     return result;

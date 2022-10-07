@@ -622,12 +622,12 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updatePlatformAsset ************`
     );
-    this.logger.log(`params.id`, params.id);
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`params.id`, params.id);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
@@ -636,7 +636,7 @@ class ExchangeHub extends Bot {
         let index = this.coinsSettings.findIndex(
           (coin) => coin.id.toString() === params.id.toString()
         );
-        this.logger.log(`index`, index);
+        this.logger.debug(`index`, index);
         if (index !== -1) {
           let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
             ...coin,
@@ -648,7 +648,7 @@ class ExchangeHub extends Bot {
             maximun: body.maximun,
             minimun: body.minimun,
           };
-          this.logger.log(
+          this.logger.debug(
             `updatePlatformAsset[${index}]`,
             updatedCoinsSettings[index]
           );
@@ -697,19 +697,19 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updateTickerSetting ************`
     );
-    this.logger.log(`params.id`, params.id);
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`params.id`, params.id);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
     try {
       const { type, data } = body;
-      this.logger.log(`type`, type);
-      this.logger.log(`data`, data);
+      this.logger.debug(`type`, type);
+      this.logger.debug(`data`, data);
       if (currentUser.roles?.includes("root")) {
         if (this.tickersSettings[params.id]) {
           let updatedTickersSettings = Object.values(
@@ -816,7 +816,7 @@ class ExchangeHub extends Bot {
             default:
               break;
           }
-          this.logger.log(
+          this.logger.debug(
             `updatedTickersSettings[${params.id}]`,
             updatedTickersSettings[params.id]
           );
@@ -913,23 +913,23 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updateCoinSetting ************`
     );
-    this.logger.log(`params.id`, params.id);
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`params.id`, params.id);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
     try {
       const { visible } = body;
-      this.logger.log(`visible`, visible);
+      this.logger.debug(`visible`, visible);
       if (currentUser.roles?.includes("root")) {
         let index = this.coinsSettings.findIndex(
           (coin) => coin.id.toString() === params.id.toString()
         );
-        this.logger.log(`index`, index);
+        this.logger.debug(`index`, index);
         if (index !== -1) {
           let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
             ...coin,
@@ -938,7 +938,7 @@ class ExchangeHub extends Bot {
             ...updatedCoinsSettings[index],
             visible: visible,
           };
-          this.logger.log(
+          this.logger.debug(
             `updatedCoinsSettings[${index}]`,
             updatedCoinsSettings[index]
           );
@@ -992,17 +992,17 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updateCoinSetting ************`
     );
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
     try {
       const { visible } = body;
-      this.logger.log(`visible`, visible);
+      this.logger.debug(`visible`, visible);
       if (currentUser.roles?.includes("root")) {
         let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
           ...coin,
@@ -1052,22 +1052,22 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updateDepositSetting ************`
     );
-    this.logger.log(`params.id`, params.id);
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`params.id`, params.id);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email),
       updatedDepositCoin;
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
     try {
       const { type, data } = body;
-      this.logger.log(`updateDepositCoin`, type, data);
+      this.logger.debug(`updateDepositCoin`, type, data);
       if (currentUser.roles?.includes("root")) {
         updatedDepositCoin = this.depositsSettings[params.id];
-        this.logger.log(`updatedDepositCoin`, updatedDepositCoin);
+        this.logger.debug(`updatedDepositCoin`, updatedDepositCoin);
         if (updatedDepositCoin) {
           let updatedDepositsSettings = Object.values(
             this.depositsSettings
@@ -1092,7 +1092,7 @@ class ExchangeHub extends Bot {
             default:
           }
 
-          this.logger.log(
+          this.logger.debug(
             `updatedDepositsSettings[${params.id}]`,
             updatedDepositsSettings[params.id]
           );
@@ -1146,22 +1146,22 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updateWithdrawSetting ************`
     );
-    this.logger.log(`params.id`, params.id);
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`params.id`, params.id);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email),
       updatedWithdrawCoin;
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
     try {
       const { type, data } = body;
-      this.logger.log(`updateWithdrawCoin`, type, data);
+      this.logger.debug(`updateWithdrawCoin`, type, data);
       if (currentUser.roles?.includes("root")) {
         updatedWithdrawCoin = this.withdrawsSettings[params.id];
-        this.logger.log(`updatedWithdrawCoin`, updatedWithdrawCoin);
+        this.logger.debug(`updatedWithdrawCoin`, updatedWithdrawCoin);
         if (updatedWithdrawCoin) {
           let updatedWithdrawsSettings = Object.values(
             this.withdrawsSettings
@@ -1185,7 +1185,7 @@ class ExchangeHub extends Bot {
               break;
             default:
           }
-          this.logger.log(
+          this.logger.debug(
             `updatedWithdrawsSettings[${params.id}]`,
             updatedWithdrawsSettings[params.id]
           );
@@ -1234,11 +1234,11 @@ class ExchangeHub extends Bot {
   async addAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(`currentUser`, currentUser);
+    this.logger.debug(`currentUser`, currentUser);
     try {
       const { newAdminUser } = body;
       const newAdminUserEmail = newAdminUser.email?.trim();
@@ -1252,7 +1252,7 @@ class ExchangeHub extends Bot {
               // `"${newAdminUserEmail}"`
               newAdminUserEmail
             );
-            this.logger.log(`addAdminUser member`, member);
+            this.logger.debug(`addAdminUser member`, member);
             if (member) {
               const updateAdminUsers = this.adminUsers
                 .map((user) => ({
@@ -1265,7 +1265,7 @@ class ExchangeHub extends Bot {
                   name: newAdminUser.name,
                   roles: newAdminUser.roles.map((key) => ROLES[key]),
                 });
-              this.logger.log(
+              this.logger.debug(
                 `addAdminUser updateAdminUsers`,
                 updateAdminUsers
               );
@@ -1330,23 +1330,23 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] updateAdminUser ************`
     );
-    this.logger.log(`email`, email);
-    this.logger.log(`body`, body);
+    this.logger.debug(`email`, email);
+    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(
+    this.logger.debug(
       `currentUser[${currentUser.roles?.includes("root")}]`,
       currentUser
     );
     try {
       const { updateAdminUser } = body;
-      this.logger.log(`updateAdminUser`, updateAdminUser);
+      this.logger.debug(`updateAdminUser`, updateAdminUser);
       if (currentUser.roles?.includes("root")) {
         if (updateAdminUser.email) {
           let index = this.adminUsers.findIndex(
             (user) => user.email === updateAdminUser.email
           );
-          this.logger.log(`index`, index);
+          this.logger.debug(`index`, index);
           if (index !== -1) {
             let updateAdminUsers = this.adminUsers.map((user) => ({
               ...user,
@@ -1358,7 +1358,7 @@ class ExchangeHub extends Bot {
               name: updateAdminUser.name,
               roles: updateAdminUser.roles.map((key) => ROLES[key]),
             };
-            this.logger.log(
+            this.logger.debug(
               `updateAdminUser updateAdminUsers`,
               updateAdminUsers
             );
@@ -1415,11 +1415,11 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `*********** [${this.name}] deleteAdminUser ************`
     );
-    this.logger.log(`params.id`, params.id);
-    this.logger.log(`email`, email);
+    this.logger.debug(`params.id`, params.id);
+    this.logger.debug(`email`, email);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.log(`currentUser`, currentUser);
+    this.logger.debug(`currentUser`, currentUser);
     try {
       if (currentUser.roles?.includes("root")) {
         if (params.id) {
@@ -1431,7 +1431,7 @@ class ExchangeHub extends Bot {
               ...user,
               roles: user.roles.map((key) => ROLES[key]),
             }));
-          this.logger.log(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
+          this.logger.debug(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
           try {
             Utils.yamlUpdate(updateAdminUsers, p);
             this.adminUsers = updateAdminUsers.map((user) => ({
@@ -1779,7 +1779,7 @@ class ExchangeHub extends Bot {
         const message = JSON.stringify(res.data);
         this.logger.trace(message);
       }
-      // this.logger.log(`getPriceList res`, res);
+      // this.logger.debug(`getPriceList res`, res);
       return res.data;
     } catch (e) {
       this.logger.error(`getPriceList e`, e);
@@ -2508,7 +2508,7 @@ class ExchangeHub extends Bot {
               },
             }
           );
-          this.logger.log(`pendingOrdersRes`, pendingOrdersRes);
+          this.logger.debug(`pendingOrdersRes`, pendingOrdersRes);
           pendingOrders = pendingOrdersRes.success
             ? pendingOrdersRes.payload
             : [];
@@ -2560,10 +2560,10 @@ class ExchangeHub extends Bot {
   }
   // TODO integrate getOrderList and getOrderHistory into one
   async getOrderList({ query, memberId }) {
-    this.logger.log(
+    this.logger.debug(
       `-------------[${this.constructor.name} getOrderList]----------`
     );
-    this.logger.log(` memberId:`, memberId);
+    this.logger.debug(` memberId:`, memberId);
     const tickerSetting = this.tickersSettings[query.id];
     if (memberId !== -1) {
       switch (tickerSetting?.source) {
@@ -2821,8 +2821,8 @@ class ExchangeHub extends Bot {
               query,
               body,
             });
-            this.logger.log(`postCancelOrder`, body);
-            this.logger.log(`okexCancelOrderRes`, response);
+            this.logger.debug(`postCancelOrder`, body);
+            this.logger.debug(`okexCancelOrderRes`, response);
             if (!response.success) {
               await transacion.rollback();
             } else {
@@ -3110,10 +3110,10 @@ class ExchangeHub extends Bot {
   }
 
   async _updateOrderDetail(formatOrder) {
-    this.logger.log(
+    this.logger.debug(
       ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
     );
-    this.logger.debug(`formatOrder`, formatOrder);
+    this.logger.log(`formatOrder`, formatOrder);
     let member,
       memberTag,
       askFeeRate,
@@ -3432,7 +3432,7 @@ class ExchangeHub extends Bot {
    * @param {Object} order
    */
   _emitUpdateOrder({ memberId, instId, market, order }) {
-    this.logger.log(`_emitUpdateOrder difference`, order);
+    this.logger.debug(`_emitUpdateOrder difference`, order);
     this.orderBook.updateByDifference(memberId, instId, {
       add: [order],
     });
@@ -3440,7 +3440,7 @@ class ExchangeHub extends Bot {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    this.logger.log(
+    this.logger.debug(
       `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] _emitUpdateOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
       this.orderBook.getDifference(memberId, instId)
     );
@@ -3460,8 +3460,8 @@ class ExchangeHub extends Bot {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    this.logger.log(`difference`, order);
-    this.logger.log(
+    this.logger.debug(`difference`, order);
+    this.logger.debug(
       `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.marketOrder}] _emitUpdateMarketOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
       this.orderBook.getDifference(memberId, instId)
     );
@@ -3478,8 +3478,8 @@ class ExchangeHub extends Bot {
       market,
       difference: this.tradeBook.getDifference(instId),
     });
-    this.logger.log(`difference`, trade);
-    this.logger.log(
+    this.logger.debug(`difference`, trade);
+    this.logger.debug(
       `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.trade}] _emitNewTrade[market:${market}][memberId:${memberId}][instId:${instId}]`,
       this.tradeBook.getDifference(instId)
     );
@@ -3492,8 +3492,8 @@ class ExchangeHub extends Bot {
       memberId,
       this.accountBook.getDifference(memberId)
     );
-    this.logger.log(`difference`, account);
-    this.logger.log(
+    this.logger.debug(`difference`, account);
+    this.logger.debug(
       `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _emitUpdateAccount[memberId:${memberId}]`,
       this.accountBook.getDifference(memberId)
     );
@@ -3642,7 +3642,7 @@ class ExchangeHub extends Bot {
             }
           }
         }
-        this.logger.log(
+        this.logger.debug(
           ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [END]---------------`
         );
       }

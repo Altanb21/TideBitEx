@@ -95,7 +95,7 @@ class WSChannel extends Bot {
                 this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
               case Events.switchMarket:
-                this.logger.log(
+                this.logger.debug(
                   `[${this.constructor.name} _onOpSwitchMarket]`,
                   args
                 );
@@ -208,7 +208,7 @@ class WSChannel extends Bot {
       // } else {
       //   this._privateClient[memberId][ws.id] = findClient;
       // }
-      this.logger.log(
+      this.logger.debug(
         `[${this.constructor.name} _onOpStatusUpdate] this._privateClient,`,
         this._privateClient
       );
@@ -254,7 +254,7 @@ class WSChannel extends Bot {
     }
     if (findClient.isPrivate) {
       this._privateClient[findClient.memberId][ws.id] = findClient;
-      this.logger.log(
+      this.logger.debug(
         `[${this.constructor.name} _onOpStatusUpdate] this._privateClient,`,
         this._privateClient
       );
@@ -282,7 +282,7 @@ class WSChannel extends Bot {
   }
 
   broadcastPrivateClient(memberId, { market, type, data }) {
-    this.logger.log(
+    this.logger.debug(
       `[${this.constructor.name}] broadcastPrivateClient market[${market}] this._privateClient[${memberId}]`,
       this._privateClient[memberId]
     );
@@ -296,7 +296,7 @@ class WSChannel extends Bot {
   }
 
   broadcastAllPrivateClient(memberId, { type, data }) {
-    this.logger.log(
+    this.logger.debug(
       `[${this.constructor.name}] broadcastAllPrivateClient this._privateClient[${memberId}]`,
       this._privateClient[memberId]
     );

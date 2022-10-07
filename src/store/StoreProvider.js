@@ -457,7 +457,7 @@ const StoreProvider = (props) => {
         setCloseOrders(orders.closedOrders);
       }
     }
-    console.log(`storeCtx start end`);
+    // console.log(`storeCtx start end`);
   }, [isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
