@@ -213,8 +213,8 @@ class Utils {
       .then((rs) =>
         Promise.resolve({
           config: rs[0],
-          database: rs[1],
-          logger: rs[2],
+          logger: rs[1],
+          database: rs[2],
           i18n: rs[3],
         })
       )

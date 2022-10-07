@@ -7,6 +7,7 @@ const { ncp } = require("ncp");
 const commandLineArgs = require("command-line-args");
 const Utils = require(path.resolve(__dirname, "../backend/libs/Utils.js"));
 
+// ++ TODO remove workaround
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
 /* initial project */
