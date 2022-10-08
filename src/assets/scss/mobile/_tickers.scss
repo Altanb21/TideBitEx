@@ -41,13 +41,12 @@
     flex-direction: column;
     background-color: white;
     top: 0;
-    z-index: 10;
   }
   &__container .tab-content{
       overflow: auto;
   }
   &__header {
-    padding: 15px;
+    padding: 40px 15px;
     height: 50px;
     background-color: #00b5ad;
     color: white;
