@@ -2131,9 +2131,9 @@ class ExchangeHub extends Bot {
             orderId = parsedClOrdId.orderId,
             askFeeRate,
             bidFeeRate,
-            tickerSetting = this.tickersSettings(
+            tickerSetting = this.tickersSettings[
               trade.instId.toLowerCase().replace("-", "")
-            ),
+            ],
             memberTag = _trade.member_tag,
             fee,
             processTrade,
