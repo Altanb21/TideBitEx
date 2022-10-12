@@ -1797,18 +1797,10 @@ class OkexConnector extends ConnectorBase {
       console.log(`market: ${market}`);
       console.log(trades);
 
-      const trade_data = {
-        trades: [
-          { tid: 15,
-            type: "buy",
-            date: 1665549110,
-            price: "19093.9",
-            amount: "0.01"
-          }
-        ]
-      };
+      const channel = `market-${market}-global`;
+      const trade_data = { trades };
       const trade_data_string = JSON.stringify(trade_data);
-      this.slanger.trigger("market-global", "tickers", trade_data_string).catch(() => {});
+      this.slanger.trigger(channel, "trades", trade_data_string).catch(() => {});
       
     } catch (error) {}
   }
