@@ -1,6 +1,6 @@
 {
   "name": "tidebitex",
-  "version": "0.8.16.2",
+  "version": "0.8.16.3",
   "private": true,
   "dependencies": {
     "@koa/cors": "^3.1.0",
