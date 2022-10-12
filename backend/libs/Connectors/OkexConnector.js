@@ -1874,6 +1874,7 @@ class OkexConnector extends ConnectorBase {
     });
 
     // broadcast to slanger (3/3)
+    console.log('--- ticker_data ---');
     console.log(ticker_data);
     const ticker_data_string = JSON.stringify(ticker_data);
     this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
