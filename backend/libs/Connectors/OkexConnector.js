@@ -1791,6 +1791,19 @@ class OkexConnector extends ConnectorBase {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
+
+      // broadcast to slanger
+      const trade_data = {
+        trades: [
+          { tid: 15,
+            type: "buy",
+            date: 1665549110,
+            price: "19093.9",
+            amount: "0.01"
+          }
+        ]
+      };
+      console.log(trades);
     } catch (error) {}
   }
 
@@ -1829,6 +1842,9 @@ class OkexConnector extends ConnectorBase {
 
   // ++ TODO: verify function works properly
   _updateTickers(data) {
+    // broadcast to slanger (1/3)
+    const ticker_data = {};
+
     data.forEach((d) => {
       const tickerSetting =
         this.tickersSettings[d.instId.replace("-", "").toLowerCase()];
@@ -1840,14 +1856,32 @@ class OkexConnector extends ConnectorBase {
           { id: d.instId.replace("-", "").toLowerCase(), ...d },
           SupportedExchange.OKEX
         );
-console.log(ticker);
-const ticker_data = "{\"btcusdt\":{\"name\":\"BTC/USDT\",\"base_unit\":\"btc\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"100.0\",\"high\":\"19055.0\",\"last\":\"19433.5\",\"open\":19433.5,\"volume\":\"0.04001\",\"sell\":\"19433.0\",\"buy\":\"400.0\",\"at\":1665552691},\"ethusdt\":{\"name\":\"ETH/USDT\",\"base_unit\":\"eth\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"110.0\",\"high\":\"1285.53\",\"last\":\"200.0\",\"open\":1279.65,\"volume\":\"0.004\",\"sell\":\"0.0\",\"buy\":\"0.0\",\"at\":1665552691}}"
-this.slanger.trigger("market-global","tickers", ticker_data).catch(console.log)
+
+        // broadcast to slanger (2/3)
+        ticker_data[ticker.id] = {
+          name: ticker.name,
+          base_unit: ticker.baseUnit,
+          quote_unit: ticker.quoteUnit,
+          group: ticker.group,
+          low: ticker.low,
+          high: ticker.high,
+          last: ticker.last,
+          open: ticker.open,
+          volume: ticker.volume,
+          sell: ticker.sell,
+          buy: ticker.buy,
+          at: ticker.at
+        };
+
         const result = this.tickerBook.updateByDifference(d.instId, ticker);
         if (result)
           EventBus.emit(Events.tickers, this.tickerBook.getDifference());
       }
     });
+
+    // broadcast to slanger (3/3)
+    const ticker_data_string = JSON.stringify(ticker_data);
+    this.slanger.trigger("market-global","tickers", ticker_data_string).catch(() => {});
   }
 
   _subscribeInstruments() {
