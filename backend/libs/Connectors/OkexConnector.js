@@ -1793,7 +1793,7 @@ class OkexConnector extends ConnectorBase {
       });
 
       // broadcast to slanger
-      console.log(`instid: ${instid}`);
+      console.log(`instId: ${instId}`);
       console.log(`market: ${market}`);
       console.log(trades);
 
