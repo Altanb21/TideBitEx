@@ -16,6 +16,7 @@ const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
   tickers = {};
+  ticker_data = {};
   okexWsChannels = {};
   instIds = [];
   slanger = {};
@@ -1837,7 +1838,6 @@ class OkexConnector extends ConnectorBase {
   // ++ TODO: verify function works properly
   _updateTickers(data) {
     // broadcast to slanger (1/3)
-    const ticker_data = {};
 
     data.forEach((d) => {
       const tickerSetting =
@@ -1852,7 +1852,7 @@ class OkexConnector extends ConnectorBase {
         );
 
         // broadcast to slanger (2/3)
-        ticker_data[ticker.id] = {
+        this.ticker_data[ticker.id] = {
           name: ticker.name,
           base_unit: ticker.baseUnit,
           quote_unit: ticker.quoteUnit,
@@ -1874,9 +1874,7 @@ class OkexConnector extends ConnectorBase {
     });
 
     // broadcast to slanger (3/3)
-    console.log('--- ticker_data ---');
-    console.log(ticker_data);
-    const ticker_data_string = JSON.stringify(ticker_data);
+    const ticker_data_string = JSON.stringify(this.ticker_data);
     this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
   }
 
