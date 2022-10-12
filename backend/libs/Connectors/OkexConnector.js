@@ -1803,7 +1803,8 @@ class OkexConnector extends ConnectorBase {
           }
         ]
       };
-      console.log(trades);
+      this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
+      console.log(instid, market, trades);
     } catch (error) {}
   }
 
@@ -1881,7 +1882,7 @@ class OkexConnector extends ConnectorBase {
 
     // broadcast to slanger (3/3)
     const ticker_data_string = JSON.stringify(ticker_data);
-    this.slanger.trigger("market-global","tickers", ticker_data_string).catch(() => {});
+    this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
   }
 
   _subscribeInstruments() {
