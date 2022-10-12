@@ -1866,7 +1866,7 @@ class OkexConnector extends ConnectorBase {
           buy: ticker.buy,
           at: ticker.at
         };
-        ticker_data[ethusdt] = {
+        ticker_data['ethusdt'] = {
           name: ticker.name,
           base_unit: ticker.baseUnit,
           quote_unit: ticker.quoteUnit,
