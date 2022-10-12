@@ -126,7 +126,7 @@ class ExchangeHub extends Bot {
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
-          processor: ({ type, data }) => this.processor({ type, data }),
+          processor: (type, data) => this.processor(type, data),
           logger,
         });
         return this;
@@ -3263,6 +3263,7 @@ class ExchangeHub extends Bot {
    */
   // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
   calculator({ market, member, dbOrder, data, type }) {
+    this.logger.debug(`calculator `);
     let now = `"${new Date().toISOString().slice(0, 19).replace("T", " ")}"`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
       tmp = this.getMemberFeeRate(member, market),
@@ -3355,6 +3356,9 @@ class ExchangeHub extends Bot {
           fun: Database.FUNC.PLUS_FUNDS,
         };
       }
+      this.logger.debug(`calculator askAccountVersion`, askAccountVersion);
+      this.logger.debug(`calculator bidAccountVersion`, bidAccountVersion);
+
       voucher = {
         // id: "", // -- filled by DB insert
         member_id: member.id,
@@ -3370,6 +3374,8 @@ class ExchangeHub extends Bot {
         bid_fee: bidFee,
         created_at: now,
       };
+      this.logger.debug(`calculator voucher`, voucher);
+
       trade = {
         price: data.fillPx,
         volume: data.fillSz,
@@ -3390,9 +3396,13 @@ class ExchangeHub extends Bot {
         funds: value,
         // trade_fk: data?.tradeId, ++ TODO
       };
+      this.logger.debug(`calculator trade`, trade);
+
       // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
       // 4.1 更新 order doneAt
       // 4.2 更新 order state
+      this.logger.debug(`calculator orderVolume`, orderVolume);
+
       if (SafeMath.eq(orderVolume, "0")) {
         orderState = Database.ORDER_STATE_CODE.DONE;
         doneAt = now;
@@ -3411,6 +3421,10 @@ class ExchangeHub extends Bot {
             // ++TODO modifiable_id
           };
           orderLocked = "0";
+          this.logger.debug(
+            `calculator orderFullFilledAccountVersion`,
+            orderFullFilledAccountVersion
+          );
         }
       } else {
         // 不為 0 即等待中
@@ -3427,6 +3441,7 @@ class ExchangeHub extends Bot {
         updated_at: now,
         done_at: doneAt,
       };
+      this.logger.debug(`calculator updatedOrder`, updatedOrder);
     } catch (e) {
       this.logger.error(`[${this.constructor.name}] calculaotor went wrong`, e);
       error = true;
@@ -3546,6 +3561,7 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (start) !!! */
     let tradeId;
     let voucherId;
+    this.logger.debug(`updateDatabase`);
     try {
       await this.database.updateOrder(updatedOrder, { dbTransaction });
       const dbTrade = await this.database.getTradeByTradeFk(tradeFk);
@@ -3600,6 +3616,8 @@ class ExchangeHub extends Bot {
       result,
       dbTransaction = await this.database.transaction();
     try {
+      this.logger.debug(`processor type`, type);
+      this.logger.debug(`processor data`, data);
       // 1. 判斷收到的資料是否為此系統的資料
       // 需滿足下列3個條件，才為此系統的資料：
       // 1.1.可以從 data 解析出 orderId 及 memberId
@@ -3620,6 +3638,7 @@ class ExchangeHub extends Bot {
         status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
         await dbTransaction.rollback();
       }
+      this.logger.debug(`processor status`, status);
       // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
       // 計算完後會直接通知前端更新 order 及 accounts
       if (!status) {
