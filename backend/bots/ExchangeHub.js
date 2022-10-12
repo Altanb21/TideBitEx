@@ -3207,13 +3207,10 @@ class ExchangeHub extends Bot {
         total = SafeMath.plus(balance, locked);
         if (orderFullFilledAccountVersion) {
           balance = SafeMath.plus(
-            orderFullFilledAccountVersion.balance,
+            balance,
             orderFullFilledAccountVersion.balance
           );
-          locked = SafeMath.plus(
-            orderFullFilledAccountVersion.locked,
-            orderFullFilledAccountVersion.locked
-          );
+          locked = SafeMath.plus(locked, orderFullFilledAccountVersion.locked);
           total = SafeMath.plus(balance, locked);
         }
         this._emitUpdateAccount({
@@ -3264,6 +3261,7 @@ class ExchangeHub extends Bot {
    * @property {Date} created_at
    * @property {Date} updated_at
    */
+  // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
   calculator({ market, member, dbOrder, data, type }) {
     let now = `"${new Date().toISOString().slice(0, 19).replace("T", " ")}"`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
@@ -3302,8 +3300,15 @@ class ExchangeHub extends Bot {
       error = false,
       result;
     try {
+      // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
       orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
+      // 3. 根據 data side （BUY，SELL）需要分別計算
+      // 3.1 order 新的鎖定金額
+      // 3.2 order 新的 fund receiced
+      // 3.3 voucher 及 account version 的手需費
+      // 3.4 voucher 與 account version 裡面的手續費是對應的
       if (data.side === Database.ORDER_SIDE.BUY) {
         orderLocked = SafeMath.minus(dbOrder.locked, value);
         orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
@@ -3354,7 +3359,7 @@ class ExchangeHub extends Bot {
         // id: "", // -- filled by DB insert
         member_id: member.id,
         order_id: dbOrder.id,
-        // trade_id: "", //++ TODO
+        // trade_id: "", //++ trade insert 到 DB 之後才會得到
         ask: market.ask.currency,
         bid: market.bid.currency,
         price: data.fillPx,
@@ -3385,10 +3390,13 @@ class ExchangeHub extends Bot {
         funds: value,
         // trade_fk: data?.tradeId, ++ TODO
       };
+      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
+      // 4.1 更新 order doneAt
+      // 4.2 更新 order state
       if (SafeMath.eq(orderVolume, "0")) {
         orderState = Database.ORDER_STATE_CODE.DONE;
         doneAt = now;
-        // if order is fullFilled and still remain locked, return
+        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
         if (SafeMath.gt(orderLocked, 0)) {
           orderFullFilledAccountVersion = {
             member_id: member.id,
@@ -3405,8 +3413,10 @@ class ExchangeHub extends Bot {
           orderLocked = "0";
         }
       } else {
+        // 不為 0 即等待中
         orderState = Database.ORDER_STATE_CODE.WAIT;
       }
+      // 根據前 5 點 可以得到最終需要更新的 order
       updatedOrder = {
         id: dbOrder.id,
         volume: orderVolume,
@@ -3427,6 +3437,7 @@ class ExchangeHub extends Bot {
         market,
         instId: data.instId,
         updatedOrder: {
+          ...updatedOrder,
           ordType: dbOrder.ord_type,
           kind: dbOrder.kind,
           price: dbOrder.price,
@@ -3435,7 +3446,7 @@ class ExchangeHub extends Bot {
           clOrdId: data.clOrdId,
           ordId: data.ordId,
         },
-        trade,
+        // trade,
         askAccountVersion,
         bidAccountVersion,
         orderFullFilledAccountVersion,
@@ -3532,6 +3543,7 @@ class ExchangeHub extends Bot {
     orderFullFilledAccountVersion,
     dbTransaction,
   }) {
+    /* !!! HIGH RISK (start) !!! */
     let tradeId;
     let voucherId;
     try {
@@ -3570,8 +3582,14 @@ class ExchangeHub extends Bot {
     } catch (error) {
       throw error;
     }
+    /* !!! HIGH RISK (end) !!! */
   }
 
+  /**
+   *  syncOuterTrades || OKx Events.order
+   * @param {String} type Database.MODIFIABLE_TYPE.TRADE || Database.MODIFIABLE_TYPE.ORDER
+   * @param {Object} data trade || order
+   */
   async processor(type, data) {
     let market,
       memberId,
@@ -3582,27 +3600,28 @@ class ExchangeHub extends Bot {
       result,
       dbTransaction = await this.database.transaction();
     try {
-      this.logger.debug(
-        `[${this.constructor.name}] processor (arg:type)`,
-        type
-      );
-      this.logger.debug(
-        `[${this.constructor.name}] processor (arg:data)`,
-        data
-      );
+      // 1. 判斷收到的資料是否為此系統的資料
+      // 需滿足下列3個條件，才為此系統的資料：
+      // 1.1.可以從 data 解析出 orderId 及 memberId
+      // 1.2.可以根據 orderId 從 database 取得 dbOrder
+      // 1.3. dbOrder.member_id 同 data 解析出的 memberId
       market = this._findMarket(data.instId);
       let tmp = Utils.parseClOrdId(data.clOrdId);
       memberId = tmp.memberId;
       orderId = tmp.orderId;
       if (!memberId || !orderId)
         status = Database.OUTERTRADE_STATUS.ClORDId_ERROR;
+      await dbTransaction.rollback();
       if (!status) {
         member = await this.database.getMemberById(memberId);
         order = await this.database.getOrder(orderId, { dbTransaction });
       }
       if (!order || order?.member_id.toString() !== member?.id.toString()) {
         status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
+        await dbTransaction.rollback();
       }
+      // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
+      // 計算完後會直接通知前端更新 order 及 accounts
       if (!status) {
         result = this.calculator({
           market,
@@ -3612,6 +3631,9 @@ class ExchangeHub extends Bot {
           type,
         });
       }
+      // 3. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
+      // trade 新增進 DB 後才可以得到我們的 trade id
+      // db 更新的資料為 calculator 得到的 result
       if (result && type === Database.MODIFIABLE_TYPE.TRADE) {
         const trade = await this.updateDatabase({
           ...result,
@@ -3623,7 +3645,7 @@ class ExchangeHub extends Bot {
         });
         if (trade && trade?.id) {
           let newTrade = {
-            id: trade.id,
+            id: trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
             price: trade.price,
             volume: trade.volume,
             market: market.id,
@@ -3640,6 +3662,7 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+      await dbTransaction.rollback();
     }
   }
 
