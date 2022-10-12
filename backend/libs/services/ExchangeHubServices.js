@@ -19,6 +19,7 @@ class ExchangeHubService {
     okexConnector,
     tidebitMarkets,
     emitUpdateData,
+    processor,
     logger,
   }) {
     this.database = database;
@@ -29,6 +30,7 @@ class ExchangeHubService {
     this.logger = logger;
     this.name = "ExchangeHubService";
     this.emitUpdateData = emitUpdateData;
+    this.processor = processor;
     return this;
   }
 
@@ -67,7 +69,7 @@ class ExchangeHubService {
     );
     this.logger.debug(`data`, data);
     let time = Date.now(),
-      updateData,
+      // updateData,
       // result,
       clOrdId = data?.clOrdId;
     // 1. 定期（10mins）執行工作
@@ -81,10 +83,10 @@ class ExchangeHubService {
 
       this._lastSyncTime = Date.now();
       // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-      updateData = await this._processOuterTrades(SupportedExchange.OKEX);
+      await this._processOuterTrades(SupportedExchange.OKEX);
 
       // 4. 通知前端
-      this.emitUpdateData(updateData);
+      // this.emitUpdateData(updateData);
       // 5. 休息
       clearTimeout(this.timer);
       this.timer = setTimeout(() => this.sync(), this._syncInterval + 1000);
@@ -171,7 +173,9 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _updateOuterTradeStatus  [END]-------------`
     );
   }
-
+  // ++ TODO 放到 ExchangeHub 裡面
+  // 修改 只能有 difference 不能直接給修改值
+  // 應該由這個 function走
   async _updateAccountsRecord({
     account,
     accBalDiff,
@@ -535,14 +539,15 @@ class ExchangeHubService {
         `order.price[${order.price}] > trade.fillPx[${trade.fillPx}]`,
         order.price > trade.fillPx
       );
+      this.logger.debug(
+        `trade.fillSz[${trade.fillSz}] === order.volume[${order.volume}]]`,
+        trade.fillSz === order.volume
+      );
       if (
         order.state_code === Database.ORDER_STATE_CODE.DONE &&
-        order.price > trade.fillPx
+        SafeMath.gt(order.locked, 0)
       ) {
-        _bidAccBalDiff = SafeMath.mult(
-          SafeMath.minus(order.price, trade.fillPx),
-          trade.fillSz
-        );
+        _bidAccBalDiff = order.locked;
         bidAccBal = SafeMath.plus(bidAccBal, _bidAccBalDiff);
         _bidLocDiff = SafeMath.mult(_bidAccBalDiff, "-1");
         bidLoc = SafeMath.plus(bidLoc, _bidLocDiff);
@@ -832,8 +837,11 @@ class ExchangeHubService {
         volume = SafeMath.minus(_order.volume, trade.fillSz);
         locked =
           trade.side === Database.ORDER_SIDE.BUY
-            ? SafeMath.mult(price, volume)
-            : volume;
+            ? SafeMath.minus(
+                _order.locked,
+                SafeMath.mult(trade.fillPx, trade.fillSz)
+              )
+            : SafeMath.minus(_order.locked, trade.fillSz);
         updateAt = `"${new Date()
           .toISOString()
           .slice(0, 19)
@@ -858,7 +866,7 @@ class ExchangeHubService {
           state = Database.ORDER_STATE.DONE;
           state_text = Database.ORDER_STATE_TEXT.DONE;
           filled = true;
-          locked = "0"; //++ TODO to be verify: 使用 TideBit ticker 測試)
+          // --locked = "0"; //++ TODO to be verify: 使用 TideBit ticker 測試)
           doneAt = `"${new Date(parseInt(trade.ts))
             .toISOString()
             .slice(0, 19)
@@ -914,6 +922,7 @@ class ExchangeHubService {
               : Database.ORDER_KIND.ASK,
           price,
           volume,
+          locked,
           origin_volume: Utils.removeZeroEnd(_order.origin_volume),
           state_text,
           filled,
@@ -1219,8 +1228,8 @@ class ExchangeHubService {
   }
 
   async _processOuterTrades(exchange) {
-    let tmp,
-      updateData = [];
+    // let tmp,
+    //   updateData = [];
     this.logger.debug(`[${this.constructor.name}] _processOuterTrades`);
     // 1. get all records from outer_trades table &  fillter records if record.status === 5
     const outerTrades = await this.database.getOuterTradesByStatus(
@@ -1236,13 +1245,17 @@ class ExchangeHubService {
     );
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
-      tmp = await this._processOuterTrade({
+      this.processor(Database.MODIFIABLE_TYPE.TRADE, {
         ...JSON.parse(trade.data),
         exchangeCode: trade.exchange_code,
       });
-      if (tmp) updateData.push(tmp);
+      // tmp = await this._processOuterTrade({
+      //   ...JSON.parse(trade.data),
+      //   exchangeCode: trade.exchange_code,
+      // });
+      // if (tmp) updateData.push(tmp);
     }
-    return updateData;
+    // return updateData;
   }
 
   // ++TODO check, rm sql inside forLoop
