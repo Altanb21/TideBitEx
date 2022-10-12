@@ -1794,13 +1794,14 @@ class OkexConnector extends ConnectorBase {
         trades: this.tradeBook.getSnapshot(instId),
       });
 
-      // broadcast to slanger
+      // ++ workaround, to be optimized: broadcast to slanger
       trade_data[market] = trade_data[market] || [];
       trade_data[market] = trade_data[market].concat(trades);
       
     } catch (error) {}
   }
 
+  // ++ workaround, to be optimized 
   _broadcast_to_slanger() {
     // broadcast ticker
     const ticker_data_string = JSON.stringify(this.ticker_data);
