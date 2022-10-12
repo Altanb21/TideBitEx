@@ -1793,6 +1793,10 @@ class OkexConnector extends ConnectorBase {
       });
 
       // broadcast to slanger
+      console.log(`instid: ${instid}`);
+      console.log(`market: ${market}`);
+      console.log(trades);
+
       const trade_data = {
         trades: [
           { tid: 15,
@@ -1803,8 +1807,9 @@ class OkexConnector extends ConnectorBase {
           }
         ]
       };
-      this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
-      console.log(instid, market, trades);
+      const trade_data_string = JSON.stringify(trade_data);
+      this.slanger.trigger("market-global", "tickers", trade_data_string).catch(() => {});
+      
     } catch (error) {}
   }
 
