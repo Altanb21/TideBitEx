@@ -17,6 +17,7 @@ const HEART_BEAT_TIME = 25000;
 class OkexConnector extends ConnectorBase {
   tickers = {};
   ticker_data = {};
+  trade_data = {};
   okexWsChannels = {};
   instIds = [];
   slanger = {};
@@ -1794,12 +1795,26 @@ class OkexConnector extends ConnectorBase {
       });
 
       // broadcast to slanger
-      const channel = `market-${market}-global`;
-      const trade_data = { trades };
-      const trade_data_string = JSON.stringify(trade_data);
-      this.slanger.trigger(channel, "trades", trade_data_string).catch(() => {});
+      trade_data[market] = trade_data[market] || [];
+      trade_data[market] = trade_data[market].concat(trades);
       
     } catch (error) {}
+  }
+
+  _broadcast_to_slanger() {
+    // broadcast ticker
+    const ticker_data_string = JSON.stringify(this.ticker_data);
+    this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
+
+    // broadcast trades
+    Object.keys(this.trade_data).map((k) => {
+      const d = this.trade_data[k].pop();
+      if(d !== undefined) {
+        const trade_data_string = JSON.stringify(d);
+        const channel = `market-${k}-global`;
+        pusher.trigger(channel, "trades", trade_data_string).catch(() => {});
+      }
+    })
   }
 
   _updateCandle(market, trades) {
@@ -1874,8 +1889,7 @@ class OkexConnector extends ConnectorBase {
     });
 
     // broadcast to slanger (3/3)
-    const ticker_data_string = JSON.stringify(this.ticker_data);
-    this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
+    this._broadcast_to_slanger();
   }
 
   _subscribeInstruments() {
