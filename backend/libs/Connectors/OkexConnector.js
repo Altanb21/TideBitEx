@@ -1793,10 +1793,6 @@ class OkexConnector extends ConnectorBase {
       });
 
       // broadcast to slanger
-      console.log(`instId: ${instId}`);
-      console.log(`market: ${market}`);
-      console.log(trades);
-
       const channel = `market-${market}-global`;
       const trade_data = { trades };
       const trade_data_string = JSON.stringify(trade_data);
@@ -1878,6 +1874,7 @@ class OkexConnector extends ConnectorBase {
     });
 
     // broadcast to slanger (3/3)
+    console.log(ticker_data);
     const ticker_data_string = JSON.stringify(ticker_data);
     this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
   }
