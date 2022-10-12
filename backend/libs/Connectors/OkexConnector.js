@@ -1,5 +1,6 @@
 const axios = require("axios");
 const crypto = require("crypto");
+const Pusher = require("pusher");
 
 const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
@@ -17,6 +18,7 @@ class OkexConnector extends ConnectorBase {
   tickers = {};
   okexWsChannels = {};
   instIds = [];
+  slanger = {};
 
   fetchedTrades = {};
   fetchedBook = {};
@@ -28,10 +30,19 @@ class OkexConnector extends ConnectorBase {
   tradeFillsHistoryMaxRequestTimes = 10;
   restTime = 2 * 1000;
 
-  constructor({ logger }) {
+  constructor({ logger, config }) {
+    const { pusher } = config;
+    const pusherConfig = {
+      appId: pusher.app,
+      key: pusher.key,
+      secret: pusher.secret,
+      host: pusher.host,
+      port: pusher.port
+    };
     super({ logger });
     this.websocket = new WebSocket({ logger });
     this.websocketPrivate = new WebSocket({ logger });
+    this.slanger = new Pusher(pusherConfig);
     return this;
   }
 
@@ -1825,6 +1836,10 @@ class OkexConnector extends ConnectorBase {
         tickerSetting?.source === SupportedExchange.OKEX &&
         tickerSetting?.visible
       ) {
+console.log(d.instId);
+const ticker_data = "{\"btcusdt\":{\"name\":\"BTC/USDT\",\"base_unit\":\"btc\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"100.0\",\"high\":\"19055.0\",\"last\":\"19433.5\",\"open\":19433.5,\"volume\":\"0.04001\",\"sell\":\"19433.0\",\"buy\":\"400.0\",\"at\":1665552691},\"ethusdt\":{\"name\":\"ETH/USDT\",\"base_unit\":\"eth\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"110.0\",\"high\":\"1285.53\",\"last\":\"200.0\",\"open\":1279.65,\"volume\":\"0.004\",\"sell\":\"0.0\",\"buy\":\"0.0\",\"at\":1665552691}}"
+pusher.trigger("market-global","tickers", ticker_data).catch(console.log)
+
         const ticker = this.tickerBook.formatTicker(
           { id: d.instId.replace("-", "").toLowerCase(), ...d },
           SupportedExchange.OKEX
