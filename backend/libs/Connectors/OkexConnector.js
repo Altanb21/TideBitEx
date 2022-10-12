@@ -1866,6 +1866,20 @@ class OkexConnector extends ConnectorBase {
           buy: ticker.buy,
           at: ticker.at
         };
+        ticker_data[ethusdt] = {
+          name: ticker.name,
+          base_unit: ticker.baseUnit,
+          quote_unit: ticker.quoteUnit,
+          group: ticker.group,
+          low: ticker.low,
+          high: ticker.high,
+          last: ticker.last,
+          open: ticker.open,
+          volume: ticker.volume,
+          sell: ticker.sell,
+          buy: ticker.buy,
+          at: ticker.at
+        };
 
         const result = this.tickerBook.updateByDifference(d.instId, ticker);
         if (result)
