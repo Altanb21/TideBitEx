@@ -3153,8 +3153,10 @@ class ExchangeHub extends Bot {
       if (updatedOrder) {
         let order = {
           ...updatedOrder,
-          at: parseInt(SafeMath.div(new Date(updatedOrder.updated_at), "1000")),
-          ts: new Date(updatedOrder.updated_at),
+          at: parseInt(
+            SafeMath.div(new Date(updatedOrder.updated_at).getTime(), "1000")
+          ),
+          ts: new Date(updatedOrder.updated_at).getTime(),
           market: market.id,
           filled: updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
           state_text:
@@ -3386,11 +3388,11 @@ class ExchangeHub extends Bot {
         created_at: now,
         updated_at: now,
         ask_member_id:
-          trade.side === Database.ORDER_SIDE.SELL
+          data.side === Database.ORDER_SIDE.SELL
             ? member.id
             : this.systemMemberId,
         bid_member_id:
-          trade.side === Database.ORDER_SIDE.BUY
+          data.side === Database.ORDER_SIDE.BUY
             ? member.id
             : this.systemMemberId,
         funds: value,
@@ -3454,7 +3456,10 @@ class ExchangeHub extends Bot {
         updatedOrder: {
           ...updatedOrder,
           ordType: dbOrder.ord_type,
-          kind: dbOrder.kind,
+          kind:
+            data.side === Database.ORDER_SIDE.BUY
+              ? Database.ORDER_KIND.BID
+              : Database.ORDER_KIND.ASK,
           price: dbOrder.price,
           origin_volume: dbOrder.origin_volume,
           instId: data.instId,
@@ -3623,13 +3628,14 @@ class ExchangeHub extends Bot {
       // 1.1.可以從 data 解析出 orderId 及 memberId
       // 1.2.可以根據 orderId 從 database 取得 dbOrder
       // 1.3. dbOrder.member_id 同 data 解析出的 memberId
-      market = this._findMarket(data.instId);
+      market = this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
       let tmp = Utils.parseClOrdId(data.clOrdId);
       memberId = tmp.memberId;
       orderId = tmp.orderId;
-      if (!memberId || !orderId)
+      if (!memberId || !orderId) {
         status = Database.OUTERTRADE_STATUS.ClORDId_ERROR;
-      await dbTransaction.rollback();
+        await dbTransaction.rollback();
+      }
       if (!status) {
         member = await this.database.getMemberById(memberId);
         order = await this.database.getOrder(orderId, { dbTransaction });
@@ -3681,6 +3687,7 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+      this.logger.error(`processor`, error);
       await dbTransaction.rollback();
     }
   }
