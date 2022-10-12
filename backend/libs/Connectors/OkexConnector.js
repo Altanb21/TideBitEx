@@ -1836,14 +1836,13 @@ class OkexConnector extends ConnectorBase {
         tickerSetting?.source === SupportedExchange.OKEX &&
         tickerSetting?.visible
       ) {
-console.log(d.instId);
-const ticker_data = "{\"btcusdt\":{\"name\":\"BTC/USDT\",\"base_unit\":\"btc\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"100.0\",\"high\":\"19055.0\",\"last\":\"19433.5\",\"open\":19433.5,\"volume\":\"0.04001\",\"sell\":\"19433.0\",\"buy\":\"400.0\",\"at\":1665552691},\"ethusdt\":{\"name\":\"ETH/USDT\",\"base_unit\":\"eth\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"110.0\",\"high\":\"1285.53\",\"last\":\"200.0\",\"open\":1279.65,\"volume\":\"0.004\",\"sell\":\"0.0\",\"buy\":\"0.0\",\"at\":1665552691}}"
-this.slanger.trigger("market-global","tickers", ticker_data).catch(console.log)
-
         const ticker = this.tickerBook.formatTicker(
           { id: d.instId.replace("-", "").toLowerCase(), ...d },
           SupportedExchange.OKEX
         );
+console.log(ticker);
+const ticker_data = "{\"btcusdt\":{\"name\":\"BTC/USDT\",\"base_unit\":\"btc\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"100.0\",\"high\":\"19055.0\",\"last\":\"19433.5\",\"open\":19433.5,\"volume\":\"0.04001\",\"sell\":\"19433.0\",\"buy\":\"400.0\",\"at\":1665552691},\"ethusdt\":{\"name\":\"ETH/USDT\",\"base_unit\":\"eth\",\"quote_unit\":\"usdt\",\"group\":\"usdx\",\"low\":\"110.0\",\"high\":\"1285.53\",\"last\":\"200.0\",\"open\":1279.65,\"volume\":\"0.004\",\"sell\":\"0.0\",\"buy\":\"0.0\",\"at\":1665552691}}"
+this.slanger.trigger("market-global","tickers", ticker_data).catch(console.log)
         const result = this.tickerBook.updateByDifference(d.instId, ticker);
         if (result)
           EventBus.emit(Events.tickers, this.tickerBook.getDifference());
