@@ -3428,6 +3428,7 @@ class ExchangeHub extends Bot {
             currency: dbOrder.bid,
             created_at: now,
             updated_at: now,
+            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
             reason: Database.REASON.ORDER_FULLFILLED,
             fun: Database.FUNC.UNLOCK_FUNDS,
             fee: 0,
@@ -3557,8 +3558,12 @@ class ExchangeHub extends Bot {
     let tradeId, voucherId, dbTrade, dbVoucher, dbAccountVersions;
     this.logger.debug(`dbUpdater`);
     try {
-      await this.database.updateOrder(updatedOrder, { dbTransaction });
-      this.logger.debug(`dbUpdater updateOrder success`, updatedOrder);
+      if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
+        await this.database.updateOrder(updatedOrder, { dbTransaction });
+        this.logger.debug(`dbUpdater updateOrder success`, updatedOrder);
+      }else{
+        this.logger.error("order is marked as done", trade);
+      }
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
         this.logger.error("trade exist trade", trade);
