@@ -3513,6 +3513,14 @@ class ExchangeHub extends Bot {
           );
           break;
         case Database.OUTERTRADE_STATUS.DONE:
+          if (!id || !dbOrder.id || !member.id || !trade.id || !voucher.id) {
+            this.logger.debug(`updateOuterTrade id`, id)
+            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder)
+            this.logger.debug(`updateOuterTrade trade`, trade)
+            this.logger.debug(`updateOuterTrade voucher`, voucher)
+            this.logger.debug(`updateOuterTrade member`, member)
+            throw Error("missing params");
+          }
           await this.database.updateOuterTrade(
             {
               id,
