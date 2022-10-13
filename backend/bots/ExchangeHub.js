@@ -3545,22 +3545,31 @@ class ExchangeHub extends Bot {
             .toISOString()
             .slice(0, 19)
             .replace("T", " ")}`;
-          let cancelOrderAccountVersion = {
-            member_id: member.id,
-            currency:
-              dbOrder.type === Database.TYPE.ORDER_ASK
-                ? dbOrder.ask
-                : dbOrder.bid,
-            created_at: now,
-            updated_at: now,
-            modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
-            balance: dbOrder.locked,
-            locked: SafeMath.mult(dbOrder.locked, "-1"),
-            fee: 0,
-            reason: Database.REASON.ORDER_CANCEL,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-          };
-          await this._updateAccount(cancelOrderAccountVersion, dbTransaction);
+          let dbCancelOrderAccountVersions =
+            await this.database.getAccountVersionsByModifiableId(dbOrder.id);
+          let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
+            (dbAccV) =>
+              dbAccV.reason.toString() ===
+              Database.REASON.ORDER_CANCEL.toString()
+          );
+          if (!dbCancelOrderAccountVersion) {
+            let cancelOrderAccountVersion = {
+              member_id: member.id,
+              currency:
+                dbOrder.type === Database.TYPE.ORDER_ASK
+                  ? dbOrder.ask
+                  : dbOrder.bid,
+              created_at: now,
+              updated_at: now,
+              modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+              balance: dbOrder.locked,
+              locked: SafeMath.mult(dbOrder.locked, "-1"),
+              fee: 0,
+              reason: Database.REASON.ORDER_CANCEL,
+              fun: Database.FUNC.UNLOCK_FUNDS,
+            };
+            await this._updateAccount(cancelOrderAccountVersion, dbTransaction);
+          }
           let updatedOrder = {
             id: dbOrder.id,
             state: Database.ORDER_STATE_CODE.CANCEL,
