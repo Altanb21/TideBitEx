@@ -796,7 +796,7 @@ class mysql {
 
   async insertOuterTrades(trades, { dbTransaction }) {
     let query =
-        "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`update_at`,`status`,`data`) VALUES",
+        "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`create_at`,`status`,`data`) VALUES",
       values = [],
       index = 0;
     for (let trade of trades) {
