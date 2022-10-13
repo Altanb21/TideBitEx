@@ -65,7 +65,7 @@ class DBOperator {
   async getMemberByEmail(memberEmail) {
     return this.database.getMemberByEmail(memberEmail);
   }
-  
+
   async getAccountByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
     return this.database.getAccountByMemberIdCurrency(memberId, currencyId, {
       dbTransaction,
@@ -221,10 +221,7 @@ class DBOperator {
     );
   }
 
-  async insertOuterTrades(
-    trades,
-    { dbTransaction }
-  ) {
+  async insertOuterTrades(trades, { dbTransaction }) {
     return this.database.insertOuterTrades(trades, { dbTransaction });
   }
 
@@ -246,36 +243,21 @@ class DBOperator {
     );
   }
 
-  async insertVouchers(
-    member_id,
-    order_id,
-    trade_id,
-    designated_trading_fee_asset_history_id,
-    ask,
-    bid,
-    price,
-    volume,
-    value,
-    trend,
-    ask_fee,
-    bid_fee,
-    created_at,
-    { dbTransaction }
-  ) {
+  async insertVouchers(voucher, { dbTransaction }) {
     return this.database.insertVouchers(
-      member_id,
-      order_id,
-      trade_id,
-      designated_trading_fee_asset_history_id,
-      ask,
-      bid,
-      price,
-      volume,
-      value,
-      trend,
-      ask_fee,
-      bid_fee,
-      created_at,
+      voucher.member_id,
+      voucher.order_id,
+      voucher.trade_id,
+      voucher.designated_trading_fee_asset_history_id,
+      voucher.ask,
+      voucher.bid,
+      voucher.price,
+      voucher.volume,
+      voucher.value,
+      voucher.trend,
+      voucher.ask_fee,
+      voucher.bid_fee,
+      voucher.created_at,
       { dbTransaction }
     );
   }

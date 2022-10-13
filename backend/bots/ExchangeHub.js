@@ -3138,7 +3138,7 @@ class ExchangeHub extends Bot {
     return { askFeeRate, bidFeeRate };
   }
 
-  emit({
+  async emitter({
     memberId,
     market,
     instId,
@@ -3147,16 +3147,16 @@ class ExchangeHub extends Bot {
     askAccountVersion,
     bidAccountVersion,
     orderFullFilledAccountVersion,
+    dbTransaction,
   }) {
     if (!instId || !market || !memberId) this.logger.error("missing arguments");
     try {
       if (updatedOrder) {
+        let time = updatedOrder.updated_at.replace(/['"]+/g, "");
         let order = {
           ...updatedOrder,
-          at: parseInt(
-            SafeMath.div(new Date(updatedOrder.updated_at).getTime(), "1000")
-          ),
-          ts: new Date(updatedOrder.updated_at).getTime(),
+          at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
+          ts: new Date(time).getTime(),
           market: market.id,
           filled: updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
           state_text:
@@ -3186,6 +3186,18 @@ class ExchangeHub extends Bot {
         });
       }
       let tmp = this.accountBook.getSnapshot(memberId, instId);
+      this.logger.log(
+        `emitter this.accountBook.getSnapshot([memberId: ${memberId}], [instId: ${instId}])`,
+        tmp
+      );
+      if (!tmp) {
+        tmp = [];
+        tmp[0] = await this.database.getAccountByMemberIdCurrency(
+          askAccountVersion.member_id,
+          askAccountVersion.currency,
+          { dbTransaction }
+        );
+      }
       let balance, locked, total;
       if (askAccountVersion) {
         let askAccount = tmp ? tmp[0] : null;
@@ -3226,7 +3238,7 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (error) {
-      this.logger.error("Fail to inform frontend");
+      this.logger.error("Fail to inform frontend", error);
     }
   }
 
@@ -3282,7 +3294,7 @@ class ExchangeHub extends Bot {
       orderFundsReceived,
       orderVolume,
       orderTradesCount,
-      doneAt,
+      doneAt = null,
       askAccountVersion = {
         member_id: member.id,
         currency: dbOrder.ask,
@@ -3366,6 +3378,7 @@ class ExchangeHub extends Bot {
         member_id: member.id,
         order_id: dbOrder.id,
         // trade_id: "", //++ trade insert 到 DB 之後才會得到
+        designated_trading_fee_asset_history_id: null,
         ask: market.ask.currency,
         bid: market.bid.currency,
         price: data.fillPx,
@@ -3449,28 +3462,6 @@ class ExchangeHub extends Bot {
       error = true;
     }
     if (!error) {
-      this.emit({
-        memberId: member.id,
-        market,
-        instId: data.instId,
-        updatedOrder: {
-          ...updatedOrder,
-          ordType: dbOrder.ord_type,
-          kind:
-            data.side === Database.ORDER_SIDE.BUY
-              ? Database.ORDER_KIND.BID
-              : Database.ORDER_KIND.ASK,
-          price: dbOrder.price,
-          origin_volume: dbOrder.origin_volume,
-          instId: data.instId,
-          clOrdId: data.clOrdId,
-          ordId: data.ordId,
-        },
-        // trade,
-        askAccountVersion,
-        bidAccountVersion,
-        orderFullFilledAccountVersion,
-      });
       result = {
         updatedOrder,
         voucher,
@@ -3550,14 +3541,11 @@ class ExchangeHub extends Bot {
     );
   }
 
-  async updateDatabase({
-    member,
-    dbOrder,
+  async dbUpdater({
     updatedOrder,
     voucher,
     trade,
     tradeFk,
-    status,
     askAccountVersion,
     bidAccountVersion,
     orderFullFilledAccountVersion,
@@ -3566,40 +3554,53 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (start) !!! */
     let tradeId;
     let voucherId;
-    this.logger.debug(`updateDatabase`);
+    this.logger.debug(`dbUpdater`);
     try {
       await this.database.updateOrder(updatedOrder, { dbTransaction });
+      this.logger.debug(`dbUpdater updateOrder success`);
       const dbTrade = await this.database.getTradeByTradeFk(tradeFk);
-      if (dbTrade) throw Error("trade exist");
-      tradeId = await this.database.insertTrades(
-        { ...trade, trade_fk: tradeFk },
-        { dbTransaction }
-      );
-      voucherId = await this.database.insertVouchers(
-        { ...voucher, trade_id: tradeId },
-        { dbTransaction }
-      );
-      await this._updateAccount(
-        { ...askAccountVersion, modifiable_id: tradeId },
-        dbTransaction
-      );
-      await this._updateAccount(
-        { ...bidAccountVersion, modifiable_id: tradeId },
-        dbTransaction
-      );
-      await this._updateAccount(
-        { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
-        dbTransaction
-      );
-      await this.updateOuterTrade({
-        member,
-        status,
-        id: tradeFk,
-        dbOrder,
+      if (dbTrade) {
+        this.logger.error("trade exist");
+        tradeId = dbTrade.id;
+        // ++ TOOD 10/13 getVoucherId
+      }
+      if (!dbTrade) {
+        tradeId = await this.database.insertTrades(
+          { ...trade, trade_fk: tradeFk },
+          { dbTransaction }
+        );
+        this.logger.debug(`dbUpdater insertTrades success tradeId`, tradeId);
+        voucherId = await this.database.insertVouchers(
+          { ...voucher, trade_id: tradeId },
+          { dbTransaction }
+        );
+        this.logger.debug(
+          `dbUpdater insertVouchers success voucherId`,
+          voucherId
+        );
+        await this._updateAccount(
+          { ...askAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        this.logger.debug(`dbUpdater _updateAccount success askAccountVersion`);
+        await this._updateAccount(
+          { ...bidAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        this.logger.debug(`dbUpdater _updateAccount success bidAccountVersion`);
+        if (orderFullFilledAccountVersion)
+          await this._updateAccount(
+            { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+            dbTransaction
+          );
+        this.logger.debug(
+          `dbUpdater _updateAccount success orderFullFilledAccountVersion`
+        );
+      }
+      return {
+        trade: { ...trade, id: tradeId },
         voucher: { ...voucher, id: voucherId },
-        dbTransaction,
-      });
-      return { ...trade, id: tradeId };
+      };
     } catch (error) {
       throw error;
     }
@@ -3619,6 +3620,7 @@ class ExchangeHub extends Bot {
       order,
       status,
       result,
+      dbResponse,
       dbTransaction = await this.database.transaction();
     try {
       this.logger.debug(`processor type`, type);
@@ -3634,7 +3636,6 @@ class ExchangeHub extends Bot {
       orderId = tmp.orderId;
       if (!memberId || !orderId) {
         status = Database.OUTERTRADE_STATUS.ClORDId_ERROR;
-        await dbTransaction.rollback();
       }
       if (!status) {
         member = await this.database.getMemberById(memberId);
@@ -3642,7 +3643,6 @@ class ExchangeHub extends Bot {
       }
       if (!order || order?.member_id.toString() !== member?.id.toString()) {
         status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
-        await dbTransaction.rollback();
       }
       this.logger.debug(`processor status`, status);
       // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
@@ -3659,30 +3659,56 @@ class ExchangeHub extends Bot {
       // 3. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
       // trade 新增進 DB 後才可以得到我們的 trade id
       // db 更新的資料為 calculator 得到的 result
-      if (result && type === Database.MODIFIABLE_TYPE.TRADE) {
-        const trade = await this.updateDatabase({
-          ...result,
-          member,
-          dbOrder: order,
-          tradeFk: data.tradeId,
-          status,
-          dbTransaction,
-        });
-        if (trade && trade?.id) {
-          let newTrade = {
-            id: trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
-            price: trade.price,
-            volume: trade.volume,
-            market: market.id,
-            at: parseInt(SafeMath.div(new Date(trade.updated_at), "1000")),
-            ts: new Date(trade.updated_at),
-          };
-          this._emitNewTrade({
-            memberId,
+      if (result) {
+        if (type === Database.MODIFIABLE_TYPE.ORDER) {
+          await this.emitter({
+            ...result,
+            updatedOrder: {
+              ...result.updatedOrder,
+              ordType: order.ord_type,
+              kind:
+                data.side === Database.ORDER_SIDE.BUY
+                  ? Database.ORDER_KIND.BID
+                  : Database.ORDER_KIND.ASK,
+              price: order.price,
+              origin_volume: order.origin_volume,
+              instId: data.instId,
+              clOrdId: data.clOrdId,
+              ordId: data.ordId,
+            },
+            memberId: member.id,
+            market,
             instId: data.instId,
-            market: market.id,
-            trade: newTrade,
+            dbTransaction,
           });
+        }
+        if (type === Database.MODIFIABLE_TYPE.TRADE) {
+          dbResponse = await this.dbUpdater({
+            ...result,
+            member,
+            dbOrder: order,
+            tradeFk: data.tradeId,
+            status,
+            dbTransaction,
+          });
+          if (dbResponse.trade && dbResponse.trade?.id) {
+            let newTrade = {
+              id: dbResponse.trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
+              price: dbResponse.trade.price,
+              volume: dbResponse.trade.volume,
+              market: market.id,
+              at: parseInt(
+                SafeMath.div(new Date(dbResponse.trade.updated_at), "1000")
+              ),
+              ts: new Date(dbResponse.trade.updated_at),
+            };
+            this._emitNewTrade({
+              memberId,
+              instId: data.instId,
+              market: market.id,
+              trade: newTrade,
+            });
+          }
         }
       }
     } catch (error) {
@@ -3690,6 +3716,15 @@ class ExchangeHub extends Bot {
       this.logger.error(`processor`, error);
       await dbTransaction.rollback();
     }
+    await this.updateOuterTrade({
+      member,
+      status,
+      id: data.tradeId,
+      order,
+      voucher: dbResponse.voucher,
+      dbTransaction,
+    });
+    await dbTransaction.commit();
   }
 
   async _updateOrderDetail(formatOrder) {
