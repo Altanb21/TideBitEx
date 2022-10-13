@@ -3757,12 +3757,12 @@ class ExchangeHub extends Bot {
       }
       // 2. 判斷收到的資料是否為此系統的資料
       // 需滿足下列條件，才為此系統的資料：
-      // 1.1.可以從 data 解析出 orderId 及 memberId
-      // 1.2.可以根據 orderId 從 database 取得 dbOrder
-      // 1.3. dbOrder.member_id 同 data 解析出的 memberId
+      // 2.1.可以從 data 解析出 orderId 及 memberId
+      // 2.2.可以根據 orderId 從 database 取得 dbOrder
+      // 2.3. dbOrder.member_id 同 data 解析出的 memberId
       // 3. 判斷收到的資料對應的 order是否需要更新
-      // 1.4 dbOrder.state 不為 0
-      // 1.5 OKx api 回傳的 orderDetail state 不為 cancel
+      // 3.1 dbOrder.state 不為 0
+      // 3.2 OKx api 回傳的 orderDetail state 不為 cancel
       market = this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
       let tmp = Utils.parseClOrdId(data.clOrdId);
       memberId = tmp.memberId;
