@@ -2723,7 +2723,7 @@ class ExchangeHub extends Bot {
       account,
       updateAccount,
       accountVersion,
-      createdAt = new Date().toISOString();
+      createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     try {
       order = await this.database.getOrder(orderId, {
         dbTransaction: transacion,
@@ -2743,6 +2743,7 @@ class ExchangeHub extends Bot {
           const newOrder = {
             id: orderId,
             state: Database.ORDER_STATE_CODE.CANCEL,
+            updated_at: `"${createdAt}"`,
           };
           await this.database.updateOrder(newOrder, {
             dbTransaction: transacion,
@@ -3486,7 +3487,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `------------- [${this.constructor.name}] updateOuterTrade -------------`
     );
-    this.logger.log(`this.updateOuterTrade status`, status);
+    this.logger.log(`updateOuterTrade status`, status);
     try {
       switch (status) {
         case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
@@ -3501,6 +3502,7 @@ class ExchangeHub extends Bot {
           );
           break;
         case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
+        case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
           await this.database.updateOuterTrade(
             {
               id,
@@ -3538,7 +3540,37 @@ class ExchangeHub extends Bot {
             { dbTransaction }
           );
           break;
-
+        case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
+          let now = `${new Date()
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}`;
+          let cancelOrderAccountVersion = {
+            member_id: member.id,
+            currency:
+              dbOrder.type === Database.TYPE.ORDER_ASK
+                ? dbOrder.ask
+                : dbOrder.bid,
+            created_at: now,
+            updated_at: now,
+            modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+            balance: dbOrder.locked,
+            locked: SafeMath.mult(dbOrder.locked, "-1"),
+            fee: 0,
+            reason: Database.REASON.ORDER_CANCEL,
+            fun: Database.FUNC.UNLOCK_FUNDS,
+          };
+          await this._updateAccount(cancelOrderAccountVersion, dbTransaction);
+          let updatedOrder = {
+            id: dbOrder.id,
+            state: Database.ORDER_STATE_CODE.CANCEL,
+            // locked: 0,
+            updated_at: `"${now}"`,
+          };
+          await this.database.updateOrder(updatedOrder, {
+            dbTransaction,
+          });
+          break;
         default:
       }
     } catch (error) {
@@ -3710,11 +3742,17 @@ class ExchangeHub extends Bot {
     try {
       this.logger.debug(`processor type`, type);
       this.logger.debug(`processor data`, data);
-      // 1. 判斷收到的資料是否為此系統的資料
-      // 需滿足下列3個條件，才為此系統的資料：
+      // 1. 判斷收到的資料 state 不為 cancel
+      if (data.state === Database.ORDER_STATE.CANCEL) {
+        status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+      }
+      // 2. 判斷收到的資料是否為此系統的資料
+      // 需滿足下列條件，才為此系統的資料：
       // 1.1.可以從 data 解析出 orderId 及 memberId
       // 1.2.可以根據 orderId 從 database 取得 dbOrder
       // 1.3. dbOrder.member_id 同 data 解析出的 memberId
+      // 1.4 dbOrder.state 不為 0
+      // 1.5 OKx api 回傳的 orderDetail state 不為 cancel
       market = this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
       let tmp = Utils.parseClOrdId(data.clOrdId);
       memberId = tmp.memberId;
@@ -3728,6 +3766,26 @@ class ExchangeHub extends Bot {
       }
       if (!order || order?.member_id.toString() !== member?.id.toString()) {
         status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
+      }
+      if (order && order?.state !== Database.ORDER_STATE_CODE.WAIT) {
+        status = Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL;
+      }
+      if (!status) {
+        if (type === Database.MODIFIABLE_TYPE.TRADE) {
+          let apiResonse = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: data.instId,
+              ordId: data.ordId,
+            },
+          });
+          if (apiResonse.success) {
+            let orderDetail = apiResonse.payload;
+            if (orderDetail.state === Database.ORDER_STATE.CANCEL)
+              status = Database.OUTERTRADE_STATUS.API_ORDER_CANCEL;
+          } else {
+            status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+          }
+        }
       }
       this.logger.debug(`processor status`, status);
       // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
