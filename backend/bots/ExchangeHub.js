@@ -3478,6 +3478,7 @@ class ExchangeHub extends Bot {
     member,
     status,
     id,
+    trade,
     dbOrder,
     voucher,
     dbTransaction,
@@ -3493,7 +3494,6 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              create_at: voucher.created_at,
               update_at: voucher.created_at,
               order_id: 0,
             },
@@ -3505,7 +3505,6 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              create_at: voucher.created_at,
               update_at: voucher.created_at,
               order_id: dbOrder.id,
               member_id: member.id,
@@ -3518,7 +3517,6 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              create_at: voucher.created_at,
               update_at: voucher.created_at,
               order_id: dbOrder.id,
               order_price: dbOrder.price,
@@ -3526,7 +3524,7 @@ class ExchangeHub extends Bot {
               member_id: member.id,
               member_tag: member.member_tag,
               email: member.email,
-              trade_id: id,
+              trade_id: trade.id,
               voucher_id: voucher.id,
             },
             { dbTransaction }
@@ -3561,7 +3559,7 @@ class ExchangeHub extends Bot {
       if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
         await this.database.updateOrder(updatedOrder, { dbTransaction });
         this.logger.debug(`dbUpdater updateOrder success`, updatedOrder);
-      }else{
+      } else {
         this.logger.error("order is marked as done", trade);
       }
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
@@ -3764,15 +3762,14 @@ class ExchangeHub extends Bot {
           });
           this.logger.log(`dbResponse`, dbResponse);
           if (dbResponse.trade && dbResponse.trade?.id) {
+            let time = dbResponse.trade.updated_at.replace(/['"]+/g, "");
             let newTrade = {
               id: dbResponse.trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
               price: dbResponse.trade.price,
               volume: dbResponse.trade.volume,
               market: market.id,
-              at: parseInt(
-                SafeMath.div(new Date(dbResponse.trade.updated_at), "1000")
-              ),
-              ts: new Date(dbResponse.trade.updated_at),
+              at: parseInt(SafeMath.div(new Date(time), "1000")),
+              ts: new Date(time),
             };
             this._emitNewTrade({
               memberId,
@@ -3789,15 +3786,22 @@ class ExchangeHub extends Bot {
       this.logger.error(`processor`, error);
       await dbTransaction.rollback();
     }
-    await this.updateOuterTrade({
-      member,
-      status,
-      id: dbResponse.trade.id,
-      dbOrder: order,
-      voucher: dbResponse.voucher,
-      dbTransaction,
-    });
-    await dbTransaction.commit();
+    try {
+      await this.updateOuterTrade({
+        member,
+        status,
+        id: data.tradeId,
+        trade: dbResponse.trade,
+        dbOrder: order,
+        voucher: dbResponse.voucher,
+        dbTransaction,
+      });
+      await dbTransaction.commit();
+    } catch (error) {
+      status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+      this.logger.error(`processor updateOuterTrade error`, error);
+      await dbTransaction.rollback();
+    }
   }
 
   async _updateOrderDetail(formatOrder) {
