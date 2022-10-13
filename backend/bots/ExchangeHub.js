@@ -3278,7 +3278,7 @@ class ExchangeHub extends Bot {
   // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
   calculator({ market, member, dbOrder, data, type }) {
     this.logger.debug(`calculator `);
-    let now = `"${new Date().toISOString().slice(0, 19).replace("T", " ")}"`,
+    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
       tmp = this.getMemberFeeRate(member, market),
       askFeeRate = tmp.askFeeRate,
@@ -3454,8 +3454,8 @@ class ExchangeHub extends Bot {
         locked: orderLocked,
         funds_received: orderFundsReceived,
         trades_count: orderTradesCount,
-        updated_at: now,
-        done_at: doneAt,
+        updated_at: `"${now}"`,
+        done_at: `"${doneAt}"`,
       };
       this.logger.debug(`calculator updatedOrder`, updatedOrder);
     } catch (e) {
@@ -3514,18 +3514,18 @@ class ExchangeHub extends Bot {
           break;
         case Database.OUTERTRADE_STATUS.DONE:
           if (!id || !dbOrder.id || !member.id || !trade.id || !voucher.id) {
-            this.logger.debug(`updateOuterTrade id`, id)
-            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder)
-            this.logger.debug(`updateOuterTrade trade`, trade)
-            this.logger.debug(`updateOuterTrade voucher`, voucher)
-            this.logger.debug(`updateOuterTrade member`, member)
+            this.logger.debug(`updateOuterTrade id`, id);
+            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
+            this.logger.debug(`updateOuterTrade trade`, trade);
+            this.logger.debug(`updateOuterTrade voucher`, voucher);
+            this.logger.debug(`updateOuterTrade member`, member);
             throw Error("missing params");
           }
           await this.database.updateOuterTrade(
             {
               id,
               status,
-              update_at: voucher.created_at,
+              update_at: `"${voucher.created_at}"`,
               order_id: dbOrder.id,
               order_price: dbOrder.price,
               order_origin_volume: dbOrder.origin_volume,
@@ -3595,7 +3595,10 @@ class ExchangeHub extends Bot {
         this.logger.error("voucher exist dbVoucher", dbVoucher);
       } else {
         voucherId = await this.database.insertVouchers(
-          { ...voucher, trade_id: tradeId },
+          {
+            ...voucher,
+            trade_id: tradeId,
+          },
           { dbTransaction }
         );
         this.logger.debug(
@@ -3603,77 +3606,82 @@ class ExchangeHub extends Bot {
           voucherId
         );
       }
-      if (dbAccountVersions) {
-        let dbAskAccountVersion = dbAccountVersions.find(
-          (dbAccV) =>
-            dbAccV.currency.toString() === askAccountVersion.currency.toString()
+      let dbAskAccountVersion =
+        dbAccountVersions?.length > 0
+          ? dbAccountVersions.find(
+              (dbAccV) =>
+                dbAccV.currency.toString() ===
+                askAccountVersion.currency.toString()
+            )
+          : null;
+      if (dbAskAccountVersion) {
+        this.logger.error(`askAccountVersion exist`, askAccountVersion);
+        this.logger.error(
+          `askAccountVersion exist dbAskAccountVersion`,
+          dbAskAccountVersion
         );
-        if (dbAskAccountVersion) {
-          this.logger.error(`askAccountVersion exist`, askAccountVersion);
+      } else {
+        await this._updateAccount(
+          { ...askAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        this.logger.debug(`dbUpdater _updateAccount success askAccountVersion`);
+      }
+      let dbBidAccountVersion =
+        dbAccountVersions?.length > 0
+          ? dbAccountVersions.find(
+              (dbAccV) =>
+                dbAccV.currency.toString() ===
+                  bidAccountVersion.currency.toString() &&
+                dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
+            )
+          : null;
+      if (dbBidAccountVersion) {
+        this.logger.error(
+          `bidAccountVersion exist bidAccountVersion`,
+          bidAccountVersion
+        );
+        this.logger.error(
+          `bidAccountVersion exist dbBidAccountVersion`,
+          dbBidAccountVersion
+        );
+      } else {
+        await this._updateAccount(
+          { ...bidAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        this.logger.debug(`dbUpdater _updateAccount success bidAccountVersion`);
+      }
+      if (orderFullFilledAccountVersion) {
+        let dbOrderFullFilledAccountVersion =
+          dbAccountVersions?.length > 0
+            ? dbAccountVersions.find(
+                (dbAccV) =>
+                  dbAccV.currency.toString() ===
+                    orderFullFilledAccountVersion.currency.toString() &&
+                  dbAccV.reason === Database.REASON.ORDER_FULLFILLED
+              )
+            : null;
+        if (dbOrderFullFilledAccountVersion) {
           this.logger.error(
-            `askAccountVersion exist dbAskAccountVersion`,
-            dbAskAccountVersion
+            `bidAccountVersion exist orderFullFilledAccountVersion`,
+            orderFullFilledAccountVersion
+          );
+          this.logger.error(
+            `orderFullFilledAccountVersion exist dbOrderFullFilledAccountVersion`,
+            dbOrderFullFilledAccountVersion
           );
         } else {
           await this._updateAccount(
-            { ...askAccountVersion, modifiable_id: tradeId },
+            { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
             dbTransaction
           );
           this.logger.debug(
-            `dbUpdater _updateAccount success askAccountVersion`
+            `dbUpdater _updateAccount success orderFullFilledAccountVersion`
           );
-        }
-        let dbBidAccountVersion = dbAccountVersions.find(
-          (dbAccV) =>
-            dbAccV.currency.toString() ===
-              bidAccountVersion.currency.toString() &&
-            dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
-        );
-        if (dbBidAccountVersion) {
-          this.logger.error(
-            `bidAccountVersion exist bidAccountVersion`,
-            bidAccountVersion
-          );
-          this.logger.error(
-            `bidAccountVersion exist dbBidAccountVersion`,
-            dbBidAccountVersion
-          );
-        } else {
-          await this._updateAccount(
-            { ...bidAccountVersion, modifiable_id: tradeId },
-            dbTransaction
-          );
-          this.logger.debug(
-            `dbUpdater _updateAccount success bidAccountVersion`
-          );
-        }
-        if (orderFullFilledAccountVersion) {
-          let dbOrderFullFilledAccountVersion = dbAccountVersions.find(
-            (dbAccV) =>
-              dbAccV.currency.toString() ===
-                orderFullFilledAccountVersion.currency.toString() &&
-              dbAccV.reason === Database.REASON.ORDER_FULLFILLED
-          );
-          if (dbOrderFullFilledAccountVersion) {
-            this.logger.error(
-              `bidAccountVersion exist orderFullFilledAccountVersion`,
-              orderFullFilledAccountVersion
-            );
-            this.logger.error(
-              `orderFullFilledAccountVersion exist dbOrderFullFilledAccountVersion`,
-              dbOrderFullFilledAccountVersion
-            );
-          } else {
-            await this._updateAccount(
-              { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
-              dbTransaction
-            );
-            this.logger.debug(
-              `dbUpdater _updateAccount success orderFullFilledAccountVersion`
-            );
-          }
         }
       }
+
       return {
         trade: { ...trade, id: tradeId },
         voucher: { ...voucher, id: voucherId },
