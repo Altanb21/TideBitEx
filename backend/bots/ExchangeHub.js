@@ -3484,6 +3484,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `------------- [${this.constructor.name}] updateOuterTrade -------------`
     );
+    this.logger.log(`this.updateOuterTrade status`, status);
     try {
       switch (status) {
         case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
@@ -3542,6 +3543,7 @@ class ExchangeHub extends Bot {
   }
 
   async dbUpdater({
+    dbOrder,
     updatedOrder,
     voucher,
     trade,
@@ -3552,24 +3554,35 @@ class ExchangeHub extends Bot {
     dbTransaction,
   }) {
     /* !!! HIGH RISK (start) !!! */
-    let tradeId;
-    let voucherId;
+    let tradeId, voucherId, dbTrade, dbVoucher, dbAccountVersions;
     this.logger.debug(`dbUpdater`);
     try {
       await this.database.updateOrder(updatedOrder, { dbTransaction });
-      this.logger.debug(`dbUpdater updateOrder success`);
-      const dbTrade = await this.database.getTradeByTradeFk(tradeFk);
+      this.logger.debug(`dbUpdater updateOrder success`, updatedOrder);
+      dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
-        this.logger.error("trade exist");
+        this.logger.error("trade exist trade", trade);
+        this.logger.error("trade exist dbTrade", dbTrade);
         tradeId = dbTrade.id;
-        // ++ TOOD 10/13 getVoucherId
-      }
-      if (!dbTrade) {
+        dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
+          dbOrder.id,
+          tradeId
+        );
+        // ++ TOOD 10/13 getAccountVersionsByModifiableId
+        dbAccountVersions =
+          await this.database.getAccountVersionsByModifiableId(tradeId);
+      } else {
         tradeId = await this.database.insertTrades(
           { ...trade, trade_fk: tradeFk },
           { dbTransaction }
         );
         this.logger.debug(`dbUpdater insertTrades success tradeId`, tradeId);
+      }
+      if (dbVoucher) {
+        voucherId = dbVoucher.id;
+        this.logger.error("voucher exist voucher", voucher);
+        this.logger.error("voucher exist dbVoucher", dbVoucher);
+      } else {
         voucherId = await this.database.insertVouchers(
           { ...voucher, trade_id: tradeId },
           { dbTransaction }
@@ -3578,24 +3591,77 @@ class ExchangeHub extends Bot {
           `dbUpdater insertVouchers success voucherId`,
           voucherId
         );
-        await this._updateAccount(
-          { ...askAccountVersion, modifiable_id: tradeId },
-          dbTransaction
+      }
+      if (dbAccountVersions) {
+        let dbAskAccountVersion = dbAccountVersions.find(
+          (dbAccV) =>
+            dbAccV.currency.toString() === askAccountVersion.currency.toString()
         );
-        this.logger.debug(`dbUpdater _updateAccount success askAccountVersion`);
-        await this._updateAccount(
-          { ...bidAccountVersion, modifiable_id: tradeId },
-          dbTransaction
-        );
-        this.logger.debug(`dbUpdater _updateAccount success bidAccountVersion`);
-        if (orderFullFilledAccountVersion)
+        if (dbAskAccountVersion) {
+          this.logger.error(`askAccountVersion exist`, askAccountVersion);
+          this.logger.error(
+            `askAccountVersion exist dbAskAccountVersion`,
+            dbAskAccountVersion
+          );
+        } else {
           await this._updateAccount(
-            { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+            { ...askAccountVersion, modifiable_id: tradeId },
             dbTransaction
           );
-        this.logger.debug(
-          `dbUpdater _updateAccount success orderFullFilledAccountVersion`
+          this.logger.debug(
+            `dbUpdater _updateAccount success askAccountVersion`
+          );
+        }
+        let dbBidAccountVersion = dbAccountVersions.find(
+          (dbAccV) =>
+            dbAccV.currency.toString() ===
+              bidAccountVersion.currency.toString() &&
+            dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
         );
+        if (dbBidAccountVersion) {
+          this.logger.error(
+            `bidAccountVersion exist bidAccountVersion`,
+            bidAccountVersion
+          );
+          this.logger.error(
+            `bidAccountVersion exist dbBidAccountVersion`,
+            dbBidAccountVersion
+          );
+        } else {
+          await this._updateAccount(
+            { ...bidAccountVersion, modifiable_id: tradeId },
+            dbTransaction
+          );
+          this.logger.debug(
+            `dbUpdater _updateAccount success bidAccountVersion`
+          );
+        }
+        if (orderFullFilledAccountVersion) {
+          let dbOrderFullFilledAccountVersion = dbAccountVersions.find(
+            (dbAccV) =>
+              dbAccV.currency.toString() ===
+                orderFullFilledAccountVersion.currency.toString() &&
+              dbAccV.reason === Database.REASON.ORDER_FULLFILLED
+          );
+          if (dbOrderFullFilledAccountVersion) {
+            this.logger.error(
+              `bidAccountVersion exist orderFullFilledAccountVersion`,
+              orderFullFilledAccountVersion
+            );
+            this.logger.error(
+              `orderFullFilledAccountVersion exist dbOrderFullFilledAccountVersion`,
+              dbOrderFullFilledAccountVersion
+            );
+          } else {
+            await this._updateAccount(
+              { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+              dbTransaction
+            );
+            this.logger.debug(
+              `dbUpdater _updateAccount success orderFullFilledAccountVersion`
+            );
+          }
+        }
       }
       return {
         trade: { ...trade, id: tradeId },
@@ -3691,6 +3757,7 @@ class ExchangeHub extends Bot {
             status,
             dbTransaction,
           });
+          this.logger.log(`dbResponse`, dbResponse);
           if (dbResponse.trade && dbResponse.trade?.id) {
             let newTrade = {
               id: dbResponse.trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
@@ -3709,6 +3776,7 @@ class ExchangeHub extends Bot {
               trade: newTrade,
             });
           }
+          status = Database.OUTERTRADE_STATUS.DONE;
         }
       }
     } catch (error) {
@@ -3719,8 +3787,8 @@ class ExchangeHub extends Bot {
     await this.updateOuterTrade({
       member,
       status,
-      id: data.tradeId,
-      order,
+      id: dbResponse.trade.id,
+      dbOrder: order,
       voucher: dbResponse.voucher,
       dbTransaction,
     });

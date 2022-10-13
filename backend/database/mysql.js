@@ -80,7 +80,7 @@ class mysql {
     }
   }
 
-  async getTotalAccountsAssets(){
+  async getTotalAccountsAssets() {
     const query = `
     SELECT
 	    accounts.currency,
@@ -577,6 +577,27 @@ class mysql {
       this.logger.debug(error);
       if (dbTransaction) throw error;
       return [];
+    }
+  }
+
+  async getAccountVersionsByModifiableId(id) {
+    const query = `
+    SELECT
+	    *
+    FROM
+	   account_versions
+    WHERE
+	   account_versions.modifiable_id = ?;`;
+    try {
+      this.logger.debug("getAccountVersionsByModifiableId", query, `[${id}]`);
+      const [accountVersions] = await this.db.query({
+        query,
+        values: [id],
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.debug(error);
+      return null;
     }
   }
 

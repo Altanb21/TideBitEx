@@ -120,6 +120,10 @@ class DBOperator {
     return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
   }
 
+  async getAccountVersionsByModifiableId(id) {
+    return this.database.getAccountVersionsByModifiableId(id);
+  }
+
   async getTradeByTradeFk(tradeFk) {
     return this.database.getTradeByTradeFk(tradeFk);
   }
