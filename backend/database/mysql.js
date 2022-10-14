@@ -77,11 +77,14 @@ class mysql {
 	    accounts.member_id,
 	    accounts.currency,
 	    accounts.balance,
-	    accounts.locked
+	    accounts.locked,
+	    accounts.created_at,
+	    accounts.updated_at,
     FROM
 	    accounts
     WHERE
-	    accounts.member_id = ?;
+	    accounts.member_id = ?
+    LIMIT 100;
     `;
     const values = [memberId];
     try {
