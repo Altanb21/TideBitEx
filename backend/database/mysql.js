@@ -79,7 +79,7 @@ class mysql {
 	    accounts.balance,
 	    accounts.locked,
 	    accounts.created_at,
-	    accounts.updated_at,
+	    accounts.updated_at
     FROM
 	    accounts
     WHERE
@@ -282,7 +282,9 @@ class mysql {
 	    accounts.member_id,
 	    accounts.currency,
 	    accounts.balance,
-	    accounts.locked
+	    accounts.locked,
+	    accounts.created_at,
+	    accounts.updated_at
     FROM
 	    accounts
     WHERE
