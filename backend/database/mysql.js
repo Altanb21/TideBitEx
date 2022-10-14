@@ -406,9 +406,6 @@ class mysql {
             orderId
               ? `
           orders.id = ?
-          AND orders.state = ?
-          AND orders.type = ?
-          AND orders.ord_type <> '${ordType}'
       LIMIT 1`
               : `
           orders.member_id = ?
