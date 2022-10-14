@@ -1249,10 +1249,9 @@ class ExchangeHub extends Bot {
             (user) => user.email === newAdminUserEmail
           );
           if (index === -1) {
-            const member = await this.database.getMemberByEmail(
-              // `"${newAdminUserEmail}"`
-              newAdminUserEmail
-            );
+            const member = await this.database.getMemberByCondition({
+              email: newAdminUserEmail,
+            });
             this.logger.debug(`addAdminUser member`, member);
             if (member) {
               const updateAdminUsers = this.adminUsers
@@ -1692,7 +1691,19 @@ class ExchangeHub extends Bot {
       )
       .concat(_doneMarketBidOrders);
     for (let _order of _orders) {
-      let order;
+      let order,
+        price = _order.price ? Utils.removeZeroEnd(_order.price) : _order.price;
+      if (_order.state === Database.ORDER_STATE_CODE.DONE) {
+        if (_order.ord_type === Database.TYPE.ORDER_ASK) {
+          price = SafeMath.div(_order.funds_received, _order.origin_volume);
+        }
+        if (_order.ord_type === Database.TYPE.ORDER_BID) {
+          price = SafeMath.div(
+            SafeMath.minus(_order.origin_locked, _order.locked),
+            _order.funds_received
+          );
+        }
+      }
       order = {
         id: _order.id,
         ts: parseInt(new Date(_order.updated_at).getTime()),
@@ -1704,7 +1715,7 @@ class ExchangeHub extends Bot {
           _order.type === Database.TYPE.ORDER_ASK
             ? Database.ORDER_KIND.ASK
             : Database.ORDER_KIND.BID,
-        price: _order.price ? Utils.removeZeroEnd(_order.price) : _order.price,
+        price,
         origin_volume: Utils.removeZeroEnd(_order.origin_volume),
         volume: Utils.removeZeroEnd(_order.volume),
         state_code: _order.state,
@@ -1769,6 +1780,9 @@ class ExchangeHub extends Bot {
     return orders;
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   async getUsersAccounts() {
     return this.tideBitConnector.router("getUsersAccounts", {});
   }
@@ -2115,11 +2129,12 @@ class ExchangeHub extends Bot {
         //   Database.EXCHANGE[exchange.toUpperCase()],
         //   365 // ++ TODO
         // );
-        const _outerTrades = await this.database.getOuterTradesBetweenDays(
-          Database.EXCHANGE[exchange.toUpperCase()],
-          startDate,
-          endtDate
-        );
+        const _outerTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          start: startDate,
+          end: endtDate,
+        });
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",
         //   {
@@ -2221,9 +2236,10 @@ class ExchangeHub extends Bot {
       query
     );
     let outerOrders = [],
-      dbOrders = await this.database.getOrdersJoinMemberEmail(
-        Database.ORDER_STATE_CODE.WAIT
-      );
+      // dbOrders = await this.database.getOrdersJoinMemberEmail(
+      //   Database.ORDER_STATE_CODE.WAIT
+      // );
+      memberIds = [];
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
@@ -2234,19 +2250,17 @@ class ExchangeHub extends Bot {
             let parsedClOrdId = Utils.parseClOrdId(order.clOrdId),
               memberId = parsedClOrdId.memberId,
               id = parsedClOrdId.orderId,
-              dbOrder = dbOrders.find(
-                (_dbOrder) => _dbOrder.id.toString() === id.toString()
-              ),
               fundsReceived =
                 order.side === Database.ORDER_SIDE.BUY
                   ? SafeMath.mult(order.avgPx, order.accFillSz)
                   : order.accFillSz,
               processOrder;
+            memberIds.push(memberId);
             processOrder = {
               ...order,
               unFillSz: SafeMath.minus(order.sz, order.accFillSz),
               id,
-              email: dbOrder?.email || null,
+              // email: dbOrder?.email || null,
               memberId,
               exchange: query.exchange,
               fundsReceived,
@@ -2255,6 +2269,17 @@ class ExchangeHub extends Bot {
             // this.logger.debug(`processOrder`, processOrder);
             outerOrders = [...outerOrders, processOrder];
           }
+          let emailsObj = this.database.getEmailsByMemberIds(
+            memberIds,
+            memberIds.length,
+            0
+          );
+          outerOrders.map((order) => {
+            let emailObj = emailsObj.find(
+              (obj) => obj.id.toString() === order.memberId.toString()
+            );
+            return { ...order, email: emailObj.email };
+          });
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
@@ -2368,7 +2393,7 @@ class ExchangeHub extends Bot {
             locked: orderData.locked,
             fee: 0,
           };
-          account = await this.database.getAccountByMemberIdCurrency(
+          account = await this.database.getAccountByMemberIdAndCurrency(
             memberId,
             currencyId,
             { dbTransaction: t }
@@ -2731,7 +2756,7 @@ class ExchangeHub extends Bot {
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
-        account = await this.database.getAccountByMemberIdCurrency(
+        account = await this.database.getAccountByMemberIdAndCurrency(
           memberId,
           currencyId,
           { dbTransaction: transacion }
@@ -3022,6 +3047,9 @@ class ExchangeHub extends Bot {
     });
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   // public api end
   async getExAccounts({ query }) {
     const { exchange } = query;
@@ -3193,7 +3221,7 @@ class ExchangeHub extends Bot {
       );
       if (!tmp) {
         tmp = [];
-        tmp[0] = await this.database.getAccountByMemberIdCurrency(
+        tmp[0] = await this.database.getAccountByMemberIdAndCurrency(
           askAccountVersion.member_id,
           askAccountVersion.currency,
           { dbTransaction }
@@ -3771,7 +3799,7 @@ class ExchangeHub extends Bot {
         status = Database.OUTERTRADE_STATUS.ClORDId_ERROR;
       }
       if (!status) {
-        member = await this.database.getMemberById(memberId);
+        member = await this.database.getMemberByCondition({ id: memberId });
         order = await this.database.getOrder(orderId, { dbTransaction });
       }
       if (!order || order?.member_id.toString() !== member?.id.toString()) {
@@ -3968,7 +3996,7 @@ class ExchangeHub extends Bot {
       });
     }
     if (tickerSetting && memberId && updateBaseAccount && updateQuoteAccount) {
-      member = await this.database.getMemberById(memberId);
+      member = await this.database.getMemberByCondition({ id: memberId });
       if (member) {
         memberTag = member.member_tag;
         this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
@@ -4138,7 +4166,7 @@ class ExchangeHub extends Bot {
 
   async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
-    const account = await this.database.getAccountByMemberIdCurrency(
+    const account = await this.database.getAccountByMemberIdAndCurrency(
       accountVersion.member_id,
       accountVersion.currency,
       { dbTransaction }

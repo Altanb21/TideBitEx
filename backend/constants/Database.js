@@ -78,7 +78,7 @@ module.exports = {
     OTHER_SYSTEM_TRADE: 8,
     ClORDId_ERROR: 7,
     API_ORDER_CANCEL: 6,
-    DB_ORDER_CANCEL: 5
+    DB_ORDER_CANCEL: 5,
   },
   STATE: {
     PENDING: "pending",
@@ -87,5 +87,9 @@ module.exports = {
   TREND: {
     UP: "up",
     DOWN: "down",
+  },
+  TIME_RANGE_TYPE: {
+    BETWEEN: "between",
+    DAY_AFTER: "dayAfter",
   },
 };

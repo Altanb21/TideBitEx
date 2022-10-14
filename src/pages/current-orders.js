@@ -23,7 +23,7 @@ const CurrentOrders = () => {
 
   const getCurrentOrders = useCallback(
     async (exchange) => {
-      const orders = await storeCtx.getOuterPendingOrders(exchange);
+      const orders = await storeCtx.getOuterPendingOrders(exchange, 100, 0);
       setOrders((prev) => {
         let _orders = { ...prev };
         _orders[exchange] = orders;
