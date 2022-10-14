@@ -70,7 +70,48 @@ class mysql {
     }
   }
 
-  async getAccountsByMemberId(memberId) {
+  async getAccountsByMemberId(memberId, options) {
+    let placeholder = ``;
+    if (options) {
+      for (let option of options) {
+        placeholder += ` AND accounts.${option.key} = ${options.value}`;
+      }
+    }
+    const query = `
+    SELECT
+	    accounts.id,
+	    accounts.member_id,
+	    accounts.currency,
+	    accounts.balance,
+	    accounts.locked,
+	    accounts.created_at,
+	    accounts.updated_at
+    FROM
+	    accounts
+    WHERE
+	    accounts.member_id = ?${placeholder}
+    LIMIT 100;
+    `;
+    const values = [memberId];
+    try {
+      const [accounts] = await this.db.query({
+        query,
+        values,
+      });
+      this.logger.debug(query, values);
+      return accounts;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  // ++ TODO 與 getAccountByMemberId 合併
+  async getAccountByMemberIdAndCurrency(
+    memberId,
+    currencyId,
+    { dbTransaction }
+  ) {
     const query = `
     SELECT
 	    accounts.id,
@@ -84,18 +125,29 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?
-    LIMIT 100;
+      AND accounts.currency = ?
+    LIMIT 1;
     `;
-    const values = [memberId];
     try {
-      const [accounts] = await this.db.query({
+      this.logger.debug(
+        "getAccountByMemberIdAndCurrency",
         query,
-        values,
-      });
-      this.logger.debug(query, values);
-      return accounts;
+        `[${memberId}, ${currencyId}]`
+      );
+      const [[account]] = await this.db.query(
+        {
+          query,
+          values: [memberId, currencyId],
+        },
+        {
+          transaction: dbTransaction,
+          lock: dbTransaction.LOCK.UPDATE,
+        }
+      );
+      return account;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(error);
+      if (dbTransaction) throw error;
       return [];
     }
   }
@@ -271,51 +323,6 @@ class mysql {
     }
   }
 
-  async getAccountByMemberIdAndCurrency(
-    memberId,
-    currencyId,
-    { dbTransaction }
-  ) {
-    const query = `
-    SELECT
-	    accounts.id,
-	    accounts.member_id,
-	    accounts.currency,
-	    accounts.balance,
-	    accounts.locked,
-	    accounts.created_at,
-	    accounts.updated_at
-    FROM
-	    accounts
-    WHERE
-	    accounts.member_id = ?
-      AND accounts.currency = ?
-    LIMIT 1;
-    `;
-    try {
-      this.logger.debug(
-        "getAccountByMemberIdAndCurrency",
-        query,
-        `[${memberId}, ${currencyId}]`
-      );
-      const [[account]] = await this.db.query(
-        {
-          query,
-          values: [memberId, currencyId],
-        },
-        {
-          transaction: dbTransaction,
-          lock: dbTransaction.LOCK.UPDATE,
-        }
-      );
-      return account;
-    } catch (error) {
-      this.logger.debug(error);
-      if (dbTransaction) throw error;
-      return [];
-    }
-  }
-
   /**
    * [deprecated] 2022/10/14
    * 與 getDoneOrders 整合
@@ -448,9 +455,6 @@ class mysql {
     memberId,
     orderType,
     state,
-    days,
-    limit,
-    offset,
     asc,
   }) {
     // async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
@@ -481,10 +485,10 @@ class mysql {
       AND orders.ask = ?
       ${state ? `AND orders.state = ${state}` : ``}
       ${orderType ? `AND orders.ord_type = ${orderType}` : ``}
-      AND orders.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     ORDER BY
-      orders.created_at ${asc ? "ASC" : "DESC"}
-    LIMIT ${limit} OFFSET ${offset};`;
+      orders.created_at ${asc ? "ASC" : "DESC"};`;
+    // AND orders.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
+    // LIMIT ${limit} OFFSET ${offset};`;// -- TODO
     try {
       this.logger.debug(
         "getOrderList",
@@ -581,13 +585,13 @@ class mysql {
     }
   }
 
-  async getEmailsByMemberIds(memberIds, limit, offset) {
+  async getEmailsByMemberIds(memberIds) {
     let placeholder,
-      values = [],
+      // values = [],
       index = 0;
-    for (let memberId of memberIds) {
+    for (let _ of memberIds) {
       placeholder += index === memberIds.length - 1 ? " ?," : " ?";
-      values.push(memberId);
+      // values.push(memberId);
       index++;
     }
     let query = `
@@ -599,14 +603,13 @@ class mysql {
     WHERE
 	     members.id in(${placeholder})
     ORDER BY
-	    members.id ASC
-    LIMIT ${limit} OFFSET ${offset};
+	    members.id ASC;
     `;
     try {
-      this.logger.debug("[mysql] getEmailsByMemberIds", query, values);
+      this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);
       const [emails] = await this.db.query({
         query,
-        values,
+        values: memberIds,
       });
       return emails;
     } catch (error) {
@@ -722,6 +725,7 @@ class mysql {
     }
   }
 
+  // ++ TO BE SOLVED 耗時
   async getOuterTrades({
     type,
     exchangeCode,
@@ -764,7 +768,7 @@ class mysql {
       }
     ORDER BY
         outer_trades.create_at ${asc ? "ASC" : "DESC"}
-    LIMIT ${limit} OFFSET ${offset} ;`;
+    LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
         "getOuterTradesByDayAfter",
@@ -912,6 +916,9 @@ class mysql {
     }
   }
 
+  /**
+   * 待優化，可以同 getVoucherBy ? 整合
+   */
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
     const query = `
     SELECT

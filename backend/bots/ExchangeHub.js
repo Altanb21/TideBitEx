@@ -3465,7 +3465,7 @@ class ExchangeHub extends Bot {
             locked: SafeMath.mult(orderLocked, "-1"),
             // ++TODO modifiable_id
           };
-          orderLocked = "0";
+          // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
           this.logger.debug(
             `calculator orderFullFilledAccountVersion`,
             orderFullFilledAccountVersion
@@ -3573,6 +3573,7 @@ class ExchangeHub extends Bot {
             .toISOString()
             .slice(0, 19)
             .replace("T", " ")}`;
+          // 確保 cancel order 的 locked 金額有還給用戶
           let dbCancelOrderAccountVersions =
             await this.database.getAccountVersionsByModifiableId(dbOrder.id);
           let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
@@ -3788,9 +3789,6 @@ class ExchangeHub extends Bot {
       // 2.1.可以從 data 解析出 orderId 及 memberId
       // 2.2.可以根據 orderId 從 database 取得 dbOrder
       // 2.3. dbOrder.member_id 同 data 解析出的 memberId
-      // 3. 判斷收到的資料對應的 order是否需要更新
-      // 3.1 dbOrder.state 不為 0
-      // 3.2 OKx api 回傳的 orderDetail state 不為 cancel
       market = this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
       let tmp = Utils.parseClOrdId(data.clOrdId);
       memberId = tmp.memberId;
@@ -3805,9 +3803,12 @@ class ExchangeHub extends Bot {
       if (!order || order?.member_id.toString() !== member?.id.toString()) {
         status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
       }
+      // 3. 判斷收到的資料對應的 order是否需要更新
+      // 3.1 dbOrder.state 不為 0
       if (order && order?.state !== Database.ORDER_STATE_CODE.WAIT) {
         status = Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL;
       }
+      // 3.2 OKx api 回傳的 orderDetail state 不為 cancel
       if (!status) {
         if (type === Database.MODIFIABLE_TYPE.TRADE) {
           let apiResonse = await this.okexConnector.router("getOrderDetails", {
@@ -3826,7 +3827,7 @@ class ExchangeHub extends Bot {
         }
       }
       this.logger.debug(`processor status`, status);
-      // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
+      // 4. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
       // 計算完後會直接通知前端更新 order 及 accounts
       if (!status) {
         result = this.calculator({
@@ -3837,7 +3838,7 @@ class ExchangeHub extends Bot {
           type,
         });
       }
-      // 3. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
+      // 5. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
       // trade 新增進 DB 後才可以得到我們的 trade id
       // db 更新的資料為 calculator 得到的 result
       if (result) {

@@ -116,9 +116,6 @@ class DBOperator {
     memberId,
     orderType,
     state,
-    days = 30,
-    limit = 200,
-    offset = 0,
     asc = false,
   }) {
     return this.database.getOrderList({
@@ -127,9 +124,6 @@ class DBOperator {
       memberId,
       orderType,
       state,
-      days,
-      limit,
-      offset,
       asc,
     });
   }
@@ -240,8 +234,8 @@ class DBOperator {
     });
   }
 
-  async getEmailsByMemberIds(memberIds, limit = 100, offset = 0) {
-    return this.database.getEmailsByMemberIds(memberIds, limit, offset);
+  async getEmailsByMemberIds(memberIds) {
+    return this.database.getEmailsByMemberIds(memberIds);
   }
   /**
    * [deprecated] 2022/10/14
