@@ -2773,6 +2773,7 @@ class ExchangeHub extends Bot {
           await this.database.updateOrder(newOrder, {
             dbTransaction: transacion,
           });
+          this.logger.error(`被取消訂單的狀態更新了`);
           accountVersion = {
             member_id: memberId,
             currency: currencyId,
@@ -2787,6 +2788,7 @@ class ExchangeHub extends Bot {
             fee,
           };
           await this._updateAccount(accountVersion, transacion);
+          this.logger.error(`被取消訂單對應的用戶帳號更新了`);
           updatedOrder = {
             ...orderData,
             state: Database.ORDER_STATE.CANCEL,
@@ -2831,6 +2833,9 @@ class ExchangeHub extends Bot {
           // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
           let transacion = await this.database.transaction();
+          this.logger.error(
+            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號`
+          );
           dbUpdateR = await this.updateOrderStatus({
             transacion,
             orderId,
@@ -2839,6 +2844,7 @@ class ExchangeHub extends Bot {
           });
           /* !!! HIGH RISK (end) !!! */
           if (!dbUpdateR.success) {
+            this.logger.error(`DB 更新失敗`);
             await transacion.rollback();
             result = new ResponseFormat({
               message: "DB ERROR",
@@ -2846,19 +2852,23 @@ class ExchangeHub extends Bot {
             });
           } else {
             // 2. performTask (Task: cancel)
+            this.logger.error(`準備呼叫 API 執行取消訂單`);
             this.logger.debug(`postCancelOrder`, body);
             apiR = await this.okexConnector.router("postCancelOrder", {
               params,
               query,
               body,
             });
+            this.logger.error(`API 取消訂單成功了`);
             this.logger.debug(`okexCancelOrderRes`, apiR);
           }
           if (!apiR.success) {
+            this.logger.error(`API 取消訂單失敗`);
             await transacion.rollback();
           } else {
             await transacion.commit();
             // 3. informFrontEnd
+            this.logger.error(`準備通知前端更新頁面`);
             this._emitUpdateOrder({
               memberId,
               instId: body.instId,
@@ -2869,6 +2879,7 @@ class ExchangeHub extends Bot {
               memberId,
               account: dbUpdateR.updateAccount,
             });
+            this.logger.error(`通知前端成功了`);
           }
           result = apiR;
           break;
@@ -2886,7 +2897,7 @@ class ExchangeHub extends Bot {
           break;
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`取消訂單失敗了`, error);
       result = new ResponseFormat({
         message: error.message,
         code: Codes.CANCEL_ORDER_FAIL,
