@@ -2393,11 +2393,11 @@ class ExchangeHub extends Bot {
             locked: orderData.locked,
             fee: 0,
           };
-          account = await this.database.getAccountByMemberIdAndCurrency(
-            memberId,
-            currencyId,
-            { dbTransaction: t }
-          );
+          account = await this.database.getAccountsByMemberId(memberId, {
+            options: [{ currency: currencyId }],
+            limit: 1,
+            dbTransaction: t,
+          });
           await this._updateAccount(accountVersion, t);
           //   * 5. commit transaction
           await t.commit();
@@ -2756,11 +2756,11 @@ class ExchangeHub extends Bot {
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
-        account = await this.database.getAccountByMemberIdAndCurrency(
-          memberId,
-          currencyId,
-          { dbTransaction: transacion }
-        );
+        account = await this.database.getAccountsByMemberId(memberId, {
+          options: [{ currency: currencyId }],
+          limit: 1,
+          dbTransaction: transacion,
+        });
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
@@ -3221,10 +3221,13 @@ class ExchangeHub extends Bot {
       );
       if (!tmp) {
         tmp = [];
-        tmp[0] = await this.database.getAccountByMemberIdAndCurrency(
+        tmp[0] = await this.database.getAccountsByMemberId(
           askAccountVersion.member_id,
-          askAccountVersion.currency,
-          { dbTransaction }
+          {
+            options: [{ currency: askAccountVersion.currency }],
+            limit: 1,
+            dbTransaction,
+          }
         );
       }
       let balance, locked, total;
@@ -4167,10 +4170,13 @@ class ExchangeHub extends Bot {
 
   async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
-    const account = await this.database.getAccountByMemberIdAndCurrency(
+    const account = await this.database.getAccountsByMemberId(
       accountVersion.member_id,
-      accountVersion.currency,
-      { dbTransaction }
+      {
+        options: [{ currency: accountVersion.currency }],
+        limit: 1,
+        dbTransaction,
+      }
     );
     const oriAccBal = account.balance;
     const oriAccLoc = account.locked;
