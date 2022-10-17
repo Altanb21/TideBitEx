@@ -2724,14 +2724,14 @@ class ExchangeHub extends Bot {
 
   async updateOrderStatus({ transacion, orderId, memberId, orderData }) {
     /* !!! HIGH RISK (start) !!! */
-    // 1. get orderId from body
+    // 1. -get orderId from body-
     // 2. get order data from table
     // 3. find and lock account
     // 4. update order state
     // 5. get balance and locked value from order
     // 6. add account_version
     // 7. update account balance and locked
-    // 8. post okex cancel order
+    // 8. -post okex cancel order-
     // const t = await this.database.transaction();
     /*******************************************
      * body.clOrdId: custom orderId for okex
@@ -2787,6 +2787,25 @@ class ExchangeHub extends Bot {
             fee,
           };
           await this._updateAccount(accountVersion, transacion);
+          updatedOrder = {
+            ...orderData,
+            state: Database.ORDER_STATE.CANCEL,
+            state_text: Database.ORDER_STATE_TEXT.CANCEL,
+            at: parseInt(SafeMath.div(Date.now(), "1000")),
+            ts: Date.now(),
+          };
+          updateAccount = {
+            balance: SafeMath.plus(account.balance, balance),
+            locked: SafeMath.plus(account.locked, locked),
+            currency: this.coinsSettings.find(
+              (curr) => curr.id === account.currency
+            )?.symbol,
+            total: SafeMath.plus(
+              SafeMath.plus(account.balance, balance),
+              SafeMath.plus(account.locked, locked)
+            ),
+          };
+          success = true;
         }
       }
     } catch (error) {
@@ -2796,24 +2815,6 @@ class ExchangeHub extends Bot {
         error
       );
     }
-    success = true;
-    updatedOrder = {
-      ...orderData,
-      state: Database.ORDER_STATE.CANCEL,
-      state_text: Database.ORDER_STATE_TEXT.CANCEL,
-      at: parseInt(SafeMath.div(Date.now(), "1000")),
-      ts: Date.now(),
-    };
-    updateAccount = {
-      balance: SafeMath.plus(account.balance, balance),
-      locked: SafeMath.plus(account.locked, locked),
-      currency: this.coinsSettings.find((curr) => curr.id === account.currency)
-        ?.symbol,
-      total: SafeMath.plus(
-        SafeMath.plus(account.balance, balance),
-        SafeMath.plus(account.locked, locked)
-      ),
-    };
     return { success, updatedOrder, updateAccount };
     /* !!! HIGH RISK (end) !!! */
   }
@@ -2827,9 +2828,9 @@ class ExchangeHub extends Bot {
     try {
       switch (source) {
         case SupportedExchange.OKEX:
-          let transacion = await this.database.transaction();
           // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
+          let transacion = await this.database.transaction();
           dbUpdateR = await this.updateOrderStatus({
             transacion,
             orderId,
