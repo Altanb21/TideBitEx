@@ -2394,7 +2394,7 @@ class ExchangeHub extends Bot {
             fee: 0,
           };
           account = await this.database.getAccountsByMemberId(memberId, {
-            options: [{ currency: currencyId }],
+            options: { currency: currencyId },
             limit: 1,
             dbTransaction: t,
           });
@@ -2757,7 +2757,7 @@ class ExchangeHub extends Bot {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
         account = await this.database.getAccountsByMemberId(memberId, {
-          options: [{ currency: currencyId }],
+          options: { currency: currencyId },
           limit: 1,
           dbTransaction: transacion,
         });
@@ -3224,7 +3224,7 @@ class ExchangeHub extends Bot {
         tmp[0] = await this.database.getAccountsByMemberId(
           askAccountVersion.member_id,
           {
-            options: [{ currency: askAccountVersion.currency }],
+            options: { currency: askAccountVersion.currency },
             limit: 1,
             dbTransaction,
           }
@@ -4173,7 +4173,7 @@ class ExchangeHub extends Bot {
     const account = await this.database.getAccountsByMemberId(
       accountVersion.member_id,
       {
-        options: [{ currency: accountVersion.currency }],
+        options: { currency: accountVersion.currency },
         limit: 1,
         dbTransaction,
       }

@@ -270,13 +270,13 @@ class ExchangeHubService {
        */
       // 1. get askAccount from table
       const askAccount = await this.database.getAccountsByMemberId(memberId, {
-        options: [{ currency: askCurr }],
+        options: { currency: askCurr },
         limit: 1,
         dbTransaction,
       });
       // 2. get bidAccount from table
       const bidAccount = await this.database.getAccountsByMemberId(memberId, {
-        options: [{ currency: bidCurr }],
+        options: { currency: bidCurr },
         limit: 1,
         dbTransaction,
       });
@@ -448,13 +448,13 @@ class ExchangeHubService {
        */
       // 1. get askAccount from table
       const askAccount = await this.database.getAccountsByMemberId(memberId, {
-        options: [{ currency: askCurr }],
+        options: { currency: askCurr },
         limit: 1,
         dbTransaction,
       });
       // 2. get bidAccount from table
       const bidAccount = await this.database.getAccountsByMemberId(memberId, {
-        options: [{ currency: bidCurr }],
+        options: { currency: bidCurr },
         limit: 1,
         dbTransaction,
       });

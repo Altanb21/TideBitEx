@@ -1435,7 +1435,7 @@ class OkexConnector extends ConnectorBase {
         });
       // this.orderBook.updateAll(memberId, instId, orders);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(error?.reponse);
       let message = error.message;
       if (error.response && error.response.data)
         message = error.response.data.msg;

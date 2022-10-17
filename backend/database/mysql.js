@@ -75,7 +75,7 @@ class mysql {
     if (options?.length > 0) {
       let keys = Object.keys(options);
       let values = Object.values(options);
-      for (let [index, _] of options) {
+      for (let index = 0; index < options.length; index++) {
         placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }

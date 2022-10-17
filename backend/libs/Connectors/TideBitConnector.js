@@ -653,7 +653,7 @@ class TibeBitConnector extends ConnectorBase {
       email
     );
     try {
-      const _accounts = await this.database.getAccountsByMemberId(memberId);
+      const _accounts = await this.database.getAccountsByMemberId(memberId, {});
       const accounts = _accounts.map((account) => {
         let currencyObj = this.coinsSettings.find(
           (curr) => curr.id === account.currency
