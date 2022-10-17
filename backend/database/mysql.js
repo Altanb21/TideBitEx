@@ -486,8 +486,8 @@ class mysql {
       orders.origin_locked,
       orders.funds_received,
       orders.trades_count,
-      orders,created_at,
-      orders,updated_at
+      orders.created_at,
+      orders.updated_at
     FROM
       orders
     WHERE

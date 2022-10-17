@@ -1357,7 +1357,6 @@ class ExchangeHubService {
         return this._getTransactionsDetail(exchange, clOrdId, newRetry);
       }
     }
-    this.logger.debug(`outerTrades[${index}]`, outerTrades[index]);
     this.logger.debug(
       `--- [${this.constructor.name}] _getTransactionsDetail [END]---`
     );
