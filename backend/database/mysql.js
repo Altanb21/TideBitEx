@@ -90,7 +90,8 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    LIMIT 100;
+    LIMIT 100
+    ORDER BY NULL;
     `;
     const values = [memberId];
     try {
@@ -602,8 +603,7 @@ class mysql {
 	    members
     WHERE
 	     members.id in(${placeholder})
-    ORDER BY
-	    members.id ASC;
+    ORDER BY NULL;
     `;
     try {
       this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);

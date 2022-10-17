@@ -2738,12 +2738,12 @@ class ExchangeHub extends Bot {
      * locked: value from order.locked, used for unlock balance, negative in account_version
      * balance: order.locked
      *******************************************/
-    let result = false,
+    let success = false,
       order,
       locked,
       balance,
       fee,
-      updateOrder,
+      updatedOrder,
       currencyId,
       account,
       updateAccount,
@@ -2787,111 +2787,111 @@ class ExchangeHub extends Bot {
             fee,
           };
           await this._updateAccount(accountVersion, transacion);
-          updateOrder = {
-            ...orderData,
-            state: Database.ORDER_STATE.CANCEL,
-            state_text: Database.ORDER_STATE_TEXT.CANCEL,
-            at: parseInt(SafeMath.div(Date.now(), "1000")),
-            ts: Date.now(),
-          };
-          this._emitUpdateOrder({
-            memberId,
-            instId: updateOrder.instId,
-            market: updateOrder.market,
-            order: updateOrder,
-          });
-          updateAccount = {
-            balance: SafeMath.plus(account.balance, balance),
-            locked: SafeMath.plus(account.locked, locked),
-            currency: this.coinsSettings.find(
-              (curr) => curr.id === account.currency
-            )?.symbol,
-            total: SafeMath.plus(
-              SafeMath.plus(account.balance, balance),
-              SafeMath.plus(account.locked, locked)
-            ),
-          };
-          this._emitUpdateAccount({ memberId, account: updateAccount });
-          result = true;
         }
       }
     } catch (error) {
+      success = false;
       this.logger.error(
         `[${this.constructor.name} updateOrderStatus] error`,
         error
       );
     }
-    return result;
+    success = true;
+    updatedOrder = {
+      ...orderData,
+      state: Database.ORDER_STATE.CANCEL,
+      state_text: Database.ORDER_STATE_TEXT.CANCEL,
+      at: parseInt(SafeMath.div(Date.now(), "1000")),
+      ts: Date.now(),
+    };
+    updateAccount = {
+      balance: SafeMath.plus(account.balance, balance),
+      locked: SafeMath.plus(account.locked, locked),
+      currency: this.coinsSettings.find((curr) => curr.id === account.currency)
+        ?.symbol,
+      total: SafeMath.plus(
+        SafeMath.plus(account.balance, balance),
+        SafeMath.plus(account.locked, locked)
+      ),
+    };
+    return { success, updatedOrder, updateAccount };
     /* !!! HIGH RISK (end) !!! */
   }
-  // ++ TODO: fix multi return
   async postCancelOrder({ header, params, query, body, memberId }) {
     const tickerSetting = this.tickersSettings[body.market];
     const source = tickerSetting?.source;
-    // const t = await this.database.transaction();
+    let result,
+      dbUpdateR,
+      apiR,
+      orderId = body.id;
     try {
-      // 1. get orderId from body.clOrdId
-      // let { orderId } =
-      //   source === SupportedExchange.OKEX
-      //     ? Utils.parseClOrdId(body.clOrdId)
-      //     : { orderId: body.id };
-      let orderId = body.id;
       switch (source) {
         case SupportedExchange.OKEX:
+          let transacion = await this.database.transaction();
+          // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
-          let result,
-            response,
-            transacion = await this.database.transaction();
-
-          result = await this.updateOrderStatus({
+          dbUpdateR = await this.updateOrderStatus({
             transacion,
             orderId,
             memberId,
             orderData: body,
           });
-          if (result) {
-            /* !!! HIGH RISK (end) !!! */
-            response = await this.okexConnector.router("postCancelOrder", {
+          /* !!! HIGH RISK (end) !!! */
+          if (!dbUpdateR.success) {
+            await transacion.rollback();
+            result = new ResponseFormat({
+              message: "DB ERROR",
+              code: Codes.CANCEL_ORDER_FAIL,
+            });
+          } else {
+            // 2. performTask (Task: cancel)
+            this.logger.debug(`postCancelOrder`, body);
+            apiR = await this.okexConnector.router("postCancelOrder", {
               params,
               query,
               body,
             });
-            this.logger.debug(`postCancelOrder`, body);
-            this.logger.debug(`okexCancelOrderRes`, response);
-            if (!response.success) {
-              await transacion.rollback();
-            } else {
-              await transacion.commit();
-            }
-          } else {
+            this.logger.debug(`okexCancelOrderRes`, apiR);
+          }
+          if (!apiR.success) {
             await transacion.rollback();
-            response = new ResponseFormat({
-              message: "DB ERROR",
-              code: Codes.CANCEL_ORDER_FAIL,
+          } else {
+            await transacion.commit();
+            // 3. informFrontEnd
+            this._emitUpdateOrder({
+              memberId,
+              instId: body.instId,
+              market: body.market,
+              order: dbUpdateR.updatedOrder,
+            });
+            this._emitUpdateAccount({
+              memberId,
+              account: dbUpdateR.updateAccount,
             });
           }
-          return response;
+          result = apiR;
+          break;
         case SupportedExchange.TIDEBIT:
-          return this.tideBitConnector.router(`postCancelOrder`, {
+          result = this.tideBitConnector.router(`postCancelOrder`, {
             header,
             body: { ...body, orderId, market: tickerSetting },
           });
-
+          break;
         default:
-          // await t.rollback();
-          return new ResponseFormat({
+          result = new ResponseFormat({
             message: "instId not Support now",
-            code: Codes.API_NOT_SUPPORTED,
+            code: Codes.INVALID_INPUT,
           });
+          break;
       }
     } catch (error) {
       this.logger.error(error);
-      // await t.rollback();
-      return new ResponseFormat({
+      result = new ResponseFormat({
         message: error.message,
-        code: Codes.API_UNKNOWN_ERROR,
+        code: Codes.CANCEL_ORDER_FAIL,
       });
     }
+    return result;
   }
 
   // ++ TODO
