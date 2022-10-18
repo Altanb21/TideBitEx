@@ -38,60 +38,124 @@ class DBOperator {
     return this.database.getAccountsByMemberId(memberId);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 原本是用在 account 的 currency 去 asset_bases 查找 account 的 symbal及 key
+   * 已有 coins.yml 的資料取代
+   */
   async getCurrencies() {
     return this.database.getCurrencies();
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 原本是用在 account 的 currency 去 asset_bases 查找 account 的 symbal及 key
+   * 已有 coins.yml 的資料取代
+   */
   async getCurrenciesSymbol() {
     return this.database.getCurrenciesSymbol();
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getCurrency(currencyId) {
     return this.database.getCurrency(currencyId);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getCurrencyByKey(currencyKey) {
     return this.database.getCurrencyByKey(currencyKey);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getMembers() {
     return this.database.getMembers();
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * getMemberById 同 getMemberByEmail整合成 getMemberByCondition
+   */
   async getMemberById(memberId) {
     return this.database.getMemberById(memberId);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * getMemberById 同 getMemberByEmail整合成 getMemberByCondition
+   */
   async getMemberByEmail(memberEmail) {
     return this.database.getMemberByEmail(memberEmail);
   }
 
-  async getAccountByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
-    return this.database.getAccountByMemberIdCurrency(memberId, currencyId, {
+  async getMemberByCondition(condition) {
+    return this.database.getMemberByCondition(condition);
+  }
+
+  async getAccountByMemberIdAndCurrency(
+    memberId,
+    currencyId,
+    { dbTransaction }
+  ) {
+    return this.database.getAccountByMemberIdAndCurrency(memberId, currencyId, {
       dbTransaction,
     });
   }
 
-  async getOrderList({ quoteCcy, baseCcy, state, memberId, orderType }) {
+  async getOrderList({
+    quoteCcy,
+    baseCcy,
+    memberId,
+    orderType,
+    state,
+    asc = false,
+  }) {
     return this.database.getOrderList({
       quoteCcy,
       baseCcy,
-      state,
       memberId,
       orderType,
+      state,
+      asc,
     });
   }
 
-  async getDoneOrders({ quoteCcy, baseCcy, memberId, state, type }) {
+  async getDoneOrders({
+    orderId,
+    quoteCcy,
+    baseCcy,
+    memberId,
+    state,
+    type,
+    ordType = "limit",
+    offset = 0,
+    limit = 100,
+  }) {
     return this.database.getDoneOrders({
+      orderId,
       quoteCcy,
       baseCcy,
       memberId,
       state,
       type,
+      ordType,
+      offset,
+      limit,
     });
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 與 getDoneOrders 整合
+   */
   async getDoneOrder(orderId) {
     return this.database.getDoneOrder(orderId);
   }
@@ -100,16 +164,40 @@ class DBOperator {
     return this.database.getOrder(orderId, { dbTransaction });
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getOrders() {
     return this.database.getOrders();
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getTrades(quoteCcy, baseCcy) {
     return this.database.getTrades(quoteCcy, baseCcy);
   }
 
-  async getVouchers({ memberId, ask, bid }) {
-    return this.database.getVouchers({ memberId, ask, bid });
+  async getVouchers({
+    memberId,
+    ask,
+    bid,
+    days = 30,
+    asc = false,
+    limit = 100,
+    offset = 0,
+  }) {
+    return this.database.getVouchers({
+      memberId,
+      ask,
+      bid,
+      days,
+      asc,
+      limit,
+      offset,
+    });
   }
 
   async getVouchersByOrderId(orderId, { dbTransaction }) {
@@ -128,20 +216,73 @@ class DBOperator {
     return this.database.getTradeByTradeFk(tradeFk);
   }
 
-  async getOuterTradesByStatus(exchangeCode, status) {
-    return this.database.getOuterTradesByStatus(exchangeCode, status);
+  async getOuterTradesByStatus({
+    exchangeCode,
+    status,
+    asc = true,
+    limit = 100,
+    offset = 0,
+    days = 30,
+  }) {
+    return this.database.getOuterTradesByStatus({
+      exchangeCode,
+      status,
+      asc,
+      limit,
+      offset,
+      days,
+    });
   }
 
+  async getEmailsByMemberIds(memberIds) {
+    return this.database.getEmailsByMemberIds(memberIds);
+  }
+  /**
+   * [deprecated] 2022/10/14
+   * replaced by getEmailByMemberId
+   */
   async getOrdersJoinMemberEmail(state) {
     return this.database.getOrdersJoinMemberEmail(state);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * getOuterTradesBetweenDays 同 getOuterTradesByDayAfter 整合在
+   * getOuterTrades
+   */
   async getOuterTradesByDayAfter(exchangeCode, day) {
     return this.database.getOuterTradesByDayAfter(exchangeCode, day);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * getOuterTradesBetweenDays 同 getOuterTradesByDayAfter 整合在
+   * getOuterTrades
+   */
   async getOuterTradesBetweenDays(exchangeCode, start, end) {
     return this.database.getOuterTradesBetweenDays(exchangeCode, start, end);
+  }
+
+  async getOuterTrades({
+    type,
+    exchangeCode,
+    day,
+    start,
+    end,
+    limit = 100,
+    offset = 0,
+    asc = false,
+  }) {
+    return this.database.getOuterTrades({
+      type,
+      exchangeCode,
+      day,
+      start,
+      end,
+      limit,
+      offset,
+      asc,
+    });
   }
 
   /* !!! HIGH RISK (start) !!! */

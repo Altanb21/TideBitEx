@@ -269,13 +269,13 @@ class ExchangeHubService {
        * 4.6 update DB
        */
       // 1. get askAccount from table
-      const askAccount = await this.database.getAccountByMemberIdCurrency(
+      const askAccount = await this.database.getAccountByMemberIdAndCurrency(
         memberId,
         askCurr,
         { dbTransaction }
       );
       // 2. get bidAccount from table
-      const bidAccount = await this.database.getAccountByMemberIdCurrency(
+      const bidAccount = await this.database.getAccountByMemberIdAndCurrency(
         memberId,
         bidCurr,
         { dbTransaction }
@@ -447,13 +447,13 @@ class ExchangeHubService {
        * -----
        */
       // 1. get askAccount from table
-      const askAccount = await this.database.getAccountByMemberIdCurrency(
+      const askAccount = await this.database.getAccountByMemberIdAndCurrency(
         memberId,
         askCurr,
         { dbTransaction }
       );
       // 2. get bidAccount from table
-      const bidAccount = await this.database.getAccountByMemberIdCurrency(
+      const bidAccount = await this.database.getAccountByMemberIdAndCurrency(
         memberId,
         bidCurr,
         { dbTransaction }
@@ -885,7 +885,8 @@ class ExchangeHubService {
               state = _orderDetails.state;
               stateCode = Database.ORDER_STATE_CODE.CANCEL;
               state_text = Database.ORDER_STATE_TEXT.CANCEL;
-              locked = "0";
+              // do not update locked amount to calculate average fill price
+              // locked = "0"; ++ !!!! ALERT
             } else {
               stateCode = Database.ORDER_STATE_CODE.WAIT;
               state = Database.ORDER_STATE.WAIT;
@@ -1034,7 +1035,7 @@ class ExchangeHubService {
     memberId = tmp.memberId;
     orderId = tmp.orderId;
     if (memberId && orderId) {
-      member = await this.database.getMemberById(memberId);
+      member = await this.database.getMemberByCondition({ id: memberId });
       if (member) {
         memberTag = member.member_tag;
         this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
@@ -1365,11 +1366,11 @@ class ExchangeHubService {
 
   async _syncOuterTrades(exchange, clOrdId) {
     this.logger.debug(`[${this.constructor.name}] _syncOuterTrades`);
-    const _outerTrades = await this.database.getOuterTradesByDayAfter(
-      Database.EXCHANGE[exchange.toUpperCase()],
-      // !this._isStarted ? 180 : 1
-      this._maxInterval
-    );
+    const _outerTrades = await this.database.getOuterTrades({
+      type: Database.TIME_RANGE_TYPE.DAY_AFTER,
+      exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+      day: this._maxInterval, // !this._isStarted ? 180 : 1
+    });
     let outerTrades = await this._getTransactionsDetail(exchange, clOrdId);
     // this.logger.debug(`outerTrades`, outerTrades);
     const _filtered = outerTrades.filter(

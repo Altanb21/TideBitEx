@@ -89,6 +89,9 @@ const StoreProvider = (props) => {
     [selectedTicker, history, middleman]
   );
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   const getExAccounts = useCallback(
     async (exchange) => {
       let exAccounts = {};
@@ -163,6 +166,9 @@ const StoreProvider = (props) => {
     return await middleman.getDashboardData();
   };
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   const getUsersAccounts = useCallback(async () => {
     let usersAccounts = {};
     try {
@@ -187,10 +193,10 @@ const StoreProvider = (props) => {
   );
 
   const getOuterPendingOrders = useCallback(
-    async (exchange) => {
+    async (exchange, limit, offset) => {
       let exAccounts = {};
       try {
-        exAccounts = await middleman.getOuterPendingOrders(exchange);
+        exAccounts = await middleman.getOuterPendingOrders(exchange, limit, offset);
       } catch (error) {
         console.log(error);
       }

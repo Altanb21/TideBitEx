@@ -206,9 +206,9 @@ class Middleman {
     }
   }
 
-  async getOuterPendingOrders(exchange) {
+  async getOuterPendingOrders(exchange, limit, offset) {
     try {
-      return await this.communicator.getOuterPendingOrders(exchange);
+      return await this.communicator.getOuterPendingOrders(exchange, limit, offset);
     } catch (error) {
       throw error;
     }
@@ -240,10 +240,16 @@ class Middleman {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   async getExAccounts(exchange) {
     return await this.communicator.getExAccounts(exchange);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   async getUsersAccounts(exchange) {
     return await this.communicator.getUsersAccounts(exchange);
   }

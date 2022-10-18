@@ -1,4 +1,5 @@
 const { Sequelize } = require("sequelize");
+const Database = require("../constants/Database");
 class mysql {
   constructor() {
     return this;
@@ -50,6 +51,11 @@ class mysql {
     return this.db.transaction();
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 原本是用在舊的管理設計(CurrenciesView)中用來顯示子帳號情況
+   * getUsersAccounts
+   */
   async getAccounts() {
     const query = "SELECT * FROM `accounts`;";
     try {
@@ -64,8 +70,28 @@ class mysql {
     }
   }
 
-  async getAccountsByMemberId(memberId) {
-    const query = "SELECT * FROM `accounts` WHERE `accounts`.member_id = ?;";
+  async getAccountsByMemberId(memberId, options) {
+    let placeholder = ``;
+    if (options) {
+      for (let option of options) {
+        placeholder += ` AND accounts.${option.key} = ${options.value}`;
+      }
+    }
+    const query = `
+    SELECT
+	    accounts.id,
+	    accounts.member_id,
+	    accounts.currency,
+	    accounts.balance,
+	    accounts.locked,
+	    accounts.created_at,
+	    accounts.updated_at
+    FROM
+	    accounts
+    WHERE
+	    accounts.member_id = ?${placeholder}
+    LIMIT 100;
+    `;
     const values = [memberId];
     try {
       const [accounts] = await this.db.query({
@@ -76,6 +102,52 @@ class mysql {
       return accounts;
     } catch (error) {
       this.logger.error(error);
+      return [];
+    }
+  }
+
+  // ++ TODO 與 getAccountByMemberId 合併
+  async getAccountByMemberIdAndCurrency(
+    memberId,
+    currencyId,
+    { dbTransaction }
+  ) {
+    const query = `
+    SELECT
+	    accounts.id,
+	    accounts.member_id,
+	    accounts.currency,
+	    accounts.balance,
+	    accounts.locked,
+	    accounts.created_at,
+	    accounts.updated_at
+    FROM
+	    accounts
+    WHERE
+	    accounts.member_id = ?
+      AND accounts.currency = ?
+    LIMIT 1;
+    `;
+    try {
+      this.logger.debug(
+        "getAccountByMemberIdAndCurrency",
+        query,
+        `[${memberId}, ${currencyId}]`
+      );
+      const [[account]] = await this.db.query(
+        {
+          query,
+          values: [memberId, currencyId],
+        },
+        {
+          transaction: dbTransaction,
+          lock: dbTransaction.LOCK.UPDATE,
+        }
+      );
+      return account;
+    } catch (error) {
+      this.logger.debug(error);
+      if (dbTransaction) throw error;
       return [];
     }
   }
@@ -103,6 +175,11 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 原本是用在 account 的 currency 去 asset_bases 查找 account 的 symbal及 key
+   * 已有 coins.yml 的資料取代
+   */
   async getCurrenciesSymbol() {
     const query = `
     SELECT
@@ -124,6 +201,11 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 原本是用在 account 的 currency 去 asset_bases 查找 account 的 symbal及 key
+   * 已有 coins.yml 的資料取代
+   */
   async getCurrencies() {
     const query = "SELECT * FROM `asset_bases`;";
     try {
@@ -138,6 +220,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getCurrency(currencyId) {
     const query = "SELECT * FROM `asset_bases` WHERE `asset_bases`.`id` = ?;";
     try {
@@ -154,6 +240,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getCurrencyByKey(currencyKey) {
     const query = "SELECT * FROM `asset_bases` WHERE `asset_bases`.`key` = ?;";
     try {
@@ -170,6 +260,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getMembers() {
     const query = "SELECT * FROM `members`;";
     try {
@@ -184,13 +278,24 @@ class mysql {
     }
   }
 
-  async getMemberById(memberId) {
-    const query = "SELECT * FROM `members` WHERE `members`.`id` = ?;";
+  async getMemberByCondition(condition) {
+    const query = `
+    SELECT
+	    members.id,
+	    members.sn,
+	    members.email,
+	    members.member_tag
+    FROM
+	    members
+    WHERE
+	    members.${condition.key} = ?
+    LIMIT 1;
+    `;
     try {
-      this.logger.debug("getMemberById", query, `[${memberId}]`);
+      this.logger.debug("getMemberByCondition", query, `[${condition}]`);
       const [[member]] = await this.db.query({
         query,
-        values: [memberId],
+        values: [condition.value],
       });
       return member;
     } catch (error) {
@@ -199,6 +304,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * getMemberById 同 getMemberByEmail整合成 getMemberByCondition
+   */
   async getMemberByEmail(memberEmail) {
     const query = "SELECT * FROM `members` WHERE `members`.`email` = ?;";
     try {
@@ -214,36 +323,11 @@ class mysql {
     }
   }
 
-  async getAccountByMemberIdCurrency(memberId, currencyId, { dbTransaction }) {
-    const query =
-      "SELECT * FROM `accounts` WHERE `accounts`.`member_id` = ? AND `accounts`.`currency` = ?;";
-    try {
-      this.logger.debug(
-        "getAccountByMemberIdCurrency",
-        query,
-        `[${memberId}, ${currencyId}]`
-      );
-      const [[account]] = await this.db.query(
-        {
-          query,
-          values: [memberId, currencyId],
-        },
-        {
-          transaction: dbTransaction,
-          lock: dbTransaction.LOCK.UPDATE,
-        }
-      );
-      return account;
-    } catch (error) {
-      this.logger.debug(error);
-      if (dbTransaction) throw error;
-      return [];
-    }
-  }
-
+  /**
+   * [deprecated] 2022/10/14
+   * 與 getDoneOrders 整合
+   */
   async getDoneOrder(orderId) {
-    // const query =
-    //   "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`id` = ?";
     const query = `
       SELECT
 	        orders.id,
@@ -284,16 +368,34 @@ class mysql {
     }
   }
 
-  async getDoneOrders({ quoteCcy, baseCcy, memberId, state, type }) {
-    // const query =
-    //   "SELECT `orders`.`id`, `orders`.`bid`, `orders`.`ask`, `orders`.`currency`, `vouchers`.`price` AS `price`, `orders`.`volume`, `orders`.`origin_volume`, `orders`.`state`, `orders`.`done_at`, `orders`.`type`, `orders`.`member_id`, `orders`.`created_at`, `orders`.`updated_at`, `orders`.`sn`, `orders`.`source`, `orders`.`ord_type`, `orders`.`locked`, `orders`.`origin_locked`, `orders`.`funds_received`, `orders`.`trades_count` FROM `orders` JOIN `vouchers` ON `orders`.`id` = `vouchers`.`order_id` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?";
+  // ++ TODO 2022/10/14
+  // CASE WHEN orders.type = 'OrderBid' THEN
+  // (orders.origin_locked - orders.locked) / orders.funds_received
+  // WHEN orders.type = 'OrderAsk' THEN
+  // (orders.funds_received / orders.origin_volume)
+  // END) AS price_avg,
+  async getDoneOrders({
+    orderId,
+    quoteCcy,
+    baseCcy,
+    memberId,
+    state,
+    type,
+    ordType,
+    offset,
+    limit,
+  }) {
+    if (!orderId && (!quoteCcy || !baseCcy || !memberId || !state || !type)) {
+      this.logger.error("missing params");
+      return [];
+    }
     const query = `
       SELECT
 	        orders.id,
 	        orders.bid,
 	        orders.ask,
 	        orders.currency,
-	        (SUM(vouchers.price * vouchers.volume) / orders.origin_volume) AS price,
+          orders.price,
 	        orders.volume,
 	        orders.origin_volume,
 	        orders.state,
@@ -311,16 +413,25 @@ class mysql {
 	        orders.trades_count
       FROM
           orders
-	        JOIN vouchers ON orders.id = vouchers.order_id
       WHERE
+          ${
+            orderId
+              ? `
+          orders.id = ?
+      LIMIT 1`
+              : `
           orders.member_id = ?
 	        AND orders.bid = ?
 	        AND orders.ask = ?
           AND orders.state = ?
           AND orders.type = ?
-          AND orders.ord_type <> 'limit'
-      GROUP BY
-	        orders.id;`;
+          AND orders.ord_type <> '${ordType}'
+      ORDER BY 
+          created_at DESC
+      LIMIT ${limit} OFFSET ${offset}
+      `
+          }
+         ;`;
     try {
       this.logger.debug(
         "getDoneOrders",
@@ -338,12 +449,46 @@ class mysql {
     }
   }
 
-  async getOrderList({ quoteCcy, baseCcy, memberId }) {
+  async getOrderList({
+    quoteCcy,
+    baseCcy,
+    memberId,
+    orderType,
+    state,
+    asc,
+  }) {
     // async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
-    const query =
-      "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ?;";
-    // const query =
-    //   "SELECT * FROM `orders` WHERE `orders`.`member_id` = ? AND `orders`.`bid` = ? AND `orders`.`ask` = ? AND `orders`.`ord_type` = ?;";
+    const query = `
+    SELECT
+      orders.id,
+      orders.bid,
+      orders.ask,
+      orders.price,
+      orders.volume,
+      orders.origin_volume,
+      orders.state,
+      orders.type,
+      orders.member_id,
+      orders.created_at,
+      orders.ord_type,
+      orders.locked,
+      orders.origin_locked,
+      orders.funds_received,
+      orders.trades_count,
+      orders,created_at,
+      orders,updated_at
+    FROM
+      orders
+    WHERE
+      orders.member_id = ?
+      AND orders.bid = ?
+      AND orders.ask = ?
+      ${state ? `AND orders.state = ${state}` : ``}
+      ${orderType ? `AND orders.ord_type = ${orderType}` : ``}
+    ORDER BY
+      orders.created_at ${asc ? "ASC" : "DESC"};`;
+    // AND orders.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
+    // LIMIT ${limit} OFFSET ${offset};`;// -- TODO
     try {
       this.logger.debug(
         "getOrderList",
@@ -363,9 +508,32 @@ class mysql {
     }
   }
 
-  async getVouchers({ memberId, ask, bid }) {
-    const query =
-      "SELECT * FROM `vouchers` WHERE `vouchers`.`member_id` = ? AND `vouchers`.`ask` = ? AND `vouchers`.`bid` = ?;";
+  async getVouchers({ memberId, ask, bid, days, asc, limit, offset }) {
+    const query = `
+    SELECT
+      vouchers.id,
+      vouchers.member_id,
+      vouchers.order_id,
+      vouchers.trade_id,
+      vouchers.ask,
+      vouchers.bid,
+      vouchers.price,
+      vouchers.volume,
+      vouchers.value,
+      vouchers.trend,
+      vouchers.ask_fee,
+      vouchers.bid_fee,
+      vouchers.created_at,
+    FROM
+      vouchers
+    WHERE
+      vouchers.member_id = ?
+      AND vouchers.ask = ?
+      AND vouchers.bid = ?
+      AND vouchers.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
+    ORDER BY
+      vouchers.created_at ${asc ? "ASC" : "DESC"}
+    LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug("getVouchers", query, `[${memberId}, ${ask}, ${bid}]`);
       const [trades] = await this.db.query({
@@ -379,6 +547,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getOrders() {
     const query = "SELECT * FROM `orders`;";
     try {
@@ -393,6 +565,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 沒有地方呼叫
+   */
   async getTrades(quoteCcy, baseCcy) {
     const query =
       "SELECT `trades`.* FROM `trades`, `orders` WHERE `orders`.`id` = `trades`.`ask_id` AND `trades`.`currency` = ? AND `orders`.`ask` = ?;";
@@ -409,6 +585,43 @@ class mysql {
     }
   }
 
+  async getEmailsByMemberIds(memberIds) {
+    let placeholder,
+      // values = [],
+      index = 0;
+    for (let _ of memberIds) {
+      placeholder += index === memberIds.length - 1 ? " ?," : " ?";
+      // values.push(memberId);
+      index++;
+    }
+    let query = `
+    SELECT
+	    members.id,
+	    members.email
+    FROM
+	    members
+    WHERE
+	     members.id in(${placeholder})
+    ORDER BY
+	    members.id ASC;
+    `;
+    try {
+      this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);
+      const [emails] = await this.db.query({
+        query,
+        values: memberIds,
+      });
+      return emails;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  /**
+   * [deprecated] 2022/10/14
+   * replaced by getEmailByMemberId
+   * 原本用在 getOuterPendingOrders 取得 outerOrder 紀錄的 memberId 對應的 email
+   */
   async getOrdersJoinMemberEmail(state) {
     const query = `
     SELECT
@@ -434,17 +647,30 @@ class mysql {
     }
   }
 
-  async getOuterTradesByStatus(exchangeCode, status) {
+  async getOuterTradesByStatus({
+    exchangeCode,
+    status,
+    asc,
+    limit,
+    offset,
+    days,
+  }) {
     const query = `
     SELECT
-      *
+      outer_trades.id,
+      outer_trades.data,
+      outer_trades.exchange_code
     FROM
       outer_trades
     WHERE
       outer_trades.exchange_code = ?
       AND(outer_trades.status = ?
         OR outer_trades.order_id IS NULL
-        OR outer_trades.create_at IS NULL);`;
+        OR outer_trades.create_at IS NULL)
+      AND outer_trades.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
+    ORDER BY
+      outer_trades.created_at ${asc ? "ASC" : "DESC"}
+    LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
         "getOuterTradesByStatus",
@@ -462,6 +688,11 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * getOuterTradesBetweenDays 同 getOuterTradesByDayAfter 整合在
+   * getOuterTrades
+   */
   async getOuterTradesBetweenDays(exchangeCode, start, end) {
     const query = `
     SELECT outer_trades.*,
@@ -494,41 +725,66 @@ class mysql {
     }
   }
 
-  async getOuterTradesByDayAfter(exchangeCode, day) {
-    /**
+  // ++ TO BE SOLVED 耗時
+  async getOuterTrades({
+    type,
+    exchangeCode,
+    day,
+    start,
+    end,
+    limit,
+    offset,
+    asc,
+  }) {
     const query = `
-    SELECT outer_trades.*,
-        referral_commissions.referred_by_member_id,
-        referral_commissions.applied_plan_id,
-        referral_commissions.applied_policy_id,
+    SELECT 
+        outer_trades.status,
+        outer_trades.data,
+        outer_trades.member_id,
+        outer_trades.member_tag,
+        outer_trades.email,
+        outer_trades.order_id,
+        outer_trades.order_price,
+        outer_trades.order_origin_volume,
+        outer_trades.trade_id,
+        outer_trades.voucher_id,
         referral_commissions.ref_gross_fee,
         referral_commissions.ref_net_fee,
         referral_commissions.amount,
         referral_commissions.state
     FROM outer_trades
-        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+        INNER JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
     WHERE outer_trades.exchange_code = ?
-      AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);`;
-    */
-    const query = `
-    SELECT outer_trades.*,
-        referral_commissions.ref_gross_fee,
-        referral_commissions.ref_net_fee,
-        referral_commissions.amount,
-        referral_commissions.state
-    FROM outer_trades
-        LEFT JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
-    WHERE outer_trades.exchange_code = ?
-        AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY);`;
+      ${
+        type === Database.TIME_RANGE_TYPE.DAY_AFTER
+          ? `
+        AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
+        `
+          : `
+        outer_trades.exchange_code = ?
+        AND outer_trades.create_at BETWEEN ?
+        AND ?
+        `
+      }
+    ORDER BY
+        outer_trades.create_at ${asc ? "ASC" : "DESC"}
+    LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
         "getOuterTradesByDayAfter",
         query,
-        `[${exchangeCode}, ${day}]`
+        `${
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? `[${exchangeCode}, ${day}]`
+            : `[${exchangeCode}, ${start}, ${end}]`
+        }`
       );
       const [outerTrades] = await this.db.query({
         query,
-        values: [exchangeCode, day],
+        values:
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? [exchangeCode, day]
+            : [exchangeCode, start, end],
       });
       return outerTrades;
     } catch (error) {
@@ -538,7 +794,33 @@ class mysql {
   }
 
   async getOrder(orderId, { dbTransaction }) {
-    const query = "SELECT * FROM `orders` WHERE `orders`.`id` = ?;";
+    const query = `
+      SELECT
+	        orders.id,
+	        orders.bid,
+	        orders.ask,
+	        orders.currency,
+          orders.price,
+	        orders.volume,
+	        orders.origin_volume,
+	        orders.state,
+	        orders.done_at,
+	        orders.type,
+	        orders.member_id,
+	        orders.created_at,
+	        orders.updated_at,
+	        orders.sn,
+	        orders.source,
+	        orders.ord_type,
+	        orders.locked,
+	        orders.origin_locked,
+	        orders.funds_received,
+	        orders.trades_count
+      FROM
+          orders
+      WHERE
+          orders.id = ?
+      LIMIT 1`;
     try {
       this.logger.debug("getOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query(
@@ -560,7 +842,26 @@ class mysql {
   }
 
   async getVouchersByOrderId(orderId, { dbTransaction }) {
-    const query = "SELECT * FROM `vouchers` WHERE `order_id` = ?;";
+    const query = `
+    SELECT
+      vouchers.id,
+      vouchers.member_id,
+      vouchers.order_id,
+      vouchers.trade_id,
+      vouchers.ask,
+      vouchers.bid,
+      vouchers.price,
+      vouchers.volume,
+      vouchers.value,
+      vouchers.trend,
+      vouchers.ask_fee,
+      vouchers.bid_fee,
+      vouchers.created_at,
+    FROM
+      vouchers
+    WHERE
+      vouchers.order_id = ?
+    LIMIT 1`;
     try {
       this.logger.debug("getVouchersByOrderId", query, orderId);
       const [vouchers] = await this.db.query(
@@ -580,14 +881,28 @@ class mysql {
     }
   }
 
+  // 不應該超過 3 筆
   async getAccountVersionsByModifiableId(id) {
     const query = `
     SELECT
-	    *
+      account_versions.id,
+      account_versions.member_id,
+      account_versions.account_id,
+      account_versions.reason,
+      account_versions.balance,
+      account_versions.locked,
+      account_versions.fee,
+      account_versions.amount,
+      account_versions.modifiable_id,
+      account_versions.modifiable_type,
+      account_versions.created_at,
+      account_versions.currency,
+      account_versions.fun
     FROM
-	   account_versions
+	    account_versions
     WHERE
-	   account_versions.modifiable_id = ?;`;
+	    account_versions.modifiable_id = ?
+    LIMIT 10;`;
     try {
       this.logger.debug("getAccountVersionsByModifiableId", query, `[${id}]`);
       const [accountVersions] = await this.db.query({
@@ -601,9 +916,31 @@ class mysql {
     }
   }
 
+  /**
+   * 待優化，可以同 getVoucherBy ? 整合
+   */
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
-    const query =
-      "SELECT * FROM `vouchers` WHERE `order_id` = ? AND trade_id = ?;";
+    const query = `
+    SELECT
+      vouchers.id,
+      vouchers.member_id,
+      vouchers.order_id,
+      vouchers.trade_id,
+      vouchers.ask,
+      vouchers.bid,
+      vouchers.price,
+      vouchers.volume,
+      vouchers.value,
+      vouchers.trend,
+      vouchers.ask_fee,
+      vouchers.bid_fee,
+      vouchers.created_at,
+    FROM
+      vouchers
+    WHERE
+      vouchers.order_id = ?
+      AND vouchers.trade_id = ?
+    LIMIT 1`;
     try {
       this.logger.debug(
         "getVoucherByOrderIdAndTradeId",
@@ -622,7 +959,25 @@ class mysql {
   }
 
   async getTradeByTradeFk(tradeFk) {
-    const query = "SELECT * FROM `trades` WHERE `trade_fk` = ?;";
+    const query = `
+    SELECT
+      trades.id,
+      trades.price,
+      trades.volume,
+      trades.ask_id,
+      trades.bid_id,
+      trades.trend,
+      trades.currency,
+      trades.created_at,
+      trades.ask_member_id,
+      trades.bid_member_id,
+      trades.funds,
+      trades.trade_fk,
+    FROM
+      trades
+    WHERE
+      trades.trade_fk = ?
+    LIMIT 1`;
     try {
       this.logger.debug("getTradeByTradeFk", query, tradeFk);
       const [[trade]] = await this.db.query({
