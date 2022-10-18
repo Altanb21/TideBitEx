@@ -2768,49 +2768,49 @@ class ExchangeHub extends Bot {
         balance = order.locked;
         fee = "0";
         // if (account) {
-          const newOrder = {
-            id: orderId,
-            state: Database.ORDER_STATE_CODE.CANCEL,
-            updated_at: `"${createdAt}"`,
-          };
-          await this.database.updateOrder(newOrder, {
-            dbTransaction: transacion,
-          });
-          this.logger.error(`被取消訂單的狀態更新了`);
-          accountVersion = {
-            member_id: memberId,
-            currency: currencyId,
-            created_at: createdAt,
-            updated_at: createdAt,
-            modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
-            modifiable_id: orderId,
-            reason: Database.REASON.ORDER_CANCEL,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-            balance,
-            locked,
-            fee,
-          };
-          await this._updateAccount(accountVersion, transacion);
-          this.logger.error(`被取消訂單對應的用戶帳號更新了`);
-          updatedOrder = {
-            ...orderData,
-            state: Database.ORDER_STATE.CANCEL,
-            state_text: Database.ORDER_STATE_TEXT.CANCEL,
-            at: parseInt(SafeMath.div(Date.now(), "1000")),
-            ts: Date.now(),
-          };
-          // updateAccount = {
-          //   balance: SafeMath.plus(account.balance, balance),
-          //   locked: SafeMath.plus(account.locked, locked),
-          //   currency: this.coinsSettings.find(
-          //     (curr) => curr.id === account.currency
-          //   )?.symbol,
-          //   total: SafeMath.plus(
-          //     SafeMath.plus(account.balance, balance),
-          //     SafeMath.plus(account.locked, locked)
-          //   ),
-          // };
-          success = true;
+        const newOrder = {
+          id: orderId,
+          state: Database.ORDER_STATE_CODE.CANCEL,
+          updated_at: `"${createdAt}"`,
+        };
+        await this.database.updateOrder(newOrder, {
+          dbTransaction: transacion,
+        });
+        this.logger.error(`被取消訂單的狀態更新了`);
+        accountVersion = {
+          member_id: memberId,
+          currency: currencyId,
+          created_at: createdAt,
+          updated_at: createdAt,
+          modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+          modifiable_id: orderId,
+          reason: Database.REASON.ORDER_CANCEL,
+          fun: Database.FUNC.UNLOCK_FUNDS,
+          balance,
+          locked,
+          fee,
+        };
+        await this._updateAccount(accountVersion, transacion);
+        this.logger.error(`被取消訂單對應的用戶帳號更新了`);
+        updatedOrder = {
+          ...orderData,
+          state: Database.ORDER_STATE.CANCEL,
+          state_text: Database.ORDER_STATE_TEXT.CANCEL,
+          at: parseInt(SafeMath.div(Date.now(), "1000")),
+          ts: Date.now(),
+        };
+        // updateAccount = {
+        //   balance: SafeMath.plus(account.balance, balance),
+        //   locked: SafeMath.plus(account.locked, locked),
+        //   currency: this.coinsSettings.find(
+        //     (curr) => curr.id === account.currency
+        //   )?.symbol,
+        //   total: SafeMath.plus(
+        //     SafeMath.plus(account.balance, balance),
+        //     SafeMath.plus(account.locked, locked)
+        //   ),
+        // };
+        success = true;
         // }
       }
     } catch (error) {
@@ -3784,8 +3784,8 @@ class ExchangeHub extends Bot {
    * @param {String} type Database.MODIFIABLE_TYPE.TRADE || Database.MODIFIABLE_TYPE.ORDER
    * @param {Object} data trade || order
    */
-  async processor(data) {
-    let error,
+  async processor(type, data) {
+    let stop,
       market,
       memberId,
       orderId,
@@ -3796,15 +3796,17 @@ class ExchangeHub extends Bot {
       updateR,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
-    try {
-      // 1. insertOuterTrade
-      await this.database.insertOuterTrades([data], { dbTransaction });
-    } catch (e) {
-      this.logger.error(`insertOuterTrades error`, e);
-      error = true;
-      await dbTransaction.rollback();
+    if (type === Database.MODIFIABLE_TYPE.TRADE) {
+      try {
+        // 1. insertOuterTrade
+        await this.database.insertOuterTrades([data], { dbTransaction });
+      } catch (error) {
+        this.logger.error(`insertOuterTrades error`, error);
+        stop = true;
+        await dbTransaction.rollback();
+      }
     }
-    if (!error) {
+    if (!stop) {
       try {
         // 1. 判斷收到的資料 state 不為 cancel
         if (data.state === Database.ORDER_STATE.CANCEL) {
@@ -3877,17 +3879,17 @@ class ExchangeHub extends Bot {
           // await this.emitter({
           //   ...result,
           //   updatedOrder: {
-              // ...result.updatedOrder,
-              // ordType: order.ord_type,
-              // kind:
-              //   data.side === Database.ORDER_SIDE.BUY
-              //     ? Database.ORDER_KIND.BID
-              //     : Database.ORDER_KIND.ASK,
-              // price: order.price,
-              // origin_volume: order.origin_volume,
-              // instId: data.instId,
-              // clOrdId: data.clOrdId,
-              // ordId: data.ordId,
+          // ...result.updatedOrder,
+          // ordType: order.ord_type,
+          // kind:
+          //   data.side === Database.ORDER_SIDE.BUY
+          //     ? Database.ORDER_KIND.BID
+          //     : Database.ORDER_KIND.ASK,
+          // price: order.price,
+          // origin_volume: order.origin_volume,
+          // instId: data.instId,
+          // clOrdId: data.clOrdId,
+          // ordId: data.ordId,
           //   },
           //   memberId: member.id,
           //   market,
@@ -3910,7 +3912,8 @@ class ExchangeHub extends Bot {
             at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
             ts: new Date(time).getTime(),
             market: market.id,
-            filled: result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
+            filled:
+              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
             state_text:
               result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
                 ? Database.ORDER_STATE_TEXT.DONE
@@ -3934,57 +3937,70 @@ class ExchangeHub extends Bot {
             memberId,
             instId: data.instId,
             market: market.id,
-            order:updatedOrder,
+            order: updatedOrder,
           });
-          updateR = await this.updater({
-            ...result,
-            member,
-            dbOrder: order,
-            tradeFk: data.tradeId,
-            status,
-            dbTransaction,
-          });
-          this.logger.log(`updateR`, updateR);
-          if (updateR.trade && updateR.trade?.id) {
-            let time = updateR.trade.updated_at.replace(/['"]+/g, "");
-            let newTrade = {
-              id: updateR.trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
-              price: updateR.trade.price,
-              volume: updateR.trade.volume,
-              market: market.id,
-              at: parseInt(SafeMath.div(new Date(time), "1000")),
-              ts: new Date(time),
-            };
-            this._emitNewTrade({
-              memberId,
-              instId: data.instId,
-              market: market.id,
-              trade: newTrade,
+          if (type === Database.MODIFIABLE_TYPE.TRADE) {
+            updateR = await this.updater({
+              ...result,
+              member,
+              dbOrder: order,
+              tradeFk: data.tradeId,
+              status,
+              dbTransaction,
+            });
+            this.logger.log(`updateR`, updateR);
+            if (updateR.trade && updateR.trade?.id) {
+              let time = updateR.trade.updated_at.replace(/['"]+/g, "");
+              let newTrade = {
+                id: updateR.trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
+                price: updateR.trade.price,
+                volume: updateR.trade.volume,
+                market: market.id,
+                at: parseInt(SafeMath.div(new Date(time), "1000")),
+                ts: new Date(time),
+              };
+              this._emitNewTrade({
+                memberId,
+                instId: data.instId,
+                market: market.id,
+                trade: newTrade,
+              });
+            }
+            status = Database.OUTERTRADE_STATUS.DONE;
+            await this.updateOuterTrade({
+              member,
+              status,
+              id: data.tradeId,
+              trade: updateR.trade,
+              dbOrder: order,
+              voucher: updateR.voucher,
+              dbTransaction,
             });
           }
-          status = Database.OUTERTRADE_STATUS.DONE;
         }
       } catch (error) {
         status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
         this.logger.error(`processor`, error);
         await dbTransaction.rollback();
       }
-      try {
-        await this.updateOuterTrade({
-          member,
-          status,
-          id: data.tradeId,
-          trade: updateR.trade,
-          dbOrder: order,
-          voucher: updateR.voucher,
-          dbTransaction,
-        });
-        await dbTransaction.commit();
-      } catch (error) {
-        status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
-        this.logger.error(`processor updateOuterTrade error`, error);
-        await dbTransaction.rollback();
+      if (type === Database.MODIFIABLE_TYPE.TRADE) {
+        try {
+          await this.updateOuterTrade({
+            member,
+            status,
+            id: data.tradeId,
+            trade: updateR.trade,
+            dbOrder: order,
+            voucher: updateR.voucher,
+            dbTransaction,
+          });
+        } catch (error) {
+          status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+          this.logger.error(`processor updateOuterTrade error`, error);
+          await dbTransaction.rollback();
+        }
       }
+      await dbTransaction.commit();
     }
   }
 
@@ -4256,12 +4272,15 @@ class ExchangeHub extends Bot {
       balance: newAccBal,
       locked: newAccLoc,
     };
+    const currency = this.coinsSettings.find(
+      (curr) => curr.id === accountVersion.currency
+    )?.symbol;
     this._emitUpdateAccount({
       memberId: accountVersion.member_id,
       account: {
         balance: newAccBal,
         locked: newAccLoc,
-        currency: account.currency.toUpperCase(),
+        currency: currency.toUpperCase(),
         total: amount,
       },
     });
@@ -4476,7 +4495,7 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
-            // await this.processor(Database.MODIFIABLE_TYPE.ORDER, formatOrder);
+            await this.processor(Database.MODIFIABLE_TYPE.ORDER, formatOrder);
             this.exchangeHubService.sync({
               exchange: SupportedExchange.OKEX,
               data: formatOrder,
