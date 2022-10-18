@@ -186,7 +186,7 @@ class OkexConnector extends ConnectorBase {
         // tradeId: `${Database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
         status: Database.OUTERTRADE_STATUS.UNPROCESS,
         exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
-        updatedAt: new Date(parseInt(trade.ts)).toISOString(),
+        createdAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
       results = data.concat(results);
@@ -308,7 +308,7 @@ class OkexConnector extends ConnectorBase {
         // tradeId: `${Database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
         status: Database.OUTERTRADE_STATUS.UNPROCESS,
         exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
-        updatedAt: new Date(parseInt(trade.ts)).toISOString(),
+        createdAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
       this.logger.debug(`[${this.constructor.name}] data.length[${data.length}]`);

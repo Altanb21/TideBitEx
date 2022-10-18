@@ -1169,7 +1169,7 @@ class mysql {
         index === trades.length - 1 ? " (?, ?, ?, ?, ?);" : " (?, ?, ?, ?, ?),";
       values.push(trade.tradeId);
       values.push(trade.exchangeCode);
-      values.push(trade.updatedAt);
+      values.push(trade.createdAt);
       values.push(trade.status);
       values.push(trade.data);
       index++;
