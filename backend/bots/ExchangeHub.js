@@ -3533,6 +3533,7 @@ class ExchangeHub extends Bot {
       `------------- [${this.constructor.name}] updateOuterTrade -------------`
     );
     this.logger.log(`updateOuterTrade status`, status);
+    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
     try {
       switch (status) {
         case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
@@ -3540,7 +3541,7 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              update_at: voucher.created_at,
+              update_at: now,
               order_id: 0,
             },
             { dbTransaction }
@@ -3553,7 +3554,7 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              update_at: voucher.created_at,
+              update_at: now,
               order_id: dbOrder.id,
               member_id: member.id,
             },
@@ -3579,7 +3580,7 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              update_at: `"${voucher.created_at}"`,
+              update_at: `"${now}"`,
               order_id: dbOrder.id,
               order_price: dbOrder.price,
               order_origin_volume: dbOrder.origin_volume,
@@ -3593,10 +3594,6 @@ class ExchangeHub extends Bot {
           );
           break;
         case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
-          let now = `${new Date()
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " ")}`;
           // 確保 cancel order 的 locked 金額有還給用戶
           let dbCancelOrderAccountVersions =
             await this.database.getAccountVersionsByModifiableId(dbOrder.id);
