@@ -77,6 +77,8 @@ module.exports = {
     SYSTEM_ERROR: 9,
     OTHER_SYSTEM_TRADE: 8,
     ClORDId_ERROR: 7,
+    API_ORDER_CANCEL: 6,
+    DB_ORDER_CANCEL: 5
   },
   STATE: {
     PENDING: "pending",

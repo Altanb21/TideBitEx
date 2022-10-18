@@ -80,7 +80,7 @@ class mysql {
     }
   }
 
-  async getTotalAccountsAssets(){
+  async getTotalAccountsAssets() {
     const query = `
     SELECT
 	    accounts.currency,
@@ -580,6 +580,27 @@ class mysql {
     }
   }
 
+  async getAccountVersionsByModifiableId(id) {
+    const query = `
+    SELECT
+	    *
+    FROM
+	   account_versions
+    WHERE
+	   account_versions.modifiable_id = ?;`;
+    try {
+      this.logger.debug("getAccountVersionsByModifiableId", query, `[${id}]`);
+      const [accountVersions] = await this.db.query({
+        query,
+        values: [id],
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.debug(error);
+      return null;
+    }
+  }
+
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
     const query =
       "SELECT * FROM `vouchers` WHERE `order_id` = ? AND trade_id = ?;";
@@ -775,7 +796,7 @@ class mysql {
 
   async insertOuterTrades(trades, { dbTransaction }) {
     let query =
-        "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`update_at`,`status`,`data`) VALUES",
+        "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`create_at`,`status`,`data`) VALUES",
       values = [],
       index = 0;
     for (let trade of trades) {
