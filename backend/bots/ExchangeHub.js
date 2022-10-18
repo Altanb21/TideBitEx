@@ -3548,6 +3548,7 @@ class ExchangeHub extends Bot {
           break;
         case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
         case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
+        case Database.OUTERTRADE_STATUS.DB_ORDER_DONE:
           await this.database.updateOuterTrade(
             {
               id,
@@ -3560,7 +3561,13 @@ class ExchangeHub extends Bot {
           );
           break;
         case Database.OUTERTRADE_STATUS.DONE:
-          if (!id || !dbOrder.id || !member.id || !trade.id || !voucher.id) {
+          if (
+            !id ||
+            !dbOrder?.id ||
+            !member?.id ||
+            !trade?.id ||
+            !voucher?.id
+          ) {
             this.logger.debug(`updateOuterTrade id`, id);
             this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
             this.logger.debug(`updateOuterTrade trade`, trade);
@@ -3848,7 +3855,7 @@ class ExchangeHub extends Bot {
             order?.state === Database.ORDER_STATE_CODE.CANCEL
               ? Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL
               : order?.state === Database.ORDER_STATE_CODE.DONE
-              ? Database.OUTERTRADE_STATUS.DONE
+              ? Database.OUTERTRADE_STATUS.DB_ORDER_DONE
               : Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
         }
         // 3.2 OKx api 回傳的 orderDetail state 不為 cancel
