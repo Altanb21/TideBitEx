@@ -36,7 +36,7 @@ class DBOperator {
 
   async getAccountsByMemberId(
     memberId,
-    { options = [], limit = 100, dbTransaction }
+    { options = {}, limit = 100, dbTransaction }
   ) {
     return this.database.getAccountsByMemberId(memberId, {
       options,

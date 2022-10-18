@@ -72,7 +72,7 @@ class mysql {
 
   async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
     let placeholder = ``;
-    if (options?.length > 0) {
+    if (Object.keys(options)?.length > 0) {
       let keys = Object.keys(options);
       let values = Object.values(options);
       for (let index = 0; index < options.length; index++) {
@@ -117,6 +117,7 @@ class mysql {
         });
       }
       this.logger.debug(query, values);
+      this.logger.debug(`getAccountsByMemberId`, accounts);
       return accounts;
     } catch (error) {
       this.logger.error(error);
