@@ -1170,11 +1170,11 @@ class mysql {
       );
       this.logger.debug(`insertAccountVersion result`, result);
       accountVersionId = result[0];
-      return accountVersionId;
     } catch (error) {
       this.logger.error(error);
       if (dbTransaction) throw error;
     }
+    return accountVersionId;
   }
 
   async insertOuterTrades(trades, { dbTransaction }) {

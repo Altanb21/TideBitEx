@@ -3642,6 +3642,18 @@ class ExchangeHub extends Bot {
             this.logger.debug(`updateOuterTrade trade`, trade);
             this.logger.debug(`updateOuterTrade voucher`, voucher);
             this.logger.debug(`updateOuterTrade member`, member);
+            this.logger.debug(
+              `updateOuterTrade askAccountVersion`,
+              askAccountVersion
+            );
+            this.logger.debug(
+              `updateOuterTrade bidAccountVersion`,
+              bidAccountVersion
+            );
+            this.logger.debug(
+              `updateOuterTrade orderFullFilledAccountVersions`,
+              orderFullFilledAccountVersion
+            );
             throw Error("missing params");
           }
           await this.database.updateOuterTrade(
