@@ -3669,10 +3669,10 @@ class ExchangeHub extends Bot {
               email: member.email,
               trade_id: trade.id,
               voucher_id: voucher.id,
-              ask_account_version_id: askAccountVersion.id || null,
-              bid_account_version_id: bidAccountVersion.id || null,
-              order_full_filled_account_version_id:
-                orderFullFilledAccountVersion?.id || null,
+              // ask_account_version_id: askAccountVersion.id || null,
+              // bid_account_version_id: bidAccountVersion.id || null,
+              // order_full_filled_account_version_id:
+              //   orderFullFilledAccountVersion?.id || null,
             },
             { dbTransaction }
           );
