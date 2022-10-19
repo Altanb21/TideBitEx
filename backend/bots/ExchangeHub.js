@@ -3565,67 +3565,15 @@ class ExchangeHub extends Bot {
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
     try {
       switch (status) {
-        case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
+        case Database.OUTERTRADE_STATUS.SYSTEM_ERROR:
         case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
+        case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
           await this.database.updateOuterTrade(
             {
               id,
               status,
               update_at: now,
               order_id: 0,
-            },
-            { dbTransaction }
-          );
-          break;
-        case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
-          await this.database.updateOuterTrade(
-            {
-              id,
-              status,
-              update_at: now,
-              order_id: dbOrder.id,
-              member_id: member.id,
-            },
-            { dbTransaction }
-          );
-          break;
-        case Database.OUTERTRADE_STATUS.DB_ORDER_DONE:
-          //++TODO 要到DB確認是否有生成對應的紀錄
-          break;
-        case Database.OUTERTRADE_STATUS.DONE:
-          if (
-            !id ||
-            !dbOrder?.id ||
-            !member?.id ||
-            !trade?.id ||
-            !voucher?.id ||
-            !askAccountVersion?.id ||
-            !bidAccountVersion?.id
-          ) {
-            this.logger.debug(`updateOuterTrade id`, id);
-            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
-            this.logger.debug(`updateOuterTrade trade`, trade);
-            this.logger.debug(`updateOuterTrade voucher`, voucher);
-            this.logger.debug(`updateOuterTrade member`, member);
-            throw Error("missing params");
-          }
-          await this.database.updateOuterTrade(
-            {
-              id,
-              status,
-              update_at: `"${now}"`,
-              order_id: dbOrder.id,
-              order_price: dbOrder.price,
-              order_origin_volume: dbOrder.origin_volume,
-              member_id: member.id,
-              member_tag: member.member_tag,
-              email: member.email,
-              trade_id: trade.id,
-              voucher_id: voucher.id,
-              ask_account_version_id: askAccountVersion.id || null,
-              bid_account_version_id: bidAccountVersion.id || null,
-              order_full_filled_account_version_id:
-                orderFullFilledAccountVersion.id || null,
             },
             { dbTransaction }
           );
@@ -3667,7 +3615,58 @@ class ExchangeHub extends Bot {
             dbTransaction,
           });
           break;
+        case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at: now,
+              order_id: dbOrder.id,
+              member_id: member.id,
+            },
+            { dbTransaction }
+          );
+          break;
+        case Database.OUTERTRADE_STATUS.DONE:
+          if (
+            !id ||
+            !dbOrder?.id ||
+            !member?.id ||
+            !trade?.id ||
+            !voucher?.id ||
+            !askAccountVersion?.id ||
+            !bidAccountVersion?.id
+          ) {
+            this.logger.debug(`updateOuterTrade id`, id);
+            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
+            this.logger.debug(`updateOuterTrade trade`, trade);
+            this.logger.debug(`updateOuterTrade voucher`, voucher);
+            this.logger.debug(`updateOuterTrade member`, member);
+            throw Error("missing params");
+          }
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at: `"${now}"`,
+              order_id: dbOrder.id,
+              order_price: dbOrder.price,
+              order_origin_volume: dbOrder.origin_volume,
+              member_id: member.id,
+              member_tag: member.member_tag,
+              email: member.email,
+              trade_id: trade.id,
+              voucher_id: voucher.id,
+              ask_account_version_id: askAccountVersion.id || null,
+              bid_account_version_id: bidAccountVersion.id || null,
+              order_full_filled_account_version_id:
+                orderFullFilledAccountVersion.id || null,
+            },
+            { dbTransaction }
+          );
+          break;
         default:
+          break;
       }
     } catch (error) {
       throw error;
@@ -3683,7 +3682,7 @@ class ExchangeHub extends Bot {
     voucher,
     trade,
     tradeFk,
-    memberId,
+    member,
     market,
     instId,
     askAccountVersion,
@@ -3734,7 +3733,7 @@ class ExchangeHub extends Bot {
           ts: new Date(time),
         };
         this._emitNewTrade({
-          memberId,
+          memberId: member.id,
           instId,
           market: market.id,
           trade: newTrade,
@@ -3856,13 +3855,18 @@ class ExchangeHub extends Bot {
           );
         }
       }
-      return {
+      await this.updateOuterTrade({
+        id: tradeFk,
+        status: Database.OUTERTRADE_STATUS.DONE,
+        member,
+        dbOrder,
         trade: { ...trade, id: tradeId },
         voucher: { ...voucher, id: voucherId },
         askAccountVersion: newAskAccountVersion,
         bidAccountVersion: newBidAccountVersion,
         orderFullFilledAccountVersion: newOrderFullFilledAccountVersion,
-      };
+        dbTransaction,
+      });
     } catch (error) {
       throw error;
     }
@@ -3882,9 +3886,7 @@ class ExchangeHub extends Bot {
       member,
       order,
       orderDetail,
-      status,
       result,
-      updateR,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
     if (type === Database.MODIFIABLE_TYPE.TRADE) {
@@ -3900,46 +3902,72 @@ class ExchangeHub extends Bot {
     }
     if (!stop) {
       try {
-        // 1. 判斷收到的資料 state 不為 cancel
-        if (data.state === Database.ORDER_STATE.CANCEL) {
-          status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+        // 1. 判斷收到的資料是否為此系統的資料
+        // 需滿足下列條件，才為此系統的資料：
+        // 1.1.可以從 data 解析出 orderId 及 memberId
+        market =
+          this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
+        let tmp = Utils.parseClOrdId(data.clOrdId);
+        memberId = tmp.memberId;
+        orderId = tmp.orderId;
+        if (!memberId || !orderId) {
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+            dbTransaction,
+          });
+          await dbTransaction.rollback();
+          stop = true;
         }
-        if (!status) {
-          // 2. 判斷收到的資料是否為此系統的資料
-          // 需滿足下列條件，才為此系統的資料：
-          // 2.1.可以從 data 解析出 orderId 及 memberId
-          // 2.2.可以根據 orderId 從 database 取得 dbOrder
-          // 2.3. dbOrder.member_id 同 data 解析出的 memberId
-          market =
-            this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
-          let tmp = Utils.parseClOrdId(data.clOrdId);
-          memberId = tmp.memberId;
-          orderId = tmp.orderId;
-        }
-        if (!status && (!memberId || !orderId)) {
-          status = Database.OUTERTRADE_STATUS.ClORDId_ERROR;
-        }
-        if (!status) {
+        // 1.2.可以根據 orderId 從 database 取得 dbOrder
+        if (!stop) {
           member = await this.database.getMemberByCondition({ id: memberId });
           order = await this.database.getOrder(orderId, { dbTransaction });
         }
+        // 1.3. dbOrder.member_id 同 data 解析出的 memberId
         if (
-          !status &&
+          !stop &&
           (!order || order?.member_id.toString() !== member?.id.toString())
         ) {
-          status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+            dbTransaction,
+          });
+          await dbTransaction.rollback();
+          stop = true;
         }
-        // 3. 判斷收到的資料對應的 order是否需要更新
-        // 3.1 dbOrder.state 不為 0
+        // 2. 判斷收到的資料對應的 order是否需要更新
+        // 2.1. 判斷收到的資料 state 不為 cancel
+        if (!stop && data.state === Database.ORDER_STATE.CANCEL) {
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            member,
+            status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+            dbOrder: order,
+            dbTransaction,
+          });
+          await dbTransaction.rollback();
+          stop = true;
+        }
+        // 2.2 dbOrder.state 不為 0
         if (
-          !status &&
+          !stop &&
           order &&
           order.state === Database.ORDER_STATE_CODE.CANCEL
         ) {
-          status = Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL;
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
+            dbOrder: order,
+            member,
+            dbTransaction,
+          });
+          await dbTransaction.rollback();
+          stop = true;
         }
-        // 3.2 OKx api 回傳的 orderDetail state 不為 cancel
-        if (!status) {
+        // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
+        if (!stop) {
           let apiResonse;
           switch (data.exchangeCode) {
             case Database.EXCHANGE.OKEX:
@@ -3949,22 +3977,36 @@ class ExchangeHub extends Bot {
                   ordId: data.ordId,
                 },
               });
-              if (apiResonse.success) {
-                orderDetail = apiResonse.payload;
-                this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
-                if (orderDetail.state === Database.ORDER_STATE.CANCEL)
-                  status = Database.OUTERTRADE_STATUS.API_ORDER_CANCEL;
-              } else {
-                status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
-              }
               break;
             default:
               break;
           }
+          if (apiResonse.success) {
+            orderDetail = apiResonse.payload;
+            this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
+            if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
+              await this.updateOuterTrade({
+                id: data.tradeId,
+                status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+                dbOrder: order,
+                member,
+                dbTransaction,
+              });
+              await dbTransaction.rollback();
+              stop = true;
+            }
+          } else {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+              dbTransaction,
+            });
+            await dbTransaction.rollback();
+            stop = true;
+          }
         }
-        // 4. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
-        // 計算完後會直接通知前端更新 order 及 accounts
-        if (!status) {
+        // 3. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
+        if (!stop) {
           result = this.calculator({
             market,
             member,
@@ -3973,11 +4015,8 @@ class ExchangeHub extends Bot {
             data,
           });
         }
-        // 5. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
-        // trade 新增進 DB 後才可以得到我們的 trade id
-        // db 更新的資料為 calculator 得到的 result
-        if (!status && result) {
-          // if (type === Database.MODIFIABLE_TYPE.ORDER) {
+        if (!stop && result) {
+          // 3.1 計算完後會直接通知前端更新 order
           let time = result.updatedOrder.updated_at.replace(/['"]+/g, "");
           let updatedOrder = {
             ...result.updatedOrder,
@@ -4022,57 +4061,32 @@ class ExchangeHub extends Bot {
             order: updatedOrder,
           });
           // }
+          // 4. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
+          // trade 新增進 DB 後才可以得到我們的 trade id
+          // db 更新的資料為 calculator 得到的 result
           if (type === Database.MODIFIABLE_TYPE.TRADE) {
-            updateR = await this.updater({
+            await this.updater({
               ...result,
               member,
               dbOrder: order,
               tradeFk: data.tradeId,
-              memberId: member.id,
               market: market.id,
               instId: data.instId,
-              status,
               dbTransaction,
             });
-            this.logger.log(`updateR`, updateR);
-            status = Database.OUTERTRADE_STATUS.DONE;
-            this.logger.debug(`processor updateOuterTrade status`, status);
-            await this.updateOuterTrade({
-              ...updateR,
-              member,
-              status,
-              id: data.tradeId,
-              dbOrder: order,
-              // trade: updateR.trade,
-              // voucher: updateR.voucher,
-              dbTransaction,
-            });
+            await dbTransaction.commit();
+            this.logger.debug(`processor complete dbTransaction commit`);
           }
         }
       } catch (error) {
-        status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
-        this.logger.error(`processor [status: ${status}]`, error);
+        await this.updateOuterTrade({
+          id: data.tradeId,
+          status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+          dbTransaction,
+        });
         await dbTransaction.rollback();
         this.logger.error(`processor dbTransaction rollback`);
       }
-      if (type === Database.MODIFIABLE_TYPE.TRADE) {
-        try {
-          this.logger.debug(`processor updateOuterTrade status`, status);
-          await this.updateOuterTrade({
-            member,
-            status,
-            id: data.tradeId,
-            dbOrder: order,
-            dbTransaction,
-          });
-        } catch (error) {
-          status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
-          this.logger.error(`processor updateOuterTrade error`, error);
-          await dbTransaction.rollback();
-          this.logger.error(`processor dbTransaction rollback`);
-        }
-      }
-      await dbTransaction.commit();
     }
   }
 
