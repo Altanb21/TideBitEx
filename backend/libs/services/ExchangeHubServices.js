@@ -1384,7 +1384,7 @@ class ExchangeHubService {
     const dbOuterTrades = await this.database.getOuterTrades({
       type: Database.TIME_RANGE_TYPE.DAY_AFTER,
       exchangeCode,
-      day: interval,
+      day: Math.ceil(interval / (60 * 60 * 24)),
       asc: true,
     });
     let apiOuterTrades = await this._getTransactionsDetail(

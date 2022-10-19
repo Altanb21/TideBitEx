@@ -4384,6 +4384,10 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
 
+  /**
+   * [deprecated] 2022/10/19
+   * 沒有地方呼叫
+   */
   async _calculateFee(orderId, trend, totalFee, dbTransaction) {
     const vouchers = await this.database.getVouchersByOrderId(orderId, {
       dbTransaction,

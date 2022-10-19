@@ -125,7 +125,10 @@ class mysql {
     }
   }
 
-  // ++ TODO 與 getAccountByMemberId 合併
+  /**
+   * [deprecated] 2022/10/19
+   * 與 getAccountByMemberId 合併
+   */
   async getAccountByMemberIdAndCurrency(
     memberId,
     currencyId,
@@ -207,7 +210,9 @@ class mysql {
 	    asset_bases.symbol
     FROM
 	    accounts
-	  LEFT JOIN asset_bases ON accounts.currency = asset_bases.id GROUP by accounts.currency;`;
+	    LEFT JOIN asset_bases ON accounts.currency = asset_bases.id
+    GROUP BY
+	    accounts.currency;`;
     try {
       this.logger.debug("getCurrenciesSymbol", query);
       const [currencies] = await this.db.query({
@@ -520,6 +525,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/19
+   * 沒有地方呼叫
+   */
   async getVouchers({ memberId, ask, bid, days, asc, limit, offset }) {
     const query = `
     SELECT
@@ -535,7 +544,7 @@ class mysql {
       vouchers.trend,
       vouchers.ask_fee,
       vouchers.bid_fee,
-      vouchers.created_at,
+      vouchers.created_at
     FROM
       vouchers
     WHERE
@@ -658,6 +667,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/19
+   * 沒有地方呼叫
+   */
   async getOuterTradesByStatus({
     exchangeCode,
     status,
@@ -678,9 +691,9 @@ class mysql {
       AND(outer_trades.status = ?
         OR outer_trades.order_id IS NULL
         OR outer_trades.create_at IS NULL)
-      AND outer_trades.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
+      AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     ORDER BY
-      outer_trades.created_at ${asc ? "ASC" : "DESC"}
+      outer_trades.create_at ${asc ? "ASC" : "DESC"}
     LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
@@ -831,7 +844,7 @@ class mysql {
           orders
       WHERE
           orders.id = ?
-      LIMIT 1`;
+      LIMIT 1;`;
     try {
       this.logger.debug("getOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query(
@@ -867,12 +880,12 @@ class mysql {
       vouchers.trend,
       vouchers.ask_fee,
       vouchers.bid_fee,
-      vouchers.created_at,
+      vouchers.created_at
     FROM
       vouchers
     WHERE
       vouchers.order_id = ?
-    LIMIT 1`;
+    LIMIT 1;`;
     try {
       this.logger.debug("getVouchersByOrderId", query, orderId);
       const [vouchers] = await this.db.query(
@@ -945,13 +958,13 @@ class mysql {
       vouchers.trend,
       vouchers.ask_fee,
       vouchers.bid_fee,
-      vouchers.created_at,
+      vouchers.created_at
     FROM
       vouchers
     WHERE
       vouchers.order_id = ?
       AND vouchers.trade_id = ?
-    LIMIT 1`;
+    LIMIT 1;`;
     try {
       this.logger.debug(
         "getVoucherByOrderIdAndTradeId",
@@ -983,12 +996,12 @@ class mysql {
       trades.ask_member_id,
       trades.bid_member_id,
       trades.funds,
-      trades.trade_fk,
+      trades.trade_fk
     FROM
       trades
     WHERE
       trades.trade_fk = ?
-    LIMIT 1`;
+    LIMIT 1;`;
     try {
       this.logger.debug("getTradeByTradeFk", query, tradeFk);
       const [[trade]] = await this.db.query({
@@ -1131,7 +1144,7 @@ class mysql {
         currency,
         fun
       );
-      result =await this.db.query(
+      result = await this.db.query(
         {
           query,
           values: [
@@ -1157,6 +1170,7 @@ class mysql {
       );
       this.logger.debug(`insertAccountVersion result`, result);
       accountVersionId = result[0];
+      return accountVersionId;
     } catch (error) {
       this.logger.error(error);
       if (dbTransaction) throw error;
