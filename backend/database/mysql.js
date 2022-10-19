@@ -765,6 +765,8 @@ class mysql {
   }) {
     const query = `
     SELECT 
+        outer_trades.id,
+        outer_trades.exchange_code,
         outer_trades.status,
         outer_trades.data,
         outer_trades.member_id,
@@ -774,6 +776,7 @@ class mysql {
         outer_trades.order_price,
         outer_trades.order_origin_volume,
         outer_trades.trade_id,
+        outer_trades.update_at,
        ${
          joinReferral
            ? `

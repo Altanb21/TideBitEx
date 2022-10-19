@@ -1040,9 +1040,7 @@ class ExchangeHubService {
       result,
       t = await this.database.transaction();
     // 1. parse  memberId, orderId from trade.clOrdId
-
     tmp = Utils.parseClOrdId(trade.clOrdId);
-
     market = this._findMarket(trade.instId);
     memberId = tmp.memberId;
     orderId = tmp.orderId;
