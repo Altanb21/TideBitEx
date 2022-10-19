@@ -1240,7 +1240,7 @@ class ExchangeHubService {
     return result;
   }
 
-  async _processOuterTrades(exchange, outerTrades) {
+  async _processOuterTrades(outerTrades) {
     // let tmp,
     //   updateData = [];
     this.logger.debug(`[${this.constructor.name}] _processOuterTrades`);
@@ -1258,10 +1258,7 @@ class ExchangeHubService {
     );
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
-      await this.processor(Database.MODIFIABLE_TYPE.TRADE, {
-        ...trade,
-        exchangeCode: exchange,
-      });
+      await this.processor(Database.MODIFIABLE_TYPE.TRADE, trade);
       // tmp = await this._processOuterTrade({
       //   ...JSON.parse(trade.data),
       //   exchangeCode: trade.exchange_code,

@@ -311,7 +311,9 @@ class OkexConnector extends ConnectorBase {
         createdAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
-      this.logger.debug(`[${this.constructor.name}] data.length[${data.length}]`);
+      this.logger.debug(
+        `[${this.constructor.name}] data.length[${data.length}]`
+      );
       // this.logger.debug(
       //   `[${this.constructor.name}][${new Date(
       //     parseInt(data[0].ts)
@@ -472,7 +474,9 @@ class OkexConnector extends ConnectorBase {
     const method = "GET";
     const path = "/api/v5/trade/orders-history";
 
-    this.logger.debug(`-------------- [START] sync OrderHistory ---------------`);
+    this.logger.debug(
+      `-------------- [START] sync OrderHistory ---------------`
+    );
     const arr = [];
     if (instType) arr.push(`instType=${instType}`);
     if (instId) arr.push(`instId=${instId}`);
@@ -549,7 +553,9 @@ class OkexConnector extends ConnectorBase {
         );
       });
       EventBus.emit(Events.orderDetailUpdate, instType, formatOrders);
-      this.logger.debug(`-------------- [END] sync OrderHistory ---------------`);
+      this.logger.debug(
+        `-------------- [END] sync OrderHistory ---------------`
+      );
     } catch (error) {
       this.logger.error(error);
       this.logger.debug(
@@ -1719,7 +1725,9 @@ class OkexConnector extends ConnectorBase {
    */
   _updateOrderDetails(instType, orderData) {
     const formatOrders = [];
-    this.logger.debug(`-------------- _updateOrderDetails from [${this.constructor.name}] ---------------`);
+    this.logger.debug(
+      `-------------- _updateOrderDetails from [${this.constructor.name}] ---------------`
+    );
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
         const formatOrder = {
@@ -1739,10 +1747,10 @@ class OkexConnector extends ConnectorBase {
           // feeCcy: data.feeCcy,
           // ts: data.utime,
           // status: 0,
-          // exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
           // updatedAt: new Date(parseInt(data.utime)).toISOString(),
           //data:
           ...data,
+          exchangeCode: Database.EXCHANGE.OKEX,
         };
         formatOrders.push(formatOrder);
       }
@@ -1798,7 +1806,9 @@ class OkexConnector extends ConnectorBase {
     const market = instId.replace("-", "").toLowerCase();
     const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
     if (action === Events.booksActions.snapshot) {
-      this.logger.debug(`=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`);
+      this.logger.debug(
+        `=+===+===+== [FULL SNAPSHOT](${instId})  =+===+===+==`
+      );
       try {
         this.depthBook.updateAll(instId, lotSz, updateBooks);
       } catch (error) {

@@ -3360,11 +3360,18 @@ class ExchangeHub extends Bot {
         // modifiable_id: "",//++TODO
       },
       orderFullFilledAccountVersion,
-      error = false,
       result;
     try {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
-      orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      // orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      let innerSysVol = SafeMath.minus(dbOrder.volume, data.fillSz);
+      let outerSysVol = SafeMath.minus(orderDetail.sz, data.fillSz);
+      if (!SafeMath.eq(innerSysVol, outerSysVol)) {
+        this.logger.error(`data`, data);
+        this.logger.error(`orderDetail`, orderDetail);
+        throw Error("innerSysVol is not equal to outerSysVol");
+      }
+      orderVolume = innerSysVol;
       // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
       // 3. 根據 data side （BUY，SELL）需要分別計算
@@ -3504,22 +3511,41 @@ class ExchangeHub extends Bot {
         done_at: `"${doneAt}"`,
       };
       this.logger.debug(`calculator updatedOrder`, updatedOrder);
-    } catch (e) {
-      this.logger.error(`[${this.constructor.name}] calculaotor went wrong`, e);
-      error = true;
+    } catch (error) {
+      this.logger.error(
+        `[${this.constructor.name}] calculaotor went wrong`,
+        error
+      );
+      throw error;
     }
-    if (!error) {
-      result = {
-        updatedOrder,
-        voucher,
-        trade,
-        askAccountVersion,
-        bidAccountVersion,
-        orderFullFilledAccountVersion,
-      };
-    }
+    result = {
+      updatedOrder,
+      voucher,
+      trade,
+      askAccountVersion,
+      bidAccountVersion,
+      orderFullFilledAccountVersion,
+    };
     return result;
   }
+
+  accountVersionVerifier(accountVersion, dbAccountVersion) {
+    let result = true;
+    if (!SafeMath.eq(accountVersion.currency, dbAccountVersion.currency))
+      result = false;
+    if (accountVersion.modifiable_type !== dbAccountVersion.modifiable_type)
+      result = false;
+    if (!SafeMath.eq(accountVersion.balance, dbAccountVersion.balance))
+      result = false;
+    if (!SafeMath.eq(accountVersion.locked, dbAccountVersion.locked))
+      result = false;
+    if (!SafeMath.eq(accountVersion.fee, dbAccountVersion.fee)) result = false;
+    if (!SafeMath.eq(accountVersion.reason, dbAccountVersion.reason))
+      result = false;
+    if (!SafeMath.eq(accountVersion.fun, dbAccountVersion.fun)) result = false;
+    return result;
+  }
+
   async updateOuterTrade({
     member,
     status,
@@ -3742,8 +3768,13 @@ class ExchangeHub extends Bot {
           : null;
       if (dbAskAccountVersion) {
         this.logger.error(`askAccountVersion exist`);
-        /** ++TODO verify amount difference is correct */
-        newAskAccountVersion = dbAskAccountVersion;
+        if (this.accountVersionVerifier(askAccountVersion, dbAskAccountVersion))
+          newAskAccountVersion = dbAskAccountVersion;
+        else {
+          this.logger.error(`askAccountVersion`, askAccountVersion);
+          this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
+          throw Error(`db update amount is different from outer data`);
+        }
       } else {
         newAskAccountVersion = await this._updateAccount(
           { ...askAccountVersion, modifiable_id: tradeId },
@@ -3765,8 +3796,15 @@ class ExchangeHub extends Bot {
           : null;
       if (dbBidAccountVersion) {
         this.logger.error(`bidAccountVersion exist`);
-        /** ++TODO verify amount difference is correct */
-        newBidAccountVersion = dbBidAccountVersion;
+        if (
+          this.accountVersionVerifier(newBidAccountVersion, dbBidAccountVersion)
+        )
+          newBidAccountVersion = dbBidAccountVersion;
+        else {
+          this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
+          this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
+          throw Error(`db update amount is different from outer data`);
+        }
       } else {
         newBidAccountVersion = await this._updateAccount(
           { ...bidAccountVersion, modifiable_id: tradeId },
@@ -3789,8 +3827,24 @@ class ExchangeHub extends Bot {
             : null;
         if (dbOrderFullFilledAccountVersion) {
           this.logger.error(`orderFullFilledAccountVersion exist`);
-          /** ++TODO verify amount difference is correct */
-          newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
+          if (
+            this.accountVersionVerifier(
+              newOrderFullFilledAccountVersion,
+              dbOrderFullFilledAccountVersion
+            )
+          )
+            newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
+          else {
+            this.logger.error(
+              `newOrderFullFilledAccountVersion`,
+              newOrderFullFilledAccountVersion
+            );
+            this.logger.error(
+              `dbOrderFullFilledAccountVersion`,
+              dbOrderFullFilledAccountVersion
+            );
+            throw Error(`db update amount is different from outer data`);
+          }
         } else {
           newOrderFullFilledAccountVersion = await this._updateAccount(
             { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
@@ -3886,24 +3940,31 @@ class ExchangeHub extends Bot {
         }
         // 3.2 OKx api 回傳的 orderDetail state 不為 cancel
         if (!status) {
-          let apiResonse = await this.okexConnector.router("getOrderDetails", {
-            query: {
-              instId: data.instId,
-              ordId: data.ordId,
-            },
-          });
-          if (apiResonse.success) {
-            orderDetail = apiResonse.payload;
-            if (orderDetail.state === Database.ORDER_STATE.CANCEL)
-              status = Database.OUTERTRADE_STATUS.API_ORDER_CANCEL;
-          } else {
-            status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+          let apiResonse;
+          switch (data.exchangeCode) {
+            case Database.EXCHANGE.OKEX:
+              apiResonse = await this.okexConnector.router("getOrderDetails", {
+                query: {
+                  instId: data.instId,
+                  ordId: data.ordId,
+                },
+              });
+              if (apiResonse.success) {
+                orderDetail = apiResonse.payload;
+                this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
+                if (orderDetail.state === Database.ORDER_STATE.CANCEL)
+                  status = Database.OUTERTRADE_STATUS.API_ORDER_CANCEL;
+              } else {
+                status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+              }
+              break;
+            default:
+              break;
           }
         }
         // 4. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
         // 計算完後會直接通知前端更新 order 及 accounts
         if (!status) {
-          /** ++TODO verify updateOrder is equal to orderDetail */
           result = this.calculator({
             market,
             member,
