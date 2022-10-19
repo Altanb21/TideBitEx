@@ -66,7 +66,7 @@ class ExchangeHubService {
   async sync({
     exchange = SupportedExchange.OKEX,
     data,
-    interval = this._minInterval,
+    interval = this._interval,
     force = false,
   }) {
     this.logger.debug(
