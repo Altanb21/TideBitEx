@@ -1401,7 +1401,9 @@ class ExchangeHubService {
       if (index === -1) needProcessTrades = [...needProcessTrades, trade];
       else if (
         index !== -1 &&
-        dbOuterTrades[index].status === Database.OUTERTRADE_STATUS.UNPROCESS
+        (dbOuterTrades[index].status === Database.OUTERTRADE_STATUS.UNPROCESS ||
+          dbOuterTrades[index].status ===
+            Database.OUTERTRADE_STATUS.SYSTEM_ERROR)
       )
         abnormalTrades = [...abnormalTrades, trade];
     }

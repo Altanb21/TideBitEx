@@ -3572,7 +3572,7 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              update_at: now,
+              update_at: `"${now}"`,
               order_id: 0,
             },
             { dbTransaction }
@@ -3620,7 +3620,7 @@ class ExchangeHub extends Bot {
             {
               id,
               status,
-              update_at: now,
+              update_at: `"${now}"`,
               order_id: dbOrder.id,
               member_id: member.id,
             },
