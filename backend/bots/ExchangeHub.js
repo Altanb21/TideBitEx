@@ -2848,7 +2848,7 @@ class ExchangeHub extends Bot {
             orderData: body,
           });
           /* !!! HIGH RISK (end) !!! */
-          if (!dbUpdateR.success) {
+          if (!dbUpdateR?.success) {
             await transacion.rollback();
             result = new ResponseFormat({
               message: "DB ERROR",
@@ -2864,27 +2864,29 @@ class ExchangeHub extends Bot {
               query,
               body,
             });
-            this.logger.error(`API 取消訂單成功了`);
             this.logger.debug(`okexCancelOrderRes`, apiR);
           }
-          if (!apiR?.success) {
-            await transacion.rollback();
-            this.logger.error(`API 取消訂單失敗 rollback`);
-          } else {
-            await transacion.commit();
-            // 3. informFrontEnd
-            this.logger.error(`準備通知前端更新頁面`);
-            this._emitUpdateOrder({
-              memberId,
-              instId: body.instId,
-              market: body.market,
-              order: dbUpdateR.updatedOrder,
-            });
-            // this._emitUpdateAccount({
-            //   memberId,
-            //   account: dbUpdateR.updateAccount,
-            // });
-            this.logger.error(`通知前端成功了`);
+          if (!result) {
+            if (!apiR?.success) {
+              await transacion.rollback();
+              this.logger.error(`API 取消訂單失敗 rollback`);
+            } else {
+              await transacion.commit();
+              this.logger.error(`API 取消訂單成功了`);
+              // 3. informFrontEnd
+              this.logger.error(`準備通知前端更新頁面`);
+              this._emitUpdateOrder({
+                memberId,
+                instId: body.instId,
+                market: body.market,
+                order: dbUpdateR.updatedOrder,
+              });
+              // this._emitUpdateAccount({
+              //   memberId,
+              //   account: dbUpdateR.updateAccount,
+              // });
+              this.logger.error(`通知前端成功了`);
+            }
           }
           result = apiR;
           break;
