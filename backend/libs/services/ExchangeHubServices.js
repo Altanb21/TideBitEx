@@ -92,7 +92,7 @@ class ExchangeHubService {
 
       this._lastSyncTime = Date.now();
       // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-      await this._processOuterTrades(exchange, outerTrades);
+      await this._processOuterTrades(outerTrades);
 
       // 4. 通知前端
       // this.emitUpdateData(updateData);
