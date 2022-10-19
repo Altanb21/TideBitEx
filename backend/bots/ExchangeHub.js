@@ -2849,12 +2849,12 @@ class ExchangeHub extends Bot {
           });
           /* !!! HIGH RISK (end) !!! */
           if (!dbUpdateR.success) {
-            this.logger.error(`DB 更新失敗`);
             await transacion.rollback();
             result = new ResponseFormat({
               message: "DB ERROR",
               code: Codes.CANCEL_ORDER_FAIL,
             });
+            this.logger.error(`DB 更新失敗 rollback`);
           } else {
             // 2. performTask (Task: cancel)
             this.logger.error(`準備呼叫 API 執行取消訂單`);
@@ -2867,9 +2867,9 @@ class ExchangeHub extends Bot {
             this.logger.error(`API 取消訂單成功了`);
             this.logger.debug(`okexCancelOrderRes`, apiR);
           }
-          if (!apiR.success) {
-            this.logger.error(`API 取消訂單失敗`);
+          if (!apiR?.success) {
             await transacion.rollback();
+            this.logger.error(`API 取消訂單失敗 rollback`);
           } else {
             await transacion.commit();
             // 3. informFrontEnd
