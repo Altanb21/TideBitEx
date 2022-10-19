@@ -1110,6 +1110,7 @@ class mysql {
     fun,
     { dbTransaction }
   ) {
+    let result, accountVersionId;
     const query =
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
@@ -1130,7 +1131,7 @@ class mysql {
         currency,
         fun
       );
-      await this.db.query(
+      result =await this.db.query(
         {
           query,
           values: [
@@ -1154,6 +1155,8 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      this.logger.debug(`insertAccountVersion result`, result);
+      accountVersionId = result[0];
     } catch (error) {
       this.logger.error(error);
       if (dbTransaction) throw error;
