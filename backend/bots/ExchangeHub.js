@@ -3631,9 +3631,9 @@ class ExchangeHub extends Bot {
           if (
             !id ||
             !dbOrder?.id ||
-            !member?.id ||
             !trade?.id ||
             !voucher?.id ||
+            !member?.id ||
             !askAccountVersion?.id ||
             !bidAccountVersion?.id
           ) {
@@ -3909,7 +3909,7 @@ class ExchangeHub extends Bot {
         this.logger.error(`insertOuterTrades error`, error);
         stop = true;
         await dbTransaction.rollback();
-        this.logger.error(`processor dbTransaction rollback`);
+        this.logger.error(`insertOuterTrades fail dbTransaction rollback`);
       }
     }
     if (!stop) {
@@ -3928,7 +3928,7 @@ class ExchangeHub extends Bot {
             status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
             dbTransaction,
           });
-          await dbTransaction.rollback();
+          await dbTransaction.commit();
           stop = true;
         }
         // 1.2.可以根據 orderId 從 database 取得 dbOrder
@@ -3946,7 +3946,7 @@ class ExchangeHub extends Bot {
             status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
             dbTransaction,
           });
-          await dbTransaction.rollback();
+          await dbTransaction.commit();
           stop = true;
         }
         // 2. 判斷收到的資料對應的 order是否需要更新
@@ -3959,7 +3959,7 @@ class ExchangeHub extends Bot {
             dbOrder: order,
             dbTransaction,
           });
-          await dbTransaction.rollback();
+          await dbTransaction.commit();
           stop = true;
         }
         // 2.2 dbOrder.state 不為 0
@@ -3975,7 +3975,7 @@ class ExchangeHub extends Bot {
             member,
             dbTransaction,
           });
-          await dbTransaction.rollback();
+          await dbTransaction.commit();
           stop = true;
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
@@ -4004,15 +4004,15 @@ class ExchangeHub extends Bot {
                 member,
                 dbTransaction,
               });
-              await dbTransaction.rollback();
+              await dbTransaction.commit();
               stop = true;
             }
           } else {
-            await this.updateOuterTrade({
-              id: data.tradeId,
-              status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
-              dbTransaction,
-            });
+            // await this.updateOuterTrade({
+            //   id: data.tradeId,
+            //   status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+            //   dbTransaction,
+            // });
             await dbTransaction.rollback();
             stop = true;
           }
@@ -4091,11 +4091,11 @@ class ExchangeHub extends Bot {
           }
         }
       } catch (error) {
-        await this.updateOuterTrade({
-          id: data.tradeId,
-          status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
-          dbTransaction,
-        });
+        // await this.updateOuterTrade({
+        //   id: data.tradeId,
+        //   status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+        //   dbTransaction,
+        // });
         await dbTransaction.rollback();
         this.logger.error(`processor dbTransaction rollback`);
       }
@@ -4404,9 +4404,7 @@ class ExchangeHub extends Bot {
     );
 
     await this.database.updateAccount(newAccount, { dbTransaction });
-    return {
-      newAccountVersion: { ...newAccountVersion, id: accountVersionId },
-    };
+    return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }
 
