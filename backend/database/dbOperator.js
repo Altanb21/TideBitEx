@@ -277,22 +277,24 @@ class DBOperator {
   async getOuterTrades({
     type,
     exchangeCode,
-    day,
+    days,
     start,
     end,
     limit = 100,
     offset = 0,
     asc = false,
+    joinReferral = false
   }) {
     return this.database.getOuterTrades({
       type,
       exchangeCode,
-      day,
+      days,
       start,
       end,
       limit,
       offset,
       asc,
+      joinReferral
     });
   }
 

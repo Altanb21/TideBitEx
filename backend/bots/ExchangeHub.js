@@ -2137,6 +2137,7 @@ class ExchangeHub extends Bot {
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           start: startDate,
           end: endtDate,
+          joinReferral: true,
         });
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",

@@ -1379,12 +1379,15 @@ class ExchangeHubService {
   }
 
   async _syncOuterTrades(exchange, interval, clOrdId) {
-    this.logger.debug(`[${this.constructor.name}] _syncOuterTrades`);
+    let days = Math.ceil(interval / (60 * 60 * 24 * 1000));
+    this.logger.debug(
+      `[${this.constructor.name}] _syncOuterTrades (days: ${days})`
+    );
     let exchangeCode = Database.EXCHANGE[exchange.toUpperCase()];
     const dbOuterTrades = await this.database.getOuterTrades({
       type: Database.TIME_RANGE_TYPE.DAY_AFTER,
       exchangeCode,
-      day: Math.ceil(interval / (60 * 60 * 24)),
+      days: days,
       asc: true,
     });
     let apiOuterTrades = await this._getTransactionsDetail(

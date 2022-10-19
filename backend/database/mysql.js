@@ -755,12 +755,13 @@ class mysql {
   async getOuterTrades({
     type,
     exchangeCode,
-    day,
+    days,
     start,
     end,
     limit,
     offset,
     asc,
+    joinReferral,
   }) {
     const query = `
     SELECT 
@@ -773,18 +774,29 @@ class mysql {
         outer_trades.order_price,
         outer_trades.order_origin_volume,
         outer_trades.trade_id,
+       ${
+         joinReferral
+           ? `
         outer_trades.voucher_id,
         referral_commissions.ref_gross_fee,
         referral_commissions.ref_net_fee,
         referral_commissions.amount,
-        referral_commissions.state
+        referral_commissions.state`
+           : `
+        outer_trades.voucher_id`
+       }
     FROM outer_trades
-        INNER JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id
+    ${
+      joinReferral
+        ? `
+        INNER JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id`
+        : ``
+    }
     WHERE outer_trades.exchange_code = ?
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
-        AND outer_trades.update_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
+        AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
         `
           : `
         outer_trades.exchange_code = ?
@@ -801,7 +813,7 @@ class mysql {
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${day}]`
+            ? `[${exchangeCode}, ${days}]`
             : `[${exchangeCode}, ${start}, ${end}]`
         }`
       );
@@ -809,7 +821,7 @@ class mysql {
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, day]
+            ? [exchangeCode, days]
             : [exchangeCode, start, end],
       });
       return outerTrades;
