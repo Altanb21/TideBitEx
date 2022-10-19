@@ -3672,7 +3672,7 @@ class ExchangeHub extends Bot {
               ask_account_version_id: askAccountVersion.id || null,
               bid_account_version_id: bidAccountVersion.id || null,
               order_full_filled_account_version_id:
-                orderFullFilledAccountVersion.id || null,
+                orderFullFilledAccountVersion?.id || null,
             },
             { dbTransaction }
           );
@@ -4097,7 +4097,7 @@ class ExchangeHub extends Bot {
         //   dbTransaction,
         // });
         await dbTransaction.rollback();
-        this.logger.error(`processor dbTransaction rollback`);
+        this.logger.error(`processor dbTransaction rollback`, error);
       }
     }
   }
