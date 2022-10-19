@@ -151,9 +151,9 @@ class OkexConnector extends ConnectorBase {
     requests = this.tradeFillsMaxRequestTimes,
     tryOnce = 1,
   }) {
-    this.logger.debug(
-      `[${this.constructor.name}] fetchTradeFillsRecords [START]`
-    );
+    // this.logger.debug(
+    //   `[${this.constructor.name}] fetchTradeFillsRecords [START]`
+    // );
     const { begin, end, before, sz } = query;
     let result,
       arr = [],
@@ -245,10 +245,10 @@ class OkexConnector extends ConnectorBase {
           }
         }
       }
-      this.logger.debug(
-        `[${this.constructor.name}] fetchTradeFillsRecords [END](results.length:${results.length}) results[0]`,
-        results[0]
-      );
+      // this.logger.debug(
+      //   `[${this.constructor.name}] fetchTradeFillsRecords [END](results.length:${results.length}) results[0]`,
+      //   results[0]
+      // );
       result = new ResponseFormat({
         message: "tradeFills",
         payload: results,
@@ -408,10 +408,10 @@ class OkexConnector extends ConnectorBase {
         //     parseInt(trade.ts) >= beginDate.getTime()
         // ),
       });
-      this.logger.debug(
-        `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length}) results[0]`,
-        results[0]
-      );
+      // this.logger.debug(
+      //   `[${this.constructor.name}] fetchTradeFillsHistoryRecords [END](results.length:${results.length}) results[0]`,
+      //   results[0]
+      // );
     } catch (error) {
       this.logger.error(error);
       let message = error.message;
