@@ -768,7 +768,7 @@ class mysql {
 	      referral_commissions
     WHERE 
         referral_commissions.market = ?
-        AND referral_commissions.create_at BETWEEN ?
+        AND referral_commissions.created_at BETWEEN ?
         AND ?
     ORDER BY
         NULL

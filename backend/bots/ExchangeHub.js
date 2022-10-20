@@ -2169,7 +2169,7 @@ class ExchangeHub extends Bot {
                 end: endtDate,
               });
           }
-          referralCommission = referralCommissions?.find(
+          referralCommission = referralCommissions[tickerSetting.id]?.find(
             (rc) => rc.voucher_id === _trade.voucher_id
           );
           fee =
