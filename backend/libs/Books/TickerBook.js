@@ -95,6 +95,7 @@ class TickerBook extends BookBase {
           ticker = {
             ...tickerSetting,
             ...data,
+            group: tickerSetting.group,
             change,
             changePct,
             at: parseInt(data.at),
