@@ -104,14 +104,16 @@ class TideBitLegacyAdapter {
         let member;
         // , email;
         try {
-          member = await database.getMemberById(parsedResult.memberId);
+          member = await database.getMemberByCondition({
+            id: parsedResult.memberId,
+          });
           // console.log(
           //   `!!! [TideBitLegacyAdapter getMemberId] getMemberFromDB`,
           //   redisDomain
           // );
           // email = member?.email;
         } catch (error) {
-          console.error(`database.getMemberById error`, error);
+          console.error(`database.getMemberByCondition error`, error);
         }
         ctx.session.token = parsedResult.peatioSession;
         // let roles = adminUsers.find(

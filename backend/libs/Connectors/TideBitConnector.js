@@ -588,6 +588,9 @@ class TibeBitConnector extends ConnectorBase {
   }
   **/
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   async getUsersAccounts() {
     try {
       const _accounts = await this.database.getAccounts();
@@ -650,7 +653,7 @@ class TibeBitConnector extends ConnectorBase {
       email
     );
     try {
-      const _accounts = await this.database.getAccountsByMemberId(memberId);
+      const _accounts = await this.database.getAccountsByMemberId(memberId, {});
       const accounts = _accounts.map((account) => {
         let currencyObj = this.coinsSettings.find(
           (curr) => curr.id === account.currency
@@ -921,7 +924,7 @@ class TibeBitConnector extends ConnectorBase {
     const instId = tickerSetting?.instId;
     let price = data.price;
     if (!price) {
-      let _order = await this.database.getDoneOrder(data.id);
+      let _order = await this.database.getDoneOrders({ orderId: data.id });
       this.logger.debug(`[FROM DB _order`, _order);
       price = _order?.price;
     }
@@ -1474,7 +1477,9 @@ class TibeBitConnector extends ConnectorBase {
       if (credential.memberId !== -1) {
         const client = this.private_client[credential.memberId];
         if (!client) {
-          const member = await this.database.getMemberById(credential.memberId);
+          const member = await this.database.getMemberByCondition({
+            id: credential.memberId,
+          });
           const auth = await this._startPusherWithLoginToken(
             credential.headers,
             member.sn

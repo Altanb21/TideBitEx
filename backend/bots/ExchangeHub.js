@@ -103,7 +103,7 @@ class ExchangeHub extends Bot {
           coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
-        this.okexConnector = new OkexConnector({ logger });
+        this.okexConnector = new OkexConnector({ logger, config });
         await this.okexConnector.init({
           domain: this.config.okex.domain,
           apiKey: this.config.okex.apiKey,
@@ -126,6 +126,7 @@ class ExchangeHub extends Bot {
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
+          processor: (type, data) => this.processor(type, data),
           logger,
         });
         return this;
@@ -136,7 +137,10 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
-    await this.exchangeHubService.sync(SupportedExchange.OKEX, null, true);
+    await this.exchangeHubService.sync({
+      exchange: SupportedExchange.OKEX,
+      force: true,
+    });
     return this;
   }
 
@@ -1248,10 +1252,9 @@ class ExchangeHub extends Bot {
             (user) => user.email === newAdminUserEmail
           );
           if (index === -1) {
-            const member = await this.database.getMemberByEmail(
-              // `"${newAdminUserEmail}"`
-              newAdminUserEmail
-            );
+            const member = await this.database.getMemberByCondition({
+              email: newAdminUserEmail,
+            });
             this.logger.debug(`addAdminUser member`, member);
             if (member) {
               const updateAdminUsers = this.adminUsers
@@ -1431,7 +1434,10 @@ class ExchangeHub extends Bot {
               ...user,
               roles: user.roles.map((key) => ROLES[key]),
             }));
-          this.logger.debug(`deleteAdminUser updateAdminUsers`, updateAdminUsers);
+          this.logger.debug(
+            `deleteAdminUser updateAdminUsers`,
+            updateAdminUsers
+          );
           try {
             Utils.yamlUpdate(updateAdminUsers, p);
             this.adminUsers = updateAdminUsers.map((user) => ({
@@ -1688,7 +1694,19 @@ class ExchangeHub extends Bot {
       )
       .concat(_doneMarketBidOrders);
     for (let _order of _orders) {
-      let order;
+      let order,
+        price = _order.price ? Utils.removeZeroEnd(_order.price) : _order.price;
+      if (_order.state === Database.ORDER_STATE_CODE.DONE) {
+        if (_order.ord_type === Database.TYPE.ORDER_ASK) {
+          price = SafeMath.div(_order.funds_received, _order.origin_volume);
+        }
+        if (_order.ord_type === Database.TYPE.ORDER_BID) {
+          price = SafeMath.div(
+            SafeMath.minus(_order.origin_locked, _order.locked),
+            _order.funds_received
+          );
+        }
+      }
       order = {
         id: _order.id,
         ts: parseInt(new Date(_order.updated_at).getTime()),
@@ -1700,7 +1718,7 @@ class ExchangeHub extends Bot {
           _order.type === Database.TYPE.ORDER_ASK
             ? Database.ORDER_KIND.ASK
             : Database.ORDER_KIND.BID,
-        price: _order.price ? Utils.removeZeroEnd(_order.price) : _order.price,
+        price,
         origin_volume: Utils.removeZeroEnd(_order.origin_volume),
         volume: Utils.removeZeroEnd(_order.volume),
         state_code: _order.state,
@@ -1765,6 +1783,9 @@ class ExchangeHub extends Bot {
     return orders;
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   async getUsersAccounts() {
     return this.tideBitConnector.router("getUsersAccounts", {});
   }
@@ -2104,18 +2125,20 @@ class ExchangeHub extends Bot {
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
     this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
-    let outerTrades = [];
+    let outerTrades = [],
+      referralCommissions = {};
     switch (exchange) {
       case SupportedExchange.OKEX:
         // const _outerTrades = await this.database.getOuterTradesByDayAfter(
         //   Database.EXCHANGE[exchange.toUpperCase()],
         //   365 // ++ TODO
         // );
-        const _outerTrades = await this.database.getOuterTradesBetweenDays(
-          Database.EXCHANGE[exchange.toUpperCase()],
-          startDate,
-          endtDate
-        );
+        const _outerTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          start: startDate,
+          end: endtDate,
+        });
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",
         //   {
@@ -2129,32 +2152,26 @@ class ExchangeHub extends Bot {
             parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
             memberId = parsedClOrdId.memberId,
             orderId = parsedClOrdId.orderId,
-            askFeeRate,
-            bidFeeRate,
-            tickerSetting = this.tickersSettings[
-              trade.instId.toLowerCase().replace("-", "")
-            ],
-            memberTag = _trade.member_tag,
+            tickerSetting =
+              this.tickersSettings[trade.instId.toLowerCase().replace("-", "")],
+            tmp = this.getMemberFeeRate(_trade.member_tag, tickerSetting),
+            askFeeRate = tmp.askFeeRate,
+            bidFeeRate = tmp.bidFeeRate,
             fee,
             processTrade,
-            profit;
-          if (memberTag) {
-            if (
-              memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
-            ) {
-              askFeeRate = tickerSetting.ask.vip_fee;
-              bidFeeRate = tickerSetting.bid.vip_fee;
-            }
-            if (
-              memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
-            ) {
-              askFeeRate = tickerSetting.ask.hero_fee;
-              bidFeeRate = tickerSetting.bid.hero_fee;
-            }
-          } else {
-            askFeeRate = tickerSetting.ask.fee;
-            bidFeeRate = tickerSetting.bid.fee;
+            profit,
+            referralCommission;
+          if (!referralCommissions[tickerSetting.id]) {
+            referralCommissions[tickerSetting.id] =
+              await this.database.getReferralCommissions({
+                market: tickerSetting.code,
+                start: startDate,
+                end: endtDate,
+              });
           }
+          referralCommission = referralCommissions[tickerSetting.id]?.find(
+            (rc) => rc.voucher_id === _trade.voucher_id
+          );
           fee =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
               ? trade.side === Database.ORDER_SIDE.SELL
@@ -2166,10 +2183,10 @@ class ExchangeHub extends Bot {
               : null;
           profit =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
-              ? _trade.ref_net_fee
+              ? referralCommission?.ref_net_fee
                 ? SafeMath.minus(
                     SafeMath.minus(fee, Math.abs(trade.fee)),
-                    Math.abs(_trade.ref_net_fee)
+                    Math.abs(referralCommission?.ref_net_fee)
                   )
                 : SafeMath.minus(fee, Math.abs(trade.fee))
               : null;
@@ -2190,8 +2207,8 @@ class ExchangeHub extends Bot {
             fee,
             profit: profit,
             exchange: exchange,
-            referral: _trade.ref_net_fee
-              ? Utils.removeZeroEnd(_trade.ref_net_fee)
+            referral: referralCommission?.ref_net_fee
+              ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
               : null,
             ts: parseInt(trade.ts),
           };
@@ -2199,7 +2216,7 @@ class ExchangeHub extends Bot {
           outerTrades = [...outerTrades, processTrade];
         }
         // }
-        // this.logger.debug(`outerTrades`, outerTrades);
+        this.logger.debug(`referralCommissions`, referralCommissions);
         return new ResponseFormat({
           message: "getOuterTradeFills",
           payload: outerTrades,
@@ -2218,9 +2235,10 @@ class ExchangeHub extends Bot {
       query
     );
     let outerOrders = [],
-      dbOrders = await this.database.getOrdersJoinMemberEmail(
-        Database.ORDER_STATE_CODE.WAIT
-      );
+      // dbOrders = await this.database.getOrdersJoinMemberEmail(
+      //   Database.ORDER_STATE_CODE.WAIT
+      // );
+      memberIds = [];
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
@@ -2231,19 +2249,17 @@ class ExchangeHub extends Bot {
             let parsedClOrdId = Utils.parseClOrdId(order.clOrdId),
               memberId = parsedClOrdId.memberId,
               id = parsedClOrdId.orderId,
-              dbOrder = dbOrders.find(
-                (_dbOrder) => _dbOrder.id.toString() === id.toString()
-              ),
               fundsReceived =
                 order.side === Database.ORDER_SIDE.BUY
                   ? SafeMath.mult(order.avgPx, order.accFillSz)
                   : order.accFillSz,
               processOrder;
+            memberIds.push(memberId);
             processOrder = {
               ...order,
               unFillSz: SafeMath.minus(order.sz, order.accFillSz),
               id,
-              email: dbOrder?.email || null,
+              // email: dbOrder?.email || null,
               memberId,
               exchange: query.exchange,
               fundsReceived,
@@ -2252,6 +2268,17 @@ class ExchangeHub extends Bot {
             // this.logger.debug(`processOrder`, processOrder);
             outerOrders = [...outerOrders, processOrder];
           }
+          let emailsObj = this.database.getEmailsByMemberIds(
+            memberIds,
+            memberIds.length,
+            0
+          );
+          outerOrders.map((order) => {
+            let emailObj = emailsObj.find(
+              (obj) => obj.id.toString() === order.memberId.toString()
+            );
+            return { ...order, email: emailObj.email };
+          });
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
@@ -2311,10 +2338,11 @@ class ExchangeHub extends Bot {
           orderId,
           clOrdId,
           currencyId,
-          account,
+          // account,
           result,
           response,
           updateOrder,
+          accountVersion,
           // * 1. DB transaction
           t = await this.database.transaction();
         try {
@@ -2351,23 +2379,25 @@ class ExchangeHub extends Bot {
             body.kind === Database.ORDER_KIND.BID
               ? orderData.bid
               : orderData.ask;
-          account = await this.database.getAccountByMemberIdCurrency(
-            memberId,
-            currencyId,
-            { dbTransaction: t }
-          );
-          await this._updateAccount({
-            account,
+          accountVersion = {
+            member_id: memberId,
+            currency: currencyId,
+            created_at: orderData.createdAt,
+            updated_at: orderData.createdAt,
+            modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+            modifiable_id: orderId,
             reason: Database.REASON.ORDER_SUBMIT,
-            dbTransaction: t,
+            fun: Database.FUNC.LOCK_FUNDS,
             balance: orderData.balance,
             locked: orderData.locked,
             fee: 0,
-            modifiableType: Database.MODIFIABLE_TYPE.ORDER,
-            modifiableId: orderId,
-            createdAt: orderData.createdAt,
-            fun: Database.FUNC.LOCK_FUNDS,
-          });
+          };
+          // account = await this.database.getAccountsByMemberId(memberId, {
+          //   options: { currency: currencyId },
+          //   limit: 1,
+          //   dbTransaction: t,
+          // });
+          await this._updateAccount(accountVersion, t);
           //   * 5. commit transaction
           await t.commit();
           //   * 6. 建立 OKX order 單
@@ -2425,21 +2455,21 @@ class ExchangeHub extends Bot {
                 market: body.market,
                 order: updateOrder,
               });
-              let _updateAccount = {
-                balance: SafeMath.plus(account.balance, orderData.balance),
-                locked: SafeMath.plus(account.locked, orderData.locked),
-                currency: this.coinsSettings.find(
-                  (curr) => curr.id === account.currency
-                )?.symbol,
-                total: SafeMath.plus(
-                  SafeMath.plus(account.balance, orderData.balance),
-                  SafeMath.plus(account.locked, orderData.locked)
-                ),
-              };
-              this._emitUpdateAccount({
-                memberId,
-                account: _updateAccount,
-              });
+              // let _updateAccount = {
+              //   balance: SafeMath.plus(account.balance, orderData.balance),
+              //   locked: SafeMath.plus(account.locked, orderData.locked),
+              //   currency: this.coinsSettings.find(
+              //     (curr) => curr.id === account.currency
+              //   )?.symbol,
+              //   total: SafeMath.plus(
+              //     SafeMath.plus(account.balance, orderData.balance),
+              //     SafeMath.plus(account.locked, orderData.locked)
+              //   ),
+              // };
+              // this._emitUpdateAccount({
+              //   memberId,
+              //   account: _updateAccount,
+              // });
             }
           } else {
             //  * 6.2 掛單失敗
@@ -2693,30 +2723,31 @@ class ExchangeHub extends Bot {
 
   async updateOrderStatus({ transacion, orderId, memberId, orderData }) {
     /* !!! HIGH RISK (start) !!! */
-    // 1. get orderId from body
+    // 1. -get orderId from body-
     // 2. get order data from table
     // 3. find and lock account
     // 4. update order state
     // 5. get balance and locked value from order
     // 6. add account_version
     // 7. update account balance and locked
-    // 8. post okex cancel order
+    // 8. -post okex cancel order-
     // const t = await this.database.transaction();
     /*******************************************
      * body.clOrdId: custom orderId for okex
      * locked: value from order.locked, used for unlock balance, negative in account_version
      * balance: order.locked
      *******************************************/
-    let result = false,
+    let success = false,
       order,
       locked,
       balance,
       fee,
-      updateOrder,
+      updatedOrder,
       currencyId,
-      account,
-      updateAccount,
-      createdAt = new Date().toISOString();
+      // account,
+      // updateAccount,
+      accountVersion,
+      createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     try {
       order = await this.database.getOrder(orderId, {
         dbTransaction: transacion,
@@ -2724,139 +2755,157 @@ class ExchangeHub extends Bot {
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
-        account = await this.database.getAccountByMemberIdCurrency(
-          memberId,
-          currencyId,
-          { dbTransaction: transacion }
-        );
+        // account = await this.database.getAccountsByMemberId(memberId, {
+        //   options: { currency: currencyId },
+        //   limit: 1,
+        //   dbTransaction: transacion,
+        // });
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
-        if (account) {
-          const newOrder = {
-            id: orderId,
-            state: Database.ORDER_STATE_CODE.CANCEL,
-          };
-          await this.database.updateOrder(newOrder, {
-            dbTransaction: transacion,
-          });
-          await this._updateAccount({
-            account,
-            dbTransaction: transacion,
-            balance,
-            locked,
-            fee,
-            modifiableType: Database.MODIFIABLE_TYPE.ORDER,
-            modifiableId: orderId,
-            createdAt,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-            reason: Database.REASON.ORDER_CANCEL,
-          });
-          updateOrder = {
-            ...orderData,
-            state: Database.ORDER_STATE.CANCEL,
-            state_text: Database.ORDER_STATE_TEXT.CANCEL,
-            at: parseInt(SafeMath.div(Date.now(), "1000")),
-            ts: Date.now(),
-          };
-          this._emitUpdateOrder({
-            memberId,
-            instId: updateOrder.instId,
-            market: updateOrder.market,
-            order: updateOrder,
-          });
-          updateAccount = {
-            balance: SafeMath.plus(account.balance, balance),
-            locked: SafeMath.plus(account.locked, locked),
-            currency: this.coinsSettings.find(
-              (curr) => curr.id === account.currency
-            )?.symbol,
-            total: SafeMath.plus(
-              SafeMath.plus(account.balance, balance),
-              SafeMath.plus(account.locked, locked)
-            ),
-          };
-          this._emitUpdateAccount({ memberId, account: updateAccount });
-          result = true;
-        }
+        // if (account) {
+        const newOrder = {
+          id: orderId,
+          state: Database.ORDER_STATE_CODE.CANCEL,
+          updated_at: `"${createdAt}"`,
+        };
+        await this.database.updateOrder(newOrder, {
+          dbTransaction: transacion,
+        });
+        this.logger.error(`被取消訂單的狀態更新了`);
+        accountVersion = {
+          member_id: memberId,
+          currency: currencyId,
+          created_at: createdAt,
+          updated_at: createdAt,
+          modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+          modifiable_id: orderId,
+          reason: Database.REASON.ORDER_CANCEL,
+          fun: Database.FUNC.UNLOCK_FUNDS,
+          balance,
+          locked,
+          fee,
+        };
+        await this._updateAccount(accountVersion, transacion);
+        this.logger.error(`被取消訂單對應的用戶帳號更新了`);
+        updatedOrder = {
+          ...orderData,
+          state: Database.ORDER_STATE.CANCEL,
+          state_text: Database.ORDER_STATE_TEXT.CANCEL,
+          at: parseInt(SafeMath.div(Date.now(), "1000")),
+          ts: Date.now(),
+        };
+        // updateAccount = {
+        //   balance: SafeMath.plus(account.balance, balance),
+        //   locked: SafeMath.plus(account.locked, locked),
+        //   currency: this.coinsSettings.find(
+        //     (curr) => curr.id === account.currency
+        //   )?.symbol,
+        //   total: SafeMath.plus(
+        //     SafeMath.plus(account.balance, balance),
+        //     SafeMath.plus(account.locked, locked)
+        //   ),
+        // };
+        success = true;
+        // }
       }
     } catch (error) {
+      success = false;
       this.logger.error(
         `[${this.constructor.name} updateOrderStatus] error`,
         error
       );
     }
-    return result;
+    // return { success, updatedOrder, updateAccount };
+    return { success, updatedOrder };
     /* !!! HIGH RISK (end) !!! */
   }
-  // ++ TODO: fix multi return
   async postCancelOrder({ header, params, query, body, memberId }) {
     const tickerSetting = this.tickersSettings[body.market];
     const source = tickerSetting?.source;
-    // const t = await this.database.transaction();
+    let result,
+      dbUpdateR,
+      apiR,
+      orderId = body.id;
     try {
-      // 1. get orderId from body.clOrdId
-      // let { orderId } =
-      //   source === SupportedExchange.OKEX
-      //     ? Utils.parseClOrdId(body.clOrdId)
-      //     : { orderId: body.id };
-      let orderId = body.id;
       switch (source) {
         case SupportedExchange.OKEX:
+          // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
-          let result,
-            response,
-            transacion = await this.database.transaction();
-
-          result = await this.updateOrderStatus({
+          let transacion = await this.database.transaction();
+          this.logger.error(
+            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號`
+          );
+          dbUpdateR = await this.updateOrderStatus({
             transacion,
             orderId,
             memberId,
             orderData: body,
           });
-          if (result) {
-            /* !!! HIGH RISK (end) !!! */
-            response = await this.okexConnector.router("postCancelOrder", {
+          /* !!! HIGH RISK (end) !!! */
+          if (!dbUpdateR?.success) {
+            await transacion.rollback();
+            result = new ResponseFormat({
+              message: "DB ERROR",
+              code: Codes.CANCEL_ORDER_FAIL,
+            });
+            this.logger.error(`DB 更新失敗 rollback`);
+          } else {
+            // 2. performTask (Task: cancel)
+            this.logger.error(`準備呼叫 API 執行取消訂單`);
+            this.logger.debug(`postCancelOrder`, body);
+            apiR = await this.okexConnector.router("postCancelOrder", {
               params,
               query,
               body,
             });
-            this.logger.debug(`postCancelOrder`, body);
-            this.logger.debug(`okexCancelOrderRes`, response);
-            if (!response.success) {
+            this.logger.debug(`okexCancelOrderRes`, apiR);
+          }
+          if (!result) {
+            if (!apiR?.success) {
               await transacion.rollback();
+              this.logger.error(`API 取消訂單失敗 rollback`);
             } else {
               await transacion.commit();
+              this.logger.error(`API 取消訂單成功了`);
+              // 3. informFrontEnd
+              this.logger.error(`準備通知前端更新頁面`);
+              this._emitUpdateOrder({
+                memberId,
+                instId: body.instId,
+                market: body.market,
+                order: dbUpdateR.updatedOrder,
+              });
+              // this._emitUpdateAccount({
+              //   memberId,
+              //   account: dbUpdateR.updateAccount,
+              // });
+              this.logger.error(`通知前端成功了`);
             }
-          } else {
-            await transacion.rollback();
-            response = new ResponseFormat({
-              message: "DB ERROR",
-              code: Codes.CANCEL_ORDER_FAIL,
-            });
           }
-          return response;
+          result = apiR;
+          break;
         case SupportedExchange.TIDEBIT:
-          return this.tideBitConnector.router(`postCancelOrder`, {
+          result = this.tideBitConnector.router(`postCancelOrder`, {
             header,
             body: { ...body, orderId, market: tickerSetting },
           });
-
+          break;
         default:
-          // await t.rollback();
-          return new ResponseFormat({
+          result = new ResponseFormat({
             message: "instId not Support now",
-            code: Codes.API_NOT_SUPPORTED,
+            code: Codes.INVALID_INPUT,
           });
+          break;
       }
     } catch (error) {
-      this.logger.error(error);
-      // await t.rollback();
-      return new ResponseFormat({
+      this.logger.error(`取消訂單失敗了`, error);
+      result = new ResponseFormat({
         message: error.message,
-        code: Codes.API_UNKNOWN_ERROR,
+        code: Codes.CANCEL_ORDER_FAIL,
       });
     }
+    return result;
   }
 
   // ++ TODO
@@ -3012,6 +3061,9 @@ class ExchangeHub extends Bot {
     });
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   // public api end
   async getExAccounts({ query }) {
     const { exchange } = query;
@@ -3109,6 +3161,944 @@ class ExchangeHub extends Bot {
     return ws.broadcastAllPrivateClient(memberId, { type, data });
   }
 
+  getMemberFeeRate(memberTag, market) {
+    let askFeeRate, bidFeeRate;
+    // this.logger.debug(`memberTag`, memberTag); // 1 是 vip， 2 是 hero
+    if (memberTag) {
+      if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
+        askFeeRate = market.ask.vip_fee;
+        bidFeeRate = market.bid.vip_fee;
+      }
+      if (memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()) {
+        askFeeRate = market.ask.hero_fee;
+        bidFeeRate = market.bid.hero_fee;
+      }
+    } else {
+      askFeeRate = market.ask.fee;
+      bidFeeRate = market.bid.fee;
+    }
+    return { askFeeRate, bidFeeRate };
+  }
+
+  async emitter({
+    memberId,
+    market,
+    instId,
+    updatedOrder,
+    trade,
+    askAccountVersion,
+    bidAccountVersion,
+    orderFullFilledAccountVersion,
+    dbTransaction,
+  }) {
+    if (!instId || !market || !memberId) this.logger.error("missing arguments");
+    try {
+      if (updatedOrder) {
+        let time = updatedOrder.updated_at.replace(/['"]+/g, "");
+        let order = {
+          ...updatedOrder,
+          at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
+          ts: new Date(time).getTime(),
+          market: market.id,
+          filled: updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
+          state_text:
+            updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+              ? Database.ORDER_STATE_TEXT.DONE
+              : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+              ? Database.ORDER_STATE_TEXT.CANCEL
+              : Database.ORDER_STATE_TEXT.WAIT,
+          state:
+            updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+              ? Database.ORDER_STATE.DONE
+              : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+              ? Database.ORDER_STATE.CANCEL
+              : Database.ORDER_STATE.WAIT,
+          state_code:
+            updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+              ? Database.ORDER_STATE_CODE.DONE
+              : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+              ? Database.ORDER_STATE_CODE.CANCEL
+              : Database.ORDER_STATE_CODE.WAIT,
+        };
+        this._emitUpdateOrder({
+          memberId,
+          instId,
+          market: market.id,
+          order,
+        });
+      }
+      let tmp = this.accountBook.getSnapshot(memberId, instId);
+      this.logger.log(
+        `emitter this.accountBook.getSnapshot([memberId: ${memberId}], [instId: ${instId}])`,
+        tmp
+      );
+      if (!tmp) {
+        tmp = [];
+        tmp[0] = await this.database.getAccountsByMemberId(
+          askAccountVersion.member_id,
+          {
+            options: { currency: askAccountVersion.currency },
+            limit: 1,
+            dbTransaction,
+          }
+        );
+      }
+      let balance, locked, total;
+      if (askAccountVersion) {
+        let askAccount = tmp ? tmp[0] : null;
+        balance = SafeMath.plus(askAccount.balance, askAccountVersion.balance);
+        locked = SafeMath.plus(askAccount.locked, askAccountVersion.locked);
+        total = SafeMath.plus(balance, locked);
+        this._emitUpdateAccount({
+          memberId,
+          account: {
+            balance,
+            locked,
+            currency: market.ask.currency.toUpperCase(),
+            total,
+          },
+        });
+      }
+      if (bidAccountVersion) {
+        let bidAccount = tmp ? tmp[1] : null;
+        balance = SafeMath.plus(bidAccount.balance, askAccountVersion.balance);
+        locked = SafeMath.plus(bidAccount.locked, askAccountVersion.locked);
+        total = SafeMath.plus(balance, locked);
+        if (orderFullFilledAccountVersion) {
+          balance = SafeMath.plus(
+            balance,
+            orderFullFilledAccountVersion.balance
+          );
+          locked = SafeMath.plus(locked, orderFullFilledAccountVersion.locked);
+          total = SafeMath.plus(balance, locked);
+        }
+        this._emitUpdateAccount({
+          memberId,
+          account: {
+            balance,
+            locked,
+            currency: market.ask.currency.toUpperCase(),
+            total,
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error("Fail to inform frontend", error);
+    }
+  }
+
+  /**
+   * @typedef {Object} Voucher
+   * @property {int} id
+   * @property {int} member_id
+   * @property {int} order_id
+   * @property {int} trade_id
+   * @property {String} ask (symbol, ex: eth)
+   * @property {String} bid (symbol, ex: usdt)
+   * @property {decimal} price
+   * @property {decimal} volume
+   * @property {decimal} value
+   * @property {String} trend
+   * @property {decimal} ask_fee
+   * @property {decimal} bid_fee
+   * @property {date} created_at
+   */
+  /**
+   * @typedef {Object} AccountVersion
+   * @property {int} id
+   * @property {int} member_id
+   * @property {int} account_id
+   * @property {int} reason
+   * @property {decimal} balance
+   * @property {decimal} locked
+   * @property {decimal} fee
+   * @property {decimal} amount
+   * @property {int} modifiable_id
+   * @property {String} modifiable_type
+   * @property {int} currency
+   * @property {int} fun
+   * @property {Date} created_at
+   * @property {Date} updated_at
+   */
+  // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
+  calculator({ market, member, dbOrder, orderDetail, data }) {
+    this.logger.debug(`calculator `);
+    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
+      value = SafeMath.mult(data.fillPx, data.fillSz),
+      tmp = this.getMemberFeeRate(member.member_tag, market),
+      askFeeRate = tmp.askFeeRate,
+      bidFeeRate = tmp.bidFeeRate,
+      trend,
+      askFee,
+      bidFee,
+      voucher,
+      trade,
+      updatedOrder,
+      orderState,
+      orderLocked,
+      orderFundsReceived,
+      orderVolume,
+      orderTradesCount,
+      doneAt = null,
+      askAccountVersion = {
+        member_id: member.id,
+        currency: dbOrder.ask,
+        created_at: now,
+        updated_at: now,
+        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+        // modifiable_id: "",//++TODO
+      },
+      bidAccountVersion = {
+        member_id: member.id,
+        currency: dbOrder.bid,
+        created_at: now,
+        updated_at: now,
+        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+        // modifiable_id: "",//++TODO
+      },
+      orderFullFilledAccountVersion,
+      result;
+    try {
+      // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
+      // orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      let innerSysVol = SafeMath.minus(dbOrder.volume, data.fillSz);
+      let outerSysVol = SafeMath.minus(orderDetail.sz, data.fillSz);
+      if (!SafeMath.eq(innerSysVol, outerSysVol)) {
+        this.logger.error(`data`, data);
+        this.logger.error(`orderDetail`, orderDetail);
+        throw Error("innerSysVol is not equal to outerSysVol");
+      }
+      orderVolume = innerSysVol;
+      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
+      orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
+      // 3. 根據 data side （BUY，SELL）需要分別計算
+      // 3.1 order 新的鎖定金額
+      // 3.2 order 新的 fund receiced
+      // 3.3 voucher 及 account version 的手需費
+      // 3.4 voucher 與 account version 裡面的手續費是對應的
+      if (data.side === Database.ORDER_SIDE.BUY) {
+        orderLocked = SafeMath.minus(dbOrder.locked, value);
+        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
+        trend = Database.ORDER_KIND.BID;
+        askFee = 0;
+        bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
+        askAccountVersion = {
+          ...askAccountVersion,
+          balance: SafeMath.minus(data.fillSz, bidFee),
+          locked: 0,
+          fee: bidFee,
+          reason: Database.REASON.STRIKE_ADD,
+          fun: Database.FUNC.PLUS_FUNDS,
+        };
+        bidAccountVersion = {
+          ...bidAccountVersion,
+          balance: 0,
+          locked: SafeMath.mult(value, "-1"),
+          fee: 0,
+          reason: Database.REASON.STRIKE_SUB,
+          fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
+        };
+      }
+      if (data.side === Database.ORDER_SIDE.SELL) {
+        orderLocked = SafeMath.minus(dbOrder.locked, data.fillSz);
+        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
+        trend = Database.ORDER_KIND.ASK;
+        askFee = SafeMath.mult(value, askFeeRate);
+        bidFee = 0;
+        askAccountVersion = {
+          ...askAccountVersion,
+          balance: 0,
+          locked: SafeMath.mult(data.fillSz, "-1"),
+          fee: 0,
+          reason: Database.REASON.STRIKE_SUB,
+          fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
+        };
+        bidAccountVersion = {
+          ...bidAccountVersion,
+          balance: SafeMath.minus(value, askFee),
+          locked: 0,
+          fee: askFee,
+          reason: Database.REASON.STRIKE_ADD,
+          fun: Database.FUNC.PLUS_FUNDS,
+        };
+      }
+      this.logger.debug(`calculator askAccountVersion`, askAccountVersion);
+      this.logger.debug(`calculator bidAccountVersion`, bidAccountVersion);
+      voucher = {
+        // id: "", // -- filled by DB insert
+        member_id: member.id,
+        order_id: dbOrder.id,
+        // trade_id: "", //++ trade insert 到 DB 之後才會得到
+        designated_trading_fee_asset_history_id: null,
+        ask: market.ask.currency,
+        bid: market.bid.currency,
+        price: data.fillPx,
+        volume: data.fillSz,
+        value,
+        trend,
+        ask_fee: askFee,
+        bid_fee: bidFee,
+        created_at: now,
+      };
+      this.logger.debug(`calculator voucher`, voucher);
+      trade = {
+        price: data.fillPx,
+        volume: data.fillSz,
+        ask_id: data.side === Database.ORDER_SIDE.SELL ? dbOrder.id : null,
+        bid_id: data.side === Database.ORDER_SIDE.BUY ? dbOrder.id : null,
+        trend: null,
+        currency: market.code,
+        created_at: now,
+        updated_at: now,
+        ask_member_id:
+          data.side === Database.ORDER_SIDE.SELL
+            ? member.id
+            : this.systemMemberId,
+        bid_member_id:
+          data.side === Database.ORDER_SIDE.BUY
+            ? member.id
+            : this.systemMemberId,
+        funds: value,
+        // trade_fk: data?.tradeId, ++ TODO
+      };
+      this.logger.debug(`calculator trade`, trade);
+
+      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
+      // 4.1 更新 order doneAt
+      // 4.2 更新 order state
+      this.logger.debug(`calculator orderVolume`, orderVolume);
+
+      if (SafeMath.eq(orderVolume, "0")) {
+        orderState = Database.ORDER_STATE_CODE.DONE;
+        doneAt = now;
+        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+        if (SafeMath.gt(orderLocked, 0)) {
+          orderFullFilledAccountVersion = {
+            member_id: member.id,
+            currency: dbOrder.bid,
+            created_at: now,
+            updated_at: now,
+            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+            reason: Database.REASON.ORDER_FULLFILLED,
+            fun: Database.FUNC.UNLOCK_FUNDS,
+            fee: 0,
+            balance: orderLocked,
+            locked: SafeMath.mult(orderLocked, "-1"),
+            // ++TODO modifiable_id
+          };
+          // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
+          this.logger.debug(
+            `calculator orderFullFilledAccountVersion`,
+            orderFullFilledAccountVersion
+          );
+        }
+      } else {
+        // 不為 0 即等待中
+        orderState = Database.ORDER_STATE_CODE.WAIT;
+      }
+      // 根據前 5 點 可以得到最終需要更新的 order
+      updatedOrder = {
+        id: dbOrder.id,
+        volume: orderVolume,
+        state: orderState,
+        locked: orderLocked,
+        funds_received: orderFundsReceived,
+        trades_count: orderTradesCount,
+        updated_at: `"${now}"`,
+        done_at: `"${doneAt}"`,
+      };
+      this.logger.debug(`calculator updatedOrder`, updatedOrder);
+    } catch (error) {
+      this.logger.error(
+        `[${this.constructor.name}] calculaotor went wrong`,
+        error
+      );
+      throw error;
+    }
+    result = {
+      updatedOrder,
+      voucher,
+      trade,
+      askAccountVersion,
+      bidAccountVersion,
+      orderFullFilledAccountVersion,
+    };
+    return result;
+  }
+
+  accountVersionVerifier(accountVersion, dbAccountVersion) {
+    let result = true;
+    if (!SafeMath.eq(accountVersion.currency, dbAccountVersion.currency))
+      result = false;
+    if (accountVersion.modifiable_type !== dbAccountVersion.modifiable_type)
+      result = false;
+    if (!SafeMath.eq(accountVersion.balance, dbAccountVersion.balance))
+      result = false;
+    if (!SafeMath.eq(accountVersion.locked, dbAccountVersion.locked))
+      result = false;
+    if (!SafeMath.eq(accountVersion.fee, dbAccountVersion.fee)) result = false;
+    if (!SafeMath.eq(accountVersion.reason, dbAccountVersion.reason))
+      result = false;
+    if (!SafeMath.eq(accountVersion.fun, dbAccountVersion.fun)) result = false;
+    return result;
+  }
+
+  async updateOuterTrade({
+    member,
+    status,
+    id,
+    trade,
+    dbOrder,
+    voucher,
+    askAccountVersion,
+    bidAccountVersion,
+    orderFullFilledAccountVersion,
+    dbTransaction,
+  }) {
+    this.logger.debug(
+      `------------- [${this.constructor.name}] updateOuterTrade -------------`
+    );
+    this.logger.log(`updateOuterTrade status`, status);
+    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+    try {
+      switch (status) {
+        case Database.OUTERTRADE_STATUS.SYSTEM_ERROR:
+        case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
+        case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at: `"${now}"`,
+              order_id: 0,
+            },
+            { dbTransaction }
+          );
+          break;
+        case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
+          // 確保 cancel order 的 locked 金額有還給用戶
+          let dbCancelOrderAccountVersions =
+            await this.database.getAccountVersionsByModifiableId(dbOrder.id);
+          let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
+            (dbAccV) =>
+              dbAccV.reason.toString() ===
+              Database.REASON.ORDER_CANCEL.toString()
+          );
+          if (!dbCancelOrderAccountVersion) {
+            let cancelOrderAccountVersion = {
+              member_id: member.id,
+              currency:
+                dbOrder.type === Database.TYPE.ORDER_ASK
+                  ? dbOrder.ask
+                  : dbOrder.bid,
+              created_at: now,
+              updated_at: now,
+              modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+              balance: dbOrder.locked,
+              locked: SafeMath.mult(dbOrder.locked, "-1"),
+              fee: 0,
+              reason: Database.REASON.ORDER_CANCEL,
+              fun: Database.FUNC.UNLOCK_FUNDS,
+            };
+            await this._updateAccount(cancelOrderAccountVersion, dbTransaction);
+          }
+          let updatedOrder = {
+            id: dbOrder.id,
+            state: Database.ORDER_STATE_CODE.CANCEL,
+            // locked: 0,
+            updated_at: `"${now}"`,
+          };
+          await this.database.updateOrder(updatedOrder, {
+            dbTransaction,
+          });
+          break;
+        case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at: `"${now}"`,
+              order_id: dbOrder.id,
+              member_id: member.id,
+            },
+            { dbTransaction }
+          );
+          break;
+        case Database.OUTERTRADE_STATUS.DONE:
+          if (
+            !id ||
+            !dbOrder?.id ||
+            !trade?.id ||
+            !voucher?.id ||
+            !member?.id ||
+            !askAccountVersion?.id ||
+            !bidAccountVersion?.id
+          ) {
+            this.logger.debug(`updateOuterTrade id`, id);
+            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
+            this.logger.debug(`updateOuterTrade trade`, trade);
+            this.logger.debug(`updateOuterTrade voucher`, voucher);
+            this.logger.debug(`updateOuterTrade member`, member);
+            this.logger.debug(
+              `updateOuterTrade askAccountVersion`,
+              askAccountVersion
+            );
+            this.logger.debug(
+              `updateOuterTrade bidAccountVersion`,
+              bidAccountVersion
+            );
+            this.logger.debug(
+              `updateOuterTrade orderFullFilledAccountVersions`,
+              orderFullFilledAccountVersion
+            );
+            throw Error("missing params");
+          }
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at: `"${now}"`,
+              order_id: dbOrder.id,
+              order_price: dbOrder.price,
+              order_origin_volume: dbOrder.origin_volume,
+              member_id: member.id,
+              member_tag: member.member_tag,
+              email: member.email,
+              trade_id: trade.id,
+              voucher_id: voucher.id,
+              // ask_account_version_id: askAccountVersion.id || null,
+              // bid_account_version_id: bidAccountVersion.id || null,
+              // order_full_filled_account_version_id:
+              //   orderFullFilledAccountVersion?.id || null,
+            },
+            { dbTransaction }
+          );
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      throw error;
+    }
+    this.logger.debug(
+      `------------- [${this.constructor.name}] _updateOuterTradeStatus  [END]-------------`
+    );
+  }
+
+  async updater({
+    dbOrder,
+    updatedOrder,
+    voucher,
+    trade,
+    tradeFk,
+    member,
+    market,
+    instId,
+    askAccountVersion,
+    bidAccountVersion,
+    orderFullFilledAccountVersion,
+    dbTransaction,
+  }) {
+    /* !!! HIGH RISK (start) !!! */
+    let tradeId,
+      voucherId,
+      newAskAccountVersion,
+      newBidAccountVersion,
+      newOrderFullFilledAccountVersion,
+      dbTrade,
+      dbVoucher,
+      dbAccountVersions;
+    this.logger.debug(`updater`);
+    try {
+      if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
+        await this.database.updateOrder(updatedOrder, { dbTransaction });
+        this.logger.debug(`updater updateOrder success`, updatedOrder);
+      } else {
+        this.logger.error("order is marked as done", trade);
+      }
+      dbTrade = await this.database.getTradeByTradeFk(tradeFk);
+      if (dbTrade) {
+        this.logger.error("trade exist trade", trade);
+        this.logger.error("trade exist dbTrade", dbTrade);
+        tradeId = dbTrade.id;
+        dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
+          dbOrder.id,
+          tradeId
+        );
+        dbAccountVersions =
+          await this.database.getAccountVersionsByModifiableId(tradeId);
+      } else {
+        tradeId = await this.database.insertTrades(
+          { ...trade, trade_fk: tradeFk },
+          { dbTransaction }
+        );
+        let time = trade.updated_at.replace(/['"]+/g, "");
+        let newTrade = {
+          id: tradeId, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
+          price: trade.price,
+          volume: trade.volume,
+          market,
+          at: parseInt(SafeMath.div(new Date(time), "1000")),
+          ts: new Date(time),
+        };
+        this._emitNewTrade({
+          memberId: member.id,
+          instId,
+          market: market.id,
+          trade: newTrade,
+        });
+        this.logger.debug(`updater insertTrades success tradeId`, tradeId);
+      }
+      if (dbVoucher) {
+        voucherId = dbVoucher.id;
+        this.logger.error("voucher exist voucher", voucher);
+        this.logger.error("voucher exist dbVoucher", dbVoucher);
+      } else {
+        voucherId = await this.database.insertVouchers(
+          {
+            ...voucher,
+            trade_id: tradeId,
+          },
+          { dbTransaction }
+        );
+        this.logger.debug(
+          `updater insertVouchers success voucherId`,
+          voucherId
+        );
+      }
+      let dbAskAccountVersion =
+        dbAccountVersions?.length > 0
+          ? dbAccountVersions.find(
+              (dbAccV) =>
+                dbAccV.currency.toString() ===
+                askAccountVersion.currency.toString()
+            )
+          : null;
+      if (dbAskAccountVersion) {
+        this.logger.error(`askAccountVersion exist`);
+        if (this.accountVersionVerifier(askAccountVersion, dbAskAccountVersion))
+          newAskAccountVersion = dbAskAccountVersion;
+        else {
+          this.logger.error(`askAccountVersion`, askAccountVersion);
+          this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
+          throw Error(`db update amount is different from outer data`);
+        }
+      } else {
+        newAskAccountVersion = await this._updateAccount(
+          { ...askAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        this.logger.debug(
+          `updater _updateAccount success askAccountVersion id`,
+          newAskAccountVersion.id
+        );
+      }
+      let dbBidAccountVersion =
+        dbAccountVersions?.length > 0
+          ? dbAccountVersions.find(
+              (dbAccV) =>
+                dbAccV.currency.toString() ===
+                  bidAccountVersion.currency.toString() &&
+                dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
+            )
+          : null;
+      if (dbBidAccountVersion) {
+        this.logger.error(`bidAccountVersion exist`);
+        if (
+          this.accountVersionVerifier(newBidAccountVersion, dbBidAccountVersion)
+        )
+          newBidAccountVersion = dbBidAccountVersion;
+        else {
+          this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
+          this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
+          throw Error(`db update amount is different from outer data`);
+        }
+      } else {
+        newBidAccountVersion = await this._updateAccount(
+          { ...bidAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        this.logger.debug(
+          `updater _updateAccount success bidAccountVersion id`,
+          newBidAccountVersion.id
+        );
+      }
+      if (orderFullFilledAccountVersion) {
+        let dbOrderFullFilledAccountVersion =
+          dbAccountVersions?.length > 0
+            ? dbAccountVersions.find(
+                (dbAccV) =>
+                  dbAccV.currency.toString() ===
+                    orderFullFilledAccountVersion.currency.toString() &&
+                  dbAccV.reason === Database.REASON.ORDER_FULLFILLED
+              )
+            : null;
+        if (dbOrderFullFilledAccountVersion) {
+          this.logger.error(`orderFullFilledAccountVersion exist`);
+          if (
+            this.accountVersionVerifier(
+              newOrderFullFilledAccountVersion,
+              dbOrderFullFilledAccountVersion
+            )
+          )
+            newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
+          else {
+            this.logger.error(
+              `newOrderFullFilledAccountVersion`,
+              newOrderFullFilledAccountVersion
+            );
+            this.logger.error(
+              `dbOrderFullFilledAccountVersion`,
+              dbOrderFullFilledAccountVersion
+            );
+            throw Error(`db update amount is different from outer data`);
+          }
+        } else {
+          newOrderFullFilledAccountVersion = await this._updateAccount(
+            { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+            dbTransaction
+          );
+          this.logger.debug(
+            `updater _updateAccount success orderFullFilledAccountVersion id`,
+            newOrderFullFilledAccountVersion.id
+          );
+        }
+      }
+      await this.updateOuterTrade({
+        id: tradeFk,
+        status: Database.OUTERTRADE_STATUS.DONE,
+        member,
+        dbOrder,
+        trade: { ...trade, id: tradeId },
+        voucher: { ...voucher, id: voucherId },
+        askAccountVersion: newAskAccountVersion,
+        bidAccountVersion: newBidAccountVersion,
+        orderFullFilledAccountVersion: newOrderFullFilledAccountVersion,
+        dbTransaction,
+      });
+    } catch (error) {
+      throw error;
+    }
+    /* !!! HIGH RISK (end) !!! */
+  }
+
+  /**
+   *  syncOuterTrades || OKx Events.order
+   * @param {String} type Database.MODIFIABLE_TYPE.TRADE || Database.MODIFIABLE_TYPE.ORDER
+   * @param {Object} data trade || order
+   */
+  async processor(type, data) {
+    let stop,
+      market,
+      memberId,
+      orderId,
+      member,
+      order,
+      orderDetail,
+      result,
+      dbTransaction = await this.database.transaction();
+    this.logger.debug(`processor data`, data);
+    if (type === Database.MODIFIABLE_TYPE.TRADE) {
+      try {
+        // 1. insertOuterTrade
+        await this.database.insertOuterTrades([data], { dbTransaction });
+      } catch (error) {
+        this.logger.error(`insertOuterTrades error`, error);
+        stop = true;
+        await dbTransaction.rollback();
+        this.logger.error(`insertOuterTrades fail dbTransaction rollback`);
+      }
+    }
+    if (!stop) {
+      try {
+        // 1. 判斷收到的資料是否為此系統的資料
+        // 需滿足下列條件，才為此系統的資料：
+        // 1.1.可以從 data 解析出 orderId 及 memberId
+        market =
+          this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
+        let tmp = Utils.parseClOrdId(data.clOrdId);
+        memberId = tmp.memberId;
+        orderId = tmp.orderId;
+        if (!memberId || !orderId) {
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+            dbTransaction,
+          });
+          await dbTransaction.commit();
+          stop = true;
+        }
+        // 1.2.可以根據 orderId 從 database 取得 dbOrder
+        if (!stop) {
+          member = await this.database.getMemberByCondition({ id: memberId });
+          order = await this.database.getOrder(orderId, { dbTransaction });
+        }
+        // 1.3. dbOrder.member_id 同 data 解析出的 memberId
+        if (
+          !stop &&
+          (!order || order?.member_id.toString() !== member?.id.toString())
+        ) {
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+            dbTransaction,
+          });
+          await dbTransaction.commit();
+          stop = true;
+        }
+        // 2. 判斷收到的資料對應的 order是否需要更新
+        // 2.1. 判斷收到的資料 state 不為 cancel
+        if (!stop && data.state === Database.ORDER_STATE.CANCEL) {
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            member,
+            status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+            dbOrder: order,
+            dbTransaction,
+          });
+          await dbTransaction.commit();
+          stop = true;
+        }
+        // 2.2 dbOrder.state 不為 0
+        if (
+          !stop &&
+          order &&
+          order.state === Database.ORDER_STATE_CODE.CANCEL
+        ) {
+          await this.updateOuterTrade({
+            id: data.tradeId,
+            status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
+            dbOrder: order,
+            member,
+            dbTransaction,
+          });
+          await dbTransaction.commit();
+          stop = true;
+        }
+        // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
+        if (!stop) {
+          let apiResonse;
+          switch (data.exchangeCode) {
+            case Database.EXCHANGE.OKEX:
+              apiResonse = await this.okexConnector.router("getOrderDetails", {
+                query: {
+                  instId: data.instId,
+                  ordId: data.ordId,
+                },
+              });
+              break;
+            default:
+              break;
+          }
+          if (apiResonse.success) {
+            orderDetail = apiResonse.payload;
+            this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
+            if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
+              await this.updateOuterTrade({
+                id: data.tradeId,
+                status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+                dbOrder: order,
+                member,
+                dbTransaction,
+              });
+              await dbTransaction.commit();
+              stop = true;
+            }
+          } else {
+            // await this.updateOuterTrade({
+            //   id: data.tradeId,
+            //   status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+            //   dbTransaction,
+            // });
+            await dbTransaction.rollback();
+            stop = true;
+          }
+        }
+        // 3. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
+        if (!stop) {
+          result = this.calculator({
+            market,
+            member,
+            dbOrder: order,
+            orderDetail,
+            data,
+          });
+        }
+        if (!stop && result) {
+          // 3.1 計算完後會直接通知前端更新 order
+          let time = result.updatedOrder.updated_at.replace(/['"]+/g, "");
+          let updatedOrder = {
+            ...result.updatedOrder,
+            ordType: order.ord_type,
+            kind:
+              data.side === Database.ORDER_SIDE.BUY
+                ? Database.ORDER_KIND.BID
+                : Database.ORDER_KIND.ASK,
+            price: order.price,
+            origin_volume: order.origin_volume,
+            instId: data.instId,
+            clOrdId: data.clOrdId,
+            ordId: data.ordId,
+            at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
+            ts: new Date(time).getTime(),
+            market: market.id,
+            filled:
+              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
+            state_text:
+              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+                ? Database.ORDER_STATE_TEXT.DONE
+                : result.updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+                ? Database.ORDER_STATE_TEXT.CANCEL
+                : Database.ORDER_STATE_TEXT.WAIT,
+            state:
+              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+                ? Database.ORDER_STATE.DONE
+                : result.updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+                ? Database.ORDER_STATE.CANCEL
+                : Database.ORDER_STATE.WAIT,
+            state_code:
+              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+                ? Database.ORDER_STATE_CODE.DONE
+                : result.updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+                ? Database.ORDER_STATE_CODE.CANCEL
+                : Database.ORDER_STATE_CODE.WAIT,
+          };
+          this._emitUpdateOrder({
+            memberId,
+            instId: data.instId,
+            market: market.id,
+            order: updatedOrder,
+          });
+          // }
+          // 4. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
+          // trade 新增進 DB 後才可以得到我們的 trade id
+          // db 更新的資料為 calculator 得到的 result
+          if (type === Database.MODIFIABLE_TYPE.TRADE) {
+            await this.updater({
+              ...result,
+              member,
+              dbOrder: order,
+              tradeFk: data.tradeId,
+              market: market.id,
+              instId: data.instId,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+            this.logger.debug(`processor complete dbTransaction commit`);
+          }
+        }
+      } catch (error) {
+        // await this.updateOuterTrade({
+        //   id: data.tradeId,
+        //   status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+        //   dbTransaction,
+        // });
+        await dbTransaction.rollback();
+        this.logger.error(`processor dbTransaction rollback`, error);
+      }
+    }
+  }
+
   async _updateOrderDetail(formatOrder) {
     this.logger.debug(
       ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
@@ -3189,7 +4179,7 @@ class ExchangeHub extends Bot {
       });
     }
     if (tickerSetting && memberId && updateBaseAccount && updateQuoteAccount) {
-      member = await this.database.getMemberById(memberId);
+      member = await this.database.getMemberByCondition({ id: memberId });
       if (member) {
         memberTag = member.member_tag;
         this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
@@ -3357,53 +4347,68 @@ class ExchangeHub extends Bot {
     return orderData;
   }
 
-  async _updateAccount({
-    account,
-    reason,
-    dbTransaction,
-    balance,
-    locked,
-    fee,
-    modifiableType,
-    modifiableId,
-    createdAt,
-    fun,
-  }) {
+  async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
-    const updatedAt = createdAt;
+    let accountVersionId, newAccountVersion;
+    const account = await this.database.getAccountsByMemberId(
+      accountVersion.member_id,
+      {
+        options: { currency: accountVersion.currency },
+        limit: 1,
+        dbTransaction,
+      }
+    );
     const oriAccBal = account.balance;
     const oriAccLoc = account.locked;
-    const newAccBal = SafeMath.plus(oriAccBal, balance);
-    const newAccLoc = SafeMath.plus(oriAccLoc, locked);
+    const newAccBal = SafeMath.plus(oriAccBal, accountVersion.balance);
+    const newAccLoc = SafeMath.plus(oriAccLoc, accountVersion.locked);
     const amount = SafeMath.plus(newAccBal, newAccLoc);
     const newAccount = {
       id: account.id,
       balance: newAccBal,
       locked: newAccLoc,
     };
-
-    await this.database.insertAccountVersion(
-      account.member_id,
-      account.id,
-      reason,
-      // Database.REASON.ORDER_CANCEL,
-      balance,
-      locked,
-      fee,
-      amount,
-      modifiableId,
-      modifiableType,
-      createdAt,
-      updatedAt,
-      account.currency,
-      fun,
+    const currency = this.coinsSettings.find(
+      (curr) => curr.id === accountVersion.currency
+    )?.symbol;
+    this._emitUpdateAccount({
+      memberId: accountVersion.member_id,
+      account: {
+        balance: newAccBal,
+        locked: newAccLoc,
+        currency: currency.toUpperCase(),
+        total: amount,
+      },
+    });
+    newAccountVersion = {
+      memberId: account.member_id,
+      accountId: account.id,
+      reason: accountVersion.reason,
+      balance: accountVersion.balance,
+      locked: accountVersion.locked,
+      fee: accountVersion.fee,
+      amount: amount,
+      modifiableId: accountVersion.modifiable_id,
+      modifiableType: accountVersion.modifiable_type,
+      createdAt: accountVersion.created_at,
+      updatedAt: accountVersion.updated_at,
+      currency: account.currency,
+      fun: accountVersion.fun,
+    };
+    accountVersionId = await this.database.insertAccountVersion(
+      newAccountVersion,
       { dbTransaction }
     );
 
     await this.database.updateAccount(newAccount, { dbTransaction });
+    return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }
 
+  /**
+   * [deprecated] 2022/10/19
+   * 沒有地方呼叫
+   */
   async _calculateFee(orderId, trend, totalFee, dbTransaction) {
     const vouchers = await this.database.getVouchersByOrderId(orderId, {
       dbTransaction,
@@ -3594,12 +4599,13 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
-            await this._updateOrderDetail(formatOrder);
-            this.exchangeHubService.sync(
-              SupportedExchange.OKEX,
-              formatOrder,
-              true
-            );
+            await this.processor(Database.MODIFIABLE_TYPE.ORDER, formatOrder);
+            this.exchangeHubService.sync({
+              exchange: SupportedExchange.OKEX,
+              data: formatOrder,
+              interval: 0.5 * 60 * 60 * 1000,
+              force: true,
+            });
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,

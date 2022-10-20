@@ -55,7 +55,11 @@ const MarketHistory = (props) => {
         })`}</li>
       </ul>
       <ul className="market-history__list scrollbar-custom">
-        <List
+        {storeCtx.trades?.length > 0 &&
+          storeCtx.trades.map((trade) => (
+            <TradeTile key={`${trade.market}-${trade.id}`} trade={trade} />
+          ))}
+        {/* <List
           innerElementType="ul"
           height={393}
           itemCount={storeCtx.trades ? storeCtx.trades.length : 0}
@@ -70,7 +74,7 @@ const MarketHistory = (props) => {
               style={style}
             />
           )}
-        </List>
+        </List> */}
       </ul>
     </div>
   );

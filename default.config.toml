@@ -19,6 +19,17 @@ secretKey = ''
 passPhrase = ''
 brokerId = ''
 
+[pusher]
+app = 0
+key = '' # slanger 的 app_key
+secret = '' # slanger 的 secret_key
+protocol = 'ws'
+host = ''  # slanger 伺服器位址
+port = 4567  # slanger REST API port
+wsPort = 8080  # slanger 的 WebSocket port
+wssPort = 18080  # slanger 的 WSS（WebSockets over SSL/TLS）port
+encrypted = false  # slanger 是否啟用 SSL 加密
+
 [peatio]
 domain = 'http://127.0.0.1:3000'      # 要與TideBit-Legacy application.yml中URL_HOST相同
 systemMemberId = 60976

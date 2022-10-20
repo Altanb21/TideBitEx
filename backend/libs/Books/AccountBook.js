@@ -51,6 +51,10 @@ class AccountBook extends BookBase {
   }
 
   getSnapshot(memberId, instId) {
+    // this.logger.debug(
+    //   `AccountBook getSnapshot this._snapshot[memberId]`,
+    //   this._snapshot[memberId]
+    // );
     if (!this._snapshot[memberId]) return null;
     else {
       if (instId)

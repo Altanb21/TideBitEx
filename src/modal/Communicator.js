@@ -314,6 +314,9 @@ class Communicator {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   // Account
   async getUsersAccounts() {
     try {
@@ -333,6 +336,9 @@ class Communicator {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   */
   async getExAccounts(exchange) {
     try {
       const url = `/users/subaccount/list?exchange=${exchange}`;
@@ -368,10 +374,15 @@ class Communicator {
     }
   }
 
-  async getOuterPendingOrders(exchange) {
+  async getOuterPendingOrders(exchange, limit , offset ) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
-      const url = `/trade/pending-orders?exchange=${exchange}`;
+      let arr = [];
+      arr.push(`exchange=${exchange}`);
+      if (limit) arr.push(`limit=${limit}`);
+      if (offset) arr.push(`offset=${offset}`);
+      const qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/trade/pending-orders${qs}`;
       const res = await this._request({
         method: "GET",
         url,
