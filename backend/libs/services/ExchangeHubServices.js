@@ -828,7 +828,7 @@ class ExchangeHubService {
       volume,
       locked,
       updateAt,
-      doneAt,
+      doneAt = null,
       fundsReceived,
       tradesCount,
       value,
