@@ -274,6 +274,24 @@ class DBOperator {
     return this.database.getOuterTradesBetweenDays(exchangeCode, start, end);
   }
 
+  async getReferralCommissions({
+    market,
+    start,
+    end,
+    limit = 100,
+    offset = 0,
+    asc = false,
+  }) {
+    return this.database.getReferralCommissions({
+      market,
+      start,
+      end,
+      limit,
+      offset,
+      asc,
+    });
+  }
+
   async getOuterTrades({
     type,
     exchangeCode,
@@ -283,7 +301,6 @@ class DBOperator {
     limit = 100,
     offset = 0,
     asc = false,
-    joinReferral = false
   }) {
     return this.database.getOuterTrades({
       type,
@@ -294,7 +311,6 @@ class DBOperator {
       limit,
       offset,
       asc,
-      joinReferral
     });
   }
 

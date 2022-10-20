@@ -751,6 +751,46 @@ class mysql {
     }
   }
 
+  async getReferralCommissions({ market, start, end, limit, offset, asc }) {
+    const query = `
+    SELECT 
+        referral_commissions.id,
+        referral_commissions.referred_by_member_id,
+        referral_commissions.trade_member_id,
+        referral_commissions.voucher_id,
+        referral_commissions.market,
+        referral_commissions.currency,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state
+    FROM
+	      referral_commissions
+    WHERE 
+        referral_commissions.market = ?
+        AND referral_commissions.created_at BETWEEN ?
+        AND ?
+    ORDER BY
+        NULL
+    LIMIT ${limit} OFFSET ${offset};`;
+    try {
+      this.logger.debug(
+        "getOuterTradesByDayAfter",
+        query,
+
+        `[${market}, ${start}, ${end}]`
+      );
+      const [outerTrades] = await this.db.query({
+        query,
+        values: [market, start, end],
+      });
+      return outerTrades;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
   // ++ TO BE SOLVED 耗時
   async getOuterTrades({
     type,
@@ -761,7 +801,6 @@ class mysql {
     limit,
     offset,
     asc,
-    joinReferral,
   }) {
     const query = `
     SELECT 
@@ -777,32 +816,17 @@ class mysql {
         outer_trades.order_origin_volume,
         outer_trades.trade_id,
         outer_trades.update_at,
-       ${
-         joinReferral
-           ? `
-        outer_trades.voucher_id,
-        referral_commissions.ref_gross_fee,
-        referral_commissions.ref_net_fee,
-        referral_commissions.amount,
-        referral_commissions.state`
-           : `
-        outer_trades.voucher_id`
-       }
-    FROM outer_trades
-    ${
-      joinReferral
-        ? `
-        INNER JOIN referral_commissions ON outer_trades.voucher_id = referral_commissions.voucher_id`
-        : ``
-    }
-    WHERE outer_trades.exchange_code = ?
+        outer_trades.voucher_id
+    FROM 
+        outer_trades
+    WHERE 
+        outer_trades.exchange_code = ?
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
         AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
         `
           : `
-        outer_trades.exchange_code = ?
         AND outer_trades.create_at BETWEEN ?
         AND ?
         `
