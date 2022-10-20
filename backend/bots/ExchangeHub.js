@@ -2125,7 +2125,8 @@ class ExchangeHub extends Bot {
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
     this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
-    let outerTrades = [];
+    let outerTrades = [],
+      referralCommissions = {};
     switch (exchange) {
       case SupportedExchange.OKEX:
         // const _outerTrades = await this.database.getOuterTradesByDayAfter(
@@ -2137,7 +2138,6 @@ class ExchangeHub extends Bot {
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           start: startDate,
           end: endtDate,
-          joinReferral: true,
         });
         // const res = await this.okexConnector.router(
         //   "fetchTradeFillsHistoryRecords",
@@ -2152,31 +2152,26 @@ class ExchangeHub extends Bot {
             parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
             memberId = parsedClOrdId.memberId,
             orderId = parsedClOrdId.orderId,
-            askFeeRate,
-            bidFeeRate,
             tickerSetting =
               this.tickersSettings[trade.instId.toLowerCase().replace("-", "")],
-            memberTag = _trade.member_tag,
+            tmp = this.getMemberFeeRate(_trade.member_tag, tickerSetting),
+            askFeeRate = tmp.askFeeRate,
+            bidFeeRate = tmp.bidFeeRate,
             fee,
             processTrade,
-            profit;
-          if (memberTag) {
-            if (
-              memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()
-            ) {
-              askFeeRate = tickerSetting.ask.vip_fee;
-              bidFeeRate = tickerSetting.bid.vip_fee;
-            }
-            if (
-              memberTag.toString() === Database.MEMBER_TAG.HERO_FEE.toString()
-            ) {
-              askFeeRate = tickerSetting.ask.hero_fee;
-              bidFeeRate = tickerSetting.bid.hero_fee;
-            }
-          } else {
-            askFeeRate = tickerSetting.ask.fee;
-            bidFeeRate = tickerSetting.bid.fee;
+            profit,
+            referralCommission;
+          if (!referralCommissions[tickerSetting.id]) {
+            referralCommissions[tickerSetting.id] =
+              await this.database.getReferralCommissions({
+                market: tickerSetting.code,
+                start: startDate,
+                end: endtDate,
+              });
           }
+          referralCommission = referralCommissions?.find(
+            (rc) => rc.voucher_id === _trade.voucher_id
+          );
           fee =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
               ? trade.side === Database.ORDER_SIDE.SELL
@@ -2188,10 +2183,10 @@ class ExchangeHub extends Bot {
               : null;
           profit =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
-              ? _trade.ref_net_fee
+              ? referralCommission.ref_net_fee
                 ? SafeMath.minus(
                     SafeMath.minus(fee, Math.abs(trade.fee)),
-                    Math.abs(_trade.ref_net_fee)
+                    Math.abs(referralCommission.ref_net_fee)
                   )
                 : SafeMath.minus(fee, Math.abs(trade.fee))
               : null;
@@ -2212,8 +2207,8 @@ class ExchangeHub extends Bot {
             fee,
             profit: profit,
             exchange: exchange,
-            referral: _trade.ref_net_fee
-              ? Utils.removeZeroEnd(_trade.ref_net_fee)
+            referral: referralCommission.ref_net_fee
+              ? Utils.removeZeroEnd(referralCommission.ref_net_fee)
               : null,
             ts: parseInt(trade.ts),
           };
@@ -2221,7 +2216,7 @@ class ExchangeHub extends Bot {
           outerTrades = [...outerTrades, processTrade];
         }
         // }
-        // this.logger.debug(`outerTrades`, outerTrades);
+        this.logger.debug(`referralCommissions`, referralCommissions);
         return new ResponseFormat({
           message: "getOuterTradeFills",
           payload: outerTrades,
@@ -3166,10 +3161,9 @@ class ExchangeHub extends Bot {
     return ws.broadcastAllPrivateClient(memberId, { type, data });
   }
 
-  getMemberFeeRate(member, market) {
-    let memberTag, askFeeRate, bidFeeRate;
-    memberTag = member.member_tag;
-    this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+  getMemberFeeRate(memberTag, market) {
+    let askFeeRate, bidFeeRate;
+    this.logger.debug(`memberTag`, memberTag); // 1 是 vip， 2 是 hero
     if (memberTag) {
       if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
         askFeeRate = market.ask.vip_fee;
@@ -3331,7 +3325,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(`calculator `);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
-      tmp = this.getMemberFeeRate(member, market),
+      tmp = this.getMemberFeeRate(member.member_tag, market),
       askFeeRate = tmp.askFeeRate,
       bidFeeRate = tmp.bidFeeRate,
       trend,
