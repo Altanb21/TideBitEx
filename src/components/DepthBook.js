@@ -186,7 +186,23 @@ const DepthBook = (props) => {
       </ul>
       <div className="order-book__table scrollbar-custom">
         <ul className="order-book__panel">
-          <List
+          {(storeCtx.books?.bids?.length > 0 ||
+            storeCtx.books?.asks?.length > 0) &&
+            storeCtx.books[
+              `${
+                storeCtx.books.bids.length >= storeCtx.books.asks.length
+                  ? "bids"
+                  : "asks"
+              }`
+            ].map((_, index) => (
+              <BookTile
+                bid={storeCtx.books.bids[index]}
+                ask={storeCtx.books.asks[index]}
+                key={`depthbbook-${index}`}
+                isMobile={width <= breakpoint}
+              />
+            ))}
+          {/* <List
             innerElementType="ul"
             height={426}
             itemCount={
@@ -210,7 +226,7 @@ const DepthBook = (props) => {
                 isMobile={width <= breakpoint}
               />
             )}
-          </List>
+          </List> */}
         </ul>
       </div>
     </section>
