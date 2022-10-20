@@ -70,11 +70,13 @@ class mysql {
     }
   }
 
-  async getAccountsByMemberId(memberId, options) {
+  async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
     let placeholder = ``;
-    if (options) {
-      for (let option of options) {
-        placeholder += ` AND accounts.${option.key} = ${options.value}`;
+    if (options?.length > 0) {
+      let keys = Object.keys(options);
+      let values = Object.values(options);
+      for (let index = 0; index < options.length; index++) {
+        placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }
     const query = `
@@ -90,14 +92,30 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    LIMIT 100;
+    ORDER BY
+      NULL
+    LIMIT ${limit};
     `;
     const values = [memberId];
     try {
-      const [accounts] = await this.db.query({
-        query,
-        values,
-      });
+      let accounts;
+      if (dbTransaction) {
+        [[accounts]] = await this.db.query(
+          {
+            query,
+            values,
+          },
+          {
+            transaction: dbTransaction,
+            lock: dbTransaction.LOCK.UPDATE,
+          }
+        );
+      } else {
+        [accounts] = await this.db.query({
+          query,
+          values,
+        });
+      }
       this.logger.debug(query, values);
       return accounts;
     } catch (error) {
@@ -288,14 +306,14 @@ class mysql {
     FROM
 	    members
     WHERE
-	    members.${condition.key} = ?
+	    members.${Object.keys(condition)[0]} = ?
     LIMIT 1;
     `;
     try {
-      this.logger.debug("getMemberByCondition", query, `[${condition}]`);
+      this.logger.debug("getMemberByCondition", query, condition);
       const [[member]] = await this.db.query({
         query,
-        values: [condition.value],
+        values: [Object.values(condition)[0]],
       });
       return member;
     } catch (error) {
@@ -449,14 +467,7 @@ class mysql {
     }
   }
 
-  async getOrderList({
-    quoteCcy,
-    baseCcy,
-    memberId,
-    orderType,
-    state,
-    asc,
-  }) {
+  async getOrderList({ quoteCcy, baseCcy, memberId, orderType, state, asc }) {
     // async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
     const query = `
     SELECT
@@ -475,8 +486,8 @@ class mysql {
       orders.origin_locked,
       orders.funds_received,
       orders.trades_count,
-      orders,created_at,
-      orders,updated_at
+      orders.created_at,
+      orders.updated_at
     FROM
       orders
     WHERE
@@ -602,8 +613,7 @@ class mysql {
 	    members
     WHERE
 	     members.id in(${placeholder})
-    ORDER BY
-	    members.id ASC;
+    ORDER BY NULL;
     `;
     try {
       this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);

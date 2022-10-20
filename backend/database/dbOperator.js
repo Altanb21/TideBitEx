@@ -34,8 +34,15 @@ class DBOperator {
     return this.database.getTotalAccountsAssets();
   }
 
-  async getAccountsByMemberId(memberId) {
-    return this.database.getAccountsByMemberId(memberId);
+  async getAccountsByMemberId(
+    memberId,
+    { options = [], limit = 100, dbTransaction }
+  ) {
+    return this.database.getAccountsByMemberId(memberId, {
+      options,
+      limit,
+      dbTransaction,
+    });
   }
 
   /**
@@ -100,6 +107,10 @@ class DBOperator {
     return this.database.getMemberByCondition(condition);
   }
 
+  /**
+   * [deprecated] 2022/10/14
+   * 與 getAccountsByMemberId 合併
+   */
   async getAccountByMemberIdAndCurrency(
     memberId,
     currencyId,

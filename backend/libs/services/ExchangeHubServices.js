@@ -269,17 +269,17 @@ class ExchangeHubService {
        * 4.6 update DB
        */
       // 1. get askAccount from table
-      const askAccount = await this.database.getAccountByMemberIdAndCurrency(
-        memberId,
-        askCurr,
-        { dbTransaction }
-      );
+      const askAccount = await this.database.getAccountsByMemberId(memberId, {
+        options: { currency: askCurr },
+        limit: 1,
+        dbTransaction,
+      });
       // 2. get bidAccount from table
-      const bidAccount = await this.database.getAccountByMemberIdAndCurrency(
-        memberId,
-        bidCurr,
-        { dbTransaction }
-      );
+      const bidAccount = await this.database.getAccountsByMemberId(memberId, {
+        options: { currency: bidCurr },
+        limit: 1,
+        dbTransaction,
+      });
       // 3. calculate askAccount balance change
       // 3.1 askAccount: balanceDiff = 0
       askAccBalDiff = 0;
@@ -447,17 +447,17 @@ class ExchangeHubService {
        * -----
        */
       // 1. get askAccount from table
-      const askAccount = await this.database.getAccountByMemberIdAndCurrency(
-        memberId,
-        askCurr,
-        { dbTransaction }
-      );
+      const askAccount = await this.database.getAccountsByMemberId(memberId, {
+        options: { currency: askCurr },
+        limit: 1,
+        dbTransaction,
+      });
       // 2. get bidAccount from table
-      const bidAccount = await this.database.getAccountByMemberIdAndCurrency(
-        memberId,
-        bidCurr,
-        { dbTransaction }
-      );
+      const bidAccount = await this.database.getAccountsByMemberId(memberId, {
+        options: { currency: bidCurr },
+        limit: 1,
+        dbTransaction,
+      });
       // 3. calculate askAccount balance change
       // 3.1 askAccount: SafeMath.plus(trade.fillSz, trade.fee);
       askAccBalDiff = SafeMath.minus(
@@ -1357,7 +1357,6 @@ class ExchangeHubService {
         return this._getTransactionsDetail(exchange, clOrdId, newRetry);
       }
     }
-    this.logger.debug(`outerTrades[${index}]`, outerTrades[index]);
     this.logger.debug(
       `--- [${this.constructor.name}] _getTransactionsDetail [END]---`
     );
