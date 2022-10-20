@@ -103,7 +103,7 @@ class ExchangeHub extends Bot {
           coinsSettings: this.coinsSettings,
           websocketDomain: this.config.websocket.domain,
         });
-        this.okexConnector = new OkexConnector({ logger });
+        this.okexConnector = new OkexConnector({ logger, config });
         await this.okexConnector.init({
           domain: this.config.okex.domain,
           apiKey: this.config.okex.apiKey,

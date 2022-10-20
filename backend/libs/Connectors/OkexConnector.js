@@ -1,5 +1,6 @@
 const axios = require("axios");
 const crypto = require("crypto");
+const Pusher = require("pusher");
 
 const ResponseFormat = require("../ResponseFormat");
 const Codes = require("../../constants/Codes");
@@ -15,8 +16,11 @@ const HEART_BEAT_TIME = 25000;
 
 class OkexConnector extends ConnectorBase {
   tickers = {};
+  ticker_data = {};
+  trade_data = {};
   okexWsChannels = {};
   instIds = [];
+  slanger = {};
 
   fetchedTrades = {};
   fetchedBook = {};
@@ -28,10 +32,19 @@ class OkexConnector extends ConnectorBase {
   tradeFillsHistoryMaxRequestTimes = 10;
   restTime = 2 * 1000;
 
-  constructor({ logger }) {
+  constructor({ logger, config }) {
+    const { pusher } = config;
+    const pusherConfig = {
+      appId: pusher.app,
+      key: pusher.key,
+      secret: pusher.secret,
+      host: pusher.host,
+      port: pusher.port
+    };
     super({ logger });
     this.websocket = new WebSocket({ logger });
     this.websocketPrivate = new WebSocket({ logger });
+    this.slanger = new Pusher(pusherConfig);
     return this;
   }
 
@@ -1780,7 +1793,29 @@ class OkexConnector extends ConnectorBase {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
+
+      // ++ workaround, to be optimized: broadcast to slanger
+      trade_data[market] = trade_data[market] || [];
+      trade_data[market] = trade_data[market].concat(trades);
+      
     } catch (error) {}
+  }
+
+  // ++ workaround, to be optimized 
+  _broadcast_to_slanger() {
+    // broadcast ticker
+    const ticker_data_string = JSON.stringify(this.ticker_data);
+    this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
+
+    // broadcast trades
+    Object.keys(this.trade_data).map((k) => {
+      const d = this.trade_data[k].pop();
+      if(d !== undefined) {
+        const trade_data_string = JSON.stringify(d);
+        const channel = `market-${k}-global`;
+        pusher.trigger(channel, "trades", trade_data_string).catch(() => {});
+      }
+    })
   }
 
   _updateCandle(market, trades) {
@@ -1818,6 +1853,8 @@ class OkexConnector extends ConnectorBase {
 
   // ++ TODO: verify function works properly
   _updateTickers(data) {
+    // broadcast to slanger (1/3)
+
     data.forEach((d) => {
       const tickerSetting =
         this.tickersSettings[d.instId.replace("-", "").toLowerCase()];
@@ -1829,11 +1866,31 @@ class OkexConnector extends ConnectorBase {
           { id: d.instId.replace("-", "").toLowerCase(), ...d },
           SupportedExchange.OKEX
         );
+
+        // broadcast to slanger (2/3)
+        this.ticker_data[ticker.id] = {
+          name: ticker.name,
+          base_unit: ticker.baseUnit,
+          quote_unit: ticker.quoteUnit,
+          group: ticker.group,
+          low: ticker.low,
+          high: ticker.high,
+          last: ticker.last,
+          open: ticker.open,
+          volume: ticker.volume,
+          sell: ticker.sell,
+          buy: ticker.buy,
+          at: ticker.at
+        };
+
         const result = this.tickerBook.updateByDifference(d.instId, ticker);
         if (result)
           EventBus.emit(Events.tickers, this.tickerBook.getDifference());
       }
     });
+
+    // broadcast to slanger (3/3)
+    this._broadcast_to_slanger();
   }
 
   _subscribeInstruments() {
