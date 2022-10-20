@@ -3163,7 +3163,7 @@ class ExchangeHub extends Bot {
 
   getMemberFeeRate(memberTag, market) {
     let askFeeRate, bidFeeRate;
-    this.logger.debug(`memberTag`, memberTag); // 1 是 vip， 2 是 hero
+    // this.logger.debug(`memberTag`, memberTag); // 1 是 vip， 2 是 hero
     if (memberTag) {
       if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
         askFeeRate = market.ask.vip_fee;
