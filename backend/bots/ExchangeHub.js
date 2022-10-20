@@ -2183,10 +2183,10 @@ class ExchangeHub extends Bot {
               : null;
           profit =
             _trade.status === Database.OUTERTRADE_STATUS.DONE
-              ? referralCommission.ref_net_fee
+              ? referralCommission?.ref_net_fee
                 ? SafeMath.minus(
                     SafeMath.minus(fee, Math.abs(trade.fee)),
-                    Math.abs(referralCommission.ref_net_fee)
+                    Math.abs(referralCommission?.ref_net_fee)
                   )
                 : SafeMath.minus(fee, Math.abs(trade.fee))
               : null;
@@ -2207,8 +2207,8 @@ class ExchangeHub extends Bot {
             fee,
             profit: profit,
             exchange: exchange,
-            referral: referralCommission.ref_net_fee
-              ? Utils.removeZeroEnd(referralCommission.ref_net_fee)
+            referral: referralCommission?.ref_net_fee
+              ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
               : null,
             ts: parseInt(trade.ts),
           };
