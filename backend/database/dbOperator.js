@@ -36,7 +36,7 @@ class DBOperator {
 
   async getAccountsByMemberId(
     memberId,
-    { options = [], limit = 100, dbTransaction }
+    { options = {}, limit = 100, dbTransaction }
   ) {
     return this.database.getAccountsByMemberId(memberId, {
       options,
@@ -277,22 +277,24 @@ class DBOperator {
   async getOuterTrades({
     type,
     exchangeCode,
-    day,
+    days,
     start,
     end,
     limit = 100,
     offset = 0,
     asc = false,
+    joinReferral = false
   }) {
     return this.database.getOuterTrades({
       type,
       exchangeCode,
-      day,
+      days,
       start,
       end,
       limit,
       offset,
       asc,
+      joinReferral
     });
   }
 
@@ -343,36 +345,21 @@ class DBOperator {
     );
   }
 
-  async insertAccountVersion(
-    member_id,
-    accountId,
-    reason,
-    balance,
-    locked,
-    fee,
-    amount,
-    modifiable_id,
-    modifiable_type,
-    created_at,
-    updated_at,
-    currency,
-    fun,
-    { dbTransaction }
-  ) {
+  async insertAccountVersion(accountVersion, { dbTransaction }) {
     return this.database.insertAccountVersion(
-      member_id,
-      accountId,
-      reason,
-      balance,
-      locked,
-      fee,
-      amount,
-      modifiable_id,
-      modifiable_type,
-      created_at,
-      updated_at,
-      currency,
-      fun,
+      accountVersion.memberId,
+      accountVersion.accountId,
+      accountVersion.reason,
+      accountVersion.balance,
+      accountVersion.locked,
+      accountVersion.fee,
+      accountVersion.amount,
+      accountVersion.modifiableId,
+      accountVersion.modifiableType,
+      accountVersion.createdAt,
+      accountVersion.updatedAt,
+      accountVersion.currency,
+      accountVersion.fun,
       { dbTransaction }
     );
   }

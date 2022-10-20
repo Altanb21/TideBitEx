@@ -79,6 +79,7 @@ module.exports = {
     ClORDId_ERROR: 7,
     API_ORDER_CANCEL: 6,
     DB_ORDER_CANCEL: 5,
+    // DB_ORDER_DONE: 4,
   },
   STATE: {
     PENDING: "pending",
