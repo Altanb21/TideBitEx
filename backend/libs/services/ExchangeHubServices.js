@@ -66,12 +66,17 @@ class ExchangeHubService {
 
   async syncUnProcessedOuterTrades(exchange = SupportedExchange.OKEX) {
     // 1. 將系統內未被處理的 outerTrades 拿出來
-    const outerTrades = await this.database.getOuterTradesByStatus(
-      Database.EXCHANGE[exchange.toUpperCase()],
-      Database.OUTERTRADE_STATUS.UNPROCESS
-    );
+    const outerTrades = await this.database.getOuterTradesByStatus({
+      exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+      status: Database.OUTERTRADE_STATUS.UNPROCESS,
+    });
     // 2. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    await this._processOuterTrades(outerTrades);
+    await this._processOuterTrades(
+      outerTrades.map((ot) => ({
+        ...JSON.parse(ot.data),
+        exchangeCode: ot.exchange_code,
+      }))
+    );
   }
 
   async syncAPIOuterTrades(exchange = SupportedExchange.OKEX, data, interval) {
@@ -1297,7 +1302,7 @@ class ExchangeHubService {
       // ++ TODO 需要有獨立的機制處理沒有正確紀錄的 outer_trades
       // 失敗的情境：
       // 1. 收到 OKX event.orders 觸發的時間點剛好是 ExchangeHubServices.sync 的時間，會導致這個時間等整筆 insertOuterTrades 失敗
-      this.logger.error(new Date().toISOString())
+      this.logger.error(new Date().toISOString());
       this.logger.error(`insertOuterTrades`, outerTrades, error);
       result = false;
       await t.rollback();

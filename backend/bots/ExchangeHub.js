@@ -3362,12 +3362,13 @@ class ExchangeHub extends Bot {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
       // orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
       let innerSysVol = SafeMath.minus(dbOrder.volume, data.fillSz);
-      let outerSysVol = SafeMath.minus(orderDetail.sz, data.fillSz);
-      if (!SafeMath.eq(innerSysVol, outerSysVol)) {
-        this.logger.error(`data`, data);
-        this.logger.error(`orderDetail`, orderDetail);
-        throw Error("innerSysVol is not equal to outerSysVol");
-      }
+      // let innerSysAccVol = SafeMath.minus(dbOrder.origin_volume, innerSysVol);
+      // if (!SafeMath.eq(innerSysAccVol, orderDetail.accFillSz)) {
+      //   this.logger.error(`data`, data);
+      //   this.logger.error(`orderDetail`, orderDetail);
+      //   throw Error("innerSysVol is not equal to outerSysVol");
+      // }
+      if(SafeMath.lt(orderVolume, 0)) throw Error('Order unFilled sz is not enough!')
       orderVolume = innerSysVol;
       // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
@@ -3578,7 +3579,10 @@ class ExchangeHub extends Bot {
         case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
           // 確保 cancel order 的 locked 金額有還給用戶
           let dbCancelOrderAccountVersions =
-            await this.database.getAccountVersionsByModifiableId(dbOrder.id);
+            await this.database.getAccountVersionsByModifiableId(
+              dbOrder.id,
+              Database.MODIFIABLE_TYPE.ORDER
+            );
           let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
             (dbAccV) =>
               dbAccV.reason.toString() ===
@@ -3726,7 +3730,10 @@ class ExchangeHub extends Bot {
           tradeId
         );
         dbAccountVersions =
-          await this.database.getAccountVersionsByModifiableId(tradeId);
+          await this.database.getAccountVersionsByModifiableId(
+            tradeId,
+            Database.MODIFIABLE_TYPE.TRADE
+          );
       } else {
         tradeId = await this.database.insertTrades(
           { ...trade, trade_fk: tradeFk },
@@ -3971,6 +3978,7 @@ class ExchangeHub extends Bot {
             await dbTransaction.commit();
           } else await dbTransaction.rollback();
           stop = true;
+          this.logger.error(`!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`, order)
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
         if (!stop) {
@@ -4371,7 +4379,7 @@ class ExchangeHub extends Bot {
       id: account.id,
       balance: newAccBal,
       locked: newAccLoc,
-      updated_at: accountVersion.updated_at,
+      updated_at: `"${accountVersion.updated_at}"`,
     };
     const currency = this.coinsSettings.find(
       (curr) => curr.id === accountVersion.currency
@@ -4605,7 +4613,7 @@ class ExchangeHub extends Bot {
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // 1. 工讀生將已被整理成 outerTrade 格式的需要更新的委託單寫到我們的系統
-            await this.exchangeHubService.insertOuterTrades([formatOrder])
+            await this.exchangeHubService.insertOuterTrades([formatOrder]);
             // 2. 呼叫承辦員處理該筆 outerTrade
             await this.processor(formatOrder);
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
