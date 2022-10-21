@@ -219,8 +219,8 @@ class DBOperator {
     return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
   }
 
-  async getAccountVersionsByModifiableId(id) {
-    return this.database.getAccountVersionsByModifiableId(id);
+  async getAccountVersionsByModifiableId(id, type) {
+    return this.database.getAccountVersionsByModifiableId(id, type);
   }
 
   async getTradeByTradeFk(tradeFk) {

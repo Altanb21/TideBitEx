@@ -947,7 +947,7 @@ class mysql {
   }
 
   // 不應該超過 3 筆
-  async getAccountVersionsByModifiableId(id) {
+  async getAccountVersionsByModifiableId(id, type) {
     const query = `
     SELECT
       account_versions.id,
@@ -967,12 +967,17 @@ class mysql {
 	    account_versions
     WHERE
 	    account_versions.modifiable_id = ?
+      AND account_versions.modifiable_type = ?
     LIMIT 10;`;
     try {
-      this.logger.debug("getAccountVersionsByModifiableId", query, `[${id}]`);
+      this.logger.debug(
+        "getAccountVersionsByModifiableId",
+        query,
+        `[${id}, ${type}]`
+      );
       const [accountVersions] = await this.db.query({
         query,
-        values: [id],
+        values: [id, type],
       });
       return accountVersions;
     } catch (error) {
