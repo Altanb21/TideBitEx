@@ -119,7 +119,7 @@ class mysql {
         });
       }
       this.logger.debug(query, values);
-      this.logger.debug(`getAccountsByMemberId`, accounts);
+      // this.logger.debug(`getAccountsByMemberId`, accounts);
       return accounts;
     } catch (error) {
       this.logger.error(error);
@@ -736,7 +736,7 @@ class mysql {
         outer_trades.create_at DESC;`;
     try {
       this.logger.debug(
-        "getOuterTradesByDayAfter",
+        "getOuterTradesBetweenDayss",
         query,
         `[${exchangeCode}, ${start}, ${end}]`
       );
@@ -775,7 +775,7 @@ class mysql {
     LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
-        "getOuterTradesByDayAfter",
+        "getReferralCommissions",
         query,
 
         `[${market}, ${start}, ${end}]`
@@ -836,7 +836,7 @@ class mysql {
     LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
-        "getOuterTradesByDayAfter",
+        "getOuterTrades",
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
@@ -1233,12 +1233,13 @@ class mysql {
       values.push(trade.data);
       index++;
     }
+    let result;
     try {
       this.logger.debug(
         "[mysql] insertOuterTrades"
         // , query, values
       );
-      await this.db.query(
+      result = await this.db.query(
         {
           query,
           values,
@@ -1247,6 +1248,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      this.logger.debug(`insertOuterTrades`, result);
     } catch (error) {
       this.logger.error(error);
       if (dbTransaction) throw error;

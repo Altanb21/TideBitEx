@@ -126,7 +126,7 @@ class ExchangeHub extends Bot {
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
-          processor: (type, data) => this.processor(type, data),
+          processor: (data) => this.processor(data),
           logger,
         });
         return this;
@@ -2772,7 +2772,7 @@ class ExchangeHub extends Bot {
         await this.database.updateOrder(newOrder, {
           dbTransaction: transacion,
         });
-        this.logger.error(`被取消訂單的狀態更新了`);
+        this.logger.debug(`被取消訂單的狀態更新了`);
         accountVersion = {
           member_id: memberId,
           currency: currencyId,
@@ -2787,7 +2787,7 @@ class ExchangeHub extends Bot {
           fee,
         };
         await this._updateAccount(accountVersion, transacion);
-        this.logger.error(`被取消訂單對應的用戶帳號更新了`);
+        this.logger.debug(`被取消訂單對應的用戶帳號更新了`);
         updatedOrder = {
           ...orderData,
           state: Database.ORDER_STATE.CANCEL,
@@ -2833,7 +2833,7 @@ class ExchangeHub extends Bot {
           // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
           let transacion = await this.database.transaction();
-          this.logger.error(
+          this.logger.debug(
             `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號`
           );
           dbUpdateR = await this.updateOrderStatus({
@@ -2849,10 +2849,10 @@ class ExchangeHub extends Bot {
               message: "DB ERROR",
               code: Codes.CANCEL_ORDER_FAIL,
             });
-            this.logger.error(`DB 更新失敗 rollback`);
+            this.logger.debug(`DB 更新失敗 rollback`);
           } else {
             // 2. performTask (Task: cancel)
-            this.logger.error(`準備呼叫 API 執行取消訂單`);
+            this.logger.debug(`準備呼叫 API 執行取消訂單`);
             this.logger.debug(`postCancelOrder`, body);
             apiR = await this.okexConnector.router("postCancelOrder", {
               params,
@@ -2864,12 +2864,12 @@ class ExchangeHub extends Bot {
           if (!result) {
             if (!apiR?.success) {
               await transacion.rollback();
-              this.logger.error(`API 取消訂單失敗 rollback`);
+              this.logger.debug(`API 取消訂單失敗 rollback`);
             } else {
               await transacion.commit();
-              this.logger.error(`API 取消訂單成功了`);
+              this.logger.debug(`API 取消訂單成功了`);
               // 3. informFrontEnd
-              this.logger.error(`準備通知前端更新頁面`);
+              this.logger.debug(`準備通知前端更新頁面`);
               this._emitUpdateOrder({
                 memberId,
                 instId: body.instId,
@@ -2880,7 +2880,7 @@ class ExchangeHub extends Bot {
               //   memberId,
               //   account: dbUpdateR.updateAccount,
               // });
-              this.logger.error(`通知前端成功了`);
+              this.logger.debug(`通知前端成功了`);
             }
           }
           result = apiR;
@@ -3887,7 +3887,7 @@ class ExchangeHub extends Bot {
    * @param {String} type Database.MODIFIABLE_TYPE.TRADE || Database.MODIFIABLE_TYPE.ORDER
    * @param {Object} data trade || order
    */
-  async processor(type, data) {
+  async processor(data) {
     let stop,
       market,
       memberId,
@@ -3898,17 +3898,6 @@ class ExchangeHub extends Bot {
       result,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
-    if (type === Database.MODIFIABLE_TYPE.TRADE) {
-      try {
-        // 1. insertOuterTrade
-        await this.database.insertOuterTrades([data], { dbTransaction });
-      } catch (error) {
-        this.logger.error(`insertOuterTrades error`, error);
-        stop = true;
-        await dbTransaction.rollback();
-        this.logger.error(`insertOuterTrades fail dbTransaction rollback`);
-      }
-    }
     if (!stop) {
       try {
         // 1. 判斷收到的資料是否為此系統的資料
@@ -3920,12 +3909,14 @@ class ExchangeHub extends Bot {
         memberId = tmp.memberId;
         orderId = tmp.orderId;
         if (!memberId || !orderId) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 1.2.可以根據 orderId 從 database 取得 dbOrder
@@ -3938,25 +3929,29 @@ class ExchangeHub extends Bot {
           !stop &&
           (!order || order?.member_id.toString() !== member?.id.toString())
         ) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 2. 判斷收到的資料對應的 order是否需要更新
         // 2.1. 判斷收到的資料 state 不為 cancel
         if (!stop && data.state === Database.ORDER_STATE.CANCEL) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            member,
-            status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
-            dbOrder: order,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              member,
+              status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+              dbOrder: order,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 2.2 dbOrder.state 不為 0
@@ -3965,14 +3960,16 @@ class ExchangeHub extends Bot {
           order &&
           order.state === Database.ORDER_STATE_CODE.CANCEL
         ) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
-            dbOrder: order,
-            member,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
+              dbOrder: order,
+              member,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
@@ -3994,14 +3991,16 @@ class ExchangeHub extends Bot {
             orderDetail = apiResonse.payload;
             this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
-              await this.updateOuterTrade({
-                id: data.tradeId,
-                status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
-                dbOrder: order,
-                member,
-                dbTransaction,
-              });
-              await dbTransaction.commit();
+              if (data.tradeId) {
+                await this.updateOuterTrade({
+                  id: data.tradeId,
+                  status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+                  dbOrder: order,
+                  member,
+                  dbTransaction,
+                });
+                await dbTransaction.commit();
+              } else await dbTransaction.rollback();
               stop = true;
             }
           } else {
@@ -4073,7 +4072,7 @@ class ExchangeHub extends Bot {
           // 4. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
           // trade 新增進 DB 後才可以得到我們的 trade id
           // db 更新的資料為 calculator 得到的 result
-          if (type === Database.MODIFIABLE_TYPE.TRADE) {
+          if (data.tradeId) {
             await this.updater({
               ...result,
               member,
@@ -4085,7 +4084,7 @@ class ExchangeHub extends Bot {
             });
             await dbTransaction.commit();
             this.logger.debug(`processor complete dbTransaction commit`);
-          }
+          } else await dbTransaction.rollback();
         }
       } catch (error) {
         // await this.updateOuterTrade({
@@ -4358,19 +4357,25 @@ class ExchangeHub extends Bot {
         dbTransaction,
       }
     );
+    if (SafeMath.lt(account.balance, accountVersion.locked))
+      throw Error("Available balance is not enough.");
     const oriAccBal = account.balance;
     const oriAccLoc = account.locked;
     const newAccBal = SafeMath.plus(oriAccBal, accountVersion.balance);
+    if (SafeMath.lt(newAccBal, "0"))
+      throw Error("Available balance is not enough.");
     const newAccLoc = SafeMath.plus(oriAccLoc, accountVersion.locked);
     const amount = SafeMath.plus(newAccBal, newAccLoc);
+    if (SafeMath.lt(amount, "0")) throw Error("System error.");
     const newAccount = {
       id: account.id,
       balance: newAccBal,
       locked: newAccLoc,
+      updated_at: accountVersion.updated_at,
     };
     const currency = this.coinsSettings.find(
       (curr) => curr.id === accountVersion.currency
-    )?.symbol;
+    )?.code;
     this._emitUpdateAccount({
       memberId: accountVersion.member_id,
       account: {
@@ -4599,13 +4604,10 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
-            await this.processor(Database.MODIFIABLE_TYPE.ORDER, formatOrder);
-            this.exchangeHubService.sync({
-              exchange: SupportedExchange.OKEX,
-              data: formatOrder,
-              interval: 0.5 * 60 * 60 * 1000,
-              force: true,
-            });
+            // 1. 工讀生將已被整理成 outerTrade 格式的需要更新的委託單寫到我們的系統
+            await this.exchangeHubService.insertOuterTrades([formatOrder])
+            // 2. 呼叫承辦員處理該筆 outerTrade
+            await this.processor(formatOrder);
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,
