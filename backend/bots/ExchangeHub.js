@@ -137,7 +137,7 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
-    await this.exchangeHubService.sync({
+    this.exchangeHubService.sync({
       exchange: SupportedExchange.OKEX,
       force: true,
     });
