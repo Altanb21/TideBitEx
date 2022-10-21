@@ -11,6 +11,7 @@ class ExchangeHubService {
   _interval = 3 * 24 * 60 * 60 * 1000; // 3天
   _maxInterval = 10 * 24 * 60 * 60 * 1000; // 10天 okex 最長只能問到3個月
   _isStarted = false;
+  _delayTime = 1000; // 1s
 
   constructor({
     database,
@@ -63,6 +64,31 @@ class ExchangeHubService {
   //   await this.sync();
   // }
 
+  async syncUnProcessedOuterTrades(exchange = SupportedExchange.OKEX) {
+    // 1. 將系統內未被處理的 outerTrades 拿出來
+    const outerTrades = await this.database.getOuterTradesByStatus(
+      Database.EXCHANGE[exchange.toUpperCase()],
+      Database.OUTERTRADE_STATUS.UNPROCESS
+    );
+    // 2. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
+    await this._processOuterTrades(outerTrades);
+  }
+
+  async syncAPIOuterTrades(exchange = SupportedExchange.OKEX, data, interval) {
+    // 1. 從 API 取 outerTrades，回傳需要寫入 DB 的 outerTrades
+    const outerTrades = await this._syncOuterTrades(
+      exchange,
+      interval,
+      data?.clOrdId
+    );
+
+    // 2. 將 outerTrades寫入 DB => 工讀生
+    await this.insertOuterTrades(outerTrades);
+
+    // 3. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
+    await this._processOuterTrades(outerTrades);
+  }
+
   async sync({
     exchange = SupportedExchange.OKEX,
     data,
@@ -73,34 +99,22 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] sync -------------`
     );
     this.logger.debug(`data`, data);
-    let time = Date.now(),
-      // updateData,
-      // result,
-      clOrdId = data?.clOrdId;
-    // 1. 定期（10mins）執行工作
+    let time = Date.now();
+    // 1. 定期（30mins）執行工作
     if (
       time - this._lastSyncTime > this._syncInterval ||
       force ||
       !this._isStarted
     ) {
-      // 2. 從 API 取 outerTrades 並寫入 DB
-      const outerTrades = await this._syncOuterTrades(
-        exchange,
-        interval,
-        clOrdId
-      );
-
       this._lastSyncTime = Date.now();
-      // 3. 觸發從 DB 取 outertradesrecord 更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-      await this._processOuterTrades(outerTrades);
+      await this.syncAPIOuterTrades(exchange, data, interval);
+      await this.syncUnProcessedOuterTrades(exchange);
 
-      // 4. 通知前端
-      // this.emitUpdateData(updateData);
       // 5. 休息
       clearTimeout(this.timer);
       this.timer = setTimeout(
         () => this.sync({ exchange, interval: this._syncInterval }),
-        this._syncInterval + 1000
+        this._syncInterval + this._delayTime
       );
     }
     this.logger.debug(
@@ -1266,8 +1280,7 @@ class ExchangeHubService {
     // return updateData;
   }
 
-  // ++TODO check, rm sql inside forLoop
-  async _insertOuterTrades(outerTrades) {
+  async insertOuterTrades(outerTrades) {
     /* !!! HIGH RISK (start) !!! */
     let result;
     this.logger.debug(`[${this.constructor.name}] insertOuterTrades`);
@@ -1280,6 +1293,9 @@ class ExchangeHubService {
       result = true;
       await t.commit();
     } catch (error) {
+      // ++ TODO 需要有獨立的機制處理沒有正確紀錄的 outer_trades
+      // 失敗的情境：
+      // 1. 收到 OKX event.orders 觸發的時間點剛好是 ExchangeHubServices.sync 的時間，會導致這個時間等整筆 insertOuterTrades 失敗
       this.logger.error(`insertOuterTrades`, error);
       result = false;
       await t.rollback();
@@ -1295,16 +1311,9 @@ class ExchangeHubService {
       `------------- [${this.constructor.name}] _getOuterTradesFromAPI --------------`
     );
     let outerTrades,
-      _endDate = new Date(),
-      endDate = new Date(
-        new Date(
-          `${_endDate.getFullYear()}-${
-            _endDate.getMonth() + 1
-          }-${_endDate.getDate()} 23:59:59`
-        )
-      ),
+      endDate = new Date(),
       end = endDate.getTime(),
-      begin = end - interval;
+      begin = end - interval - this._delayTime * 1.2;
 
     this.logger.debug(
       `[${this.constructor.name}] begin[${begin}]`,
@@ -1393,21 +1402,14 @@ class ExchangeHubService {
       interval,
       clOrdId
     );
-    let needProcessTrades = [],
-      abnormalTrades = [];
+    let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
       let index = dbOuterTrades.findIndex(
         (dbTrade) => dbTrade.id.toString() === trade.tradeId
       );
       if (index === -1) needProcessTrades = [...needProcessTrades, trade];
-      else if (
-        index !== -1 &&
-        (dbOuterTrades[index].status === Database.OUTERTRADE_STATUS.UNPROCESS ||
-          dbOuterTrades[index].status ===
-            Database.OUTERTRADE_STATUS.SYSTEM_ERROR)
-      )
-        abnormalTrades = [...abnormalTrades, trade];
     }
+
     // this.logger.debug(`apiOuterTrades`, apiOuterTrades);
     // const _filtered = outerTrades.filter(
     //   (trade) =>
@@ -1418,12 +1420,8 @@ class ExchangeHubService {
     // let result = false;
     // if (_filtered.length > 0) {
     // this.logger.debug(`_filtered[${_filtered.length}]`, _filtered);
-    // result = await this._insertOuterTrades(_filtered);
+    // result = await this.insertOuterTrades(_filtered);
     // }
-    /**
-     * ++TODO handle abnormalTrades
-     */
-    this.logger.error(`_syncOuterTrades abnormalTrades`, abnormalTrades);
     return needProcessTrades;
   }
 

@@ -3898,17 +3898,6 @@ class ExchangeHub extends Bot {
       result,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
-    if (data.tradeId) {
-      try {
-        // 1. insertOuterTrade
-        await this.database.insertOuterTrades([data], { dbTransaction });
-      } catch (error) {
-        this.logger.error(`insertOuterTrades error`, error);
-        stop = true;
-        await dbTransaction.rollback();
-        this.logger.error(`insertOuterTrades fail dbTransaction rollback`);
-      }
-    }
     if (!stop) {
       try {
         // 1. 判斷收到的資料是否為此系統的資料
@@ -4609,14 +4598,10 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
+            // 1. 工讀生將已被整理成 outerTrade 格式的需要更新的委託單寫到我們的系統
+            await this.exchangeHubService.insertOuterTrades([formatOrder])
+            // 2. 呼叫承辦員處理該筆 outerTrade
             await this.processor(formatOrder);
-            if (!formatOrder.tradeId)
-              this.exchangeHubService.sync({
-                exchange: SupportedExchange.OKEX,
-                data: formatOrder,
-                interval: 1 * 24 * 60 * 60 * 1000,
-                force: true,
-              });
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,
