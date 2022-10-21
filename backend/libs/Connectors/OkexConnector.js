@@ -196,9 +196,8 @@ class OkexConnector extends ConnectorBase {
       }
       const data = res.data.data.map((trade) => ({
         ...trade,
-        // tradeId: `${Database.EXCHANGE.OKEX.toString()}${this.tradeId}`,
         status: Database.OUTERTRADE_STATUS.UNPROCESS,
-        exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
+        exchangeCode: Database.EXCHANGE.OKEX,
         createdAt: new Date(parseInt(trade.ts)).toISOString(),
         data: JSON.stringify(trade),
       }));
@@ -1759,11 +1758,12 @@ class OkexConnector extends ConnectorBase {
           // // tradeId: data?.tradeId,
           // feeCcy: data.feeCcy,
           // ts: data.utime,
-          // status: 0,
-          // updatedAt: new Date(parseInt(data.utime)).toISOString(),
           //data:
           ...data,
           exchangeCode: Database.EXCHANGE.OKEX,
+          status: Database.OUTERTRADE_STATUS.UNPROCESS,
+          createdAt: new Date(parseInt(data.cTime)).toISOString(),
+          data: JSON.stringify(data),
         };
         formatOrders.push(formatOrder);
       }
