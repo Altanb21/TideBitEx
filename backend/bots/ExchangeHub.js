@@ -4358,15 +4358,21 @@ class ExchangeHub extends Bot {
         dbTransaction,
       }
     );
+    if (SafeMath.lt(account.balance, accountVersion.locked))
+      throw Error("Available balance is not enough.");
     const oriAccBal = account.balance;
     const oriAccLoc = account.locked;
     const newAccBal = SafeMath.plus(oriAccBal, accountVersion.balance);
+    if (SafeMath.lt(newAccBal, "0"))
+      throw Error("Available balance is not enough.");
     const newAccLoc = SafeMath.plus(oriAccLoc, accountVersion.locked);
     const amount = SafeMath.plus(newAccBal, newAccLoc);
+    if (SafeMath.lt(amount, "0")) throw Error("System error.");
     const newAccount = {
       id: account.id,
       balance: newAccBal,
       locked: newAccLoc,
+      updated_at: accountVersion.updated_at,
     };
     const currency = this.coinsSettings.find(
       (curr) => curr.id === accountVersion.currency
