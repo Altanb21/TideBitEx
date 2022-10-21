@@ -82,6 +82,7 @@ class ExchangeHubService {
       data?.clOrdId
     );
 
+    if (outerTrades.length <= 0) return; // 沒有待處理任務
     // 2. 將 outerTrades寫入 DB => 工讀生
     await this.insertOuterTrades(outerTrades);
 
