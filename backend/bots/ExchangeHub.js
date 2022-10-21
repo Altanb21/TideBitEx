@@ -137,7 +137,7 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
-    await this.exchangeHubService.sync({
+    this.exchangeHubService.sync({
       exchange: SupportedExchange.OKEX,
       force: true,
     });
@@ -4605,7 +4605,7 @@ class ExchangeHub extends Bot {
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // 1. 工讀生將已被整理成 outerTrade 格式的需要更新的委託單寫到我們的系統
-            await this.exchangeHubService.insertOuterTrades([formatOrder])
+            await this.exchangeHubService.insertOuterTrades([formatOrder]);
             // 2. 呼叫承辦員處理該筆 outerTrade
             await this.processor(formatOrder);
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
