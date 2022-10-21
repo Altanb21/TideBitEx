@@ -4380,7 +4380,7 @@ class ExchangeHub extends Bot {
     };
     const currency = this.coinsSettings.find(
       (curr) => curr.id === accountVersion.currency
-    )?.symbol;
+    )?.code;
     this._emitUpdateAccount({
       memberId: accountVersion.member_id,
       account: {
