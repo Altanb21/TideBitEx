@@ -3978,6 +3978,7 @@ class ExchangeHub extends Bot {
             await dbTransaction.commit();
           } else await dbTransaction.rollback();
           stop = true;
+          this.logger.error(`!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`, order)
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
         if (!stop) {

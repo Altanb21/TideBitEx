@@ -673,14 +673,7 @@ class mysql {
    * [deprecated] 2022/10/19
    * 沒有地方呼叫
    */
-  async getOuterTradesByStatus({
-    exchangeCode,
-    status,
-    asc,
-    limit,
-    offset,
-    days,
-  }) {
+  async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
     const query = `
     SELECT
       outer_trades.id,
@@ -693,7 +686,6 @@ class mysql {
       AND(outer_trades.status = ?
         OR outer_trades.order_id IS NULL
         OR outer_trades.create_at IS NULL)
-      AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     ORDER BY
       outer_trades.create_at ${asc ? "ASC" : "DESC"}
     LIMIT ${limit} OFFSET ${offset};`;
