@@ -1256,7 +1256,7 @@ class ExchangeHubService {
     );
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
-      await this.processor(Database.MODIFIABLE_TYPE.TRADE, trade);
+      await this.processor(trade);
       // tmp = await this._processOuterTrade({
       //   ...JSON.parse(trade.data),
       //   exchangeCode: trade.exchange_code,

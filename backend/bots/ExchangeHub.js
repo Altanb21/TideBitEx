@@ -126,7 +126,7 @@ class ExchangeHub extends Bot {
           okexConnector: this.okexConnector,
           tidebitMarkets: this.tidebitMarkets,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
-          processor: (type, data) => this.processor(type, data),
+          processor: (data) => this.processor(data),
           logger,
         });
         return this;
@@ -3887,7 +3887,7 @@ class ExchangeHub extends Bot {
    * @param {String} type Database.MODIFIABLE_TYPE.TRADE || Database.MODIFIABLE_TYPE.ORDER
    * @param {Object} data trade || order
    */
-  async processor(type, data) {
+  async processor(data) {
     let stop,
       market,
       memberId,
@@ -3898,7 +3898,7 @@ class ExchangeHub extends Bot {
       result,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
-    if (type === Database.MODIFIABLE_TYPE.TRADE) {
+    if (data.tradeId) {
       try {
         // 1. insertOuterTrade
         await this.database.insertOuterTrades([data], { dbTransaction });
@@ -3920,12 +3920,14 @@ class ExchangeHub extends Bot {
         memberId = tmp.memberId;
         orderId = tmp.orderId;
         if (!memberId || !orderId) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 1.2.可以根據 orderId 從 database 取得 dbOrder
@@ -3938,25 +3940,29 @@ class ExchangeHub extends Bot {
           !stop &&
           (!order || order?.member_id.toString() !== member?.id.toString())
         ) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 2. 判斷收到的資料對應的 order是否需要更新
         // 2.1. 判斷收到的資料 state 不為 cancel
         if (!stop && data.state === Database.ORDER_STATE.CANCEL) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            member,
-            status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
-            dbOrder: order,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              member,
+              status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+              dbOrder: order,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 2.2 dbOrder.state 不為 0
@@ -3965,14 +3971,16 @@ class ExchangeHub extends Bot {
           order &&
           order.state === Database.ORDER_STATE_CODE.CANCEL
         ) {
-          await this.updateOuterTrade({
-            id: data.tradeId,
-            status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
-            dbOrder: order,
-            member,
-            dbTransaction,
-          });
-          await dbTransaction.commit();
+          if (data.tradeId) {
+            await this.updateOuterTrade({
+              id: data.tradeId,
+              status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
+              dbOrder: order,
+              member,
+              dbTransaction,
+            });
+            await dbTransaction.commit();
+          } else await dbTransaction.rollback();
           stop = true;
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
@@ -3994,14 +4002,16 @@ class ExchangeHub extends Bot {
             orderDetail = apiResonse.payload;
             this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
-              await this.updateOuterTrade({
-                id: data.tradeId,
-                status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
-                dbOrder: order,
-                member,
-                dbTransaction,
-              });
-              await dbTransaction.commit();
+              if (data.tradeId) {
+                await this.updateOuterTrade({
+                  id: data.tradeId,
+                  status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
+                  dbOrder: order,
+                  member,
+                  dbTransaction,
+                });
+                await dbTransaction.commit();
+              } else await dbTransaction.rollback();
               stop = true;
             }
           } else {
@@ -4073,7 +4083,7 @@ class ExchangeHub extends Bot {
           // 4. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
           // trade 新增進 DB 後才可以得到我們的 trade id
           // db 更新的資料為 calculator 得到的 result
-          if (type === Database.MODIFIABLE_TYPE.TRADE) {
+          if (data.tradeId) {
             await this.updater({
               ...result,
               member,
@@ -4085,7 +4095,7 @@ class ExchangeHub extends Bot {
             });
             await dbTransaction.commit();
             this.logger.debug(`processor complete dbTransaction commit`);
-          }
+          } else await dbTransaction.rollback();
         }
       } catch (error) {
         // await this.updateOuterTrade({
@@ -4599,13 +4609,14 @@ class ExchangeHub extends Bot {
               Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
-            await this.processor(Database.MODIFIABLE_TYPE.ORDER, formatOrder);
-            this.exchangeHubService.sync({
-              exchange: SupportedExchange.OKEX,
-              data: formatOrder,
-              interval: 0.5 * 60 * 60 * 1000,
-              force: true,
-            });
+            await this.processor(formatOrder);
+            if (!formatOrder.tradeId)
+              this.exchangeHubService.sync({
+                exchange: SupportedExchange.OKEX,
+                data: formatOrder,
+                interval: 0.5 * 60 * 60 * 1000,
+                force: true,
+              });
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,
