@@ -9,7 +9,7 @@ class ExchangeHubService {
   _syncInterval = 0.5 * 60 * 60 * 1000; // 30 mins
   _minInterval = 1 * 24 * 60 * 60 * 1000; // 1天
   _interval = 3 * 24 * 60 * 60 * 1000; // 3天
-  _maxInterval = 365 * 24 * 60 * 60 * 1000; // 93天 okex 最長只能問到3個月
+  _maxInterval = 10 * 24 * 60 * 60 * 1000; // 10天 okex 最長只能問到3個月
   _isStarted = false;
 
   constructor({
@@ -66,7 +66,7 @@ class ExchangeHubService {
   async sync({
     exchange = SupportedExchange.OKEX,
     data,
-    interval = this._interval,
+    interval = this._maxInterval,
     force = false,
   }) {
     this.logger.debug(

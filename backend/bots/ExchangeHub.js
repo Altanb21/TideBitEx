@@ -4614,7 +4614,7 @@ class ExchangeHub extends Bot {
               this.exchangeHubService.sync({
                 exchange: SupportedExchange.OKEX,
                 data: formatOrder,
-                interval: 0.5 * 60 * 60 * 1000,
+                interval: 1 * 24 * 60 * 60 * 1000,
                 force: true,
               });
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {

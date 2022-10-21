@@ -119,7 +119,7 @@ class mysql {
         });
       }
       this.logger.debug(query, values);
-      this.logger.debug(`getAccountsByMemberId`, accounts);
+      // this.logger.debug(`getAccountsByMemberId`, accounts);
       return accounts;
     } catch (error) {
       this.logger.error(error);
