@@ -1297,7 +1297,8 @@ class ExchangeHubService {
       // ++ TODO 需要有獨立的機制處理沒有正確紀錄的 outer_trades
       // 失敗的情境：
       // 1. 收到 OKX event.orders 觸發的時間點剛好是 ExchangeHubServices.sync 的時間，會導致這個時間等整筆 insertOuterTrades 失敗
-      this.logger.error(`insertOuterTrades`, error);
+      this.logger.error(new Date().toISOString())
+      this.logger.error(`insertOuterTrades`, outerTrades, error);
       result = false;
       await t.rollback();
     }
