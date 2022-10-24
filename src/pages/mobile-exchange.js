@@ -27,7 +27,7 @@ const MobileExchange = (props) => {
       //   storeCtx.setFocusEl(null);
       // }}
     >
-      <React.Suspense>
+      <React.Suspense fallback={<div></div>}>
         {(storeCtx.activePage === "chart" ||
           storeCtx.activePage === "market" ||
           storeCtx.activePage === "trade") && <MobileTickers />}
@@ -59,7 +59,7 @@ const MobileExchange = (props) => {
                 <MarketTrade />
               </div>
               <div className="section__container section__container--mobile">
-                <React.Suspense>
+                <React.Suspense fallback={<div></div>}>
                   <Tabs defaultActiveKey="market">
                     <Tab eventKey="market" title={t("navigator_market")}>
                       <DepthBook />
@@ -78,7 +78,7 @@ const MobileExchange = (props) => {
             </>
           )}
           {storeCtx.activePage === "assets" && (
-            <React.Suspense>
+            <React.Suspense fallback={<div></div>}>
               <div className="mobole-account__list">
                 {storeCtx.accounts?.accounts ? (
                   Object.values(storeCtx.accounts.accounts).map((account) => (

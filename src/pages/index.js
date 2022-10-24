@@ -20,7 +20,7 @@ const Admin = lazy(() => import("./admin"));
 
 export default function index() {
   return (
-    <Suspense
+    <Suspense fallback={<div></div>}
     >
       <Switch>
         <Route exact path="/">
