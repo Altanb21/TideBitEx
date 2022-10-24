@@ -22,11 +22,11 @@ const Admin = lazy(() => import("./admin"));
 export default function index() {
   return (
     <Suspense
-      fallback={
-        <div className="loading">
-          <LoadingDialog />
-        </div>
-      }
+      // fallback={
+      //   <div className="loading">
+      //     <LoadingDialog />
+      //   </div>
+      // }
     >
       <Switch>
         <Route exact path="/">
