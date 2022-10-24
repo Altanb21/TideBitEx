@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React from "react";
 import { Switch, Route } from "react-router-dom";
 // import Markets from "../pages/markets";
 // import Profile from "./profile";
@@ -14,12 +14,14 @@ import { Switch, Route } from "react-router-dom";
 // import Signup from "./signup";
 // import Notfound from "./notfound";
 // import Analysis from "./analysis";s
+// import Exchange from "./exchange";
+// import Admin from "./admin";
 const Exchange = React.lazy(() => import('./exchange'));
 const Admin = React.lazy(() => import('./admin'));
 
 export default function index() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    // <Suspense fallback={<div>Loading...</div>}>
       <Switch>
         <Route exact path="/">
           <Exchange />
@@ -68,6 +70,6 @@ export default function index() {
         <Notfound />
       </Route> */}
       </Switch>
-    </Suspense>
+    // </Suspense>
   );
 }
