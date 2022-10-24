@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from "react";
 import { Switch, Route } from "react-router-dom";
+import LoadingDialog from "../components/LoadingDialog";
 // import Markets from "../pages/markets";
 // import Profile from "./profile";
 // import Wallet from "./wallet";
@@ -20,7 +21,13 @@ const Admin = lazy(() => import("./admin"));
 
 export default function index() {
   return (
-    <Suspense fallback={<div></div>}>
+    <Suspense
+      fallback={
+        <div className="loading">
+          <LoadingDialog />
+        </div>
+      }
+    >
       <Switch>
         <Route exact path="/">
           <Exchange />

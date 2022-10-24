@@ -7,6 +7,8 @@ import { RiKey2Line, RiHistoryFill } from "react-icons/ri";
 import { FaWrench, FaUserAlt } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
 
+const AccountMobileTile = React.lazy(() => import("./AccountMobileTile"));
+
 const ToggleButton = (props) => {
   return (
     <div
@@ -20,34 +22,6 @@ const ToggleButton = (props) => {
         <input data-size="mini" name="sound-checkbox" type="checkbox" />
       </div>
     </div>
-  );
-};
-
-const AccountMobileTile = (props) => {
-  const { t } = useTranslation();
-  return (
-    <li className="mobile-account__tile">
-      <div className="mobile-account__leading">
-        <div className="mobile-account__icon">
-          <img
-            src={`/icons/${props.account.currency.toLowerCase()}.png`}
-            alt={props.account?.currency.toLowerCase()}
-            loading="lazy" 
-          />
-        </div>
-        <div>{props.account?.currency}</div>
-      </div>
-      <div className="mobile-account__subtitle">
-        <div className="mobile-account__balance">
-          <div>{`${t("amount")}:`}</div>
-          {formateDecimal(props.account?.total, { decimalLength: 8 })}
-        </div>
-        <div className="mobile-account__locked">
-          <div>{`${t("locked")}:`}</div>
-          {formateDecimal(props.account?.locked, { decimalLength: 8 })}
-        </div>
-      </div>
-    </li>
   );
 };
 
@@ -90,23 +64,35 @@ const UserInfo = (props) => {
             }`}
           >
             <div className="user-info__accounts--dropdown-box">
-              {storeCtx.selectedTicker && storeCtx.accounts?.accounts ? (
-                accountsShowMore ? (
-                  Object.values(storeCtx.accounts?.accounts).map((account) => (
-                    <AccountMobileTile account={account} />
-                  ))
+              <React.Suspense fallback={<div></div>}>
+                {storeCtx.selectedTicker && storeCtx.accounts?.accounts ? (
+                  accountsShowMore ? (
+                    Object.values(storeCtx.accounts?.accounts).map(
+                      (account) => (
+                        <AccountMobileTile
+                          account={account}
+                          withTitle={true}
+                          showAvailable={false}
+                          showTotal={true}
+                        />
+                      )
+                    )
+                  ) : (
+                    storeCtx.selectedTicker.instId
+                      .split("-")
+                      ?.map((ccy) => (
+                        <AccountMobileTile
+                          account={storeCtx.accounts?.accounts[ccy]}
+                          withTitle={true}
+                          showAvailable={false}
+                          showTotal={true}
+                        />
+                      ))
+                  )
                 ) : (
-                  storeCtx.selectedTicker.instId
-                    .split("-")
-                    ?.map((ccy) => (
-                      <AccountMobileTile
-                        account={storeCtx.accounts?.accounts[ccy]}
-                      />
-                    ))
-                )
-              ) : (
-                <div></div>
-              )}
+                  <div></div>
+                )}
+              </React.Suspense>
             </div>
             <div
               className="user-info__accounts--dropdown-btn"

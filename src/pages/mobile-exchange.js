@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { AccountMobileTile, PendingOrders } from "../components/HistoryOrder";
+import { PendingOrders } from "../components/HistoryOrder";
 import MarketHistory from "../components/MarketHistory";
 import MarketTrade from "../components/MarketTrade";
 import DepthBook from "../components/DepthBook";
@@ -11,6 +11,8 @@ import { useTranslation } from "react-i18next";
 import MobileTickers from "../components/MobileTickers";
 import MobileTicker from "../components/MobileTicker";
 import DepthChart from "../components/DepthChart";
+
+const AccountMobileTile = React.lazy(() => import("./AccountMobileTile"));
 
 const MobileExchange = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -71,15 +73,22 @@ const MobileExchange = (props) => {
           </>
         )}
         {storeCtx.activePage === "assets" && (
-          <div className="mobole-account__list">
-            {storeCtx.accounts?.accounts ? (
-              Object.values(storeCtx.accounts.accounts).map((account) => (
-                <AccountMobileTile account={account} />
-              ))
-            ) : (
-              <div></div>
-            )}
-          </div>
+          <React.Suspense>
+            <div className="mobole-account__list">
+              {storeCtx.accounts?.accounts ? (
+                Object.values(storeCtx.accounts.accounts).map((account) => (
+                  <AccountMobileTile
+                    account={account}
+                    withTitle={false}
+                    showAvailable={true}
+                    showTotal={false}
+                  />
+                ))
+              ) : (
+                <div></div>
+              )}
+            </div>
+          </React.Suspense>
         )}
         <div className="section__block"></div>
       </section>
