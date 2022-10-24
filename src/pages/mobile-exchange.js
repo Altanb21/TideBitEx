@@ -12,7 +12,7 @@ import MobileTickers from "../components/MobileTickers";
 import MobileTicker from "../components/MobileTicker";
 import DepthChart from "../components/DepthChart";
 
-const AccountMobileTile = React.lazy(() => import("./AccountMobileTile"));
+const AccountMobileTile = React.lazy(() => import("../components/AccountMobileTile"));
 
 const MobileExchange = (props) => {
   const storeCtx = useContext(StoreContext);
