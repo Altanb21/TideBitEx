@@ -12,8 +12,8 @@ const HistoryOrder = () => {
     <>
       <div className="market-order">
         <div className="market-order__header">{t("my_orders")}</div>
-        <Tabs defaultActiveKey="open-orders">
-          <Suspense fallback={<div></div>}>
+        <Suspense fallback={<div></div>}>
+          <Tabs defaultActiveKey="open-orders">
             <Tab eventKey="open-orders" title={t("open_orders")}>
               <PendingOrders />
             </Tab>
@@ -23,8 +23,8 @@ const HistoryOrder = () => {
             <Tab eventKey="balance" title={t("balance")}>
               <AccountList />
             </Tab>
-          </Suspense>
-        </Tabs>
+          </Tabs>
+        </Suspense>
       </div>
     </>
   );

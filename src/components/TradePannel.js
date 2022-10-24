@@ -13,8 +13,8 @@ const TradePannel = (props) => {
   return (
     <div className="market-trade__panel">
       {width <= breakpoint ? (
-        <Tabs defaultActiveKey="buy">
-          <Suspense fallback={<div></div>}>
+        <Suspense fallback={<div></div>}>
+          <Tabs defaultActiveKey="buy">
             <Tab eventKey="buy" title={t("buy")}>
               <TradeForm
                 ordType={props.ordType}
@@ -31,8 +31,8 @@ const TradePannel = (props) => {
                 isMobile={true}
               />
             </Tab>
-          </Suspense>
-        </Tabs>
+          </Tabs>
+        </Suspense>
       ) : (
         <>
           <TradeForm

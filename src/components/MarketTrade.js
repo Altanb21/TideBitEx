@@ -12,8 +12,8 @@ const MarketTrade = () => {
     <div className="market-trade">
       <div className="market-trade__container">
         <div className="market-trade__header">{t("place_order")}</div>
-        <Tabs defaultActiveKey="limit">
-          <Suspense fallback={<div></div>}>
+        <Suspense fallback={<div></div>}>
+          <Tabs defaultActiveKey="limit">
             <Tab eventKey="limit" title={t("limit")}>
               <TradePannel ordType="limit" />
             </Tab>
@@ -26,8 +26,8 @@ const MarketTrade = () => {
             {/* <Tab eventKey="stop-market" title="Stop Market">
             <TradePannel ordType="stop-market" />
           </Tab> */}
-          </Suspense>
-        </Tabs>
+          </Tabs>
+        </Suspense>
       </div>
       {storeCtx.isLogin === false && (
         <div className="market-trade__cover flex-row">

@@ -59,8 +59,8 @@ const MobileExchange = (props) => {
                 <MarketTrade />
               </div>
               <div className="section__container section__container--mobile">
-                <Tabs defaultActiveKey="market">
-                  <React.Suspense>
+                <React.Suspense>
+                  <Tabs defaultActiveKey="market">
                     <Tab eventKey="market" title={t("navigator_market")}>
                       <DepthBook />
                     </Tab>
@@ -72,8 +72,8 @@ const MobileExchange = (props) => {
                     <Tab eventKey="trades" title={t("trades")}>
                       <MarketHistory />
                     </Tab>
-                  </React.Suspense>
-                </Tabs>
+                  </Tabs>
+                </React.Suspense>
               </div>
             </>
           )}
