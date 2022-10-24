@@ -126,6 +126,7 @@ export const AccountMobileTile = (props) => {
           <img
             src={`/icons/${props.account.currency.toLowerCase()}.png`}
             alt={props.account?.currency.toLowerCase()}
+            loading="lazy" 
           />
         </div>
         <div>{props.account?.currency}</div>

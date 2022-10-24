@@ -1,9 +1,8 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import StoreContext from "../store/store-context";
 
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
-// import { BiLock } from "react-icons/bi";
 import { RiKey2Line, RiHistoryFill } from "react-icons/ri";
 import { FaWrench, FaUserAlt } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
@@ -33,6 +32,7 @@ const AccountMobileTile = (props) => {
           <img
             src={`/icons/${props.account.currency.toLowerCase()}.png`}
             alt={props.account?.currency.toLowerCase()}
+            loading="lazy" 
           />
         </div>
         <div>{props.account?.currency}</div>
