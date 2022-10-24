@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 // import MobileExchange from "./mobile-exchange";
 const DesktopExchange = React.lazy(() => import("./desktop-exchange"));
 const MobileExchange = React.lazy(() => import("./mobile-exchange"));
+const LoadingDialog = React.lazy(() => import("../components/LoadingDialog"));
 
 const Exchange = () => {
   const storeCtx = useContext(StoreContext);
@@ -35,7 +36,13 @@ const Exchange = () => {
 
   return (
     <Layout>
-      <Suspense fallback={<div></div>}>
+      <Suspense
+        fallback={
+          <div className="loading">
+            <LoadingDialog />
+          </div>
+        }
+      >
         {width <= breakpoint ? <MobileExchange /> : <DesktopExchange />}
       </Suspense>
     </Layout>
