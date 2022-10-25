@@ -16,7 +16,7 @@ const AccountMobileTile = React.lazy(() =>
   import("../components/AccountMobileTile")
 );
 
-const MobileExchange = (props) => {
+const MobileExchange = (_) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   return (
@@ -83,10 +83,12 @@ const MobileExchange = (props) => {
                 {storeCtx.accounts?.accounts ? (
                   Object.values(storeCtx.accounts.accounts).map((account) => (
                     <AccountMobileTile
-                      account={account}
                       withTitle={false}
                       showAvailable={true}
                       showTotal={false}
+                      currency={account.currency.toLowerCase()}
+                      total={account.balance}
+                      locked={account.locked}
                     />
                   ))
                 ) : (

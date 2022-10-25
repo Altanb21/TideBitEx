@@ -4,7 +4,7 @@ import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
 import { OrderTile } from "./ClosedOrders";
 
-const PendingOrders = (props) => {
+const PendingOrders = (_) => {
   const storeCtx = useContext(StoreContext);
   const cancelOrder = (order) => {
     const text =
@@ -68,7 +68,16 @@ const PendingOrders = (props) => {
           storeCtx.pendingOrders
             .filter((order) => !(order.price === "NaN" || !order.price)) // ++ WORKAROUND
             .map((order) => (
-              <OrderTile order={order} cancelOrder={cancelOrder} />
+              <OrderTile
+                price={order.price}
+                volume={order.volume}
+                kind={order.kind}
+                state={order.state}
+                filled={order.filled}
+                tickSz={storeCtx.tickSz}
+                lotSz={storeCtx.lotSz}
+                cancelOrderHandler={()=>cancelOrder(order)}
+              />
             ))}
       </ul>
       {storeCtx.selectedTicker?.source === "TideBit" && (

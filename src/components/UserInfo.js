@@ -25,9 +25,7 @@ const ToggleButton = (props) => {
   );
 };
 
-const UserInfo = (props) => {
-  // const [isInit, setIsInit] = useState(false);
-  // const [email, setEmail] = useState(null);
+const UserInfo = (_) => {
   const [openSound, setOpenSound] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
   const [openAccounts, setOpenAccounts] = useState(false);
@@ -70,24 +68,29 @@ const UserInfo = (props) => {
                     Object.values(storeCtx.accounts?.accounts).map(
                       (account) => (
                         <AccountMobileTile
-                          account={account}
                           withTitle={true}
-                          showAvailable={false}
                           showTotal={true}
+                          showAvailable={false}
+                          currency={account.currency.toLowerCase()}
+                          total={account.total}
+                          locked={account.locked}
                         />
                       )
                     )
                   ) : (
-                    storeCtx.selectedTicker.instId
-                      .split("-")
-                      ?.map((ccy) => (
+                    storeCtx.selectedTicker.instId.split("-")?.map((ccy) => {
+                      let account = storeCtx.accounts?.accounts[ccy];
+                      return (
                         <AccountMobileTile
-                          account={storeCtx.accounts?.accounts[ccy]}
                           withTitle={true}
-                          showAvailable={false}
                           showTotal={true}
+                          showAvailable={false}
+                          currency={account.currency.toLowerCase()}
+                          total={account.total}
+                          locked={account.locked}
                         />
-                      ))
+                      );
+                    })
                   )
                 ) : (
                   <div></div>

@@ -2268,11 +2268,7 @@ class ExchangeHub extends Bot {
             // this.logger.debug(`processOrder`, processOrder);
             outerOrders = [...outerOrders, processOrder];
           }
-          let emailsObj = this.database.getEmailsByMemberIds(
-            memberIds,
-            memberIds.length,
-            0
-          );
+          let emailsObj = this.database.getEmailsByMemberIds(memberIds);
           outerOrders.map((order) => {
             let emailObj = emailsObj.find(
               (obj) => obj.id.toString() === order.memberId.toString()

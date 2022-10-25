@@ -609,14 +609,7 @@ class mysql {
   }
 
   async getEmailsByMemberIds(memberIds) {
-    let placeholder,
-      // values = [],
-      index = 0;
-    for (let _ of memberIds) {
-      placeholder += index === memberIds.length - 1 ? " ?," : " ?";
-      // values.push(memberId);
-      index++;
-    }
+    let placeholder = memberIds.join(`,`);
     let query = `
     SELECT
 	    members.id,
@@ -624,8 +617,7 @@ class mysql {
     FROM
 	    members
     WHERE
-	     members.id in(${placeholder})
-    ORDER BY NULL;
+	     members.id in(${placeholder});
     `;
     try {
       this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);

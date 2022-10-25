@@ -9,29 +9,29 @@ const AccountMobileTile = (props) => {
       <div className="mobile-account__leading">
         <div className="mobile-account__icon">
           <img
-            src={`/icons/${props.account.currency.toLowerCase()}.png`}
-            alt={props.account?.currency.toLowerCase()}
+            src={`/icons/${props.currency}.png`}
+            alt={props.currency}
             loading="lazy"
           />
         </div>
-        <div>{props.account?.currency}</div>
+        <div>{props.currency.toUpperCase()}</div>
       </div>
       <div className="mobile-account__subtitle">
         {props.showTotal && (
           <div className="mobile-account__balance">
             {props.withTitle && <div>{`${t("amount")}:`}</div>}
-            {formateDecimal(props.account?.total, { decimalLength: 8 })}
+            {formateDecimal(props.total, { decimalLength: 8 })}
           </div>
         )}
         {props.showAvailable && (
           <div className="mobile-account__balance">
             {props.withTitle && <div>{`${t("amount")}:`}</div>}
-            {formateDecimal(props.account?.balance, { decimalLength: 8 })}
+            {formateDecimal(props.balance, { decimalLength: 8 })}
           </div>
         )}
         <div className="mobile-account__locked">
           {props.withTitle && <div>{`${t("locked")}:`}</div>}
-          {formateDecimal(props.account?.locked, { decimalLength: 8 })}
+          {formateDecimal(props.locked, { decimalLength: 8 })}
         </div>
       </div>
     </li>

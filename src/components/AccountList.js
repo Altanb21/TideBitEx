@@ -3,18 +3,18 @@ import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 import StoreContext from "../store/store-context";
 
-const AccountTile = (props) => {
+const AccountTile = React.memo((props) => {
   return (
     <ul className="d-flex justify-content-between market-order-item market-balance">
-      <li>{props.account?.currency || "--"}</li>
-      <li>{formateDecimal(props.account?.total, { decimalLength: 8 })}</li>
-      <li>{formateDecimal(props.account?.balance, { decimalLength: 8 })}</li>
-      <li>{formateDecimal(props.account?.locked, { decimalLength: 8 })}</li>
+      <li>{props?.currency || "--"}</li>
+      <li>{formateDecimal(props?.total, { decimalLength: 8 })}</li>
+      <li>{formateDecimal(props?.balance, { decimalLength: 8 })}</li>
+      <li>{formateDecimal(props?.locked, { decimalLength: 8 })}</li>
     </ul>
   );
-};
+});
 
-const AccountList = (props) => {
+const AccountList = (_) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   return (
@@ -27,11 +27,17 @@ const AccountList = (props) => {
       </ul>
       <ul className="order-list scrollbar-custom">
         {storeCtx.selectedTicker?.instId && storeCtx.accounts?.accounts ? (
-          storeCtx.selectedTicker.instId
-            .split("-")
-            ?.map((ccy) => (
-              <AccountTile account={storeCtx.accounts.accounts[ccy]} />
-            ))
+          storeCtx.selectedTicker.instId.split("-")?.map((ccy) => {
+            let account = storeCtx.accounts.accounts[ccy];
+            return (
+              <AccountTile
+                currency={account.currency}
+                total={account.total}
+                balance={account.balance}
+                locked={account.locked}
+              />
+            );
+          })
         ) : (
           <div></div>
         )}
