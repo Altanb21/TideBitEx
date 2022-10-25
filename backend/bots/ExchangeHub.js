@@ -1235,6 +1235,54 @@ class ExchangeHub extends Bot {
     return Promise.resolve(result);
   }
 
+  async getReferrer(member) {
+    let referredByMember, referral;
+    referredByMember = await this.database.getMemberByCondition({
+      refer_code: member.refer,
+    });
+    referral = await this.database.getMemberReferral({
+      referrer_id: referredByMember.id,
+      referee_id: member.id,
+    });
+    return { referredByMember, referral };
+  }
+
+  async getReferrerCommissionPlan(referral) {
+    // expose :referrer_commission_plan do |member|
+    // ::APIv2::Entities::CommissionPlan.represent(
+    //   Referral::CommissionService.get_default_commission_plan(member: member),
+    //   { enabled_policies_only: true }
+    // )
+    // default is 1 // ++ TODO not sure
+    return Promise.resolve(referral.commission_plan_id || 1);
+  }
+  async getReferrerCommissionPolicy(referral, voucher) {
+    // commission_plan.policies.sort_by{ |policy| policy.referred_months }.detect do |policy|
+    // policy.is_enabled? && (@referral.created_at + policy.referred_months.month >= @voucher.created_at)
+    let commissionPlanId = this.getReferrerCommissionPlan(referral);
+    let commissionPolicies = await this.database.getCommissionPolicies(
+      commissionPlanId
+    );
+    let policy;
+    for (let p of commissionPolicies) {
+      if (!policy) {
+        let dateLength = new Date(
+          new Date().getFullYear(),
+          p.referred_months + 1,
+          0
+        ).getDate();
+        let time =
+          new Date(`${referral.created_at}`).getTime() +
+          dateLength * 24 * 60 * 60 * 1000;
+        let voucherCreatedTime = new Date(`${voucher.created_at}`).getTime();
+        if (p.is_enabled === 1 && time >= voucherCreatedTime) {
+          policy = p; // ++ TODO not sure
+        }
+      }
+    }
+    return policy;
+  }
+
   async addAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
@@ -3317,7 +3365,15 @@ class ExchangeHub extends Bot {
    * @property {Date} updated_at
    */
   // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
-  calculator({ market, member, dbOrder, orderDetail, data }) {
+  async calculator({
+    market,
+    member,
+    dbOrder,
+    orderDetail,
+    data,
+    referredByMember,
+    referral,
+  }) {
     this.logger.debug(`calculator `);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
@@ -3353,6 +3409,9 @@ class ExchangeHub extends Bot {
         // modifiable_id: "",//++TODO
       },
       orderFullFilledAccountVersion,
+      currency,
+      refGrossFee,
+      referralCommission,
       result;
     try {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
@@ -3378,6 +3437,10 @@ class ExchangeHub extends Bot {
         trend = Database.ORDER_KIND.BID;
         askFee = 0;
         bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
+        refGrossFee = bidFee;
+        currency = this.coinsSettings.find(
+          (coinSetting) => coinSetting.code === market.bid.currency
+        )?.id;
         askAccountVersion = {
           ...askAccountVersion,
           balance: SafeMath.minus(data.fillSz, bidFee),
@@ -3400,6 +3463,10 @@ class ExchangeHub extends Bot {
         orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
         trend = Database.ORDER_KIND.ASK;
         askFee = SafeMath.mult(value, askFeeRate);
+        refGrossFee = askFee;
+        currency = this.coinsSettings.find(
+          (coinSetting) => coinSetting.code === market.ask.currency
+        )?.id;
         bidFee = 0;
         askAccountVersion = {
           ...askAccountVersion,
@@ -3504,6 +3571,39 @@ class ExchangeHub extends Bot {
         done_at: `"${doneAt}"`,
       };
       this.logger.debug(`calculator updatedOrder`, updatedOrder);
+      if (referredByMember) {
+        /**
+         * referred_by_member: @referred_by_member => referredByMember.id
+         * trade_member: @trade_member => member.id
+         * voucher: @voucher => vouucher.id
+         * applied_plan: plan => getReferrerCommissionPlan(referral)
+         * applied_policy: policy => getReferrerCommissionPolicy(referral, voucher)
+         * trend: @trend,
+         * market: @market_code,
+         * currency: @currency_id,
+         * ref_gross_fee: @fee,
+         * ref_net_fee: @fee - eligible_commission,
+         * amount: eligible_commission
+         */
+        let plan = await this.getReferrerCommissionPlan(referral);
+        let policy = await this.getReferrerCommissionPolicy(referral, voucher);
+        if (policy) {
+          let eligibleCommission = SafeMath.mult(refGrossFee, policy.rate);
+          referralCommission = {
+            referred_by_member: referredByMember.id,
+            trade_member: member.id,
+            voucher_id: voucher.id,
+            applied_plan: plan,
+            applied_policy: policy.id,
+            trend,
+            market: market.code,
+            currency,
+            ref_gross_fee: refGrossFee,
+            ref_net_fee: SafeMath.minus(refGrossFee, eligibleCommission),
+            amount: eligibleCommission,
+          };
+        }
+      }
     } catch (error) {
       this.logger.error(
         `[${this.constructor.name}] calculaotor went wrong`,
@@ -3518,6 +3618,7 @@ class ExchangeHub extends Bot {
       askAccountVersion,
       bidAccountVersion,
       orderFullFilledAccountVersion,
+      referralCommission,
     };
     return result;
   }
@@ -3892,6 +3993,8 @@ class ExchangeHub extends Bot {
       order,
       orderDetail,
       result,
+      referredByMember,
+      referral,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
     if (!stop) {
@@ -4011,12 +4114,19 @@ class ExchangeHub extends Bot {
         }
         // 3. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
         if (!stop) {
-          result = this.calculator({
+          if (member.refer) {
+            let tmp = await this.getReferrer(member);
+            referredByMember = tmp.referredByMember;
+            referral = tmp.referral;
+          }
+          result = await this.calculator({
             market,
             member,
             dbOrder: order,
             orderDetail,
             data,
+            referredByMember: referredByMember,
+            referral: referral,
           });
         }
         if (!stop && result) {
