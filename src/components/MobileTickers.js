@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
@@ -78,16 +78,22 @@ const quoteCcies = {
   ALTS: ["ALTS", "USX"],
 };
 
-const MobileTickers = (props) => {
+const MobileTickers = (_) => {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState(false);
+  const [isInit, setIsInit] = useState(false);
   const storeCtx = useContext(StoreContext);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [defaultActiveKey, setDefaultActiveKey] = useState(
     Object.keys(quoteCcies)[0].toLowerCase()
   );
+  const [tickers, setTickers] = useState([]);
 
   useEffect(() => {
+    if ((!isInit && storeCtx.tickers?.length > 0) || openDialog) {
+      setTickers(storeCtx.tickers);
+      if (!isInit) setIsInit(true);
+    }
     if (
       (storeCtx.selectedTicker && !selectedTicker) ||
       (storeCtx.selectedTicker &&
@@ -96,7 +102,13 @@ const MobileTickers = (props) => {
       setSelectedTicker(storeCtx.selectedTicker);
       setDefaultActiveKey(storeCtx.selectedTicker?.group);
     }
-  }, [selectedTicker, storeCtx.selectedTicker]);
+  }, [
+    isInit,
+    openDialog,
+    selectedTicker,
+    storeCtx.selectedTicker,
+    storeCtx.tickers,
+  ]);
 
   return (
     <div className="mobile-tickers mobile-tickers__dropdown">
@@ -139,7 +151,7 @@ const MobileTickers = (props) => {
               >
                 <TickerList
                   closeDialogHandler={() => setOpenDialog(false)}
-                  tickers={storeCtx.tickers?.filter((ticker) => {
+                  tickers={tickers?.filter((ticker) => {
                     // if (!ticker.group) console.error(ticker);
                     return quoteCcies[quoteCcy].includes(
                       ticker.group?.toUpperCase()
