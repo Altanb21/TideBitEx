@@ -1,59 +1,48 @@
 import React, { useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
-import { FixedSizeList as List } from "react-window";
+// import { FixedSizeList as List } from "react-window";
 import { formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import { useViewport } from "../store/ViewportProvider";
 // import DropDown from "./DropDown";
 
-const BookTile = (props) => {
-  const storeCtx = useContext(StoreContext);
-
+const BookTile = React.memo((props) => {
   return (
     <li className={`order-book__tile flex-row`} style={props.style}>
       <div
         className={`order-book__tile--bid  ${
-          props.bid?.update ? "" : "" /** TODO animation temporary removed */
+          props.bidUpdate ? "" : "" /** TODO animation temporary removed */
           // props.book.update ? "update" : ""
         }`}
-        onClick={() => {
-          storeCtx.depthBookHandler(props.bid.price, props.bid.amount);
-          if (props.isMobile) storeCtx.activePageHandler("trade");
-        }}
+        onClick={props.handlebidOrderSelect}
       >
-        {props.bid && (
+        {props.bidPrice && props.bidAmount && (
           <>
             <div>
-              {formateDecimal(
-                SafeMath.mult(props.bid.price, props.bid.amount),
-                {
-                  decimalLength: Math.min(
-                    storeCtx.tickSz || 0,
-                    storeCtx.lotSz || 0
-                  ),
-                  pad: true,
-                }
-              )}
-            </div>
-            <div>
-              {formateDecimal(props.bid.amount, {
-                // decimalLength: 4,
-                decimalLength: storeCtx.lotSz || 0,
+              {formateDecimal(SafeMath.mult(props.bidPrice, props.bidAmount), {
+                decimalLength: Math.min(props.tickSz || 0, props.lotSz || 0),
                 pad: true,
               })}
             </div>
             <div>
-              {formateDecimal(props.bid.price, {
+              {formateDecimal(props.bidAmount, {
+                // decimalLength: 4,
+                decimalLength: props.lotSz || 0,
+                pad: true,
+              })}
+            </div>
+            <div>
+              {formateDecimal(props.bidPrice, {
                 // decimalLength: 2,
-                decimalLength: storeCtx.tickSz || 0,
+                decimalLength: props.tickSz || 0,
                 pad: true,
               })}
             </div>
             <div
               className="order-book__tile--cover"
               style={{
-                width: `${(parseFloat(props.bid.depth) * 100).toFixed(2)}%`,
+                width: `${(parseFloat(props.bidDepth) * 100).toFixed(2)}%`,
               }}
             ></div>
           </>
@@ -61,46 +50,37 @@ const BookTile = (props) => {
       </div>
       <div
         className={`order-book__tile--ask  ${
-          props.ask?.update ? "" : "" /** TODO animation temporary removed */
+          props.askUpdate ? "" : "" /** TODO animation temporary removed */
           // props.book.update ? "update" : ""
         }`}
-        onClick={() => {
-          storeCtx.depthBookHandler(props.ask.price, props.ask.amount);
-          if (props.isMobile) storeCtx.activePageHandler("trade");
-        }}
+        onClick={props.handleAskOrderSelect}
       >
-        {props.ask && (
+        {props.askPrice && props.askAmount && (
           <>
             <div>
-              {formateDecimal(props.ask.price, {
+              {formateDecimal(props.askPrice, {
                 // decimalLength: 2,
-                decimalLength: storeCtx.tickSz || 0,
+                decimalLength: props.tickSz || 0,
                 pad: true,
               })}
             </div>
             <div>
-              {formateDecimal(props.ask.amount, {
+              {formateDecimal(props.askAmount, {
                 // decimalLength: 4,
-                decimalLength: storeCtx.lotSz || 0,
+                decimalLength: props.lotSz || 0,
                 pad: true,
               })}
             </div>
             <div>
-              {formateDecimal(
-                SafeMath.mult(props.ask.price, props.ask.amount),
-                {
-                  decimalLength: Math.min(
-                    storeCtx.tickSz || 0,
-                    storeCtx.lotSz || 0
-                  ),
-                  pad: true,
-                }
-              )}
+              {formateDecimal(SafeMath.mult(props.askPrice, props.askAmount), {
+                decimalLength: Math.min(props.tickSz || 0, props.lotSz || 0),
+                pad: true,
+              })}
             </div>
             <div
               className="order-book__tile--cover"
               style={{
-                width: `${(parseFloat(props.ask.depth) * 100).toFixed(2)}%`,
+                width: `${(parseFloat(props.askDepth) * 100).toFixed(2)}%`,
               }}
             ></div>
           </>
@@ -108,7 +88,7 @@ const BookTile = (props) => {
       </div>
     </li>
   );
-};
+});
 
 // const getDecimal = (length) => {
 //   let num = "0.";
@@ -119,7 +99,7 @@ const BookTile = (props) => {
 //   return num;
 // };
 
-const DepthBook = (props) => {
+const DepthBook = (_) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   // const [range, setRange] = useState("");
@@ -194,14 +174,40 @@ const DepthBook = (props) => {
                   ? "bids"
                   : "asks"
               }`
-            ].map((_, index) => (
-              <BookTile
-                bid={storeCtx.books.bids[index]}
-                ask={storeCtx.books.asks[index]}
-                key={`depthbbook-${index}`}
-                isMobile={width <= breakpoint}
-              />
-            ))}
+            ].map((_, index) => {
+              let bid = storeCtx.books.bids[index];
+              let ask = storeCtx.books.asks[index];
+              return (
+                <BookTile
+                  key={`depthbbook-${storeCtx.books.bids[index]?.price}?${storeCtx.books.bids[index]?.price}:${storeCtx.books.asks[index]?.price}`}
+                  bidUpdate={bid?.update}
+                  bidPrice={bid?.price}
+                  bidAmount={bid?.amount}
+                  bidDepth={bid?.depth}
+                  askUpdate={ask?.update}
+                  askPrice={ask?.price}
+                  askAmount={ask?.amount}
+                  askDepth={ask?.depth}
+                  isMobile={width <= breakpoint}
+                  tickSz={storeCtx.tickSz}
+                  lotSz={storeCtx.lotSz}
+                  handleAskOrderSelect={() => {
+                    if (ask?.price && ask?.amount) {
+                      storeCtx.depthBookHandler(ask.price, ask.amount);
+                      if (width <= breakpoint)
+                        storeCtx.activePageHandler("trade");
+                    }
+                  }}
+                  handlebidOrderSelect={() => {
+                    if (bid?.price && bid?.amount) {
+                      storeCtx.depthBookHandler(bid.price, bid.amount);
+                      if (width <= breakpoint)
+                        storeCtx.activePageHandler("trade");
+                    }
+                  }}
+                />
+              );
+            })}
           {/* <List
             innerElementType="ul"
             height={426}

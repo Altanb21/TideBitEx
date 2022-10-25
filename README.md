@@ -139,6 +139,14 @@ export const wsUrl = 'ws.tidebit.network/ws';
 cp default.config.js public/tradingview/config.js
 cp default.config.js src/constant/Config.js
 ```
+或是將上一個版本的資料，複製的最新版本
+ex:
+```
+cp -r TideBitEx/private/ TideBitEx-[version]/private
+cp TideBitEx/shell/restart.sh TideBitEx-[version]/shell/restart.sh
+cp TideBitEx/src/constant/Config.js TideBitEx-[version]/src/constant/Config.js
+cp TideBitEx/public/tradingview/config.js TideBitEx-[version]/public/tradingview/config.js
+```
 
 ### 設定 crontab
 將 default.restart.sh 複製到 shell/restart.sh

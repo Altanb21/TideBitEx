@@ -1,11 +1,13 @@
-import React, { useState, useContext } from "react";
+import React, { Suspense, useState, useContext } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { formateDecimal } from "../utils/Utils";
-import DesktopTickers from "./DesktopTickers";
+// import DesktopTickers from "./DesktopTickers";
 import { useTranslation } from "react-i18next";
 import { AiOutlineBarChart } from "react-icons/ai";
 import { AiFillCaretDown } from "react-icons/ai";
+
+const DesktopTickers = React.lazy(() => import("./DesktopTickers"));
 
 const SelectedTicker = (props) => {
   const [openTickerList, setOpenTickerList] = useState(false);
@@ -32,7 +34,12 @@ const SelectedTicker = (props) => {
           </div>
           <AiFillCaretDown />
         </div>
-        <DesktopTickers openTickerList={openTickerList} openTickerListHandler={openTickerListHandler} />
+        <Suspense fallback={<div></div>}>
+          <DesktopTickers
+            openTickerList={openTickerList}
+            openTickerListHandler={openTickerListHandler}
+          />
+        </Suspense>
       </div>
       <div className="ticker__price">
         <div

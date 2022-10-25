@@ -1,10 +1,13 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { Suspense, useContext, useEffect, useState } from "react";
 import { useViewport } from "../store/ViewportProvider";
-import DesktopExchange from "./desktop-exchange";
-import MobileExchange from "./mobile-exchange";
 import Layout from "../components/Layout";
 import StoreContext from "../store/store-context";
 import { useLocation } from "react-router-dom";
+// import DesktopExchange from "./desktop-exchange";
+// import MobileExchange from "./mobile-exchange";
+const DesktopExchange = React.lazy(() => import("./desktop-exchange"));
+const MobileExchange = React.lazy(() => import("./mobile-exchange"));
+const LoadingDialog = React.lazy(() => import("../components/LoadingDialog"));
 
 const Exchange = () => {
   const storeCtx = useContext(StoreContext);
@@ -33,7 +36,15 @@ const Exchange = () => {
 
   return (
     <Layout>
-      {width <= breakpoint ? <MobileExchange /> : <DesktopExchange />}
+      <Suspense
+        fallback={
+          <div className="loading">
+            <LoadingDialog />
+          </div>
+        }
+      >
+        {width <= breakpoint ? <MobileExchange /> : <DesktopExchange />}
+      </Suspense>
     </Layout>
   );
 };

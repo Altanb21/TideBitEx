@@ -304,6 +304,63 @@ class mysql {
     }
   }
 
+  async getMemberReferral({ referrerId, refereeId }) {
+    const query = `
+    SELECT
+      member_referrals.id,
+      member_referrals.commission_plan_id,
+      member_referrals.is_enabled,
+      member_referrals.created_at,
+    FROM
+      member_referrals
+    WHERE
+      member_referrals.referrer_id = ?
+      AND member_referrals.referee_id = ?
+    LIMIT 1;
+    `;
+    try {
+      this.logger.debug(
+        "getMemberReferral",
+        query,
+        `[${referrerId}, ${refereeId}]`
+      );
+      const [[memberReferral]] = await this.db.query({
+        query,
+        values: [referrerId, refereeId],
+      });
+      return memberReferral;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
+  async getCommissionPolicies(planId) {
+    const query = `
+    SELECT
+      commission_policies.id,
+      commission_policies.referred_months,
+      commission_policies.rate,
+      commission_policies.is_enabled,
+    FROM
+      commission_policies
+    WHERE
+      commission_policies.plan_id = ?
+    LIMIT 12;
+    `;
+    try {
+      this.logger.debug("getCommissionPolicices", query, `[${planId}]`);
+      const [commissionPolicies] = await this.db.query({
+        query,
+        values: [planId],
+      });
+      return commissionPolicies;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
   async getMemberByCondition(condition) {
     const query = `
     SELECT
@@ -609,14 +666,7 @@ class mysql {
   }
 
   async getEmailsByMemberIds(memberIds) {
-    let placeholder,
-      // values = [],
-      index = 0;
-    for (let _ of memberIds) {
-      placeholder += index === memberIds.length - 1 ? " ?," : " ?";
-      // values.push(memberId);
-      index++;
-    }
+    let placeholder = memberIds.join(`,`);
     let query = `
     SELECT
 	    members.id,
@@ -624,8 +674,7 @@ class mysql {
     FROM
 	    members
     WHERE
-	     members.id in(${placeholder})
-    ORDER BY NULL;
+	     members.id in(${placeholder});
     `;
     try {
       this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);

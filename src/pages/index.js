@@ -1,6 +1,5 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Switch, Route } from "react-router-dom";
-import Exchange from "../pages/exchange";
 // import Markets from "../pages/markets";
 // import Profile from "./profile";
 // import Wallet from "./wallet";
@@ -15,22 +14,26 @@ import Exchange from "../pages/exchange";
 // import Signup from "./signup";
 // import Notfound from "./notfound";
 // import Analysis from "./analysis";s
-import Admin from "./admin";
+
+const Exchange = lazy(() => import("./exchange"));
+const Admin = lazy(() => import("./admin"));
 
 export default function index() {
   return (
-    <Switch>
-      <Route exact path="/">
-        <Exchange />
-      </Route>
-      <Route path="/markets">
-        <Exchange />
-      </Route>
-      <Route path="/analysis">
-        {/* <Analysis /> */}
-        <Admin/>
-      </Route>
-      {/* <Route path="/profile">
+    <Suspense fallback={<div></div>}
+    >
+      <Switch>
+        <Route exact path="/">
+          <Exchange />
+        </Route>
+        <Route path="/markets">
+          <Exchange />
+        </Route>
+        <Route path="/analysis">
+          {/* <Analysis /> */}
+          <Admin />
+        </Route>
+        {/* <Route path="/profile">
         <Profile />
       </Route>
       <Route path="/wallet">
@@ -66,6 +69,7 @@ export default function index() {
       <Route path="/notfound">
         <Notfound />
       </Route> */}
-    </Switch>
+      </Switch>
+    </Suspense>
   );
 }

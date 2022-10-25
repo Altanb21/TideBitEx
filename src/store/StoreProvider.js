@@ -196,7 +196,11 @@ const StoreProvider = (props) => {
     async (exchange, limit, offset) => {
       let exAccounts = {};
       try {
-        exAccounts = await middleman.getOuterPendingOrders(exchange, limit, offset);
+        exAccounts = await middleman.getOuterPendingOrders(
+          exchange,
+          limit,
+          offset
+        );
       } catch (error) {
         console.log(error);
       }
@@ -359,21 +363,21 @@ const StoreProvider = (props) => {
           middleman.tickerBook.updateByDifference(metaData.data);
           let ticker = middleman.getTickerSnapshot();
           if (ticker) setPrecision(ticker);
-          if (time - tickersLastTimeSync > tickersSyncInterval) {
-            setSelectedTicker(ticker);
-            setTickers(middleman.getTickersSnapshot());
-            tickersLastTimeSync = time;
-          }
+          // if (time - tickersLastTimeSync > tickersSyncInterval) {
+          setSelectedTicker(ticker);
+          setTickers(middleman.getTickersSnapshot());
+          tickersLastTimeSync = time;
+          // }
           break;
         case Events.trades:
           middleman.tradeBook.updateAll(
             metaData.data.market,
             metaData.data.trades
           );
-          if (time - tradesLastTimeSync > tradesSyncInterval) {
-            setTrades(middleman.getTradesSnapshot());
-            tradesLastTimeSync = time;
-          }
+          // if (time - tradesLastTimeSync > tradesSyncInterval) {
+          setTrades(middleman.getTradesSnapshot());
+          tradesLastTimeSync = time;
+          // }
           break;
         case Events.trade:
           middleman.tradeBook.updateByDifference(

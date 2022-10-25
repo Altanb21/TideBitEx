@@ -107,6 +107,13 @@ class DBOperator {
     return this.database.getMemberByCondition(condition);
   }
 
+  async getCommissionPolicies(planId) {
+    return this.database.getCommissionPolicies(planId);
+  }
+
+  async getMemberReferral({ referrerId, refereeId }) {
+    return this.database.getMemberReferral({ referrerId, refereeId });
+  }
   /**
    * [deprecated] 2022/10/14
    * 與 getAccountsByMemberId 合併

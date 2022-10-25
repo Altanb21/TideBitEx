@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { Tabs, Tab } from "react-bootstrap";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
@@ -7,8 +7,7 @@ import { formateDecimal, getPrecision } from "../utils/Utils";
 import { ImCross } from "react-icons/im";
 import { IoMdArrowDropdown } from "react-icons/io";
 
-const TickerTile = (props) => {
-  // const storeCtx = useContext(StoreContext);
+const TickerTile = React.memo((props) => {
   const { t } = useTranslation();
   return (
     <li
@@ -18,30 +17,23 @@ const TickerTile = (props) => {
       }`}
     >
       <div className="mobile-tickers__icon">
-        <img
-          src={`/icons/${props.ticker.baseUnit}.png`}
-          alt={props.ticker.baseUnit}
-        />
+        <img src={`/icons/${props.baseUnit}.png`} alt={props.baseUnit} />
       </div>
       <div className="mobile-tickers__detail">
-        <div className="mobile-tickers__name">{props.ticker.name}</div>
+        <div className="mobile-tickers__name">{props.name}</div>
         <div className="mobile-tickers__currency">
-          {t(props.ticker?.baseUnit)?.toUpperCase()}
+          {t(props.baseUnit)?.toUpperCase()}
         </div>
       </div>
       <div className="mobile-tickers__price">
         <div>
-          {formateDecimal(props.ticker?.last, {
-            decimalLength: props.ticker?.tickSz
-              ? getPrecision(props.ticker?.tickSz)
-              : "0",
+          {formateDecimal(props.last, {
+            decimalLength: props.tickSz ? getPrecision(props.tickSz) : "0",
             pad: true,
           })}
         </div>
-        <div
-          className={SafeMath.gte(props.ticker?.change, "0") ? "green" : "red"}
-        >
-          {`${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
+        <div className={SafeMath.gte(props.change, "0") ? "green" : "red"}>
+          {`${formateDecimal(SafeMath.mult(props.changePct, "100"), {
             decimalLength: 2,
             pad: true,
             withSign: true,
@@ -50,7 +42,7 @@ const TickerTile = (props) => {
       </div>
     </li>
   );
-};
+});
 
 const TickerList = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -59,7 +51,12 @@ const TickerList = (props) => {
       {props.tickers.map((ticker) => (
         <TickerTile
           key={`${ticker.market}`}
-          ticker={ticker}
+          name={ticker.name}
+          baseUnit={ticker.baseUnit}
+          last={ticker.last}
+          tickSz={ticker.tickSz}
+          change={ticker.change}
+          changePct={ticker.changePct}
           active={ticker.market === storeCtx.market}
           update={ticker.update}
           onClick={() => {
@@ -81,16 +78,22 @@ const quoteCcies = {
   ALTS: ["ALTS", "USX"],
 };
 
-const MobileTickers = (props) => {
+const MobileTickers = (_) => {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState(false);
+  const [isInit, setIsInit] = useState(false);
   const storeCtx = useContext(StoreContext);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [defaultActiveKey, setDefaultActiveKey] = useState(
     Object.keys(quoteCcies)[0].toLowerCase()
   );
+  const [tickers, setTickers] = useState([]);
 
   useEffect(() => {
+    if ((!isInit && storeCtx.tickers?.length > 0) || openDialog) {
+      setTickers(storeCtx.tickers);
+      if (!isInit) setIsInit(true);
+    }
     if (
       (storeCtx.selectedTicker && !selectedTicker) ||
       (storeCtx.selectedTicker &&
@@ -99,7 +102,13 @@ const MobileTickers = (props) => {
       setSelectedTicker(storeCtx.selectedTicker);
       setDefaultActiveKey(storeCtx.selectedTicker?.group);
     }
-  }, [selectedTicker, storeCtx.selectedTicker]);
+  }, [
+    isInit,
+    openDialog,
+    selectedTicker,
+    storeCtx.selectedTicker,
+    storeCtx.tickers,
+  ]);
 
   return (
     <div className="mobile-tickers mobile-tickers__dropdown">
@@ -142,7 +151,7 @@ const MobileTickers = (props) => {
               >
                 <TickerList
                   closeDialogHandler={() => setOpenDialog(false)}
-                  tickers={storeCtx.tickers?.filter((ticker) => {
+                  tickers={tickers?.filter((ticker) => {
                     // if (!ticker.group) console.error(ticker);
                     return quoteCcies[quoteCcy].includes(
                       ticker.group?.toUpperCase()
