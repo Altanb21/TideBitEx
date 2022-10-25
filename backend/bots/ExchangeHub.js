@@ -4477,20 +4477,11 @@ class ExchangeHub extends Bot {
       id: account.id,
       balance: newAccBal,
       locked: newAccLoc,
-      updated_at: accountVersion.updated_at,
+      updated_at: `"${accountVersion.created_at}"`,
     };
     const currency = this.coinsSettings.find(
       (curr) => curr.id === accountVersion.currency
     )?.code;
-    this._emitUpdateAccount({
-      memberId: accountVersion.member_id,
-      account: {
-        balance: newAccBal,
-        locked: newAccLoc,
-        currency: currency.toUpperCase(),
-        total: amount,
-      },
-    });
     newAccountVersion = {
       memberId: account.member_id,
       accountId: account.id,
@@ -4501,8 +4492,8 @@ class ExchangeHub extends Bot {
       amount: amount,
       modifiableId: accountVersion.modifiable_id,
       modifiableType: accountVersion.modifiable_type,
-      createdAt: accountVersion.created_at,
-      updatedAt: accountVersion.updated_at,
+      createdAt: `"${accountVersion.created_at}"`,
+      updatedAt: `"${accountVersion.updated_at}"`,
       currency: account.currency,
       fun: accountVersion.fun,
     };
@@ -4510,8 +4501,16 @@ class ExchangeHub extends Bot {
       newAccountVersion,
       { dbTransaction }
     );
-
     await this.database.updateAccount(newAccount, { dbTransaction });
+    this._emitUpdateAccount({
+      memberId: accountVersion.member_id,
+      account: {
+        balance: newAccBal,
+        locked: newAccLoc,
+        currency: currency.toUpperCase(),
+        total: amount,
+      },
+    });
     return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }
