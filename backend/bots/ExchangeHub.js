@@ -1266,38 +1266,40 @@ class ExchangeHub extends Bot {
   async getReferrerCommissionPolicy(referral, voucher) {
     // commission_plan.policies.sort_by{ |policy| policy.referred_months }.detect do |policy|
     // policy.is_enabled? && (@referral.created_at + policy.referred_months.month >= @voucher.created_at)
-    let commissionPlanId = await this.getReferrerCommissionPlan(referral);
-    let commissionPolicies = await this.database.getCommissionPolicies(
-      commissionPlanId
-    );
-    let dayTime = 24 * 60 * 60 * 1000;
-    let days = Math.ceil(
-      (new Date(`${voucher.created_at}`).getTime() -
-        new Date(`${referral.created_at}`).getTime()) /
-        dayTime
-    );
-    this.logger.log(`getReferrerCommissionPolicy days`, days);
     let policy;
-    if (days <= 365) {
-      let index = 1;
-      let year = new Date(`${referral.created_at}`).getFullYear();
-      let month = new Date(`${referral.created_at}`).getMonth();
-      let accDays = new Date(year, month + 1, 0).getDate();
-      while (days > accDays) {
-        month++;
-        index++;
-        let dateLength = new Date(year, month + 1, 0).getDate();
-        accDays += dateLength;
-        if (month === 12) {
-          month = 0;
-          year++;
-        }
-      }
-      this.logger.log(`getReferrerCommissionPolicy index`, index);
-      policy = commissionPolicies.find((policy) =>
-        SafeMath.eq(policy.referred_months, index)
+    if (referral.is_enabled) {
+      let commissionPlanId = await this.getReferrerCommissionPlan(referral);
+      let commissionPolicies = await this.database.getCommissionPolicies(
+        commissionPlanId
       );
-      this.logger.log(`getReferrerCommissionPolicy policy`, policy);
+      let dayTime = 24 * 60 * 60 * 1000;
+      let days = Math.ceil(
+        (new Date(`${voucher.created_at}`).getTime() -
+          new Date(`${referral.created_at}`).getTime()) /
+          dayTime
+      );
+      this.logger.log(`getReferrerCommissionPolicy days`, days);
+      if (days <= 365) {
+        let index = 1;
+        let year = new Date(`${referral.created_at}`).getFullYear();
+        let month = new Date(`${referral.created_at}`).getMonth();
+        let accDays = new Date(year, month + 1, 0).getDate();
+        while (days > accDays) {
+          month++;
+          index++;
+          let dateLength = new Date(year, month + 1, 0).getDate();
+          accDays += dateLength;
+          if (month === 12) {
+            month = 0;
+            year++;
+          }
+        }
+        this.logger.log(`getReferrerCommissionPolicy index`, index);
+        policy = commissionPolicies.find((policy) =>
+          SafeMath.eq(policy.referred_months, index)
+        );
+        this.logger.log(`getReferrerCommissionPolicy policy`, policy);
+      }
     }
     return policy;
   }
@@ -3832,6 +3834,13 @@ class ExchangeHub extends Bot {
     dbTransaction,
   }) {
     /* !!! HIGH RISK (start) !!! */
+    /** 
+     * 1. update DB order
+     * 2. insert trade
+     * 3. insert voucher
+     * 4. update Accounts
+     * 5. insert referralCommission (++ TODO verify)
+    */
     let tradeId,
       voucherId,
       referralCommissionId,
@@ -4028,17 +4037,20 @@ class ExchangeHub extends Bot {
             `db update referralCommission is different from outer data`
           );
         } else {
-          referralCommissionId = await this.database.insertReferralCommission(
-            {
-              ...referralCommission,
-              voucherId,
-            },
-            { dbTransaction }
-          );
-          this.logger.debug(
-            `updater insertReferralCommission success referralCommissionId`,
-            referralCommissionId
-          );
+          /**
+           * ++ TODO after verify
+           */
+          // referralCommissionId = await this.database.insertReferralCommission(
+          //   {
+          //     ...referralCommission,
+          //     voucherId,
+          //   },
+          //   { dbTransaction }
+          // );
+          // this.logger.debug(
+          //   `updater insertReferralCommission success referralCommissionId`,
+          //   referralCommissionId
+          // );
         }
       }
       await this.updateOuterTrade({
