@@ -2286,7 +2286,7 @@ class ExchangeHub extends Bot {
       // dbOrders = await this.database.getOrdersJoinMemberEmail(
       //   Database.ORDER_STATE_CODE.WAIT
       // );
-      memberIds = [];
+      memberIds = {};
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
@@ -2302,7 +2302,7 @@ class ExchangeHub extends Bot {
                   ? SafeMath.mult(order.avgPx, order.accFillSz)
                   : order.accFillSz,
               processOrder;
-            memberIds.push(memberId);
+            if (!memberIds[memberId]) memberIds[memberId] = memberId;
             processOrder = {
               ...order,
               unFillSz: SafeMath.minus(order.sz, order.accFillSz),
@@ -2316,12 +2316,14 @@ class ExchangeHub extends Bot {
             // this.logger.debug(`processOrder`, processOrder);
             outerOrders = [...outerOrders, processOrder];
           }
-          let emailsObj = this.database.getEmailsByMemberIds(memberIds);
-          outerOrders.map((order) => {
+          let emailsObj = await this.database.getEmailsByMemberIds(
+            Object.values(memberIds)
+          );
+          outerOrders = outerOrders.map((order) => {
             let emailObj = emailsObj.find(
               (obj) => obj.id.toString() === order.memberId.toString()
             );
-            return { ...order, email: emailObj.email };
+            return { ...order, email: emailObj?.email };
           });
         }
         return new ResponseFormat({
@@ -4415,12 +4417,12 @@ class ExchangeHub extends Bot {
       ordType === Database.ORD_TYPE.IOC
         ? type === Database.TYPE.ORDER_BID
           ? body.price
-            // ? (parseFloat(body.price) * 1.05).toString()
-            ? body.price
+            ? // ? (parseFloat(body.price) * 1.05).toString()
+              body.price
             : null
           : body.price
-          // ? (parseFloat(body.price) * 0.95).toString()
-          ? body.price
+          ? // ? (parseFloat(body.price) * 0.95).toString()
+            body.price
           : null
         : body.price || null;
     const locked =
