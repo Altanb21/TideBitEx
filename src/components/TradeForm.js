@@ -78,7 +78,7 @@ const TradeForm = (props) => {
               storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
             ]?.balance,
             props.ordType === "market"
-              ? storeCtx.selectedTicker?.last
+              ? (parseFloat(storeCtx.selectedTicker?.last) * 1.05).toString()
               : formatedValue
           )
         )
@@ -115,7 +115,11 @@ const TradeForm = (props) => {
     (value) => {
       setErrorMessage(null);
       let _price =
-        props.ordType === "market" ? storeCtx.selectedTicker?.last : price;
+        props.ordType === "market"
+          ? props.kind === "bid"
+            ? SafeMath.mult(storeCtx.selectedTicker?.last, 1.05)
+            : SafeMath.mult(storeCtx.selectedTicker?.last, 0.95)
+          : price;
       let { formatedValue } = formatValue({
         value,
         precision: storeCtx.lotSz,
@@ -161,6 +165,63 @@ const TradeForm = (props) => {
     ]
   );
 
+  const percentageHandler = useCallback(
+    (percentage) => {
+      if (storeCtx.accounts?.accounts && storeCtx.selectedTicker?.baseUnit) {
+        let _price, balance, available, size;
+        if (props.kind === "ask") {
+          balance =
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.baseUnit?.toUpperCase()
+            ]?.balance;
+          size = SafeMath.mult(balance, percentage);
+        } else {
+          switch (props.ordType) {
+            case "limit":
+              if (price) _price = price;
+              else _price = storeCtx.selectedTicker.last;
+              break;
+            case "market":
+              _price = SafeMath.mult(storeCtx.selectedTicker?.last, 1.05);
+              break;
+            default:
+              break;
+          }
+          setPrice(
+            formatValue({
+              value: _price,
+              precision: storeCtx.tickSz,
+            })
+          );
+          balance =
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
+            ]?.balance;
+          available = SafeMath.mult(balance, percentage);
+          size = SafeMath.div(available, _price);
+        }
+        setVolume(
+          formatValue({
+            value: size,
+            precision: storeCtx.lotSz,
+          })
+        );
+      }
+    },
+    [
+      formatValue,
+      price,
+      props.ordType,
+      props.kind,
+      storeCtx.accounts?.accounts,
+      storeCtx.lotSz,
+      storeCtx.selectedTicker?.baseUnit,
+      storeCtx.selectedTicker.last,
+      storeCtx.selectedTicker?.quoteUnit,
+      storeCtx.tickSz,
+    ]
+  );
+
   const onSubmit = async (event, kind) => {
     event.preventDefault();
     if (!storeCtx.selectedTicker) return;
@@ -170,7 +231,12 @@ const TradeForm = (props) => {
       tdMode,
       kind,
       ordType: props.ordType,
-      price: props.ordType === "limit" ? price : storeCtx.selectedTicker?.last,
+      price:
+        props.ordType === "limit"
+          ? price
+          : props.kind === "bid"
+          ? SafeMath.mult(storeCtx.selectedTicker?.last, 1.05)
+          : SafeMath.mult(storeCtx.selectedTicker?.last, 0.95),
       volume,
       market: storeCtx.selectedTicker.market,
     };
@@ -378,101 +444,16 @@ const TradeForm = (props) => {
       </div>
       <ul className="market-trade__amount-controller">
         <li className={`${selectedPct === "0.25" ? "active" : ""}`}>
-          <span
-            onClick={() => {
-              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-                formatSize(
-                  SafeMath.mult(
-                    "0.25",
-                    props.kind === "bid"
-                      ? storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-                        ]?.balance
-                      : SafeMath.div(
-                          storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
-                          ]?.balance,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  )
-                );
-              }
-            }}
-          >
-            25%
-          </span>
+          <span onClick={() => percentageHandler(0.25)}>25%</span>
         </li>
         <li className={`${selectedPct === "0.5" ? "active" : ""}`}>
-          <span
-            onClick={() => {
-              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-                formatSize(
-                  SafeMath.mult(
-                    "0.5",
-                    props.kind === "bid"
-                      ? storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-                        ]?.balance
-                      : SafeMath.div(
-                          storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
-                          ]?.balance,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  )
-                );
-              }
-            }}
-          >
-            50%
-          </span>
+          <span onClick={() => percentageHandler(0.5)}>50%</span>
         </li>
         <li className={`${selectedPct === "0.75" ? "active" : ""}`}>
-          <span
-            onClick={() => {
-              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-                formatSize(
-                  SafeMath.mult(
-                    "0.75",
-                    props.kind === "bid"
-                      ? storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-                        ]?.balance
-                      : SafeMath.div(
-                          storeCtx.accounts?.accounts[
-                            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
-                          ]?.balance,
-                          price || storeCtx.selectedTicker?.last
-                        )
-                  )
-                );
-              }
-            }}
-          >
-            75%
-          </span>
+          <span onClick={() => percentageHandler(0.75)}>75%</span>
         </li>
         <li className={`${selectedPct === "1.0" ? "active" : ""}`}>
-          <span
-            onClick={() => {
-              if (storeCtx.accounts?.accounts && storeCtx.selectedTicker) {
-                formatSize(
-                  props.kind === "bid"
-                    ? storeCtx.accounts?.accounts[
-                        storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-                      ]?.balance
-                    : SafeMath.div(
-                        storeCtx.accounts?.accounts[
-                          storeCtx.selectedTicker?.baseUnit?.toUpperCase()
-                        ]?.balance,
-                        price || storeCtx.selectedTicker?.last
-                      )
-                );
-              }
-            }}
-          >
-            100%
-          </span>
+          <span onClick={() => percentageHandler(1)}>100%</span>
         </li>
       </ul>
       <div style={{ flex: "auto" }}></div>

@@ -4415,10 +4415,12 @@ class ExchangeHub extends Bot {
       ordType === Database.ORD_TYPE.IOC
         ? type === Database.TYPE.ORDER_BID
           ? body.price
-            ? (parseFloat(body.price) * 1.05).toString()
+            // ? (parseFloat(body.price) * 1.05).toString()
+            ? body.price
             : null
           : body.price
-          ? (parseFloat(body.price) * 0.95).toString()
+          // ? (parseFloat(body.price) * 0.95).toString()
+          ? body.price
           : null
         : body.price || null;
     const locked =
