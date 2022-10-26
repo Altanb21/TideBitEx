@@ -120,10 +120,10 @@ const TradeForm = (props) => {
         precision: storeCtx.lotSz,
       });
       setVolume(formatedValue);
-      console.log(
-        `SafeMath.gt(formatValue:${formatedValue}, 0)`,
-        SafeMath.gt(formatedValue, 0)
-      );
+      // console.log(
+      //   `SafeMath.gt(formatValue:${formatedValue}, 0)`,
+      //   SafeMath.gt(formatedValue, 0)
+      // );
       let total;
       if (SafeMath.gt(_price, 0)) {
         total = SafeMath.mult(_price, formatedValue);
@@ -140,10 +140,10 @@ const TradeForm = (props) => {
             storeCtx.accounts?.accounts[
               storeCtx.selectedTicker?.baseUnit?.toUpperCase()
             ]?.balance;
-          console.log(
-            `SafeMath.gt(formatValue:${formatedValue}, balance:${balance})`,
-            SafeMath.gt(formatedValue, balance)
-          );
+          // console.log(
+          //   `SafeMath.gt(formatValue:${formatedValue}, balance:${balance})`,
+          //   SafeMath.gt(formatedValue, balance)
+          // );
           if (SafeMath.gt(formatedValue, balance)) {
             setVolume(balance);
             total = SafeMath.mult(_price, balance);
@@ -248,7 +248,7 @@ const TradeForm = (props) => {
 
   const percentageHandler = useCallback(
     (percentage) => {
-      console.log(`percentageHandler percentage`, percentage);
+      // console.log(`percentageHandler percentage`, percentage);
       if (storeCtx.accounts?.accounts && storeCtx.selectedTicker?.baseUnit) {
         let _price, balance, available, volume;
         if (props.kind === "ask") {
@@ -256,13 +256,16 @@ const TradeForm = (props) => {
             storeCtx.accounts?.accounts[
               storeCtx.selectedTicker?.baseUnit?.toUpperCase()
             ]?.balance;
-          console.log(
-            `percentageHandler[props.kind=${
-              props.kind
-            }] balance(${storeCtx.selectedTicker?.baseUnit?.toUpperCase()})`,
-            balance
-          );
-          volume = SafeMath.mult(balance, percentage);
+          // console.log(
+          //   `percentageHandler[props.kind=${
+          //     props.kind
+          //   }] balance(${storeCtx.selectedTicker?.baseUnit?.toUpperCase()})`,
+          //   balance
+          // );
+          volume = formatValue({
+            value: SafeMath.mult(balance, percentage),
+            precision: storeCtx.lotSz,
+          });
         } else {
           switch (props.ordType) {
             case "limit":
@@ -275,10 +278,10 @@ const TradeForm = (props) => {
             default:
               break;
           }
-          console.log(
-            `percentageHandler[props.ordType=${props.ordType}] _price(${storeCtx.selectedTicker.last})`,
-            _price
-          );
+          // console.log(
+          //   `percentageHandler[props.ordType=${props.ordType}] _price(${storeCtx.selectedTicker.last})`,
+          //   _price
+          // );
           _price = formatValue({
             value: _price,
             precision: storeCtx.tickSz,
@@ -288,21 +291,20 @@ const TradeForm = (props) => {
             storeCtx.accounts?.accounts[
               storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
             ]?.balance;
-          console.log(
-            `percentageHandler[props.kind=${
-              props.kind
-            }] balance(${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()})`,
-            balance
-          );
+          // console.log(
+          //   `percentageHandler[props.kind=${
+          //     props.kind
+          //   }] balance(${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()})`,
+          //   balance
+          // );
           available = SafeMath.mult(balance, percentage);
-          volume = SafeMath.div(available, _price);
+          volume = formatValue({
+            value: SafeMath.div(available, _price),
+            precision: storeCtx.lotSz,
+          });
+          setTotal(SafeMath.mult(_price, volume));
         }
-        volume = formatValue({
-          value: volume,
-          precision: storeCtx.lotSz,
-        });
         setVolume(volume);
-        setTotal(SafeMath.mult(_price, volume));
       }
     },
     [
