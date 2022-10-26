@@ -132,9 +132,10 @@ const TradeForm = (props) => {
               storeCtx.selectedTicker?.baseUnit?.toUpperCase()
             ]?.balance;
           if (SafeMath.gt(formatedValue, balance))
-            setErrorMessage(
-              `Available ${storeCtx.selectedTicker?.baseUnit?.toUpperCase()} is not enough`
-            );
+            // setErrorMessage(
+            //   `Available ${storeCtx.selectedTicker?.baseUnit?.toUpperCase()} is not enough`
+            // );
+            setVolume(balance);
         } else if (props.kind === "bid") {
           if (SafeMath.gt(_price, 0)) {
             let total = SafeMath.mult(_price, formatedValue);

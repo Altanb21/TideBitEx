@@ -2258,7 +2258,7 @@ class ExchangeHub extends Bot {
             referral: referralCommission?.ref_net_fee
               ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
               : null,
-            ts: parseInt(trade.ts),
+            ts: parseInt(trade.ts || trade.uTime),
           };
           // this.logger.debug(`processTrade`, processTrade);
           outerTrades = [...outerTrades, processTrade];
