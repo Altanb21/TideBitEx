@@ -94,8 +94,6 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    ORDER BY
-      NULL
     LIMIT ${limit};
     `;
     const values = [memberId];
@@ -310,7 +308,7 @@ class mysql {
       member_referrals.id,
       member_referrals.commission_plan_id,
       member_referrals.is_enabled,
-      member_referrals.created_at,
+      member_referrals.created_at
     FROM
       member_referrals
     WHERE
@@ -335,13 +333,39 @@ class mysql {
     }
   }
 
+  async getDefaultCommissionPlan() {
+    const query = `
+    SELECT
+      commission_plans.id,
+      commission_plans.name,
+      commission_plans.is_enabled,
+      commission_plans.is_default
+    FROM
+      commission_plans
+    WHERE
+      commission_plans.is_enabled = 1
+      AND commission_plans.is_default = 1
+    LIMIT 1;
+    `;
+    try {
+      this.logger.debug("getCommissionPolicices", query);
+      const [[defaultCommissionPlan]] = await this.db.query({
+        query,
+      });
+      return defaultCommissionPlan;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
   async getCommissionPolicies(planId) {
     const query = `
     SELECT
       commission_policies.id,
       commission_policies.referred_months,
       commission_policies.rate,
-      commission_policies.is_enabled,
+      commission_policies.is_enabled
     FROM
       commission_policies
     WHERE
@@ -381,6 +405,74 @@ class mysql {
         values: [Object.values(condition)[0]],
       });
       return member;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
+  async getReferralCommissionsByConditions({ conditions, limit, offset, asc }) {
+    let tableName = `referral_commissions`;
+    let placeholder = ``;
+    let arr = [],
+      values = [];
+    if (conditions[`referredByMemberId`]) {
+      arr = [...arr, `${tableName}.referred_by_member_id = ?`];
+      values = [...values, conditions[`referredByMemberId`]];
+    }
+    if (conditions[`tradeMemberId`]) {
+      arr = [...arr, `${tableName}.trade_member_id = ?`];
+      values = [...values, conditions[`tradeMemberId`]];
+    }
+    if (conditions[`voucherId`]) {
+      arr = [...arr, `${tableName}.voucher_id = ?`];
+      values = [...values, conditions[`voucherId`]];
+    }
+    if (conditions[`market`]) {
+      arr = [...arr, `${tableName}.market = ?`];
+      values = [...values, conditions[`market`]];
+    }
+    if (conditions[`currency`]) {
+      arr = [...arr, `${tableName}.currency = ?`];
+      values = [...values, conditions[`currency`]];
+    }
+    if (conditions[`state`]) {
+      arr = [...arr, `${tableName}.state = ?`];
+      values = [...values, conditions[`state`]];
+    }
+    if (conditions[`start`] && conditions[`end`]) {
+      arr = [...arr, `${tableName}.created_at BETWEEN ? AND ?`];
+      values = [...values, conditions[`start`], conditions[`end`]];
+    }
+    placeholder = arr.join(` AND `);
+    const query = `
+    SELECT 
+        referral_commissions.id,
+        referral_commissions.referred_by_member_id,
+        referral_commissions.trade_member_id,
+        referral_commissions.voucher_id,
+        referral_commissions.market,
+        referral_commissions.currency,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state,
+        referral_commissions.created_at,
+        referral_commissions.updated_at
+    FROM
+	      referral_commissions
+    WHERE 
+        ${placeholder}
+    ORDER BY
+        referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
+    // LIMIT ${limit} OFFSET ${offset};`;
+    try {
+      this.logger.debug("getReferralCommissionsByConditions", query, values);
+      const [referralCommissions] = await this.db.query({
+        query,
+        values,
+      });
+      return referralCommissions;
     } catch (error) {
       this.logger.debug(error);
       return [];
@@ -800,6 +892,10 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/26
+   * integrate with getReferralCommissionsByConditions
+   */
   async getReferralCommissions({ market, start, end, limit, offset, asc }) {
     const query = `
     SELECT 
@@ -820,7 +916,7 @@ class mysql {
         AND referral_commissions.created_at BETWEEN ?
         AND ?
     ORDER BY
-        NULL
+        referral_commissions.created_at ${asc ? "ASC" : "DESC"}
     LIMIT ${limit} OFFSET ${offset};`;
     try {
       this.logger.debug(
@@ -1444,6 +1540,85 @@ class mysql {
       if (dbTransaction) throw error;
     }
     return voucherId;
+  }
+
+  async insertReferralCommission(
+    referredByMemberId,
+    tradeMemberId,
+    voucherId,
+    appliedPlanId,
+    appliedPolicyId,
+    trend,
+    market,
+    currency,
+    refGrossFee,
+    refNetFee,
+    amount,
+    state,
+    depositedAt,
+    createdAt,
+    updatedAt,
+    { dbTransaction }
+  ) {
+    let result, referralCommissionId;
+    const query =
+      "INSERT INTO `referral_commissions` (`id`,`referred_by_member_id`,`trade_member_id`,`voucher_id`,`applied_plan_id`, `applied_policy_id`, `trend`, `market`, `currency`, `ref_gross_fee`, `ref_net_fee`, `amount`, `state`, `deposited_at`, `created_at` `updated_at`)" +
+      // " OUTPUT Inserted.ID " +
+      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    try {
+      this.logger.debug(
+        "insertReferralCommission",
+        query,
+        "DEFAULT",
+        referredByMemberId,
+        tradeMemberId,
+        voucherId,
+        appliedPlanId,
+        appliedPolicyId,
+        trend,
+        market,
+        currency,
+        refGrossFee,
+        refNetFee,
+        amount,
+        state,
+        depositedAt,
+        createdAt,
+        updatedAt
+      );
+      result = await this.db.query(
+        {
+          query,
+          values: [
+            "DEFAULT",
+            referredByMemberId,
+            tradeMemberId,
+            voucherId,
+            appliedPlanId,
+            appliedPolicyId,
+            trend,
+            market,
+            currency,
+            refGrossFee,
+            refNetFee,
+            amount,
+            state,
+            depositedAt,
+            createdAt,
+            updatedAt,
+          ],
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      this.logger.debug(`insertReferralCommission result`, result);
+      referralCommissionId = result[0];
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+    return referralCommissionId;
   }
 
   async updateAccount(datas, { dbTransaction }) {

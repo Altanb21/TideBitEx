@@ -252,6 +252,10 @@ class DBOperator {
     });
   }
 
+  async getDefaultCommissionPlan() {
+    return this.database.getDefaultCommissionPlan();
+  }
+
   async getEmailsByMemberIds(memberIds) {
     return this.database.getEmailsByMemberIds(memberIds);
   }
@@ -281,6 +285,10 @@ class DBOperator {
     return this.database.getOuterTradesBetweenDays(exchangeCode, start, end);
   }
 
+  /**
+   * [deprecated] 2022/10/26
+   * integrate with getReferralCommissionsByConditions
+   */
   async getReferralCommissions({
     market,
     start,
@@ -293,6 +301,20 @@ class DBOperator {
       market,
       start,
       end,
+      limit,
+      offset,
+      asc,
+    });
+  }
+
+  async getReferralCommissionsByConditions({
+    conditions,
+    limit = 100,
+    offset = 0,
+    asc = false,
+  }) {
+    return this.database.getReferralCommissionsByConditions({
+      conditions,
       limit,
       offset,
       asc,
@@ -424,6 +446,27 @@ class DBOperator {
       voucher.ask_fee,
       voucher.bid_fee,
       voucher.created_at,
+      { dbTransaction }
+    );
+  }
+
+  async insertReferralCommission(referralCommission, { dbTransaction }) {
+    return this.database.insertVouchers(
+      referralCommission.referredByMemberId,
+      referralCommission.tradeMemberId,
+      referralCommission.voucherId,
+      referralCommission.appliedPlanId,
+      referralCommission.appliedPolicyId,
+      referralCommission.trend,
+      referralCommission.market,
+      referralCommission.currency,
+      referralCommission.refGrossFee,
+      referralCommission.refNetFee,
+      referralCommission.amount,
+      referralCommission.state,
+      referralCommission.depositedAt,
+      referralCommission.createdAt,
+      referralCommission.updatedAt,
       { dbTransaction }
     );
   }
