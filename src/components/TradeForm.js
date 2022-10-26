@@ -49,13 +49,13 @@ const TradeForm = (props) => {
         formatedValue = parseInt(formatedValue).toString();
       // console.log(`formatedValue`, formatedValue);
     }
-    return { formatedValue };
+    return formatedValue;
   }, []);
 
   const formatPrice = useCallback(
     (value) => {
       setErrorMessage(null);
-      let { formatedValue } = formatValue({
+      let formatedValue = formatValue({
         value,
         precision: storeCtx.tickSz,
       });
@@ -71,25 +71,28 @@ const TradeForm = (props) => {
         setErrorMessage(
           `Minimum order price is ${storeCtx.selectedTicker?.tickSz}`
         );
-      } else if (props.kind === "bid") {
-        balance =
-          storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-          ]?.balance;
+      } else if (SafeMath.gt(volume, 0)) {
         total = SafeMath.mult(price, volume);
-        if (SafeMath.gt(total, balance))
-          setErrorMessage(
-            `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
-          );
-      } else if (props.kind === "ask") {
-        balance =
-          storeCtx.accounts?.accounts[
-            storeCtx.selectedTicker?.baseUnit?.toUpperCase()
-          ]?.balance;
-        if (SafeMath.gt(volume, balance))
-          setErrorMessage(
-            `Available ${storeCtx.selectedTicker?.baseUnit?.toUpperCase()} is not enough`
-          );
+        setTotal(total);
+        if (props.kind === "bid") {
+          balance =
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
+            ]?.balance;
+          if (SafeMath.gt(total, balance))
+            setErrorMessage(
+              `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
+            );
+        } else if (props.kind === "ask") {
+          balance =
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.baseUnit?.toUpperCase()
+            ]?.balance;
+          if (SafeMath.gt(volume, balance))
+            setErrorMessage(
+              `Available ${storeCtx.selectedTicker?.baseUnit?.toUpperCase()} is not enough`
+            );
+        } else setErrorMessage(null);
       } else setErrorMessage(null);
     },
     [
@@ -112,18 +115,16 @@ const TradeForm = (props) => {
             ? SafeMath.mult(storeCtx.selectedTicker?.last, 1.05)
             : SafeMath.mult(storeCtx.selectedTicker?.last, 0.95)
           : price;
-      let { formatedValue } = formatValue({
+      let formatedValue = formatValue({
         value,
         precision: storeCtx.lotSz,
       });
-      // console.log(
-      //   `formatedValue:${formatedValue}`)
       setVolume(formatedValue);
       if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
         setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
       else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
         setErrorMessage(`Maximum amount is ${storeCtx.selectedTicker?.maxSz}`);
-      else {
+      else if (SafeMath.gt(formatValue, 0)) {
         let balance;
         if (props.kind === "ask") {
           balance =
@@ -135,16 +136,20 @@ const TradeForm = (props) => {
               `Available ${storeCtx.selectedTicker?.baseUnit?.toUpperCase()} is not enough`
             );
         } else if (props.kind === "bid") {
-          balance =
-            storeCtx.accounts?.accounts[
-              storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-            ]?.balance;
-          if (SafeMath.gt(SafeMath.mult(_price, formatedValue), balance))
-            setErrorMessage(
-              `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
-            );
+          if (SafeMath.gt(_price, 0)) {
+            let total = SafeMath.mult(_price, formatedValue);
+            setTotal(total);
+            balance =
+              storeCtx.accounts?.accounts[
+                storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
+              ]?.balance;
+            if (SafeMath.gt(total, balance))
+              setErrorMessage(
+                `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
+              );
+          }
         } else setErrorMessage(null);
-      }
+      } else setErrorMessage(null);
     },
     [
       storeCtx.accounts?.accounts,
@@ -160,7 +165,7 @@ const TradeForm = (props) => {
   const totalAmountHandler = useCallback(
     (value) => {
       if (storeCtx.accounts?.accounts && storeCtx.selectedTicker?.baseUnit) {
-        let { formatedValue } = formatValue({
+        let formatedValue = formatValue({
           value,
           precision: Math.min(storeCtx.tickSz, storeCtx.lotSz),
         });
@@ -229,6 +234,7 @@ const TradeForm = (props) => {
 
   const percentageHandler = useCallback(
     (percentage) => {
+      console.log(`percentageHandler percentage`, percentage);
       if (storeCtx.accounts?.accounts && storeCtx.selectedTicker?.baseUnit) {
         let _price, balance, available, volume;
         if (props.kind === "ask") {
@@ -236,6 +242,12 @@ const TradeForm = (props) => {
             storeCtx.accounts?.accounts[
               storeCtx.selectedTicker?.baseUnit?.toUpperCase()
             ]?.balance;
+          console.log(
+            `percentageHandler[props.kind=${
+              props.kind
+            }] balance(${storeCtx.selectedTicker?.baseUnit?.toUpperCase()})`,
+            balance
+          );
           volume = SafeMath.mult(balance, percentage);
         } else {
           switch (props.ordType) {
@@ -249,6 +261,10 @@ const TradeForm = (props) => {
             default:
               break;
           }
+          console.log(
+            `percentageHandler[props.ordType=${props.ordType}] _price(${storeCtx.selectedTicker.last})`,
+            _price
+          );
           setPrice(
             formatValue({
               value: _price,
@@ -259,6 +275,12 @@ const TradeForm = (props) => {
             storeCtx.accounts?.accounts[
               storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
             ]?.balance;
+          console.log(
+            `percentageHandler[props.kind=${
+              props.kind
+            }] balance(${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()})`,
+            balance
+          );
           available = SafeMath.mult(balance, percentage);
           volume = SafeMath.div(available, _price);
         }
@@ -345,7 +367,6 @@ const TradeForm = (props) => {
         storeCtx.selectedTicker.instId !== selectedTicker?.instId)
     ) {
       setSelectedTicker(storeCtx.selectedTicker);
-
       if (price) formatPrice(price);
       if (volume) formatSize(volume);
     }
