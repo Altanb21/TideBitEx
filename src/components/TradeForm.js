@@ -120,6 +120,10 @@ const TradeForm = (props) => {
         precision: storeCtx.lotSz,
       });
       setVolume(formatedValue);
+      if (SafeMath.gt(_price, 0)) {
+        let total = SafeMath.mult(_price, formatedValue);
+        setTotal(total);
+      }
       if (SafeMath.lt(formatedValue, storeCtx.selectedTicker?.minSz))
         setErrorMessage(`Minimum amount is ${storeCtx.selectedTicker?.minSz}`);
       else if (SafeMath.gt(formatedValue, storeCtx.selectedTicker?.maxSz))
@@ -137,18 +141,14 @@ const TradeForm = (props) => {
             // );
             setVolume(balance);
         } else if (props.kind === "bid") {
-          if (SafeMath.gt(_price, 0)) {
-            let total = SafeMath.mult(_price, formatedValue);
-            setTotal(total);
-            balance =
-              storeCtx.accounts?.accounts[
-                storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
-              ]?.balance;
-            if (SafeMath.gt(total, balance))
-              setErrorMessage(
-                `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
-              );
-          }
+          balance =
+            storeCtx.accounts?.accounts[
+              storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
+            ]?.balance;
+          if (SafeMath.gt(total, balance))
+            setErrorMessage(
+              `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
+            );
         } else setErrorMessage(null);
       } else setErrorMessage(null);
     },

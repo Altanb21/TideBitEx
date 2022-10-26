@@ -326,6 +326,7 @@ class mysql {
         query,
         values: [referrerId, refereeId],
       });
+      this.logger.debug("getMemberReferral memberReferral", memberReferral);
       return memberReferral;
     } catch (error) {
       this.logger.debug(error);
@@ -348,7 +349,7 @@ class mysql {
     LIMIT 1;
     `;
     try {
-      this.logger.debug("getCommissionPolicices", query);
+      this.logger.debug("getDefaultCommissionPlan", query);
       const [[defaultCommissionPlan]] = await this.db.query({
         query,
       });
@@ -373,7 +374,7 @@ class mysql {
     LIMIT 12;
     `;
     try {
-      this.logger.debug("getCommissionPolicices", query, `[${planId}]`);
+      this.logger.debug("getCommissionPolicies", query, `[${planId}]`);
       const [commissionPolicies] = await this.db.query({
         query,
         values: [planId],
@@ -391,7 +392,8 @@ class mysql {
 	    members.id,
 	    members.sn,
 	    members.email,
-	    members.member_tag
+	    members.member_tag,
+	    members.refer
     FROM
 	    members
     WHERE
@@ -1562,7 +1564,7 @@ class mysql {
   ) {
     let result, referralCommissionId;
     const query =
-      "INSERT INTO `referral_commissions` (`id`,`referred_by_member_id`,`trade_member_id`,`voucher_id`,`applied_plan_id`, `applied_policy_id`, `trend`, `market`, `currency`, `ref_gross_fee`, `ref_net_fee`, `amount`, `state`, `deposited_at`, `created_at` `updated_at`)" +
+      "INSERT INTO `referral_commissions` (`id`,`referred_by_member_id`,`trade_member_id`,`voucher_id`,`applied_plan_id`, `applied_policy_id`, `trend`, `market`, `currency`, `ref_gross_fee`, `ref_net_fee`, `amount`, `state`, `deposited_at`, `created_at`, `updated_at`)" +
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {

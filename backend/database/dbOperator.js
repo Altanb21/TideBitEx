@@ -451,7 +451,7 @@ class DBOperator {
   }
 
   async insertReferralCommission(referralCommission, { dbTransaction }) {
-    return this.database.insertVouchers(
+    return this.database.insertReferralCommission(
       referralCommission.referredByMemberId,
       referralCommission.tradeMemberId,
       referralCommission.voucherId,

@@ -1241,8 +1241,8 @@ class ExchangeHub extends Bot {
       refer_code: member.refer,
     });
     referral = await this.database.getMemberReferral({
-      referrer_id: referredByMember.id,
-      referee_id: member.id,
+      referrerId: referredByMember.id,
+      refereeId: member.id,
     });
     return { referredByMember, referral };
   }
@@ -1262,10 +1262,11 @@ class ExchangeHub extends Bot {
     this.logger.log(`getReferrerCommissionPlan planId`, planId);
     return planId;
   }
+
   async getReferrerCommissionPolicy(referral, voucher) {
     // commission_plan.policies.sort_by{ |policy| policy.referred_months }.detect do |policy|
     // policy.is_enabled? && (@referral.created_at + policy.referred_months.month >= @voucher.created_at)
-    let commissionPlanId = this.getReferrerCommissionPlan(referral);
+    let commissionPlanId = await this.getReferrerCommissionPlan(referral);
     let commissionPolicies = await this.database.getCommissionPolicies(
       commissionPlanId
     );
@@ -1281,12 +1282,12 @@ class ExchangeHub extends Bot {
       let index = 1;
       let year = new Date(`${referral.created_at}`).getFullYear();
       let month = new Date(`${referral.created_at}`).getMonth();
-      let accDays = 0;
+      let accDays = new Date(year, month + 1, 0).getDate();
       while (days > accDays) {
-        let dateLength = new Date(year, month + 1, 0).getDate();
-        accDays += dateLength;
         month++;
         index++;
+        let dateLength = new Date(year, month + 1, 0).getDate();
+        accDays += dateLength;
         if (month === 12) {
           month = 0;
           year++;
@@ -3629,7 +3630,10 @@ class ExchangeHub extends Bot {
             refGrossFee,
             refNetFee: SafeMath.minus(refGrossFee, eligibleCommission),
             amount: eligibleCommission,
-            state: "",
+            state: "submitted",
+            depositedAt: null,
+            createdAt: now,
+            updatedAt: now,
           };
           this.logger.log(`calculator referralCommission`, referralCommission);
         }
@@ -3997,7 +4001,7 @@ class ExchangeHub extends Bot {
       if (referralCommission) {
         let rcs = await this.database.getReferralCommissionsByConditions({
           conditions: {
-            voucherId: dbVoucher.id,
+            voucherId,
             market: market.code,
             tradeMemberId: member.id,
           },
@@ -4024,7 +4028,7 @@ class ExchangeHub extends Bot {
             `db update referralCommission is different from outer data`
           );
         } else {
-          referralCommissionId = await this.database.insertVouchers(
+          referralCommissionId = await this.database.insertReferralCommission(
             {
               ...referralCommission,
               voucherId,
