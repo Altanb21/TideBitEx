@@ -218,7 +218,7 @@ const StoreProvider = (props) => {
         ...order,
       };
       try {
-        const result = await middleman.postOrder(_order);
+        await middleman.postOrder(_order);
         enqueueSnackbar(
           `${order.kind === "bid" ? "Bid" : "Ask"} ${order.volume} ${
             order.instId.split("-")[0]
@@ -228,7 +228,7 @@ const StoreProvider = (props) => {
           )} ${order.instId.split("-")[1]}`,
           { variant: "success", action }
         );
-        return result;
+        return true;
       } catch (error) {
         if (error.code !== Codes.USER_IS_LOGOUT) {
           enqueueSnackbar(

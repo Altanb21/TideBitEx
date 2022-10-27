@@ -1004,9 +1004,9 @@ class TibeBitConnector extends ConnectorBase {
               id: "",
               clOrdId: "",
               sCode: "",
-              sMsg: "",
+              sMsg: tbOrdersRes.data?.message,
               tag: "",
-              data: tbOrdersRes.data,
+              data: "",
             },
           ],
         });

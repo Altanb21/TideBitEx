@@ -17,6 +17,7 @@ const TradeForm = (props) => {
   const [selectedPct, setSelectedPct] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const formatValue = useCallback(({ value, precision }) => {
     // console.log(`value: ${+value < 0 }`, value);
@@ -397,9 +398,15 @@ const TradeForm = (props) => {
           });
     const confirm = window.confirm(text);
     if (confirm) {
-      await storeCtx.postOrder(order);
+      setIsLoading(true);
+      let result = await storeCtx.postOrder(order);
+      if (result) {
+        setPrice(``);
+        setVolume(``);
+        setTotal(``);
+      }
+      setIsLoading(false);
     }
-    setVolume("");
     setSelectedPct(null);
   };
 
@@ -608,6 +615,7 @@ const TradeForm = (props) => {
         type="submit"
         className="btn market-trade__button"
         disabled={
+          isLoading ||
           storeCtx.disableTrade ||
           !storeCtx.accounts?.accounts ||
           !storeCtx.selectedTicker ||
