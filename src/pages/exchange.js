@@ -43,7 +43,7 @@ const Exchange = () => {
     <>
       {storeCtx.tokenExpired && (
         <Dialog
-          className="user-setting__dialog-delete"
+          className="exchange"
           title="Info"
           block={true}
           onConfirm={() =>
