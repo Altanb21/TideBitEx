@@ -31,10 +31,10 @@ const AccountList = (_) => {
             let account = storeCtx.accounts.accounts[ccy];
             return (
               <AccountTile
-                currency={account.currency}
-                total={account.total}
-                balance={account.balance}
-                locked={account.locked}
+                currency={account?.currency}
+                total={account?.total}
+                balance={account?.balance}
+                locked={account?.locked}
               />
             );
           })
