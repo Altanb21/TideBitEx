@@ -58,6 +58,7 @@ ormEnable = false
 pathname = [
   "get | /version | Static.Utils.readPackageInfo",
   "get | /lacale, /lacale/:language | Static.Utils.getLocaleData",
+  "get | /logout, | Bot.ExchangeHub.logout",
 
   # exchange - account
   "get | /api/v1/account/balance | Bot.ExchangeHub.getAccounts",

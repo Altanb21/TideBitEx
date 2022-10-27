@@ -208,7 +208,19 @@ class Middleman {
 
   async getOuterPendingOrders(exchange, limit, offset) {
     try {
-      return await this.communicator.getOuterPendingOrders(exchange, limit, offset);
+      return await this.communicator.getOuterPendingOrders(
+        exchange,
+        limit,
+        offset
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async logout() {
+    try {
+      return await this.communicator.logout();
     } catch (error) {
       throw error;
     }

@@ -13,7 +13,9 @@ let interval,
   tradesSyncInterval = 500,
   tradesLastTimeSync = 0,
   tickersSyncInterval = 500,
-  tickersLastTimeSync = 0;
+  tickersLastTimeSync = 0,
+  timer,
+  expireTime = 1 * 60 * 1000 * 0.998; // 119.76 mins
 
 const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
@@ -41,6 +43,15 @@ const StoreProvider = (props) => {
   const [focusEl, setFocusEl] = useState(null);
   const [fiatCurrency, setFiatCurrency] = useState("usd");
   const [exchangeRates, setExchangeRates] = useState(null);
+  const [tokenExpired, setTokenExpired] = useState(null);
+
+  const countDown = useCallback(() => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      await middleman.logout();
+      setTokenExpired(true);
+    }, expireTime);
+  }, [middleman]);
 
   const action = useCallback(
     (key) => (
@@ -339,8 +350,10 @@ const StoreProvider = (props) => {
       const time = Date.now();
       switch (metaData.type) {
         case Events.userStatusUpdate:
-          if (metaData.data?.isLogin === false) middleman.isLogin = false;
-          setIsLogin(middleman.isLogin);
+          if (metaData.data?.isLogin === false) {
+            middleman.isLogin = false;
+            setIsLogin(middleman.isLogin);
+          }
           break;
         case Events.account:
           middleman.accountBook.updateByDifference(metaData.data);
@@ -426,9 +439,10 @@ const StoreProvider = (props) => {
       setIsLogin(middleman.isLogin);
       setAccounts(middleman.getAccountsSnapshot());
       setMemberEmail(middleman.email);
+      countDown();
     }
     // console.log(`storeCtx init end`);
-  }, [eventListener, middleman]);
+  }, [countDown, eventListener, middleman]);
 
   const start = useCallback(async () => {
     let market =
@@ -450,6 +464,7 @@ const StoreProvider = (props) => {
         if (middleman.isLogin) {
           setAccounts(middleman.getAccountsSnapshot());
           setMemberEmail(middleman.email);
+          countDown();
         }
       }
       await middleman.selectMarket(market);
@@ -504,6 +519,7 @@ const StoreProvider = (props) => {
         depthChartData,
         exchangeRates,
         disableTrade,
+        tokenExpired,
         setIsLogin,
         // sync,
         init,

@@ -439,6 +439,30 @@ class TibeBitConnector extends ConnectorBase {
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
+  async logout() {
+    try {
+      const res = await axios.get(`${this.peatio}/signout`);
+      this.logger.debug(`${this.peatio}/signout`, res);
+      // if (!res || !res.data) {
+      //   return new ResponseFormat({
+      //     message: "Something went wrong",
+      //     code: Codes.API_UNKNOWN_ERROR,
+      //   });
+      // }
+      return new ResponseFormat({
+        message: "logout",
+        payload: res.data,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      const message = error.message;
+      return new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+  }
+
   /**
     [
       {

@@ -167,9 +167,9 @@ const TradeForm = (props) => {
               storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
             ]?.balance;
           if (SafeMath.gt(total, balance)) {
-            setErrorMessage(
-              `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
-            );
+            // setErrorMessage(
+            //   `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
+            // );
             _price = formatValue({
               value: SafeMath.div(balance, formatedValue),
               precision: storeCtx.tickSz,
@@ -246,9 +246,9 @@ const TradeForm = (props) => {
               storeCtx.selectedTicker?.quoteUnit?.toUpperCase()
             ]?.balance;
           if (SafeMath.gt(formatedValue, balance)) {
-            setErrorMessage(
-              `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
-            );
+            // setErrorMessage(
+            //   `Available ${storeCtx.selectedTicker?.quoteUnit?.toUpperCase()} is not enough`
+            // );
             setTotal(balance);
             volume = SafeMath.div(balance, _price);
             setVolume(

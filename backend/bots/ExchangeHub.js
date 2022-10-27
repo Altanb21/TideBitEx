@@ -1903,6 +1903,11 @@ class ExchangeHub extends Bot {
     });
   }
 
+  async logout() {
+    this.logger.debug(`*********** [${this.name}] logout ************`);
+    return this.tideBitConnector.router("logout", {});
+  }
+
   async getTicker({ params, query }) {
     this.logger.debug(`*********** [${this.name}] getTicker ************`);
     // this.tickersSettings = this._getTickersSettings();
@@ -3834,13 +3839,13 @@ class ExchangeHub extends Bot {
     dbTransaction,
   }) {
     /* !!! HIGH RISK (start) !!! */
-    /** 
+    /**
      * 1. update DB order
      * 2. insert trade
      * 3. insert voucher
      * 4. update Accounts
      * 5. insert referralCommission (++ TODO verify)
-    */
+     */
     let tradeId,
       voucherId,
       referralCommissionId,
