@@ -15,7 +15,7 @@ let interval,
   tickersSyncInterval = 500,
   tickersLastTimeSync = 0,
   timer,
-  expireTime = 1 * 60 * 1000 * 0.998; // 119.76 mins
+  expireTime = 120 * 60 * 1000 * 0.998; // 119.76 mins
 
 const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
