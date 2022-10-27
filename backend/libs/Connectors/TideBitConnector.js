@@ -439,9 +439,15 @@ class TibeBitConnector extends ConnectorBase {
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
-  async logout() {
+  async logout({ header }) {
     try {
-      const res = await axios.get(`${this.peatio}/signout`);
+      const headers = {
+        "content-type": "application/x-www-form-urlencoded",
+        cookie: header.cookie,
+      };
+      const res = await axios.get(`${this.peatio}/signout`, {
+        headers,
+      });
       this.logger.debug(`${this.peatio}/signout`, res);
       // if (!res || !res.data) {
       //   return new ResponseFormat({

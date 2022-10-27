@@ -1903,9 +1903,9 @@ class ExchangeHub extends Bot {
     });
   }
 
-  async logout() {
+  async logout({ header }) {
     this.logger.debug(`*********** [${this.name}] logout ************`);
-    return this.tideBitConnector.router("logout", {});
+    return this.tideBitConnector.router("logout", { header });
   }
 
   async getTicker({ params, query }) {
