@@ -48,8 +48,9 @@ const StoreProvider = (props) => {
   const countDown = useCallback(() => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
-      await middleman.logout();
       setTokenExpired(true);
+      // console.log(`TokenExpired`)
+      await middleman.logout();
     }, expireTime);
   }, [middleman]);
 

@@ -47,9 +47,10 @@ const Exchange = () => {
           title="Info"
           block={true}
           onConfirm={() =>
-            history.replace({
+            {history.replace({
               pathname: `/signin`,
-            })
+            });
+            window.location.reload()}
           }
         >
           <p className="info__text">{t("tokex_expire")}</p>
