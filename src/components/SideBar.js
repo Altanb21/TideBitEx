@@ -96,7 +96,7 @@ const SideBar = (props) => {
           <p>{t("announcement")}</p>
         </a>
       </li>
-      {storeCtx.isLogin === false && storeCtx.disableTrade && (
+      {(storeCtx.isLogin === false || storeCtx.disableTrade) && (
         <>
           <li className="sidebar__item">
             <a className="sidebar__link" href="/signin">
