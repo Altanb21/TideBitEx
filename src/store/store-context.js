@@ -23,6 +23,7 @@ const StoreContext = React.createContext({
   tickSz: null,
   lotSz: null,
   memberEmail: null,
+  disableTrade: false,
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},

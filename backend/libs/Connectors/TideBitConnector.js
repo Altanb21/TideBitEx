@@ -995,6 +995,7 @@ class TibeBitConnector extends ConnectorBase {
       const tbOrdersRes = await axios.post(url, formbody, {
         headers,
       }); // TODO: payload
+      this.logger.debug(`tbOrdersRes`, tbOrdersRes)
       return new ResponseFormat({
         message: "postPlaceOrder",
         payload: [
@@ -1013,7 +1014,7 @@ class TibeBitConnector extends ConnectorBase {
       // debug for postman so return error
       return new ResponseFormat({
         message: "postPlaceOrder error",
-        code: Codes.UNKNOWN_ERROR,
+        code: Codes.USER_IS_LOGOUT,
       });
     }
   }

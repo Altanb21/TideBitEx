@@ -5,6 +5,7 @@ import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import Events from "../constant/Events";
+import Codes from "../constant/Codes";
 
 let interval,
   depthBookSyncInterval = 500,
@@ -19,6 +20,7 @@ const StoreProvider = (props) => {
   const location = useLocation();
   const history = useHistory();
   const [defaultMarket, setDefaultMarket] = useState("btcusdt");
+  const [disableTrade, setDisableTrade] = useState(false);
   const [market, setMarket] = useState(null);
   const [isLogin, setIsLogin] = useState(null);
   const [memberEmail, setMemberEmail] = useState(false);
@@ -228,20 +230,24 @@ const StoreProvider = (props) => {
         );
         return result;
       } catch (error) {
-        enqueueSnackbar(
-          `${error?.message}. Failed to post order:
+        if (error.code !== Codes.USER_IS_LOGOUT) {
+          enqueueSnackbar(
+            `${error?.message}. Failed to post order:
            ${order.kind === "buy" ? "Bid" : "Ask"} ${order.volume} ${
-            order.instId.split("-")[0]
-          } with ${order.kind === "buy" ? "with" : "for"} ${SafeMath.mult(
-            order.price,
-            order.volume
-          )} ${order.instId.split("-")[1]}
+              order.instId.split("-")[0]
+            } with ${order.kind === "buy" ? "with" : "for"} ${SafeMath.mult(
+              order.price,
+              order.volume
+            )} ${order.instId.split("-")[1]}
           `,
-          {
-            variant: "error",
-            action,
-          }
-        );
+            {
+              variant: "error",
+              action,
+            }
+          );
+        } else {
+          setDisableTrade(true);
+        }
       }
     },
     [action, enqueueSnackbar, middleman]
@@ -497,6 +503,7 @@ const StoreProvider = (props) => {
         fiatCurrency,
         depthChartData,
         exchangeRates,
+        disableTrade,
         setIsLogin,
         // sync,
         init,

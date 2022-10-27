@@ -608,6 +608,7 @@ const TradeForm = (props) => {
         type="submit"
         className="btn market-trade__button"
         disabled={
+          storeCtx.disableTrade ||
           !storeCtx.accounts?.accounts ||
           !storeCtx.selectedTicker ||
           !!errorMessage ||

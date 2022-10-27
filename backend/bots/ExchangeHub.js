@@ -2392,7 +2392,7 @@ class ExchangeHub extends Bot {
     if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "member_id not found",
-        code: Codes.MEMBER_ID_NOT_FOUND,
+        code: Codes.USER_IS_LOGOUT,
       });
     }
     /* !!! HIGH RISK (start) !!! */
