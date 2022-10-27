@@ -120,54 +120,62 @@ const UserInfo = (_) => {
             <div>{storeCtx.memberEmail}</div>
           </div>
           <ul className={`user-info__navs--dropdown${openNav ? " open" : ""}`}>
-            <ToggleButton
-              option={t("sound")}
-              status={openSound}
-              onClick={() => setOpenSound((prev) => !prev)}
-            />
-            <ToggleButton
-              option={t("notification")}
-              status={openNotification}
-              onClick={() => setOpenNotification((prev) => !prev)}
-            />
-            <li className="user-info__navs-item">
-              <a
-                href="/accounts"
-                target="_blank"
-                className="user-info__navs-link"
-              >
-                <RiKey2Line size={20} />
-                {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
-                <span>{t("funds")}</span>
-              </a>
-            </li>
-            <li className="user-info__navs-item">
-              <a
-                href="/settings"
-                target="_blank"
-                className="user-info__navs-link"
-              >
-                {/* <i class="fa fa-wrench"></i> */}
-                <FaWrench size={16} />
-                <span>{t("profile")}</span>
-              </a>
-            </li>
-            <li className="user-info__navs-item">
-              <a
-                href="/history/orders"
-                target="_blank"
-                className="user-info__navs-link"
-              >
-                {/* <i class="fa fa-history"></i> */}
-                <RiHistoryFill size={16} />
-                <span>{t("_history")}</span>
-              </a>
-            </li>
+            {!storeCtx.disableTrade && (
+              <>
+                <ToggleButton
+                  option={t("sound")}
+                  status={openSound}
+                  onClick={() => setOpenSound((prev) => !prev)}
+                />
+                <ToggleButton
+                  option={t("notification")}
+                  status={openNotification}
+                  onClick={() => setOpenNotification((prev) => !prev)}
+                />
+                <li className="user-info__navs-item">
+                  <a
+                    href="/accounts"
+                    target="_blank"
+                    className="user-info__navs-link"
+                  >
+                    <RiKey2Line size={20} />
+                    {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
+                    <span>{t("funds")}</span>
+                  </a>
+                </li>
+                <li className="user-info__navs-item">
+                  <a
+                    href="/settings"
+                    target="_blank"
+                    className="user-info__navs-link"
+                  >
+                    {/* <i class="fa fa-wrench"></i> */}
+                    <FaWrench size={16} />
+                    <span>{t("profile")}</span>
+                  </a>
+                </li>
+                <li className="user-info__navs-item">
+                  <a
+                    href="/history/orders"
+                    target="_blank"
+                    className="user-info__navs-link"
+                  >
+                    {/* <i class="fa fa-history"></i> */}
+                    <RiHistoryFill size={16} />
+                    <span>{t("_history")}</span>
+                  </a>
+                </li>
+              </>
+            )}
             <li className="user-info__navs-item">
               <a href="/signout" className="user-info__navs-link">
                 {/* <i class="fa fa-sign-out"></i> */}
                 <FiLogOut size={16} />
-                <span>{t("logout")}</span>
+                {storeCtx.disableTrade ? (
+                  <span>{t("login")}</span>
+                ) : (
+                  <span>{t("logout")}</span>
+                )}
               </a>
             </li>
           </ul>
