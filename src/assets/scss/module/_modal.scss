@@ -170,6 +170,9 @@
     letter-spacing: 0px;
     color: #767676;
   }
+  .exchange &__title{
+    color: #fff;
+  }
   &__close-btn {
     position: absolute;
     top: 27px;
@@ -206,6 +209,7 @@
   }
   .exchange &__btn{
     background-color: #00b5ad;
+    border-color: #00b5ad;
   }
   &__cancel-btn {
     color: #3e3e3e;
