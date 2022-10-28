@@ -816,14 +816,7 @@ class mysql {
    * [deprecated] 2022/10/19
    * 沒有地方呼叫
    */
-  async getOuterTradesByStatus({
-    exchangeCode,
-    status,
-    asc,
-    limit,
-    offset,
-    days,
-  }) {
+  async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
     const query = `
     SELECT
       outer_trades.id,
@@ -836,7 +829,6 @@ class mysql {
       AND(outer_trades.status = ?
         OR outer_trades.order_id IS NULL
         OR outer_trades.create_at IS NULL)
-      AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     ORDER BY
       outer_trades.create_at ${asc ? "ASC" : "DESC"}
     LIMIT ${limit} OFFSET ${offset};`;
@@ -1094,7 +1086,7 @@ class mysql {
   }
 
   // 不應該超過 3 筆
-  async getAccountVersionsByModifiableId(id) {
+  async getAccountVersionsByModifiableId(id, type) {
     const query = `
     SELECT
       account_versions.id,
@@ -1114,12 +1106,17 @@ class mysql {
 	    account_versions
     WHERE
 	    account_versions.modifiable_id = ?
+      AND account_versions.modifiable_type = ?
     LIMIT 10;`;
     try {
-      this.logger.debug("getAccountVersionsByModifiableId", query, `[${id}]`);
+      this.logger.debug(
+        "getAccountVersionsByModifiableId",
+        query,
+        `[${id}, ${type}]`
+      );
       const [accountVersions] = await this.db.query({
         query,
-        values: [id],
+        values: [id, type],
       });
       return accountVersions;
     } catch (error) {

@@ -226,8 +226,8 @@ class DBOperator {
     return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
   }
 
-  async getAccountVersionsByModifiableId(id) {
-    return this.database.getAccountVersionsByModifiableId(id);
+  async getAccountVersionsByModifiableId(id, type) {
+    return this.database.getAccountVersionsByModifiableId(id, type);
   }
 
   async getTradeByTradeFk(tradeFk) {
@@ -240,7 +240,7 @@ class DBOperator {
     asc = true,
     limit = 100,
     offset = 0,
-    days = 30,
+    // days = 30,
   }) {
     return this.database.getOuterTradesByStatus({
       exchangeCode,
@@ -248,7 +248,7 @@ class DBOperator {
       asc,
       limit,
       offset,
-      days,
+      // days,
     });
   }
 
