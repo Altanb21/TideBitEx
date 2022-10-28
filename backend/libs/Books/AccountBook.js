@@ -11,42 +11,52 @@ class AccountBook extends BookBase {
     eur: 8.9341,
     try: 1.4637,
   };
-  exchangeRates = {};
-  constructor({ logger, markets, coinsSettings, priceList }) {
+  // exchangeRates = {};
+  constructor({
+    logger,
+    markets,
+    coinsSettings,
+    //  priceList
+  }) {
     super({ logger, markets });
     this._config = { remove: false, add: false, update: true };
     this.coinsSettings = coinsSettings;
-    this.priceList = priceList;
-    this.exchangeRates = this.coinsSettings
-      .filter((coin) => coin.visible)
-      .reduce((prev, curr) => {
-        prev[curr.code.toUpperCase()] = {
-          ...curr,
-          rate:
-            curr.code === "try"
-              ? this._ratio.try
-              : this.priceList[curr.code]
-              ? SafeMath.mult(this.priceList[curr.code], this._ratio.usd)
-              : 0,
-        };
-        return prev;
-      }, {});
+    
+    /**
+     * [deprecated] 2022/10/28
+     *  move to frontend ticker book `getPrice`
+     */
+    // this.priceList = priceList;
+    // this.exchangeRates = this.coinsSettings
+    //   .filter((coin) => coin.visible)
+    //   .reduce((prev, curr) => {
+    //     prev[curr.code.toUpperCase()] = {
+    //       ...curr,
+    //       rate:
+    //         curr.code === "try"
+    //           ? this._ratio.try
+    //           : this.priceList[curr.code]
+    //           ? SafeMath.mult(this.priceList[curr.code], this._ratio.usd)
+    //           : 0,
+    //     };
+    //     return prev;
+    //   }, {});
     // this.logger.debug(`this.exchangeRates `, this.exchangeRates);
 
     this.name = `AccountBook`;
     return this;
   }
 
-  getExchangeRate() {
-    return this.exchangeRates;
-  }
+  // getExchangeRate() {
+  //   return this.exchangeRates;
+  // }
 
   getDifference(memberId) {
     if (!this._difference[memberId]) return null;
     else
       return Object.values(this._difference[memberId]).map((account) => ({
         ...account,
-        exchangeRate: this.exchangeRates[account.currency]?.rate || 0,
+        // exchangeRate: this.exchangeRates[account.currency]?.rate || 0,
       }));
   }
 
@@ -60,11 +70,11 @@ class AccountBook extends BookBase {
       if (instId)
         return instId.split("-").map((currency) => ({
           ...this._snapshot[memberId][currency],
-          exchangeRate: this.exchangeRates[currency]?.rate || 0,
+          // exchangeRate: this.exchangeRates[currency]?.rate || 0,
         }));
       return Object.values(this._snapshot[memberId]).map((account) => ({
         ...account,
-        exchangeRate: this.exchangeRates[account.currency]?.rate || 0,
+        // exchangeRate: this.exchangeRates[account.currency]?.rate || 0,
       }));
     }
   }

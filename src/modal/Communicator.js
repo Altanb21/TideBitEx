@@ -73,7 +73,7 @@ class Communicator {
     try {
       // ++ TODO
       const res = await this._get(`/logout`);
-      console.log(`res`)
+      console.log(`res`);
       if (res.success) {
         return res.data;
       }
@@ -82,7 +82,6 @@ class Communicator {
       return Promise.reject({ ...error });
     }
   }
-
 
   // Public
   /**
@@ -105,6 +104,9 @@ class Communicator {
     }
   }
 
+  /**
+   * [deprecated] 2022/10/28
+   */
   async getExchangeRates() {
     try {
       const res = await this._request({
@@ -389,7 +391,7 @@ class Communicator {
     }
   }
 
-  async getOuterPendingOrders(exchange, limit , offset ) {
+  async getOuterPendingOrders(exchange, limit, offset) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
       let arr = [];

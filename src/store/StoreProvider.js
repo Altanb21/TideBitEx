@@ -41,7 +41,10 @@ const StoreProvider = (props) => {
   const [depthBook, setDepthbook] = useState(null);
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
-  const [fiatCurrency, setFiatCurrency] = useState("usd");
+  const [baseCurrency, setBaseCurrency] = useState("hkd");
+  /**
+   * [deprecated] 2022/10/28
+   */
   const [exchangeRates, setExchangeRates] = useState(null);
   const [tokenExpired, setTokenExpired] = useState(null);
 
@@ -178,6 +181,10 @@ const StoreProvider = (props) => {
 
   const getDashboardData = async () => {
     return await middleman.getDashboardData();
+  };
+
+  const getPrice = (currency) => {
+    return middleman.getPrice(currency);
   };
 
   /**
@@ -411,11 +418,14 @@ const StoreProvider = (props) => {
     };
   }, [market, middleman]);
 
-  const updateFiatCurrency = (fiatCurrency) => {
-    middleman.setFiatCurrency(fiatCurrency);
-    setFiatCurrency(fiatCurrency);
+  const updateBaseCurrency = (baseCurrency) => {
+    middleman.setBaseCurrency(baseCurrency);
+    setBaseCurrency(baseCurrency);
   };
 
+  /**
+   * [deprecated] 2022/10/28
+   */
   const getExchangeRates = useCallback(async () => {
     let _exchangeRates = exchangeRates;
     if (!_exchangeRates) {
@@ -490,7 +500,7 @@ const StoreProvider = (props) => {
       }
     }
     // console.log(`storeCtx start end`);
-  }, [isLogin, location.pathname, middleman]);
+  }, [countDown, isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
@@ -516,9 +526,13 @@ const StoreProvider = (props) => {
         tickSz,
         lotSz,
         memberEmail,
-        fiatCurrency,
+        baseCurrency,
         depthChartData,
-        exchangeRates,
+        /**
+         * [deprecated] 2022/10/28
+         */
+        // exchangeRates,
+        getPrice,
         disableTrade,
         tokenExpired,
         setIsLogin,
@@ -539,13 +553,13 @@ const StoreProvider = (props) => {
         getOuterPendingOrders,
         setFocusEl,
         changeRange,
-        updateFiatCurrency,
+        updateBaseCurrency,
         getAdminUser,
         getAdminUsers,
         addAdminUser,
         deleteAdminUser,
         updateAdminUser,
-        getExchangeRates,
+        // getExchangeRates,
         getTickersSettings,
         getCoinsSettings,
         updateCoinSetting,
