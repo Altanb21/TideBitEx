@@ -342,17 +342,20 @@ class Middleman {
     return this.tickers;
   }
 
-  // async getExchangeRates() {
-  //   try {
-  //     const exchangeRates = await this.communicator.getExchangeRates();
-  //     this.exchangeRates = exchangeRates;
-  //     // console.log(`middleman this.exchangeRates`, this.exchangeRates)
-  //     return exchangeRates;
-  //   } catch (error) {
-  //     this.exchangeRates = {};
-  //     throw error;
-  //   }
-  // }
+  /**
+   * [deprecated] 2022/10/28
+   */
+  async getExchangeRates() {
+    try {
+      const exchangeRates = await this.communicator.getExchangeRates();
+      this.exchangeRates = exchangeRates;
+      // console.log(`middleman this.exchangeRates`, this.exchangeRates)
+      return exchangeRates;
+    } catch (error) {
+      this.exchangeRates = {};
+      throw error;
+    }
+  }
 
   getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;

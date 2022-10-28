@@ -41,11 +41,10 @@ const StoreProvider = (props) => {
   const [depthBook, setDepthbook] = useState(null);
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
-<<<<<<< HEAD
   const [baseCurrency, setBaseCurrency] = useState("hkd");
-  // const [exchangeRates, setExchangeRates] = useState(null);
-=======
-  const [fiatCurrency, setFiatCurrency] = useState("usd");
+  /**
+   * [deprecated] 2022/10/28
+   */
   const [exchangeRates, setExchangeRates] = useState(null);
   const [tokenExpired, setTokenExpired] = useState(null);
 
@@ -57,7 +56,6 @@ const StoreProvider = (props) => {
       await middleman.logout();
     }, expireTime);
   }, [middleman]);
->>>>>>> develop
 
   const action = useCallback(
     (key) => (
@@ -425,18 +423,21 @@ const StoreProvider = (props) => {
     setBaseCurrency(baseCurrency);
   };
 
-  // const getExchangeRates = useCallback(async () => {
-  //   let _exchangeRates = exchangeRates;
-  //   if (!_exchangeRates) {
-  //     try {
-  //       _exchangeRates = await middleman.getExchangeRates();
-  //       setExchangeRates(_exchangeRates);
-  //     } catch (error) {
-  //       console.error(`getExchangeRates`, error);
-  //     }
-  //   }
-  //   return _exchangeRates;
-  // }, [exchangeRates, middleman]);
+  /**
+   * [deprecated] 2022/10/28
+   */
+  const getExchangeRates = useCallback(async () => {
+    let _exchangeRates = exchangeRates;
+    if (!_exchangeRates) {
+      try {
+        _exchangeRates = await middleman.getExchangeRates();
+        setExchangeRates(_exchangeRates);
+      } catch (error) {
+        console.error(`getExchangeRates`, error);
+      }
+    }
+    return _exchangeRates;
+  }, [exchangeRates, middleman]);
 
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
@@ -499,7 +500,7 @@ const StoreProvider = (props) => {
       }
     }
     // console.log(`storeCtx start end`);
-  }, [isLogin, location.pathname, middleman]);
+  }, [countDown, isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
@@ -527,14 +528,13 @@ const StoreProvider = (props) => {
         memberEmail,
         baseCurrency,
         depthChartData,
-<<<<<<< HEAD
+        /**
+         * [deprecated] 2022/10/28
+         */
         // exchangeRates,
         getPrice,
-=======
-        exchangeRates,
         disableTrade,
         tokenExpired,
->>>>>>> develop
         setIsLogin,
         // sync,
         init,

@@ -21,6 +21,11 @@ class AccountBook extends BookBase {
     super({ logger, markets });
     this._config = { remove: false, add: false, update: true };
     this.coinsSettings = coinsSettings;
+    
+    /**
+     * [deprecated] 2022/10/28
+     *  move to frontend ticker book `getPrice`
+     */
     // this.priceList = priceList;
     // this.exchangeRates = this.coinsSettings
     //   .filter((coin) => coin.visible)

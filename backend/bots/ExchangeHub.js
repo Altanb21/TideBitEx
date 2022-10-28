@@ -1859,6 +1859,10 @@ class ExchangeHub extends Bot {
     return this.tideBitConnector.router("getUsersAccounts", {});
   }
 
+  /**
+   * [deprecated] 2022/10/28
+   *  move to frontend ticker book `getPrice`
+   */
   // async getPriceList() {
   //   try {
   //     const res = await axios({
@@ -1876,6 +1880,10 @@ class ExchangeHub extends Bot {
   //   }
   // }
 
+  /**
+   * [deprecated] 2022/10/28
+   *  move to frontend ticker book `getPrice`
+   */
   // async getExchangeRates() {
   //   const exchangeRates = this.accountBook.exchangeRates;
   //   return Promise.resolve(

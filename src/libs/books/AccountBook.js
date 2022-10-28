@@ -24,6 +24,10 @@ class AccountBook extends BookBase {
     return this;
   }
 
+  /**
+   * [deprecated] 2022/10/28
+   * move to tickerBook
+   */
   // /**
   //  * @param {String} currency
   //  */
@@ -31,10 +35,18 @@ class AccountBook extends BookBase {
   //   this._fiatCurrency = currency;
   // }
 
+  /**
+   * [deprecated] 2022/10/28
+   * move to tickerBook
+   */
   // get fiatCurrency() {
   //   return this._fiatCurrency;
   // }
 
+  /**
+   * [deprecated] 2022/10/28
+   * move to middleman
+   */
   // getAssetsSum() {
   //   let sum = this._sum;
   //   // console.log(`[START] getAssetsSum sum`, sum);
@@ -83,6 +95,10 @@ class AccountBook extends BookBase {
     );
   }
 
+  /**
+   * [deprecated] 2022/10/28
+   *  move to middleman
+   */
   // sumUp = () => {
   //   let sum = 0;
   //   Object.values(this._snapshot).forEach((account, i) => {
