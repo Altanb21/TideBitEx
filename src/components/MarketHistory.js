@@ -2,43 +2,42 @@ import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 import { dateFormatter, formateDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
-import { FixedSizeList as List } from "react-window";
+// import { FixedSizeList as List } from "react-window";
 
-const TradeTile = (props) => {
-  const storeCtx = useContext(StoreContext);
+const TradeTile = React.memo((props) => {
   return (
     <li
       className={`market-history__tile flex-row 
-      ${props.trade.update ? "++TODO" : ""}
+      ${props.update ? "++TODO" : ""}
       `}
-      trade-id={props.trade.id}
+      trade-id={props.id}
       style={props.style}
     >
       <div className="market-history__tile--time">
-        <span>{dateFormatter(parseInt(props.trade.ts)).time}</span>
-        <span>{dateFormatter(parseInt(props.trade.ts)).date}</span>
+        <span>{dateFormatter(parseInt(props.ts)).time}</span>
+        <span>{dateFormatter(parseInt(props.ts)).date}</span>
       </div>
       <div
         className={`market-history__tile--data ${
-          props.trade.side === "down" ? "red" : "green"
+          props.side === "down" ? "red" : "green"
         }`}
       >
-        {formateDecimal(props.trade.price, {
-          decimalLength: storeCtx.tickSz || 0,
+        {formateDecimal(props.price, {
+          decimalLength: props.tickSz || 0,
           pad: true,
         })}
       </div>
       <div className="market-history__tile--data">
-        {formateDecimal(props.trade.volume, {
-          decimalLength: storeCtx.lotSz || 0,
+        {formateDecimal(props.volume, {
+          decimalLength: props.lotSz || 0,
           pad: true,
         })}
       </div>
     </li>
   );
-};
+});
 
-const MarketHistory = (props) => {
+const MarketHistory = (_) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
 
@@ -57,7 +56,17 @@ const MarketHistory = (props) => {
       <ul className="market-history__list scrollbar-custom">
         {storeCtx.trades?.length > 0 &&
           storeCtx.trades.map((trade) => (
-            <TradeTile key={`${trade.market}-${trade.id}`} trade={trade} />
+            <TradeTile
+              key={`${trade.market}-${trade.id}`}
+              id={trade.id}
+              update={trade.update}
+              ts={trade.ts}
+              side={trade.side}
+              price={trade.price}
+              volume={trade.volume}
+              tickSz={storeCtx.tickSz}
+              lotSz={storeCtx.lotSz}
+            />
           ))}
         {/* <List
           innerElementType="ul"

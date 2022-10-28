@@ -232,5 +232,6 @@
   "coin-close": "入金功能关闭",
   "sub-account": "子账号",
   "asset-balance": "资产水位",
-  "value": "数量"
+  "value": "数量",
+  "tokex_expire": "页面闲置过久，请重新登入"
 }

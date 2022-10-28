@@ -71,12 +71,7 @@ class ExchangeHubService {
       status: Database.OUTERTRADE_STATUS.UNPROCESS,
     });
     // 2. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    await this._processOuterTrades(
-      outerTrades.map((ot) => ({
-        ...JSON.parse(ot.data),
-        exchangeCode: ot.exchange_code,
-      }))
-    );
+    await this._processOuterTrades(outerTrades, { needParse: true });
   }
 
   async syncAPIOuterTrades(exchange = SupportedExchange.OKEX, data, interval) {
@@ -92,7 +87,7 @@ class ExchangeHubService {
     await this.insertOuterTrades(outerTrades);
 
     // 3. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    await this._processOuterTrades(outerTrades);
+    await this._processOuterTrades(outerTrades, { needParse: false });
   }
 
   async sync({
@@ -1258,7 +1253,7 @@ class ExchangeHubService {
     return result;
   }
 
-  async _processOuterTrades(outerTrades) {
+  async _processOuterTrades(outerTrades, options) {
     // let tmp,
     //   updateData = [];
     this.logger.debug(`[${this.constructor.name}] _processOuterTrades`);
@@ -1276,7 +1271,12 @@ class ExchangeHubService {
     );
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
-      await this.processor(trade);
+      if (options.needParse)
+        await this.processor({
+          ...JSON.parse(trade.data),
+          exchangeCode: trade.exchange_code,
+        });
+      else await this.processor(trade);
       // tmp = await this._processOuterTrade({
       //   ...JSON.parse(trade.data),
       //   exchangeCode: trade.exchange_code,

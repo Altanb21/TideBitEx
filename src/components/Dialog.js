@@ -16,16 +16,20 @@ const Dialog = (props) => {
         <div className={`modal__dialog modal__card ${props.className}`}>
           <div className="modal__header">
             <div className="modal__title">{props.title}</div>
-            <div className="modal__close-btn"  onClick={props.onClose}></div>
+            {!props.block && (
+              <div className="modal__close-btn" onClick={props.onClose}></div>
+            )}
           </div>
           <div className="modal__content">{props.children}</div>
           <div className="modal__footer">
-            <div
-              className="modal__btn modal__cancel-btn"
-              onClick={props.onCancel}
-            >
-              {t("cancel")}
-            </div>
+            {!props.block && (
+              <div
+                className="modal__btn modal__cancel-btn"
+                onClick={props.onCancel}
+              >
+                {t("cancel")}
+              </div>
+            )}
             <div
               className="modal__btn modal__confirm-btn"
               onClick={props.onConfirm}

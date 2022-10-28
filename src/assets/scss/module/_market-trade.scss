@@ -149,6 +149,7 @@
     padding: 0px;
     margin-bottom: 7px;
     gap: 7px;
+    cursor: pointer;
     // justify-content: space-between;
   }
   &__amount-controller > li > span {
@@ -172,6 +173,11 @@
   }
   &__form > *:last-child {
     // flex: auto;
+  }
+  &__button:disabled{
+    color: #fff;
+    // cursor: not-allowed;
+    cursor: auto;
   }
   &__button {
     color: #fff;

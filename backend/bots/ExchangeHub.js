@@ -1235,6 +1235,75 @@ class ExchangeHub extends Bot {
     return Promise.resolve(result);
   }
 
+  async getMemberReferral(member) {
+    let referredByMember, referral;
+    referredByMember = await this.database.getMemberByCondition({
+      refer_code: member.refer,
+    });
+    referral = await this.database.getMemberReferral({
+      referrerId: referredByMember.id,
+      refereeId: member.id,
+    });
+    return { referredByMember, referral };
+  }
+
+  async getReferrerCommissionPlan(referral) {
+    // expose :referrer_commission_plan do |member|
+    // ::APIv2::Entities::CommissionPlan.represent(
+    //   Referral::CommissionService.get_default_commission_plan(member: member),
+    //   { enabled_policies_only: true }
+    // )
+    let plan,
+      planId = referral.commission_plan_id;
+    if (!planId) {
+      plan = await this.database.getDefaultCommissionPlan();
+      planId = plan.id;
+    }
+    this.logger.log(`getReferrerCommissionPlan planId`, planId);
+    return planId;
+  }
+
+  async getReferrerCommissionPolicy(referral, voucher) {
+    // commission_plan.policies.sort_by{ |policy| policy.referred_months }.detect do |policy|
+    // policy.is_enabled? && (@referral.created_at + policy.referred_months.month >= @voucher.created_at)
+    let policy;
+    if (referral.is_enabled) {
+      let commissionPlanId = await this.getReferrerCommissionPlan(referral);
+      let commissionPolicies = await this.database.getCommissionPolicies(
+        commissionPlanId
+      );
+      let dayTime = 24 * 60 * 60 * 1000;
+      let days = Math.ceil(
+        (new Date(`${voucher.created_at}`).getTime() -
+          new Date(`${referral.created_at}`).getTime()) /
+          dayTime
+      );
+      this.logger.log(`getReferrerCommissionPolicy days`, days);
+      if (days <= 365) {
+        let index = 1;
+        let year = new Date(`${referral.created_at}`).getFullYear();
+        let month = new Date(`${referral.created_at}`).getMonth();
+        let accDays = new Date(year, month + 1, 0).getDate();
+        while (days > accDays) {
+          month++;
+          index++;
+          let dateLength = new Date(year, month + 1, 0).getDate();
+          accDays += dateLength;
+          if (month === 12) {
+            month = 0;
+            year++;
+          }
+        }
+        this.logger.log(`getReferrerCommissionPolicy index`, index);
+        policy = commissionPolicies.find((policy) =>
+          SafeMath.eq(policy.referred_months, index)
+        );
+        this.logger.log(`getReferrerCommissionPolicy policy`, policy);
+      }
+    }
+    return policy;
+  }
+
   async addAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
     this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
@@ -1834,6 +1903,11 @@ class ExchangeHub extends Bot {
     });
   }
 
+  async logout({ header }) {
+    this.logger.debug(`*********** [${this.name}] logout ************`);
+    return this.tideBitConnector.router("logout", { header });
+  }
+
   async getTicker({ params, query }) {
     this.logger.debug(`*********** [${this.name}] getTicker ************`);
     // this.tickersSettings = this._getTickersSettings();
@@ -2163,11 +2237,17 @@ class ExchangeHub extends Bot {
             referralCommission;
           if (!referralCommissions[tickerSetting.id]) {
             referralCommissions[tickerSetting.id] =
-              await this.database.getReferralCommissions({
-                market: tickerSetting.code,
-                start: startDate,
-                end: endtDate,
+              await this.database.getReferralCommissionsByConditions({
+                conditions: {
+                  market: tickerSetting.code,
+                  start: startDate,
+                  end: endtDate,
+                },
               });
+            this.logger.log(
+              `getOuterTradeFills referralCommissions[${tickerSetting.id}]`,
+              referralCommissions[tickerSetting.id]
+            );
           }
           referralCommission = referralCommissions[tickerSetting.id]?.find(
             (rc) => rc.voucher_id === _trade.voucher_id
@@ -2210,7 +2290,7 @@ class ExchangeHub extends Bot {
             referral: referralCommission?.ref_net_fee
               ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
               : null,
-            ts: parseInt(trade.ts),
+            ts: parseInt(trade.ts || trade.uTime),
           };
           // this.logger.debug(`processTrade`, processTrade);
           outerTrades = [...outerTrades, processTrade];
@@ -2238,7 +2318,7 @@ class ExchangeHub extends Bot {
       // dbOrders = await this.database.getOrdersJoinMemberEmail(
       //   Database.ORDER_STATE_CODE.WAIT
       // );
-      memberIds = [];
+      memberIds = {};
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
@@ -2254,7 +2334,7 @@ class ExchangeHub extends Bot {
                   ? SafeMath.mult(order.avgPx, order.accFillSz)
                   : order.accFillSz,
               processOrder;
-            memberIds.push(memberId);
+            if (!memberIds[memberId]) memberIds[memberId] = memberId;
             processOrder = {
               ...order,
               unFillSz: SafeMath.minus(order.sz, order.accFillSz),
@@ -2268,16 +2348,14 @@ class ExchangeHub extends Bot {
             // this.logger.debug(`processOrder`, processOrder);
             outerOrders = [...outerOrders, processOrder];
           }
-          let emailsObj = this.database.getEmailsByMemberIds(
-            memberIds,
-            memberIds.length,
-            0
+          let emailsObj = await this.database.getEmailsByMemberIds(
+            Object.values(memberIds)
           );
-          outerOrders.map((order) => {
+          outerOrders = outerOrders.map((order) => {
             let emailObj = emailsObj.find(
               (obj) => obj.id.toString() === order.memberId.toString()
             );
-            return { ...order, email: emailObj.email };
+            return { ...order, email: emailObj?.email };
           });
         }
         return new ResponseFormat({
@@ -2319,7 +2397,7 @@ class ExchangeHub extends Bot {
     if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "member_id not found",
-        code: Codes.MEMBER_ID_NOT_FOUND,
+        code: Codes.USER_IS_LOGOUT,
       });
     }
     /* !!! HIGH RISK (start) !!! */
@@ -3321,7 +3399,15 @@ class ExchangeHub extends Bot {
    * @property {Date} updated_at
    */
   // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
-  calculator({ market, member, dbOrder, orderDetail, data }) {
+  async calculator({
+    market,
+    member,
+    dbOrder,
+    orderDetail,
+    data,
+    referredByMember,
+    referral,
+  }) {
     this.logger.debug(`calculator `);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
@@ -3357,6 +3443,9 @@ class ExchangeHub extends Bot {
         // modifiable_id: "",//++TODO
       },
       orderFullFilledAccountVersion,
+      currency,
+      refGrossFee,
+      referralCommission,
       result;
     try {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
@@ -3383,6 +3472,10 @@ class ExchangeHub extends Bot {
         trend = Database.ORDER_KIND.BID;
         askFee = 0;
         bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
+        refGrossFee = bidFee;
+        currency = this.coinsSettings.find(
+          (coinSetting) => coinSetting.code === market.bid.currency
+        )?.id;
         askAccountVersion = {
           ...askAccountVersion,
           balance: SafeMath.minus(data.fillSz, bidFee),
@@ -3405,6 +3498,10 @@ class ExchangeHub extends Bot {
         orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
         trend = Database.ORDER_KIND.ASK;
         askFee = SafeMath.mult(value, askFeeRate);
+        refGrossFee = askFee;
+        currency = this.coinsSettings.find(
+          (coinSetting) => coinSetting.code === market.ask.currency
+        )?.id;
         bidFee = 0;
         askAccountVersion = {
           ...askAccountVersion,
@@ -3509,6 +3606,46 @@ class ExchangeHub extends Bot {
         done_at: `"${doneAt}"`,
       };
       this.logger.debug(`calculator updatedOrder`, updatedOrder);
+      if (referredByMember) {
+        this.logger.debug(`calculator referredByMember`, referredByMember);
+        this.logger.debug(`calculator referral`, referral);
+        /**
+         * referred_by_member: @referred_by_member => referredByMember.id
+         * trade_member: @trade_member => member.id
+         * voucher: @voucher => vouucher.id
+         * applied_plan: plan => getReferrerCommissionPlan(referral)
+         * applied_policy: policy => getReferrerCommissionPolicy(referral, voucher)
+         * trend: @trend,
+         * market: @market_code,
+         * currency: @currency_id,
+         * ref_gross_fee: @fee,
+         * ref_net_fee: @fee - eligible_commission,
+         * amount: eligible_commission
+         */
+        let plan = await this.getReferrerCommissionPlan(referral);
+        let policy = await this.getReferrerCommissionPolicy(referral, voucher);
+        if (policy) {
+          let eligibleCommission = SafeMath.mult(refGrossFee, policy.rate);
+          referralCommission = {
+            referredByMemberId: referredByMember.id,
+            tradeMemberId: member.id,
+            // voucherId: voucher.id, // ++ after insert voucherId
+            appliedPlanId: plan,
+            appliedPolicyId: policy.id,
+            trend,
+            market: market.code,
+            currency,
+            refGrossFee,
+            refNetFee: SafeMath.minus(refGrossFee, eligibleCommission),
+            amount: eligibleCommission,
+            state: "submitted",
+            depositedAt: null,
+            createdAt: now,
+            updatedAt: now,
+          };
+          this.logger.log(`calculator referralCommission`, referralCommission);
+        }
+      }
     } catch (error) {
       this.logger.error(
         `[${this.constructor.name}] calculaotor went wrong`,
@@ -3523,6 +3660,7 @@ class ExchangeHub extends Bot {
       askAccountVersion,
       bidAccountVersion,
       orderFullFilledAccountVersion,
+      referralCommission,
     };
     return result;
   }
@@ -3701,17 +3839,27 @@ class ExchangeHub extends Bot {
     askAccountVersion,
     bidAccountVersion,
     orderFullFilledAccountVersion,
+    referralCommission,
     dbTransaction,
   }) {
     /* !!! HIGH RISK (start) !!! */
+    /**
+     * 1. update DB order
+     * 2. insert trade
+     * 3. insert voucher
+     * 4. update Accounts
+     * 5. insert referralCommission (++ TODO verify)
+     */
     let tradeId,
       voucherId,
+      referralCommissionId,
       newAskAccountVersion,
       newBidAccountVersion,
       newOrderFullFilledAccountVersion,
       dbTrade,
       dbVoucher,
-      dbAccountVersions;
+      dbAccountVersions,
+      dbReferrerCommission;
     this.logger.debug(`updater`);
     try {
       if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
@@ -3871,6 +4019,52 @@ class ExchangeHub extends Bot {
           );
         }
       }
+      if (referralCommission) {
+        let rcs = await this.database.getReferralCommissionsByConditions({
+          conditions: {
+            voucherId,
+            market: market.code,
+            tradeMemberId: member.id,
+          },
+        });
+        this.logger.log(`updater rcs`, rcs);
+        dbReferrerCommission = rcs[0];
+        this.logger.log(`updater dbReferrerCommission`, dbReferrerCommission);
+        if (dbReferrerCommission) {
+          this.logger.error(`referralCommission exist`);
+          if (
+            SafeMath.eq(
+              dbReferrerCommission.referred_by_member_id,
+              referralCommission.referredByMemberId
+            ) ||
+            SafeMath.eq(
+              dbReferrerCommission.ref_net_fee,
+              referralCommission.refNetFee
+            )
+          ) {
+            this.logger.error(`referralCommission`, referralCommission);
+            this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
+          }
+          throw Error(
+            `db update referralCommission is different from outer data`
+          );
+        } else {
+          /**
+           * ++ TODO after verify
+           */
+          // referralCommissionId = await this.database.insertReferralCommission(
+          //   {
+          //     ...referralCommission,
+          //     voucherId,
+          //   },
+          //   { dbTransaction }
+          // );
+          // this.logger.debug(
+          //   `updater insertReferralCommission success referralCommissionId`,
+          //   referralCommissionId
+          // );
+        }
+      }
       await this.updateOuterTrade({
         id: tradeFk,
         status: Database.OUTERTRADE_STATUS.DONE,
@@ -3903,6 +4097,8 @@ class ExchangeHub extends Bot {
       order,
       orderDetail,
       result,
+      referredByMember,
+      referral,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
     if (!stop) {
@@ -4023,12 +4219,20 @@ class ExchangeHub extends Bot {
         }
         // 3. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
         if (!stop) {
-          result = this.calculator({
+          if (member.refer) {
+            let tmp = await this.getMemberReferral(member);
+            referredByMember = tmp.referredByMember;
+            referral = tmp.referral;
+            this.logger.log(`updater tmp`, tmp);
+          }
+          result = await this.calculator({
             market,
             member,
             dbOrder: order,
             orderDetail,
             data,
+            referredByMember: referredByMember,
+            referral: referral,
           });
         }
         if (!stop && result) {
@@ -4317,10 +4521,12 @@ class ExchangeHub extends Bot {
       ordType === Database.ORD_TYPE.IOC
         ? type === Database.TYPE.ORDER_BID
           ? body.price
-            ? (parseFloat(body.price) * 1.05).toString()
+            ? // ? (parseFloat(body.price) * 1.05).toString()
+              body.price
             : null
           : body.price
-          ? (parseFloat(body.price) * 0.95).toString()
+          ? // ? (parseFloat(body.price) * 0.95).toString()
+            body.price
           : null
         : body.price || null;
     const locked =
@@ -4379,20 +4585,11 @@ class ExchangeHub extends Bot {
       id: account.id,
       balance: newAccBal,
       locked: newAccLoc,
-      updated_at: `"${accountVersion.updated_at}"`,
+      updated_at: `"${accountVersion.created_at}"`,
     };
     const currency = this.coinsSettings.find(
       (curr) => curr.id === accountVersion.currency
     )?.code;
-    this._emitUpdateAccount({
-      memberId: accountVersion.member_id,
-      account: {
-        balance: newAccBal,
-        locked: newAccLoc,
-        currency: currency.toUpperCase(),
-        total: amount,
-      },
-    });
     newAccountVersion = {
       memberId: account.member_id,
       accountId: account.id,
@@ -4403,8 +4600,8 @@ class ExchangeHub extends Bot {
       amount: amount,
       modifiableId: accountVersion.modifiable_id,
       modifiableType: accountVersion.modifiable_type,
-      createdAt: accountVersion.created_at,
-      updatedAt: accountVersion.updated_at,
+      createdAt: `"${accountVersion.created_at}"`,
+      updatedAt: `"${accountVersion.updated_at}"`,
       currency: account.currency,
       fun: accountVersion.fun,
     };
@@ -4412,8 +4609,16 @@ class ExchangeHub extends Bot {
       newAccountVersion,
       { dbTransaction }
     );
-
     await this.database.updateAccount(newAccount, { dbTransaction });
+    this._emitUpdateAccount({
+      memberId: accountVersion.member_id,
+      account: {
+        balance: newAccBal,
+        locked: newAccLoc,
+        currency: currency.toUpperCase(),
+        total: amount,
+      },
+    });
     return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }

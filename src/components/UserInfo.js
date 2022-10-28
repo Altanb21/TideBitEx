@@ -1,12 +1,13 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext } from "react";
 import StoreContext from "../store/store-context";
 
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
-// import { BiLock } from "react-icons/bi";
 import { RiKey2Line, RiHistoryFill } from "react-icons/ri";
 import { FaWrench, FaUserAlt } from "react-icons/fa";
 import { FiLogOut } from "react-icons/fi";
+
+const AccountMobileTile = React.lazy(() => import("./AccountMobileTile"));
 
 const ToggleButton = (props) => {
   return (
@@ -24,36 +25,7 @@ const ToggleButton = (props) => {
   );
 };
 
-const AccountMobileTile = (props) => {
-  const { t } = useTranslation();
-  return (
-    <li className="mobile-account__tile">
-      <div className="mobile-account__leading">
-        <div className="mobile-account__icon">
-          <img
-            src={`/icons/${props.account.currency.toLowerCase()}.png`}
-            alt={props.account?.currency.toLowerCase()}
-          />
-        </div>
-        <div>{props.account?.currency}</div>
-      </div>
-      <div className="mobile-account__subtitle">
-        <div className="mobile-account__balance">
-          <div>{`${t("amount")}:`}</div>
-          {formateDecimal(props.account?.total, { decimalLength: 8 })}
-        </div>
-        <div className="mobile-account__locked">
-          <div>{`${t("locked")}:`}</div>
-          {formateDecimal(props.account?.locked, { decimalLength: 8 })}
-        </div>
-      </div>
-    </li>
-  );
-};
-
-const UserInfo = (props) => {
-  // const [isInit, setIsInit] = useState(false);
-  // const [email, setEmail] = useState(null);
+const UserInfo = (_) => {
   const [openSound, setOpenSound] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
   const [openAccounts, setOpenAccounts] = useState(false);
@@ -90,23 +62,40 @@ const UserInfo = (props) => {
             }`}
           >
             <div className="user-info__accounts--dropdown-box">
-              {storeCtx.selectedTicker && storeCtx.accounts?.accounts ? (
-                accountsShowMore ? (
-                  Object.values(storeCtx.accounts?.accounts).map((account) => (
-                    <AccountMobileTile account={account} />
-                  ))
+              <React.Suspense fallback={<div></div>}>
+                {storeCtx.selectedTicker && storeCtx.accounts?.accounts ? (
+                  accountsShowMore ? (
+                    Object.values(storeCtx.accounts?.accounts).map(
+                      (account) => (
+                        <AccountMobileTile
+                          withTitle={true}
+                          showTotal={true}
+                          showAvailable={false}
+                          currency={account.currency.toLowerCase()}
+                          total={account.total}
+                          locked={account.locked}
+                        />
+                      )
+                    )
+                  ) : (
+                    storeCtx.selectedTicker.instId.split("-")?.map((ccy) => {
+                      let account = storeCtx.accounts?.accounts[ccy];
+                      return (
+                        <AccountMobileTile
+                          withTitle={true}
+                          showTotal={true}
+                          showAvailable={false}
+                          currency={account.currency.toLowerCase()}
+                          total={account.total}
+                          locked={account.locked}
+                        />
+                      );
+                    })
+                  )
                 ) : (
-                  storeCtx.selectedTicker.instId
-                    .split("-")
-                    ?.map((ccy) => (
-                      <AccountMobileTile
-                        account={storeCtx.accounts?.accounts[ccy]}
-                      />
-                    ))
-                )
-              ) : (
-                <div></div>
-              )}
+                  <div></div>
+                )}
+              </React.Suspense>
             </div>
             <div
               className="user-info__accounts--dropdown-btn"
@@ -131,54 +120,62 @@ const UserInfo = (props) => {
             <div>{storeCtx.memberEmail}</div>
           </div>
           <ul className={`user-info__navs--dropdown${openNav ? " open" : ""}`}>
-            <ToggleButton
-              option={t("sound")}
-              status={openSound}
-              onClick={() => setOpenSound((prev) => !prev)}
-            />
-            <ToggleButton
-              option={t("notification")}
-              status={openNotification}
-              onClick={() => setOpenNotification((prev) => !prev)}
-            />
-            <li className="user-info__navs-item">
-              <a
-                href="/accounts"
-                target="_blank"
-                className="user-info__navs-link"
-              >
-                <RiKey2Line size={20} />
-                {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
-                <span>{t("funds")}</span>
-              </a>
-            </li>
-            <li className="user-info__navs-item">
-              <a
-                href="/settings"
-                target="_blank"
-                className="user-info__navs-link"
-              >
-                {/* <i class="fa fa-wrench"></i> */}
-                <FaWrench size={16} />
-                <span>{t("profile")}</span>
-              </a>
-            </li>
-            <li className="user-info__navs-item">
-              <a
-                href="/history/orders"
-                target="_blank"
-                className="user-info__navs-link"
-              >
-                {/* <i class="fa fa-history"></i> */}
-                <RiHistoryFill size={16} />
-                <span>{t("_history")}</span>
-              </a>
-            </li>
+            {!storeCtx.disableTrade && (
+              <>
+                <ToggleButton
+                  option={t("sound")}
+                  status={openSound}
+                  onClick={() => setOpenSound((prev) => !prev)}
+                />
+                <ToggleButton
+                  option={t("notification")}
+                  status={openNotification}
+                  onClick={() => setOpenNotification((prev) => !prev)}
+                />
+                <li className="user-info__navs-item">
+                  <a
+                    href="/accounts"
+                    target="_blank"
+                    className="user-info__navs-link"
+                  >
+                    <RiKey2Line size={20} />
+                    {/* <FontAwesomeIcon icon={["fal", "coffee"]} /> */}
+                    <span>{t("funds")}</span>
+                  </a>
+                </li>
+                <li className="user-info__navs-item">
+                  <a
+                    href="/settings"
+                    target="_blank"
+                    className="user-info__navs-link"
+                  >
+                    {/* <i class="fa fa-wrench"></i> */}
+                    <FaWrench size={16} />
+                    <span>{t("profile")}</span>
+                  </a>
+                </li>
+                <li className="user-info__navs-item">
+                  <a
+                    href="/history/orders"
+                    target="_blank"
+                    className="user-info__navs-link"
+                  >
+                    {/* <i class="fa fa-history"></i> */}
+                    <RiHistoryFill size={16} />
+                    <span>{t("_history")}</span>
+                  </a>
+                </li>
+              </>
+            )}
             <li className="user-info__navs-item">
               <a href="/signout" className="user-info__navs-link">
                 {/* <i class="fa fa-sign-out"></i> */}
                 <FiLogOut size={16} />
-                <span>{t("logout")}</span>
+                {storeCtx.disableTrade ? (
+                  <span>{t("login")}</span>
+                ) : (
+                  <span>{t("logout")}</span>
+                )}
               </a>
             </li>
           </ul>

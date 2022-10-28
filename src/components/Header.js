@@ -38,13 +38,13 @@ const Header = (props) => {
           {t("digital_staking")}
         </Nav.Link>
         <Nav.Link href="/referral">{t("refer_now")}</Nav.Link>
-        {storeCtx.isLogin === false && (
+        {(storeCtx.isLogin === false || storeCtx.disableTrade) && (
           <React.Fragment>
             <Nav.Link href="/signin">{t("login")}</Nav.Link>
             <Nav.Link href="/signup">{t("register")}</Nav.Link>
           </React.Fragment>
         )}
-        {storeCtx.isLogin && (
+        {storeCtx.isLogin && !storeCtx.disableTrade && (
           <React.Fragment>
             <Nav.Link href="/accounts">{t("accounts")}</Nav.Link>
             <Nav.Link href="/signout">{t("logout")}</Nav.Link>

@@ -12,7 +12,7 @@ import { IoSearch } from "react-icons/io5";
 import { useTranslation } from "react-i18next";
 import { formateDecimal, getPrecision } from "../utils/Utils";
 
-const TickerTile = (props) => {
+const TickerTile = React.memo((props) => {
   // const storeCtx = useContext(StoreContext);
   return (
     <li
@@ -21,47 +21,41 @@ const TickerTile = (props) => {
         props.update ? "" : ""
       }`}
     >
-      <div>{props.ticker.name}</div>
+      <div>{props.name}</div>
       <div>
-        {formateDecimal(props.ticker.last, {
-          decimalLength: props.ticker?.tickSz
-            ? getPrecision(props.ticker?.tickSz)
-            : "0",
+        {formateDecimal(props.last, {
+          decimalLength: props?.tickSz ? getPrecision(props?.tickSz) : "0",
           pad: true,
         })}
       </div>
-      <div className={SafeMath.gte(props.ticker.change, "0") ? "green" : "red"}>
-        {`${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
+      <div className={SafeMath.gte(props.change, "0") ? "green" : "red"}>
+        {`${formateDecimal(SafeMath.mult(props?.changePct, "100"), {
           decimalLength: 2,
           pad: true,
           withSign: true,
         })}%`}
       </div>
       <div>
-        {formateDecimal(props.ticker.volume, {
-          decimalLength: getPrecision(props.ticker?.lotSz),
+        {formateDecimal(props.volume, {
+          decimalLength: getPrecision(props?.lotSz),
           pad: true,
         })}
       </div>
       <div>
-        {formateDecimal(props.ticker.high, {
-          decimalLength: props.ticker?.tickSz
-            ? getPrecision(props.ticker?.tickSz)
-            : "0",
+        {formateDecimal(props.high, {
+          decimalLength: props?.tickSz ? getPrecision(props?.tickSz) : "0",
           pad: true,
         })}
       </div>
       <div>
-        {formateDecimal(props.ticker.low, {
-          decimalLength: props.ticker?.tickSz
-            ? getPrecision(props.ticker?.tickSz)
-            : "0",
+        {formateDecimal(props.low, {
+          decimalLength: props?.tickSz ? getPrecision(props?.tickSz) : "0",
           pad: true,
         })}
       </div>
     </li>
   );
-};
+});
 
 const TickerList = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -70,7 +64,16 @@ const TickerList = (props) => {
       {props.tickers.map((ticker) => (
         <TickerTile
           key={`${ticker.market}`}
-          ticker={ticker}
+          name={ticker.name}
+          baseUnit={ticker.baseUnit}
+          last={ticker.last}
+          high={ticker.high}
+          low={ticker.low}
+          volume={ticker.volume}
+          tickSz={ticker.tickSz}
+          lotSz={ticker.lotSz}
+          change={ticker.change}
+          changePct={ticker.changePct}
           active={ticker.market === storeCtx.market}
           update={ticker.update}
           onClick={() => {

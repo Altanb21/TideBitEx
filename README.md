@@ -1,3 +1,5 @@
+## Tidebit-Lagacy 流程補充
+為了使被推薦的用戶有對應的 commission_plans_id 及得到推薦者的分潤比例，需要再 import 兩張table `commission_plans` 及 `commission_policies` 
 # TideBitEx
 TideBit Exchange
 
@@ -138,6 +140,14 @@ export const wsUrl = 'ws.tidebit.network/ws';
 ```
 cp default.config.js public/tradingview/config.js
 cp default.config.js src/constant/Config.js
+```
+或是將上一個版本的資料，複製的最新版本
+ex:
+```
+cp -r TideBitEx/private/ TideBitEx-[version]/private
+cp TideBitEx/shell/restart.sh TideBitEx-[version]/shell/restart.sh
+cp TideBitEx/src/constant/Config.js TideBitEx-[version]/src/constant/Config.js
+cp TideBitEx/public/tradingview/config.js TideBitEx-[version]/public/tradingview/config.js
 ```
 
 ### 設定 crontab

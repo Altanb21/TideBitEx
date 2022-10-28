@@ -4,7 +4,7 @@ import SideBar from "./SideBar";
 import { useTranslation } from "react-i18next";
 import BottomNavigator from "./BottomNavigator";
 import StoreContext from "../store/store-context";
- 
+
 const languages = {
   "en-US": "English",
   "zh-HK": "繁體中文",
@@ -96,11 +96,13 @@ const Layout = ({ children }) => {
           storeCtx.setFocusEl(e.target);
       }}
     >
-      <SideBar
-        languages={languages}
-        languageKey={storeCtx.languageKey}
-        changeLanguage={changeLanguage}
-      />
+      {active && (
+        <SideBar
+          languages={languages}
+          languageKey={storeCtx.languageKey}
+          changeLanguage={changeLanguage}
+        />
+      )}
       <div className={`layout--pusher${active ? " active" : ""}`}>
         <Header
           languages={languages}

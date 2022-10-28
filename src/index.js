@@ -7,7 +7,7 @@ import "slick-carousel/slick/slick-theme.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./assets/css/ionicons.min.css";
 import "./assets/scss/style.scss";
-import './i18n/config';
+import "./i18n/config";
 
 const ScrollToTop = () => {
   window.scrollTo(0, 0);
