@@ -73,7 +73,8 @@ class TickerBook extends BookBase {
   getPrice(currency) {
     let price = 0,
       ticker;
-    if (this._ratio[currency.toLowerCase()]) price = this._ratio[currency];
+    if (this._ratio[currency.toLowerCase()])
+      price = this._ratio[currency.toLowerCase()];
     else {
       ticker = this._snapshot[`${currency.toLowerCase()}${this._baseCurrency}`];
       if (ticker) {
@@ -82,7 +83,7 @@ class TickerBook extends BookBase {
         ticker = Object.keys(this._snapshot)
           .sort((a, b) => a.code - b.code)
           .find((t) => t.baseUnit === currency.toLowerCase());
-        price = ticker.last * this.getPrice(this.quoteUnit);
+        if (ticker) price = ticker.last * this.getPrice(this.quoteUnit);
       }
     }
     return price;

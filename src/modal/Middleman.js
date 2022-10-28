@@ -512,12 +512,12 @@ class Middleman {
   getAccountsSnapshot(instId) {
     let accounts = this.accountBook.getSnapshot(),
       sum = 0;
-    Object.keys(accounts).forEach((index, currency) => {
+    Object.keys(accounts).forEach((currency) => {
       let price = this.tickerBook.getPrice(currency);
-      let amount = SafeMath.mult(accounts[index].total, price);
-      sum += amount;
-      accounts[index] = {
-        ...accounts[index],
+      let amount = SafeMath.mult(accounts[currency].total, price);
+      sum = sum + parseFloat(amount);
+      accounts[currency] = {
+        ...accounts[currency],
         price,
         amount,
       };
@@ -529,7 +529,7 @@ class Middleman {
       }, {});
     return {
       accounts,
-      sum,
+      sum: sum.toFixed(2),
     };
   }
 
