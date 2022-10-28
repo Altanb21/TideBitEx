@@ -118,8 +118,8 @@ const Vouchers = () => {
   };
   const formateTrades = useCallback(
     async (trades) => {
-      let exchangeRates = storeCtx.exchangeRates;
-      if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
+      // let exchangeRates = storeCtx.exchangeRates;
+      // if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
       // console.log(`formateTrades trades[${trades.length}]`, trades);
       let chartData = { data: {}, xaxisType: "string" },
         data = {};
@@ -180,12 +180,10 @@ const Vouchers = () => {
               lastDailyBar.getMonth() + 1
             }-${lastDailyBar.getDate()}`;
             // console.log(`formateTrades key`, key);
+            let price = storeCtx.getPrice(trade.feeCcy);
             if (!data[key])
               data[key] = {
-                y: SafeMath.mult(
-                  trade.profit,
-                  exchangeRates[trade.feeCcy].rate
-                ),
+                y: SafeMath.mult(trade.profit, price),
                 x: key,
                 date: lastDailyBar,
               };
@@ -194,7 +192,7 @@ const Vouchers = () => {
                 ...data[key],
                 y: SafeMath.plus(
                   data[key].y,
-                  SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
+                  SafeMath.mult(trade.profit, price)
                 ),
               };
 
@@ -268,12 +266,10 @@ const Vouchers = () => {
               lastMonthlyBar.getMonth() + 1
             }`;
             // console.log(`formateTrades key`, key);
+            let price = storeCtx.getPrice(trade.feeCcy);
             if (!data[key])
               data[key] = {
-                y: SafeMath.mult(
-                  trade.profit,
-                  exchangeRates[trade.feeCcy].rate
-                ),
+                y: SafeMath.mult(trade.profit, price),
                 x: `${
                   months[lastMonthlyBar.getMonth()]
                 } ${lastMonthlyBar.getFullYear()}`,
@@ -284,7 +280,7 @@ const Vouchers = () => {
                 ...data[key],
                 y: SafeMath.plus(
                   data[key].y,
-                  SafeMath.mult(trade.profit, exchangeRates[trade.feeCcy].rate)
+                  SafeMath.mult(trade.profit, price)
                 ),
               };
             // }
@@ -481,7 +477,7 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        await storeCtx.getExchangeRates();
+        // await storeCtx.getExchangeRates();
         // console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
         const end = new Date(

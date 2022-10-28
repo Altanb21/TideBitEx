@@ -34,8 +34,8 @@ class Middleman {
     return this;
   }
 
-  setFiatCurrency(fiatCurrency) {
-    this.accountBook.fiatCurrency = fiatCurrency;
+  setbaseCurrency(baseCurrency) {
+    this.tickerBook.baseCurrency = baseCurrency;
   }
 
   async getInstruments(instType) {
@@ -342,6 +342,9 @@ class Middleman {
     return this.tickers;
   }
 
+  /**
+   * [deprecated] 2022/10/28
+   */
   async getExchangeRates() {
     try {
       const exchangeRates = await this.communicator.getExchangeRates();
@@ -513,10 +516,31 @@ class Middleman {
     }
   }
 
+  getPrice(currency) {
+    return this.tickerBook.getPrice(currency);
+  }
+
   getAccountsSnapshot(instId) {
+    let accounts = this.accountBook.getSnapshot(),
+      sum = 0;
+    Object.keys(accounts).forEach((currency) => {
+      let price = this.tickerBook.getPrice(currency);
+      let amount = SafeMath.mult(accounts[currency].total, price);
+      sum = sum + parseFloat(amount);
+      accounts[currency] = {
+        ...accounts[currency],
+        price,
+        amount,
+      };
+    });
+    if (instId)
+      accounts = instId.split("-").reduce((prev, currency) => {
+        prev[currency] = accounts[currency];
+        return prev;
+      }, {});
     return {
-      accounts: this.accountBook.getSnapshot(instId),
-      sum: this.accountBook.getAssetsSum(),
+      accounts,
+      sum: sum.toFixed(2),
     };
   }
 
