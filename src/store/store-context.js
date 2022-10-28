@@ -2,7 +2,7 @@ import React from "react";
 
 const StoreContext = React.createContext({
   defaultMarket: null,
-  exchangeRates: null,
+  // exchangeRates: null,s
   languageKey: null,
   isLogin: null,
   selectedTicker: null,
@@ -23,6 +23,7 @@ const StoreContext = React.createContext({
   tickSz: null,
   lotSz: null,
   memberEmail: null,
+  baseCurrency: "hkd",
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},
@@ -251,7 +252,8 @@ const StoreContext = React.createContext({
   addAdminUser: async (newUser) => {},
   deleteAdminUser: async (user) => {},
   updateAdminUser: async (updateUser) => {},
-  getExchangeRates: async () => {},
+  // getExchangeRates: async () => {},
+  getPrice: async (currency) => {},
   getCoinsSettings: async () => {},
   updateCoinSetting: async (id, visible) => {},
   updateCoinsSettings: async () => {},

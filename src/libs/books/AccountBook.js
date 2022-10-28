@@ -5,17 +5,17 @@ class AccountBook extends BookBase {
   _currentUser;
   _snapshot = {};
   _difference = {};
-  _fiatCurrency = "hkd";
-  _sum;
-  _ratio = {
-    hkd: 1,
-    twd: 0.2623,
-    jpy: 0.0715,
-    krw: 0.0073,
-    usd: 7.8,
-    eur: 8.9341,
-    try: 1.4637,
-  };
+  // _fiatCurrency = "hkd";
+  // _sum;
+  // _ratio = {
+  //   hkd: 1,
+  //   twd: 0.2623,
+  //   jpy: 0.0715,
+  //   krw: 0.0073,
+  //   usd: 7.8,
+  //   eur: 8.9341,
+  //   try: 1.4637,
+  // };
   //exchangeRate 是對美金
   constructor() {
     super();
@@ -24,31 +24,31 @@ class AccountBook extends BookBase {
     return this;
   }
 
-  /**
-   * @param {String} currency
-   */
-  set fiatCurrency(currency) {
-    this._fiatCurrency = currency;
-  }
+  // /**
+  //  * @param {String} currency
+  //  */
+  // set fiatCurrency(currency) {
+  //   this._fiatCurrency = currency;
+  // }
 
-  get fiatCurrency() {
-    return this._fiatCurrency;
-  }
+  // get fiatCurrency() {
+  //   return this._fiatCurrency;
+  // }
 
-  getAssetsSum() {
-    let sum = this._sum;
-    // console.log(`[START] getAssetsSum sum`, sum);
-    // console.log(
-    //   `this._fiatCurrency[this._fiatCurrency !== "hkd"?${
-    //     this._fiatCurrency !== "hkd"
-    //   }] `,
-    //   this._fiatCurrency
-    // );
-    if (!this._fiatCurrency && this._fiatCurrency !== "hkd")
-      sum = SafeMath.mult(this._sum, this._ratio[this._fiatCurrency]);
-    // console.log(`[END] getAssetsSum sum`, sum);
-    return sum;
-  }
+  // getAssetsSum() {
+  //   let sum = this._sum;
+  //   // console.log(`[START] getAssetsSum sum`, sum);
+  //   // console.log(
+  //   //   `this._fiatCurrency[this._fiatCurrency !== "hkd"?${
+  //   //     this._fiatCurrency !== "hkd"
+  //   //   }] `,
+  //   //   this._fiatCurrency
+  //   // );
+  //   if (!this._fiatCurrency && this._fiatCurrency !== "hkd")
+  //     sum = SafeMath.mult(this._sum, this._ratio[this._fiatCurrency]);
+  //   // console.log(`[END] getAssetsSum sum`, sum);
+  //   return sum;
+  // }
 
   getSnapshot(instId) {
     try {
@@ -83,19 +83,19 @@ class AccountBook extends BookBase {
     );
   }
 
-  sumUp = () => {
-    let sum = 0;
-    Object.values(this._snapshot).forEach((account, i) => {
-      // console.log(`sumUp forEach account`, account);
-      sum = SafeMath.plus(
-        sum,
-        SafeMath.mult(account.total, account.exchangeRate)
-      );
-      // console.log(`sumUp forEach sum[${i}]`, sum);
-    });
-    // console.log(`sumUp sum`, sum);
-    this._sum = sum;
-  };
+  // sumUp = () => {
+  //   let sum = 0;
+  //   Object.values(this._snapshot).forEach((account, i) => {
+  //     // console.log(`sumUp forEach account`, account);
+  //     sum = SafeMath.plus(
+  //       sum,
+  //       SafeMath.mult(account.total, account.exchangeRate)
+  //     );
+  //     // console.log(`sumUp forEach sum[${i}]`, sum);
+  //   });
+  //   // console.log(`sumUp sum`, sum);
+  //   this._sum = sum;
+  // };
 
   /**
    *
@@ -111,7 +111,7 @@ class AccountBook extends BookBase {
         this._difference[account.currency] = account;
         this._snapshot[account.currency] = account;
       });
-      this.sumUp();
+      // this.sumUp();s
       return true;
     } catch (error) {
       console.error(`[AccountBook] error`, error);
@@ -134,7 +134,7 @@ class AccountBook extends BookBase {
         // }
         this._snapshot[account.currency] = account;
       });
-      this.sumUp();
+      // this.sumUp();
       return true;
     } catch (error) {
       console.error(`[AccountBook updateAll]`, error);

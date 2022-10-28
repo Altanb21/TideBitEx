@@ -37,8 +37,8 @@ const StoreProvider = (props) => {
   const [depthBook, setDepthbook] = useState(null);
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
-  const [fiatCurrency, setFiatCurrency] = useState("usd");
-  const [exchangeRates, setExchangeRates] = useState(null);
+  const [baseCurrency, setBaseCurrency] = useState("hkd");
+  // const [exchangeRates, setExchangeRates] = useState(null);
 
   const action = useCallback(
     (key) => (
@@ -164,6 +164,10 @@ const StoreProvider = (props) => {
 
   const getDashboardData = async () => {
     return await middleman.getDashboardData();
+  };
+
+  const getPrice = (currency) => {
+    return middleman.getPrice(currency);
   };
 
   /**
@@ -391,23 +395,23 @@ const StoreProvider = (props) => {
     };
   }, [market, middleman]);
 
-  const updateFiatCurrency = (fiatCurrency) => {
-    middleman.setFiatCurrency(fiatCurrency);
-    setFiatCurrency(fiatCurrency);
+  const updateBaseCurrency = (baseCurrency) => {
+    middleman.setBaseCurrency(baseCurrency);
+    setBaseCurrency(baseCurrency);
   };
 
-  const getExchangeRates = useCallback(async () => {
-    let _exchangeRates = exchangeRates;
-    if (!_exchangeRates) {
-      try {
-        _exchangeRates = await middleman.getExchangeRates();
-        setExchangeRates(_exchangeRates);
-      } catch (error) {
-        console.error(`getExchangeRates`, error);
-      }
-    }
-    return _exchangeRates;
-  }, [exchangeRates, middleman]);
+  // const getExchangeRates = useCallback(async () => {
+  //   let _exchangeRates = exchangeRates;
+  //   if (!_exchangeRates) {
+  //     try {
+  //       _exchangeRates = await middleman.getExchangeRates();
+  //       setExchangeRates(_exchangeRates);
+  //     } catch (error) {
+  //       console.error(`getExchangeRates`, error);
+  //     }
+  //   }
+  //   return _exchangeRates;
+  // }, [exchangeRates, middleman]);
 
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
@@ -494,9 +498,10 @@ const StoreProvider = (props) => {
         tickSz,
         lotSz,
         memberEmail,
-        fiatCurrency,
+        baseCurrency,
         depthChartData,
-        exchangeRates,
+        // exchangeRates,
+        getPrice,
         setIsLogin,
         // sync,
         init,
@@ -515,13 +520,13 @@ const StoreProvider = (props) => {
         getOuterPendingOrders,
         setFocusEl,
         changeRange,
-        updateFiatCurrency,
+        updateBaseCurrency,
         getAdminUser,
         getAdminUsers,
         addAdminUser,
         deleteAdminUser,
         updateAdminUser,
-        getExchangeRates,
+        // getExchangeRates,
         getTickersSettings,
         getCoinsSettings,
         updateCoinSetting,

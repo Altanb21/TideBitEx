@@ -54,7 +54,7 @@ class ExchangeHub extends Bot {
         this.coinsSettings = this._getCoinsSettings();
         this.depositsSettings = this._getDepositsSettings();
         this.withdrawsSettings = this._getWithdrawsSettings();
-        this.priceList = await this.getPriceList();
+        // this.priceList = await this.getPriceList();
         this.tickerBook = new TickerBook({
           logger,
           markets: this.tidebitMarkets,
@@ -76,7 +76,7 @@ class ExchangeHub extends Bot {
           logger,
           markets: this.tidebitMarkets,
           coinsSettings: this.coinsSettings,
-          priceList: this.priceList,
+          // priceList: this.priceList,
         });
       })
       .then(async () => {
@@ -1838,32 +1838,32 @@ class ExchangeHub extends Bot {
     return this.tideBitConnector.router("getUsersAccounts", {});
   }
 
-  async getPriceList() {
-    try {
-      const res = await axios({
-        method: `get`,
-        url: `https://cc.isun.one/api/cc/PriceList`,
-      });
-      if (res.data && res.status !== 200) {
-        const message = JSON.stringify(res.data);
-        this.logger.trace(message);
-      }
-      // this.logger.debug(`getPriceList res`, res);
-      return res.data;
-    } catch (e) {
-      this.logger.error(`getPriceList e`, e);
-    }
-  }
+  // async getPriceList() {
+  //   try {
+  //     const res = await axios({
+  //       method: `get`,
+  //       url: `https://cc.isun.one/api/cc/PriceList`,
+  //     });
+  //     if (res.data && res.status !== 200) {
+  //       const message = JSON.stringify(res.data);
+  //       this.logger.trace(message);
+  //     }
+  //     // this.logger.debug(`getPriceList res`, res);
+  //     return res.data;
+  //   } catch (e) {
+  //     this.logger.error(`getPriceList e`, e);
+  //   }
+  // }
 
-  async getExchangeRates() {
-    const exchangeRates = this.accountBook.exchangeRates;
-    return Promise.resolve(
-      new ResponseFormat({
-        message: "getExchangeRates",
-        payload: exchangeRates,
-      })
-    );
-  }
+  // async getExchangeRates() {
+  //   const exchangeRates = this.accountBook.exchangeRates;
+  //   return Promise.resolve(
+  //     new ResponseFormat({
+  //       message: "getExchangeRates",
+  //       payload: exchangeRates,
+  //     })
+  //   );
+  // }
 
   // account api
   async getAccounts({ memberId, email, token }) {

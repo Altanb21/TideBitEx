@@ -34,8 +34,8 @@ class Middleman {
     return this;
   }
 
-  setFiatCurrency(fiatCurrency) {
-    this.accountBook.fiatCurrency = fiatCurrency;
+  setbaseCurrency(baseCurrency) {
+    this.tickerBook.baseCurrency = baseCurrency;
   }
 
   async getInstruments(instType) {
@@ -208,7 +208,11 @@ class Middleman {
 
   async getOuterPendingOrders(exchange, limit, offset) {
     try {
-      return await this.communicator.getOuterPendingOrders(exchange, limit, offset);
+      return await this.communicator.getOuterPendingOrders(
+        exchange,
+        limit,
+        offset
+      );
     } catch (error) {
       throw error;
     }
@@ -330,17 +334,17 @@ class Middleman {
     return this.tickers;
   }
 
-  async getExchangeRates() {
-    try {
-      const exchangeRates = await this.communicator.getExchangeRates();
-      this.exchangeRates = exchangeRates;
-      // console.log(`middleman this.exchangeRates`, this.exchangeRates)
-      return exchangeRates;
-    } catch (error) {
-      this.exchangeRates = {};
-      throw error;
-    }
-  }
+  // async getExchangeRates() {
+  //   try {
+  //     const exchangeRates = await this.communicator.getExchangeRates();
+  //     this.exchangeRates = exchangeRates;
+  //     // console.log(`middleman this.exchangeRates`, this.exchangeRates)
+  //     return exchangeRates;
+  //   } catch (error) {
+  //     this.exchangeRates = {};
+  //     throw error;
+  //   }
+  // }
 
   getTradesSnapshot(market) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
@@ -501,10 +505,31 @@ class Middleman {
     }
   }
 
+  getPrice(currency) {
+    return this.tickerBook.getPrice(currency);
+  }
+
   getAccountsSnapshot(instId) {
+    let accounts = this.accountBook.getSnapshot(),
+      sum = 0;
+    Object.keys(accounts).forEach((index, currency) => {
+      let price = this.tickerBook.getPrice(currency);
+      let amount = SafeMath.mult(accounts[index].total, price);
+      sum += amount;
+      accounts[index] = {
+        ...accounts[index],
+        price,
+        amount,
+      };
+    });
+    if (instId)
+      accounts = instId.split("-").reduce((prev, currency) => {
+        prev[currency] = accounts[currency];
+        return prev;
+      }, {});
     return {
-      accounts: this.accountBook.getSnapshot(instId),
-      sum: this.accountBook.getAssetsSum(),
+      accounts,
+      sum,
     };
   }
 
