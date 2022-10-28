@@ -5,6 +5,7 @@ import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import Events from "../constant/Events";
+import Codes from "../constant/Codes";
 
 let interval,
   depthBookSyncInterval = 500,
@@ -12,13 +13,16 @@ let interval,
   tradesSyncInterval = 500,
   tradesLastTimeSync = 0,
   tickersSyncInterval = 500,
-  tickersLastTimeSync = 0;
+  tickersLastTimeSync = 0,
+  timer,
+  expireTime = 120 * 60 * 1000 * 0.998; // 119.76 mins
 
 const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
   const [defaultMarket, setDefaultMarket] = useState("btcusdt");
+  const [disableTrade, setDisableTrade] = useState(false);
   const [market, setMarket] = useState(null);
   const [isLogin, setIsLogin] = useState(null);
   const [memberEmail, setMemberEmail] = useState(false);
@@ -37,8 +41,23 @@ const StoreProvider = (props) => {
   const [depthBook, setDepthbook] = useState(null);
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
+<<<<<<< HEAD
   const [baseCurrency, setBaseCurrency] = useState("hkd");
   // const [exchangeRates, setExchangeRates] = useState(null);
+=======
+  const [fiatCurrency, setFiatCurrency] = useState("usd");
+  const [exchangeRates, setExchangeRates] = useState(null);
+  const [tokenExpired, setTokenExpired] = useState(null);
+
+  const countDown = useCallback(() => {
+    clearTimeout(timer);
+    timer = setTimeout(async () => {
+      setTokenExpired(true);
+      // console.log(`TokenExpired`)
+      await middleman.logout();
+    }, expireTime);
+  }, [middleman]);
+>>>>>>> develop
 
   const action = useCallback(
     (key) => (
@@ -220,7 +239,7 @@ const StoreProvider = (props) => {
         ...order,
       };
       try {
-        const result = await middleman.postOrder(_order);
+        await middleman.postOrder(_order);
         enqueueSnackbar(
           `${order.kind === "bid" ? "Bid" : "Ask"} ${order.volume} ${
             order.instId.split("-")[0]
@@ -230,22 +249,26 @@ const StoreProvider = (props) => {
           )} ${order.instId.split("-")[1]}`,
           { variant: "success", action }
         );
-        return result;
+        return true;
       } catch (error) {
-        enqueueSnackbar(
-          `${error?.message}. Failed to post order:
+        if (error.code !== Codes.USER_IS_LOGOUT) {
+          enqueueSnackbar(
+            `${error?.message}. Failed to post order:
            ${order.kind === "buy" ? "Bid" : "Ask"} ${order.volume} ${
-            order.instId.split("-")[0]
-          } with ${order.kind === "buy" ? "with" : "for"} ${SafeMath.mult(
-            order.price,
-            order.volume
-          )} ${order.instId.split("-")[1]}
+              order.instId.split("-")[0]
+            } with ${order.kind === "buy" ? "with" : "for"} ${SafeMath.mult(
+              order.price,
+              order.volume
+            )} ${order.instId.split("-")[1]}
           `,
-          {
-            variant: "error",
-            action,
-          }
-        );
+            {
+              variant: "error",
+              action,
+            }
+          );
+        } else {
+          setDisableTrade(true);
+        }
       }
     },
     [action, enqueueSnackbar, middleman]
@@ -337,8 +360,10 @@ const StoreProvider = (props) => {
       const time = Date.now();
       switch (metaData.type) {
         case Events.userStatusUpdate:
-          if (metaData.data?.isLogin === false) middleman.isLogin = false;
-          setIsLogin(middleman.isLogin);
+          if (metaData.data?.isLogin === false) {
+            middleman.isLogin = false;
+            setIsLogin(middleman.isLogin);
+          }
           break;
         case Events.account:
           middleman.accountBook.updateByDifference(metaData.data);
@@ -424,9 +449,10 @@ const StoreProvider = (props) => {
       setIsLogin(middleman.isLogin);
       setAccounts(middleman.getAccountsSnapshot());
       setMemberEmail(middleman.email);
+      countDown();
     }
     // console.log(`storeCtx init end`);
-  }, [eventListener, middleman]);
+  }, [countDown, eventListener, middleman]);
 
   const start = useCallback(async () => {
     let market =
@@ -448,6 +474,7 @@ const StoreProvider = (props) => {
         if (middleman.isLogin) {
           setAccounts(middleman.getAccountsSnapshot());
           setMemberEmail(middleman.email);
+          countDown();
         }
       }
       await middleman.selectMarket(market);
@@ -500,8 +527,14 @@ const StoreProvider = (props) => {
         memberEmail,
         baseCurrency,
         depthChartData,
+<<<<<<< HEAD
         // exchangeRates,
         getPrice,
+=======
+        exchangeRates,
+        disableTrade,
+        tokenExpired,
+>>>>>>> develop
         setIsLogin,
         // sync,
         init,

@@ -439,6 +439,36 @@ class TibeBitConnector extends ConnectorBase {
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
+  async logout({ header }) {
+    try {
+      const headers = {
+        "content-type": "application/x-www-form-urlencoded",
+        cookie: header.cookie,
+      };
+      const res = await axios.get(`${this.peatio}/signout`, {
+        headers,
+      });
+      this.logger.debug(`${this.peatio}/signout`, res);
+      // if (!res || !res.data) {
+      //   return new ResponseFormat({
+      //     message: "Something went wrong",
+      //     code: Codes.API_UNKNOWN_ERROR,
+      //   });
+      // }
+      return new ResponseFormat({
+        message: "logout",
+        payload: res.data,
+      });
+    } catch (error) {
+      this.logger.error(error);
+      const message = error.message;
+      return new ResponseFormat({
+        message,
+        code: Codes.API_UNKNOWN_ERROR,
+      });
+    }
+  }
+
   /**
     [
       {
@@ -995,25 +1025,33 @@ class TibeBitConnector extends ConnectorBase {
       const tbOrdersRes = await axios.post(url, formbody, {
         headers,
       }); // TODO: payload
-      return new ResponseFormat({
-        message: "postPlaceOrder",
-        payload: [
-          {
-            id: "",
-            clOrdId: "",
-            sCode: "",
-            sMsg: "",
-            tag: "",
-            data: tbOrdersRes.data,
-          },
-        ],
-      });
+      this.logger.debug(`postPlaceOrder res`, tbOrdersRes.data);
+      if (tbOrdersRes.data?.result) {
+        return new ResponseFormat({
+          message: "postPlaceOrder",
+          payload: [
+            {
+              id: "",
+              clOrdId: "",
+              sCode: "",
+              sMsg: tbOrdersRes.data?.message,
+              tag: "",
+              data: "",
+            },
+          ],
+        });
+      } else {
+        return new ResponseFormat({
+          message: "postPlaceOrder error",
+          code: Codes.USER_IS_LOGOUT,
+        });
+      }
     } catch (error) {
       this.logger.error(error);
       // debug for postman so return error
       return new ResponseFormat({
         message: "postPlaceOrder error",
-        code: Codes.UNKNOWN_ERROR,
+        code: Codes.USER_IS_LOGOUT,
       });
     }
   }

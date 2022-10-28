@@ -23,7 +23,12 @@ const StoreContext = React.createContext({
   tickSz: null,
   lotSz: null,
   memberEmail: null,
+<<<<<<< HEAD
   baseCurrency: "hkd",
+=======
+  disableTrade: false,
+  tokenExpired: null,
+>>>>>>> develop
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},

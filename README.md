@@ -1,3 +1,5 @@
+## Tidebit-Lagacy 流程補充
+為了使被推薦的用戶有對應的 commission_plans_id 及得到推薦者的分潤比例，需要再 import 兩張table `commission_plans` 及 `commission_policies` 
 # TideBitEx
 TideBit Exchange
 

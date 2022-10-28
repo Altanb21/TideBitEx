@@ -233,5 +233,6 @@
   "coin-close": "deposit Closed",
   "sub-account": "Sub Account",
   "asset-balance": "Asset Balance",
-  "value": "Value"
+  "value": "Value",
+  "tokex_expire": "Token Expired. Please re-loginin."
 }

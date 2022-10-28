@@ -69,6 +69,21 @@ class Communicator {
     }
   }
 
+  async logout() {
+    try {
+      // ++ TODO
+      const res = await this._get(`/logout`);
+      console.log(`res`)
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
+
   // Public
   /**
    * instruments

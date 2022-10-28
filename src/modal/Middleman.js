@@ -218,6 +218,14 @@ class Middleman {
     }
   }
 
+  async logout() {
+    try {
+      return await this.communicator.logout();
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }

@@ -96,7 +96,7 @@ const SideBar = (props) => {
           <p>{t("announcement")}</p>
         </a>
       </li>
-      {storeCtx.isLogin === false && (
+      {(storeCtx.isLogin === false || storeCtx.disableTrade) && (
         <>
           <li className="sidebar__item">
             <a className="sidebar__link" href="/signin">
@@ -112,7 +112,7 @@ const SideBar = (props) => {
           </li>
         </>
       )}
-      {storeCtx.isLogin && (
+      {storeCtx.isLogin && !storeCtx.disableTrade && (
         <li className="sidebar__item">
           <a className="sidebar__link" href="/signout">
             <FaSignOutAlt size="1.8em" />
