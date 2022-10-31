@@ -887,6 +887,7 @@ class mysql {
   }
 
   /**
+   * [deprecated] 2022/10/26
    * [c] 2022/10/26
    * integrate with getReferralCommissionsByConditions
    */
