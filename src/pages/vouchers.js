@@ -364,7 +364,8 @@ const Vouchers = () => {
       if (_trades) {
         _trades = _trades.filter((trade) => {
           let condition =
-            trade.orderId?.includes(_keyword) ||
+            trade.innerTrade?.orderId?.includes(_keyword) ||
+            trade.outerTrade?.orderId?.includes(_keyword) ||
             trade.instId?.includes(_keyword) ||
             trade.email?.includes(_keyword) ||
             trade.memberId?.includes(_keyword) ||

@@ -2256,6 +2256,7 @@ class ExchangeHub extends Bot {
             ...trades,
             {
               id: dbOuterTrade.id,
+              instId: outerTradeData.instId,
               memberId: dbOuterTrade.memberId,
               email: dbOuterTrade.email,
               status: dbOuterTrade.status,
@@ -2263,6 +2264,7 @@ class ExchangeHub extends Bot {
               marketCode: tickerSetting.code,
               outerTrade,
               innerTrade,
+              exchange: SupportedExchange.OKEX,
               feeCurrency: outerTradeData.feeCcy,
               ts: parseInt(outerTradeData.ts || outerTradeData.uTime),
             },
