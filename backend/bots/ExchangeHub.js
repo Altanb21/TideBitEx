@@ -2281,9 +2281,11 @@ class ExchangeHub extends Bot {
             let voucher = vouchers.find((v) =>
               SafeMath.eq(v.id, trade.voucherId)
             );
-            let feeCurrency = voucher
-              ? voucher[voucher.trend].toUpperCase()
-              : null;
+            let feeCurrency = (
+              voucher.trend === Database.ORDER_KIND.ASK
+                ? voucher.bid
+                : voucher.ask
+            )?.toUpperCase();
             let fee = voucher
               ? Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`])
               : null;
@@ -4957,6 +4959,7 @@ class ExchangeHub extends Bot {
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // 1. 工讀生將已被整理成 outerTrade 格式的需要更新的委託單寫到我們的系統
+            // ++TODO id should be replaced by exchangeCode + tradeId, current is tradeId (需要避免與其他交易所碰撞)
             await this.exchangeHubService.insertOuterTrades([formatOrder]);
             // 2. 呼叫承辦員處理該筆 outerTrade
             await this.processor(formatOrder);
