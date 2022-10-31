@@ -888,7 +888,6 @@ class mysql {
 
   /**
    * [deprecated] 2022/10/26
-   * [c] 2022/10/26
    * integrate with getReferralCommissionsByConditions
    */
   async getReferralCommissions({ market, start, end, limit, offset, asc }) {
@@ -1199,6 +1198,72 @@ class mysql {
     } catch (error) {
       this.logger.debug(error);
       return null;
+    }
+  }
+
+  async getVouchersByIds(ids) {
+    let placeholder = ids.join(`,`);
+    let query = `
+    SELECT
+	    vouchers.id,
+	    vouchers.price,
+      vouchers.volume,
+      vouchers.trend,
+      vouchers.ask,
+      vouchers.bid,
+      vouchers.ask_fee,
+      vouchers.bid_fee
+    FROM
+      vouchers
+    WHERE
+      vouchers.id in(${placeholder});
+    `;
+    try {
+      this.logger.debug("[mysql] getVouchersByIds", query, ids);
+      const [vouchers] = await this.db.query({
+        query,
+        values: ids,
+      });
+      return vouchers;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async getReferralCommissionsByMarkets({ markets, start, end, asc }) {
+    let placeholder = markets.join(`,`);
+    const query = `
+    SELECT 
+        referral_commissions.id,
+        referral_commissions.referred_by_member_id,
+        referral_commissions.trade_member_id,
+        referral_commissions.voucher_id,
+        referral_commissions.market,
+        referral_commissions.currency,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state,
+        referral_commissions.created_at,
+        referral_commissions.updated_at
+    FROM
+	      referral_commissions
+    WHERE 
+        referral_commissions.market in(${placeholder})
+        AND referral_commissions.created_at BETWEEN "${start}"
+        AND "${end}"
+    ORDER BY
+        referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
+    try {
+      this.logger.debug("getReferralCommissionsByConditions", query, markets);
+      const [referralCommissions] = await this.db.query({
+        query,
+        values: markets,
+      });
+      return referralCommissions;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
     }
   }
 

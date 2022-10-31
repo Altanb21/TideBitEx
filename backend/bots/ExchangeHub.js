@@ -2206,108 +2206,127 @@ class ExchangeHub extends Bot {
     let { exchange, start, end } = query;
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
-    this.logger.debug(`startDate:${startDate}, endtDate:${endtDate}`);
-    let outerTrades = [],
-      referralCommissions = {};
+    this.logger.debug(
+      `${exchange} startDate:${startDate}, endtDate:${endtDate}`
+    );
+    let trades = [],
+      voucherIds = [],
+      markets = {},
+      vouchers = [],
+      referralCommissions = [],
+      processTrades = [];
     switch (exchange) {
       case SupportedExchange.OKEX:
-        // const _outerTrades = await this.database.getOuterTradesByDayAfter(
-        //   Database.EXCHANGE[exchange.toUpperCase()],
-        //   365 // ++ TODO
-        // );
-        const _outerTrades = await this.database.getOuterTrades({
+        const dbOuterTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           start: startDate,
           end: endtDate,
         });
-        // const res = await this.okexConnector.router(
-        //   "fetchTradeFillsHistoryRecords",
-        //   {
-        //     query: { ...query, instType: Database.INST_TYPE.SPOT },
-        //   }
-        // );
-        // if (res.success) {
-        // for (let trade of res.payload) {
-        for (let _trade of _outerTrades) {
-          let trade = JSON.parse(_trade.data),
-            parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
-            memberId = parsedClOrdId.memberId,
-            orderId = parsedClOrdId.orderId,
+        for (let dbOuterTrade of dbOuterTrades) {
+          let outerTradeData = JSON.parse(dbOuterTrade.data),
+            outerTrade = {
+              orderId: outerTradeData.ordId,
+              price: outerTradeData.px, // if outer_trade data type is trade, this value will be null
+              volume: outerTradeData.sz, // if outer_trade data type is trade, this value will be null
+              exchange: SupportedExchange.TIDEBIT,
+              fillPrice: outerTradeData.fillPx,
+              fillVolume: outerTradeData.fillSz,
+              fee: outerTradeData.fee,
+              feeCurrency: outerTradeData.feeCcy,
+            },
             tickerSetting =
-              this.tickersSettings[trade.instId.toLowerCase().replace("-", "")],
-            tmp = this.getMemberFeeRate(_trade.member_tag, tickerSetting),
-            askFeeRate = tmp.askFeeRate,
-            bidFeeRate = tmp.bidFeeRate,
-            fee,
-            processTrade,
-            profit,
-            referralCommission;
-          if (!referralCommissions[tickerSetting.id]) {
-            referralCommissions[tickerSetting.id] =
-              await this.database.getReferralCommissionsByConditions({
-                conditions: {
-                  market: tickerSetting.code,
-                  start: startDate,
-                  end: endtDate,
-                },
-              });
-            this.logger.log(
-              `getOuterTradeFills referralCommissions[${tickerSetting.id}]`,
-              referralCommissions[tickerSetting.id]
-            );
+              this.tickersSettings[
+                outerTradeData.instId.toLowerCase().replace("-", "")
+              ],
+            innerTrade = null;
+          if (dbOuterTrade.voucher_id) {
+            voucherIds = [...voucherIds, dbOuterTrade.voucher_id];
+            if (!markets[tickerSetting.id])
+              markets[tickerSetting.id] = tickerSetting.code;
+            innerTrade = {
+              orderId: dbOuterTrade.order_id,
+              price: Utils.removeZeroEnd(dbOuterTrade.order_price),
+              volume: Utils.removeZeroEnd(dbOuterTrade.order_origin_volume),
+              exchange: SupportedExchange.OKEX,
+            };
           }
-          referralCommission = referralCommissions[tickerSetting.id]?.find(
-            (rc) => rc.voucher_id === _trade.voucher_id
-          );
-          fee =
-            _trade.status === Database.OUTERTRADE_STATUS.DONE
-              ? trade.side === Database.ORDER_SIDE.SELL
-                ? SafeMath.mult(
-                    SafeMath.mult(trade.fillPx, trade.fillSz),
-                    askFeeRate
-                  )
-                : SafeMath.mult(trade.fillSz, bidFeeRate)
-              : null;
-          profit =
-            _trade.status === Database.OUTERTRADE_STATUS.DONE
-              ? referralCommission?.ref_net_fee
-                ? SafeMath.minus(
-                    SafeMath.minus(fee, Math.abs(trade.fee)),
-                    Math.abs(referralCommission?.ref_net_fee)
-                  )
-                : SafeMath.minus(fee, Math.abs(trade.fee))
-              : null;
-          processTrade = {
-            ...trade,
-            orderId,
-            px:
-              _trade.status === Database.OUTERTRADE_STATUS.DONE
-                ? Utils.removeZeroEnd(_trade.order_price)
-                : null,
-            sz:
-              _trade.status === Database.OUTERTRADE_STATUS.DONE
-                ? Utils.removeZeroEnd(_trade.order_origin_volume)
-                : null,
-            email: _trade?.email || null,
-            memberId,
-            externalFee: Math.abs(trade.fee),
-            fee,
-            profit: profit,
-            exchange: exchange,
-            referral: referralCommission?.ref_net_fee
-              ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
-              : null,
-            ts: parseInt(trade.ts || trade.uTime),
-          };
-          // this.logger.debug(`processTrade`, processTrade);
-          outerTrades = [...outerTrades, processTrade];
+          trades = [
+            ...trades,
+            {
+              id: dbOuterTrade.id,
+              memberId: dbOuterTrade.memberId,
+              email: dbOuterTrade.email,
+              status: dbOuterTrade.status,
+              voucherId: dbOuterTrade.voucher_id,
+              marketCode: tickerSetting.code,
+              outerTrade,
+              innerTrade,
+              ts: parseInt(outerTradeData.ts || outerTradeData.uTime),
+            },
+          ];
         }
-        // }
-        this.logger.debug(`referralCommissions`, referralCommissions);
+        // getVouchersById
+        vouchers = await this.database.getVouchersByIds(voucherIds);
+        // getReferralCommissionsByMarkets
+        referralCommissions =
+          await this.database.getReferralCommissionsByMarkets({
+            markets: Object.values(markets),
+            start,
+            end,
+          });
+        for (let trade of trades) {
+          let innerTrade, referral, profit;
+          if (trade.innerTrade) {
+            let voucher = vouchers.find((v) =>
+              SafeMath.eq(v.id, trade.voucherId)
+            );
+            let feeCurrency = voucher
+              ? voucher[voucher.trend].toUpperCase()
+              : null;
+            let fee = voucher
+              ? Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`])
+              : null;
+            let referralCommission = referralCommissions.find(
+              (rc) =>
+                SafeMath.eq(rc.market, trade.marketCode) &&
+                SafeMath.eq(rc.voucher_id, trade.voucherId)
+            );
+            referral = referralCommission?.ref_net_fee
+              ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
+              : null;
+            profit =
+              trade.status === Database.OUTERTRADE_STATUS.DONE
+                ? referralCommission?.ref_net_fee
+                  ? SafeMath.minus(
+                      SafeMath.minus(fee, Math.abs(trade.outerTrade.fee)),
+                      Math.abs(referralCommission?.ref_net_fee)
+                    )
+                  : SafeMath.minus(fee, Math.abs(trade.outerTrade.fee))
+                : null;
+            innerTrade = {
+              ...trade.innerTrade,
+              fillPrice: Utils.removeZeroEnd(voucher.price),
+              fillVolume: Utils.removeZeroEnd(voucher.volume),
+              fee,
+              feeCurrency,
+            };
+          }
+          processTrades = [
+            ...processTrades,
+            {
+              ...trade,
+              innerTrade,
+              referral,
+              profit,
+            },
+          ];
+        }
+        processTrades = processTrades.sort((a, b) => b.ts - a.ts);
+
         return new ResponseFormat({
           message: "getOuterTradeFills",
-          payload: outerTrades,
+          payload: processTrades,
         });
       default:
         return new ResponseFormat({
@@ -2315,6 +2334,114 @@ class ExchangeHub extends Bot {
           payload: null,
         });
     }
+    // let outerTrades = [],
+    //   referralCommissions = {};
+    // switch (exchange) {
+    //   case SupportedExchange.OKEX:
+    //     // const _outerTrades = await this.database.getOuterTradesByDayAfter(
+    //     //   Database.EXCHANGE[exchange.toUpperCase()],
+    //     //   365 // ++ TODO
+    //     // );
+    //     const _outerTrades = await this.database.getOuterTrades({
+    //       type: Database.TIME_RANGE_TYPE.BETWEEN,
+    //       exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+    //       start: startDate,
+    //       end: endtDate,
+    //     });
+    //     // const res = await this.okexConnector.router(
+    //     //   "fetchTradeFillsHistoryRecords",
+    //     //   {
+    //     //     query: { ...query, instType: Database.INST_TYPE.SPOT },
+    //     //   }
+    //     // );
+    //     // if (res.success) {
+    //     // for (let trade of res.payload) {
+    //     for (let _trade of _outerTrades) {
+    //       let trade = JSON.parse(_trade.data),
+    //         parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
+    //         memberId = parsedClOrdId.memberId,
+    //         orderId = parsedClOrdId.orderId,
+    //         tickerSetting =
+    //           this.tickersSettings[trade.instId.toLowerCase().replace("-", "")],
+    //         tmp = this.getMemberFeeRate(_trade.member_tag, tickerSetting),
+    //         askFeeRate = tmp.askFeeRate,
+    //         bidFeeRate = tmp.bidFeeRate,
+    //         fee,
+    //         processTrade,
+    //         profit,
+    //         referralCommission;
+    //       if (!referralCommissions[tickerSetting.id]) {
+    //         referralCommissions[tickerSetting.id] =
+    //           await this.database.getReferralCommissionsByConditions({
+    //             conditions: {
+    //               market: tickerSetting.code,
+    //               start: startDate,
+    //               end: endtDate,
+    //             },
+    //           });
+    //         this.logger.log(
+    //           `getOuterTradeFills referralCommissions[${tickerSetting.id}]`,
+    //           referralCommissions[tickerSetting.id]
+    //         );
+    //       }
+    //       referralCommission = referralCommissions[tickerSetting.id]?.find(
+    //         (rc) => rc.voucher_id === _trade.voucher_id
+    //       );
+    //       fee =
+    //         _trade.status === Database.OUTERTRADE_STATUS.DONE
+    //           ? trade.side === Database.ORDER_SIDE.SELL
+    //             ? SafeMath.mult(
+    //                 SafeMath.mult(trade.fillPx, trade.fillSz),
+    //                 askFeeRate
+    //               )
+    //             : SafeMath.mult(trade.fillSz, bidFeeRate)
+    //           : null;
+    //       profit =
+    //         _trade.status === Database.OUTERTRADE_STATUS.DONE
+    //           ? referralCommission?.ref_net_fee
+    //             ? SafeMath.minus(
+    //                 SafeMath.minus(fee, Math.abs(trade.fee)),
+    //                 Math.abs(referralCommission?.ref_net_fee)
+    //               )
+    //             : SafeMath.minus(fee, Math.abs(trade.fee))
+    //           : null;
+    //       processTrade = {
+    //         ...trade,
+    //         orderId,
+    //         px:
+    //           _trade.status === Database.OUTERTRADE_STATUS.DONE
+    //             ? Utils.removeZeroEnd(_trade.order_price)
+    //             : null,
+    //         sz:
+    //           _trade.status === Database.OUTERTRADE_STATUS.DONE
+    //             ? Utils.removeZeroEnd(_trade.order_origin_volume)
+    //             : null,
+    //         email: _trade?.email || null,
+    //         memberId,
+    //         externalFee: Math.abs(trade.fee),
+    //         fee,
+    //         profit: profit,
+    //         exchange: exchange,
+    //         referral: referralCommission?.ref_net_fee
+    //           ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
+    //           : null,
+    //         ts: parseInt(trade.ts || trade.uTime),
+    //       };
+    //       // this.logger.debug(`processTrade`, processTrade);
+    //       outerTrades = [...outerTrades, processTrade];
+    //     }
+    //     // }
+    //     this.logger.debug(`referralCommissions`, referralCommissions);
+    //     return new ResponseFormat({
+    //       message: "getOuterTradeFills",
+    //       payload: outerTrades,
+    //     });
+    //   default:
+    //     return new ResponseFormat({
+    //       message: "getOuterTradeFills",
+    //       payload: null,
+    //     });
+    // }
   }
 
   async getOuterPendingOrders({ query }) {
@@ -3465,7 +3592,8 @@ class ExchangeHub extends Bot {
       //   this.logger.error(`orderDetail`, orderDetail);
       //   throw Error("innerSysVol is not equal to outerSysVol");
       // }
-      if(SafeMath.lt(orderVolume, 0)) throw Error('Order unFilled sz is not enough!')
+      if (SafeMath.lt(orderVolume, 0))
+        throw Error("Order unFilled sz is not enough!");
       orderVolume = innerSysVol;
       // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
@@ -4182,7 +4310,10 @@ class ExchangeHub extends Bot {
             await dbTransaction.commit();
           } else await dbTransaction.rollback();
           stop = true;
-          this.logger.error(`!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`, order)
+          this.logger.error(
+            `!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`,
+            order
+          );
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
         if (!stop) {
