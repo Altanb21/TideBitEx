@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import StoreContext from "../store/store-context";
 import TableDropdown from "../components/TableDropdown";
-import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
+import { convertExponentialToDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import DatePicker from "../components/DatePicker";
 import LoadingDialog from "../components/LoadingDialog";
 import ProfitTrendingChart from "../components/ProfitTrendingChart";
+import VoucherTile from "../components/VoucherTile";
 
 const exchanges = ["OKEx"];
 const monthInterval = 30 * 24 * 60 * 60 * 1000;
@@ -318,7 +319,7 @@ const Vouchers = () => {
       }
       // trade fromate ++ TODO
       const chartData = await formateTrades(trades);
-      console.log(`formateTrades chartData`, chartData);
+      // console.log(`formateTrades chartData`, chartData);
       setChartData(chartData);
       return { trades, tickers, ticker: ticker };
     },
@@ -477,6 +478,9 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
+        /**
+         * [deprecated] 2022/10/28
+         */
         // await storeCtx.getExchangeRates();
         // console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
@@ -501,7 +505,7 @@ const Vouchers = () => {
         return !prev;
       } else return prev;
     });
-  }, [storeCtx, filterOption, getVouchers, filter]);
+  }, [filterOption, getVouchers, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -624,7 +628,7 @@ const Vouchers = () => {
               label={t("date")}
               onClick={(ascending) => sorting("ts", ascending)}
             />
-            <th className="screen__table-header">{t("memberId_email")}</th>
+            <th className="screen__table-header">{t("member_email")}</th>
             {/* <li className="screen__table-header">{t("orderId")}</li> */}
             <TableHeader
               label={t("orderId")}
@@ -658,10 +662,10 @@ const Vouchers = () => {
               onClick={(ascending) => sorting("fee", ascending)}
             />
             {/* <li className="screen__table-header">{t("external-fee")}</li> */}
-            <TableHeader
+            {/* <TableHeader
               label={t("external-fee")}
               onClick={(ascending) => sorting("externalFee", ascending)}
-            />
+            /> */}
             {/* <li className="screen__table-header">{t("referral")}</li> */}
             <TableHeader
               label={t("referral")}
@@ -679,94 +683,7 @@ const Vouchers = () => {
           </tr>
           <tr className="screen__table-rows">
             {filterTrades &&
-              filterTrades.map((trade, i) => (
-                <td
-                  className={`vouchers__tile screen__table-row${
-                    trade.email ? "" : " unknown"
-                  }`}
-                  key={`${i}-${trade.orderId}`}
-                >
-                  <div className="vouchers__text screen__table-item">
-                    {dateFormatter(trade.ts).text}
-                  </div>
-                  <div className="vouchers__text screen__table-item">
-                    <div>{`${
-                      trade.email ? trade.email + "/" : "Unknown"
-                    }`}</div>
-                    <div>{`${trade.email ? trade.memberId : ""}`}</div>
-                  </div>
-                  <div className="vouchers__text screen__table-item">
-                    {trade.orderId || "Unknown"}
-                  </div>
-                  {/* <div className="vouchers__text screen__table-item">
-                  {trade.instId}
-                </div> */}
-                  <div className="vouchers__text screen__table-item">
-                    {trade.exchange}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.side === "buy" ? " positive" : " negative"
-                    }`}
-                  >
-                    {trade.email
-                      ? `${trade.px} / ${trade.fillPx}` || "--"
-                      : "Unknown"}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.side === "buy" ? " positive" : " negative"
-                    }`}
-                  >
-                    {trade.email ? trade.fillSz || "--" : "Unknown"}
-                  </div>
-                  <div className={`vouchers__text screen__table-item`}>
-                    {trade.fee
-                      ? `${convertExponentialToDecimal(trade.fee)} ${
-                          trade.feeCcy
-                        }`
-                      : "Unknown"}
-                  </div>
-                  <div className={`vouchers__text screen__table-item`}>
-                    {trade.externalFee
-                      ? `${convertExponentialToDecimal(trade.externalFee)} ${
-                          trade.feeCcy
-                        }`
-                      : "--"}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.referral
-                        ? // trade.referral > 0
-                          //   ? " positive"
-                          // :
-                          " negative"
-                        : ""
-                    }`}
-                  >
-                    {trade.referral
-                      ? `${convertExponentialToDecimal(trade.referral)} ${
-                          trade.feeCcy
-                        }`
-                      : "--"}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.profit
-                        ? trade.profit > 0
-                          ? " "
-                          : " negative negative--em"
-                        : ""
-                    }`}
-                  >
-                    {trade.profit
-                      ? `${convertExponentialToDecimal(trade.profit)} ${
-                          trade.feeCcy
-                        }`
-                      : "Unknown"}
-                  </div>
-                </td>
-              ))}
+              filterTrades.map((trade) => <VoucherTile trade={trade} />)}
           </tr>
           <tfoot
             className="screen__table-btn screen__table-text"

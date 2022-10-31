@@ -148,6 +148,7 @@
   "show": "顯示",
   "date": "日期",
   "memberId_email": "用戶 Email & ID",
+  "member_email": "用戶 Email",
   "orderId": "訂單 ID",
   "match-fee": "搓合手續費",
   "external-fee": "外部手續費成本",

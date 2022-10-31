@@ -2,6 +2,10 @@
   & .screen__search-bar {
     justify-content: space-between;
   }
+  &__box {
+    display: flex;
+    flex-direction: column;
+  }
   &__text.positive {
     color: #5ad998;
   }
@@ -70,9 +74,9 @@
     margin-bottom: 10px;
     &--title {
       font-size: 20px;
-      color: 767676
+      color: 767676;
     }
-    &--chart{
+    &--chart {
       height: 340px;
       border: 1px solid #707070;
     }

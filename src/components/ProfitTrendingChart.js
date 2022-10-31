@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import ApexCharts from "react-apexcharts";
 const ProfitTrendingChart = (props) => {
   const { t } = useTranslation();
-  console.log(`ProfitTrendingChart props`, props);
+  // console.log(`ProfitTrendingChart props`, props);
   return (
     <React.Fragment>
       <div className="main-chart__chart">

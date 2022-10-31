@@ -149,6 +149,7 @@
   "show": "Show",
   "date": "Date",
   "memberId_email": "Member Email & ID",
+  "member_email": "Member Email",
   "orderId": "Order ID",
   "match-fee": "Fee",
   "external-fee": "External Fee",
