@@ -181,7 +181,7 @@ const Vouchers = () => {
               lastDailyBar.getMonth() + 1
             }-${lastDailyBar.getDate()}`;
             // console.log(`formateTrades key`, key);
-            let price = storeCtx.getPrice(trade.feeCcy);
+            let price = storeCtx.getPrice(trade.feeCurrency);
             if (!data[key])
               data[key] = {
                 y: SafeMath.mult(trade.profit, price),
@@ -267,7 +267,7 @@ const Vouchers = () => {
               lastMonthlyBar.getMonth() + 1
             }`;
             // console.log(`formateTrades key`, key);
-            let price = storeCtx.getPrice(trade.feeCcy);
+            let price = storeCtx.getPrice(trade.feeCurrency);
             if (!data[key])
               data[key] = {
                 y: SafeMath.mult(trade.profit, price),
@@ -386,14 +386,14 @@ const Vouchers = () => {
         setFilterTrades(_trades);
         let profits = _trades.reduce((prev, trade) => {
           if (trade.profit) {
-            if (!prev[trade.feeCcy]) {
-              prev[trade.feeCcy] = {
+            if (!prev[trade.feeCurrency]) {
+              prev[trade.feeCurrency] = {
                 sum: 0,
-                currency: trade.feeCcy,
+                currency: trade.feeCurrency,
               };
             }
-            prev[trade.feeCcy].sum = SafeMath.plus(
-              prev[trade.feeCcy].sum,
+            prev[trade.feeCurrency].sum = SafeMath.plus(
+              prev[trade.feeCurrency].sum,
               trade.profit
             );
           }

@@ -2214,7 +2214,8 @@ class ExchangeHub extends Bot {
       markets = {},
       vouchers = [],
       referralCommissions = [],
-      processTrades = [];
+      processTrades = [],
+      feeCurrency;
     switch (exchange) {
       case SupportedExchange.OKEX:
         const dbOuterTrades = await this.database.getOuterTrades({
@@ -2233,7 +2234,7 @@ class ExchangeHub extends Bot {
               fillPrice: outerTradeData.fillPx,
               fillVolume: outerTradeData.fillSz,
               fee: outerTradeData.fee,
-              feeCurrency: outerTradeData.feeCcy,
+              // feeCurrency: outerTradeData.feeCcy,
             },
             tickerSetting =
               this.tickersSettings[
@@ -2262,6 +2263,7 @@ class ExchangeHub extends Bot {
               marketCode: tickerSetting.code,
               outerTrade,
               innerTrade,
+              feeCurrency: outerTradeData.feeCcy,
               ts: parseInt(outerTradeData.ts || outerTradeData.uTime),
             },
           ];
@@ -2281,7 +2283,7 @@ class ExchangeHub extends Bot {
             let voucher = vouchers.find((v) =>
               SafeMath.eq(v.id, trade.voucherId)
             );
-            let feeCurrency = (
+            feeCurrency = (
               voucher.trend === Database.ORDER_KIND.ASK
                 ? voucher.bid
                 : voucher.ask
@@ -2311,7 +2313,7 @@ class ExchangeHub extends Bot {
               fillPrice: Utils.removeZeroEnd(voucher.price),
               fillVolume: Utils.removeZeroEnd(voucher.volume),
               fee,
-              feeCurrency,
+              // feeCurrency,
             };
           }
           processTrades = [
@@ -2319,6 +2321,7 @@ class ExchangeHub extends Bot {
             {
               ...trade,
               innerTrade,
+              feeCurrency: trade.feeCurrency || feeCurrency,
               referral,
               profit,
             },

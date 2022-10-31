@@ -113,7 +113,7 @@ const VoucherTile = (props) => {
       >
         {trade.referral
           ? `${convertExponentialToDecimal(trade.referral)} ${
-              trade.outerTrade?.feeCurrency || trade.innerTrade?.feeCurrency
+              trade?.feeCurrency
             }`
           : "-"}
       </div>
@@ -127,9 +127,7 @@ const VoucherTile = (props) => {
         }`}
       >
         {trade.profit
-          ? `${convertExponentialToDecimal(trade.profit)} ${
-              trade.outerTrade?.feeCurrency || trade.innerTrade?.feeCurrency
-            }`
+          ? `${convertExponentialToDecimal(trade.profit)} ${trade?.feeCurrency}`
           : "-"}
       </div>
     </td>
