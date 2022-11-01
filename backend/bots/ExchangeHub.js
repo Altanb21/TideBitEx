@@ -2223,6 +2223,7 @@ class ExchangeHub extends Bot {
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           start: startDate,
           end: endtDate,
+          limit: 1000,
         });
         for (let dbOuterTrade of dbOuterTrades) {
           let outerTradeData = JSON.parse(dbOuterTrade.data),
@@ -2267,7 +2268,7 @@ class ExchangeHub extends Bot {
               side: outerTradeData.side,
               exchange: SupportedExchange.OKEX,
               feeCurrency: outerTradeData.feeCcy,
-              ts: parseInt(outerTradeData.ts || outerTradeData.uTime),
+              ts: new Date(dbOuterTrade.create_at).getTime(),
             },
           ];
         }
@@ -2281,43 +2282,63 @@ class ExchangeHub extends Bot {
             end,
           });
         for (let trade of trades) {
-          let innerTrade, referral, profit;
+          let innerTrade,
+            referral,
+            profit,
+            alert = false;
           if (trade.innerTrade) {
             let voucher = vouchers.find((v) =>
               SafeMath.eq(v.id, trade.voucherId)
             );
-            feeCurrency = (
-              voucher.trend === Database.ORDER_KIND.ASK
-                ? voucher.bid
-                : voucher.ask
-            )?.toUpperCase();
-            let fee = voucher
-              ? Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`])
-              : null;
-            let referralCommission = referralCommissions.find(
-              (rc) =>
-                SafeMath.eq(rc.market, trade.marketCode) &&
-                SafeMath.eq(rc.voucher_id, trade.voucherId)
-            );
-            referral = referralCommission?.ref_net_fee
-              ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
-              : null;
-            profit =
-              trade.status === Database.OUTERTRADE_STATUS.DONE
-                ? referralCommission?.ref_net_fee
-                  ? SafeMath.minus(
-                      SafeMath.minus(fee, Math.abs(trade.outerTrade.fee)),
-                      Math.abs(referralCommission?.ref_net_fee)
-                    )
-                  : SafeMath.minus(fee, Math.abs(trade.outerTrade.fee))
+            if (voucher) {
+              feeCurrency = (
+                voucher.trend === Database.ORDER_KIND.ASK
+                  ? voucher.bid
+                  : voucher.ask
+              )?.toUpperCase();
+
+              let fee = voucher
+                ? Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`])
                 : null;
-            innerTrade = {
-              ...trade.innerTrade,
-              fillPrice: Utils.removeZeroEnd(voucher.price),
-              fillVolume: Utils.removeZeroEnd(voucher.volume),
-              fee,
-              // feeCurrency,
-            };
+              let referralCommission = referralCommissions.find(
+                (rc) =>
+                  SafeMath.eq(rc.market, trade.marketCode) &&
+                  SafeMath.eq(rc.voucher_id, trade.voucherId)
+              );
+              referral = referralCommission?.ref_net_fee
+                ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
+                : null;
+              profit =
+                trade.status === Database.OUTERTRADE_STATUS.DONE
+                  ? referralCommission?.ref_net_fee
+                    ? SafeMath.minus(
+                        SafeMath.minus(fee, Math.abs(trade.outerTrade.fee)),
+                        Math.abs(referralCommission?.ref_net_fee)
+                      )
+                    : SafeMath.minus(fee, Math.abs(trade.outerTrade.fee))
+                  : null;
+              innerTrade = {
+                ...trade.innerTrade,
+                fillPrice: Utils.removeZeroEnd(voucher.price),
+                fillVolume: Utils.removeZeroEnd(voucher.volume),
+                fee,
+                // feeCurrency,
+              };
+              if (
+                !trade.feeCurrency ||
+                trade.feeCurrency !== feeCurrency ||
+                !SafeMath.eq(trade.outerTrade.price, trade.innerTrade.price) ||
+                !SafeMath.eq(
+                  trade.outerTrade.volume,
+                  trade.innerTrade.volume
+                ) ||
+                !SafeMath.eq(trade.outerTrade.fillPrice, voucher.price) ||
+                !SafeMath.eq(trade.outerTrade.fillVolume, voucher.volume)
+              )
+                alert = true;
+            } else {
+              alert = true;
+            }
           }
           processTrades = [
             ...processTrades,
@@ -2327,6 +2348,7 @@ class ExchangeHub extends Bot {
               feeCurrency: trade.feeCurrency || feeCurrency,
               referral,
               profit,
+              alert,
             },
           ];
         }

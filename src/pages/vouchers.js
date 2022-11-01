@@ -631,10 +631,10 @@ const Vouchers = () => {
             />
             <th className="screen__table-header vouchers__email">{t("member_email")}</th>
             {/* <li className="screen__table-header">{t("orderId")}</li> */}
-            {/* <TableHeader
+            <TableHeader
               label={t("orderId")}
               onClick={(ascending) => sorting("orderId", ascending)}
-            /> */}
+            />
             {/* <li className="screen__table-header">{t("ticker")}</li> */}
             {/* <TableDropdown
             className="screen__table-header"

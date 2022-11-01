@@ -954,6 +954,7 @@ class mysql {
         outer_trades.order_price,
         outer_trades.order_origin_volume,
         outer_trades.trade_id,
+        outer_trades.create_at,
         outer_trades.update_at,
         outer_trades.voucher_id
     FROM 

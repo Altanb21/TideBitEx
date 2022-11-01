@@ -6,15 +6,18 @@ const VoucherTile = (props) => {
     <td
       className={`vouchers__tile screen__table-row${
         trade.email ? "" : " unknown"
-      }`}
+      }${trade.alert ? " screen__table-row--alert" : ""}`}
       key={`${trade.id}`}
     >
       <div className="vouchers__text screen__table-item">
         {dateFormatter(trade.ts).text}
       </div>
       <div className="vouchers__text vouchers__email screen__table-item">
-        {`${trade.email ? trade.email : "Unknown"}`}
+        {`${trade.email ? trade.email : "-"}`}
         {/* <div>{`${trade.email ? trade.memberId : ""}`}</div> */}
+      </div>
+      <div className="vouchers__text screen__table-item">
+        {trade.innerTrade?.orderId || "-"}
       </div>
       {/* <div className="vouchers__box screen__table-item">
         <div className="vouchers__text screen__table-item">
