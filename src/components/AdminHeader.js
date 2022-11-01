@@ -43,13 +43,14 @@ const AdminHeader = (props) => {
           分析
         </div>
       </div>
-      <button
+      <div
         className={`admin-header__hamburger${props.open ? " active" : ""}`}
+        onClick={() => props.openSidebar(!props.open)}
       >
         <div></div>
         <div></div>
         <div></div>
-      </button>
+      </div>
     </header>
   );
 };
