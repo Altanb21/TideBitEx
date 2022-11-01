@@ -30,6 +30,8 @@
     flex-direction: column;
     justify-content: space-between;
     cursor: pointer;
+    position: absolute;
+    right: 30px;
     & > div {
       background-color: #fff;
       height: 2px;

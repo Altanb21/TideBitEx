@@ -23,6 +23,7 @@ const Admin = () => {
 
   const onSelected = (page) => {
     setActivePage(page);
+    setOpenSidebar(false);
   };
 
   const userAbility = (user) => {

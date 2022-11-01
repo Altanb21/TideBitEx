@@ -55,7 +55,6 @@ const Sidebar = (props) => {
   return (
     <section
       className={`admin-sidebar${props.open ? " open" : ""}`}
-      onClick={() => props.openSidebar(false)}
     >
       <DropDownMenu
         label="交易管理"
