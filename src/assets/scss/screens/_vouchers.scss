@@ -8,7 +8,7 @@
     align-items: flex-start
   }
   &__email{
-    max-width: 200px;
+    min-width: 200px;
   }
   &__text.positive {
     color: #5ad998;

@@ -2231,7 +2231,7 @@ class ExchangeHub extends Bot {
               orderId: outerTradeData.ordId,
               price: outerTradeData.px, // if outer_trade data type is trade, this value will be null
               volume: outerTradeData.sz, // if outer_trade data type is trade, this value will be null
-              exchange: SupportedExchange.TIDEBIT,
+              exchange: SupportedExchange.OKEX,
               fillPrice: outerTradeData.fillPx,
               fillVolume: outerTradeData.fillSz,
               fee: outerTradeData.fee,
@@ -2250,7 +2250,7 @@ class ExchangeHub extends Bot {
               orderId: dbOuterTrade.order_id,
               price: Utils.removeZeroEnd(dbOuterTrade.order_price),
               volume: Utils.removeZeroEnd(dbOuterTrade.order_origin_volume),
-              exchange: SupportedExchange.OKEX,
+              exchange: SupportedExchange.TIDEBIT,
             };
           }
           trades = [
@@ -2327,11 +2327,16 @@ class ExchangeHub extends Bot {
               if (
                 !trade.feeCurrency ||
                 trade.feeCurrency !== feeCurrency ||
-                !SafeMath.eq(trade.outerTrade.price, trade.innerTrade.price) ||
-                !SafeMath.eq(
-                  trade.outerTrade.volume,
-                  trade.innerTrade.volume
-                ) ||
+                (trade.outerTrade.price &&
+                  !SafeMath.eq(
+                    trade.outerTrade.price,
+                    trade.innerTrade.price
+                  )) ||
+                (trade.outerTrade.volume &&
+                  !SafeMath.eq(
+                    trade.outerTrade.volume,
+                    trade.innerTrade.volume
+                  )) ||
                 !SafeMath.eq(trade.outerTrade.fillPrice, voucher.price) ||
                 !SafeMath.eq(trade.outerTrade.fillVolume, voucher.volume)
               )
