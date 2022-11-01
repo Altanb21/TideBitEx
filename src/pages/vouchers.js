@@ -364,8 +364,8 @@ const Vouchers = () => {
       if (_trades) {
         _trades = _trades.filter((trade) => {
           let condition =
-            trade.innerTrade?.orderId?.includes(_keyword) ||
-            trade.outerTrade?.orderId?.includes(_keyword) ||
+            // trade.innerTrade?.orderId?.includes(_keyword) ||
+            // trade.outerTrade?.orderId?.includes(_keyword) ||
             trade.instId?.includes(_keyword) ||
             trade.email?.includes(_keyword) ||
             trade.memberId?.includes(_keyword) ||
@@ -631,10 +631,10 @@ const Vouchers = () => {
             />
             <th className="screen__table-header">{t("member_email")}</th>
             {/* <li className="screen__table-header">{t("orderId")}</li> */}
-            <TableHeader
+            {/* <TableHeader
               label={t("orderId")}
               onClick={(ascending) => sorting("orderId", ascending)}
-            />
+            /> */}
             {/* <li className="screen__table-header">{t("ticker")}</li> */}
             {/* <TableDropdown
             className="screen__table-header"

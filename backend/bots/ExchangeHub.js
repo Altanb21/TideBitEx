@@ -2264,6 +2264,7 @@ class ExchangeHub extends Bot {
               marketCode: tickerSetting.code,
               outerTrade,
               innerTrade,
+              side: outerTradeData.side,
               exchange: SupportedExchange.OKEX,
               feeCurrency: outerTradeData.feeCcy,
               ts: parseInt(outerTradeData.ts || outerTradeData.uTime),
