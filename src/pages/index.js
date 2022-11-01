@@ -1,5 +1,6 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useContext, useEffect, useState } from "react";
 import { Switch, Route } from "react-router-dom";
+import StoreContext from "../store/store-context";
 // import Markets from "../pages/markets";
 // import Profile from "./profile";
 // import Wallet from "./wallet";
@@ -18,10 +19,25 @@ import { Switch, Route } from "react-router-dom";
 const Exchange = lazy(() => import("./exchange"));
 const Admin = lazy(() => import("./admin"));
 
-export default function index() {
+const Index = () => {
+  const storeCtx = useContext(StoreContext);
+  const [isInit, setIsInit] = useState(null);
+
+  useEffect(() => {
+    if (isInit === null) {
+      setIsInit(false);
+      storeCtx.init().then((_) => setIsInit(true));
+    }
+
+    // ++TODO never called
+    return () => {
+      // storeCtx.stop();
+      // clearInterval(interval)
+    };
+  }, [isInit, storeCtx]);
+
   return (
-    <Suspense fallback={<div></div>}
-    >
+    <Suspense fallback={<div></div>}>
       <Switch>
         <Route exact path="/">
           <Exchange />
@@ -72,4 +88,6 @@ export default function index() {
       </Switch>
     </Suspense>
   );
-}
+};
+
+export default Index;
