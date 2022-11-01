@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Sidebar from "../components/AdminSidebar";
 import CurrencySetting from "./currency-setting";
 import Deposit from "./deposit";
 import InfoSetting from "./info-setting";
@@ -18,7 +17,6 @@ const Manager = (props) => {
   };
   return (
     <div className="screen manager">
-      <Sidebar activePage={activePage} onSelected={onSelected} />
       {activePage === "ticker-setting" && <TickerSetting />}
       {activePage === "currency-setting" && <CurrencySetting />}
       {activePage === "deposit" && (

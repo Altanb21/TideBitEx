@@ -23,5 +23,29 @@
     &__button.active{
       border-bottom: 1px solid #fff;
     }
+    &__hamburger{
+      width: 30px;
+      height: 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      &div{
+        background-color: #fff;
+        height: 2px;
+        width: 100%;
+        transition: rotate;
+      }
+    }
+    &__hamburger.active{
+      &div:nth-child(1){
+        transform: translate(-50%,-50%) rotate(45);
+      }
+      &div:nth-child(2){
+        opacity: 0;
+      }
+      &div:nth-child(3){
+        transform: translate(-50%,-50%) rotate(-45);
+      }
+    }
   }
   

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useContext } from "react";
 import AdminHeader from "../components/AdminHeader";
+import Sidebar from "../components/AdminSidebar";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
@@ -16,6 +17,7 @@ const Admin = () => {
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
+  const [openSidebar, setOpenSidebar] = useState(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { t } = useTranslation();
 
@@ -112,6 +114,14 @@ const Admin = () => {
           activePage={activePage}
           onSelected={onSelected}
           user={user}
+          open={openSidebar}
+          openSidebar={(open) => setOpenSidebar(open)}
+        />
+        <Sidebar
+          activePage={activePage}
+          onSelected={onSelected}
+          open={openSidebar}
+          openSidebar={(open) => setOpenSidebar(open)}
         />
         {user &&
           user.ability?.canNotRead !== "all" &&
