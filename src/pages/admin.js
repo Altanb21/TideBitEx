@@ -17,12 +17,17 @@ const Admin = () => {
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
+  const [activeSection, setActiveSection] = useState("ticker-setting");
   const [openSidebar, setOpenSidebar] = useState(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { t } = useTranslation();
 
-  const onSelected = (page) => {
+  const onSelectedPage = (page) => {
     setActivePage(page);
+    setOpenSidebar(false);
+  };
+  const onSelectedSection = (section) => {
+    setActiveSection(section);
     setOpenSidebar(false);
   };
 
@@ -113,23 +118,21 @@ const Admin = () => {
       <div className="admin">
         <AdminHeader
           activePage={activePage}
-          onSelected={onSelected}
+          onSelected={onSelectedPage}
           user={user}
           open={openSidebar}
           openSidebar={(open) => setOpenSidebar(open)}
         />
         <Sidebar
-          activePage={activePage}
-          onSelected={onSelected}
+          activeSection={activeSection}
+          onSelected={onSelectedSection}
           open={openSidebar}
           openSidebar={(open) => setOpenSidebar(open)}
         />
-        {user &&
-          user.ability?.canNotRead !== "all" &&
-          activePage === "manager" && <Manager user={user} />}
-        {user &&
-          user.ability?.canNotRead !== "all" &&
-          activePage === "dashboard" && <Dashboard user={user} />}
+        {user && activePage === "manager" && (
+          <Manager user={user} activeSection={activeSection} />
+        )}
+        {user && activePage === "dashboard" && <Dashboard user={user} />}
       </div>
     </>
   );
