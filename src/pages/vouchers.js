@@ -629,7 +629,7 @@ const Vouchers = () => {
               label={t("date")}
               onClick={(ascending) => sorting("ts", ascending)}
             />
-            <th className="screen__table-header">{t("member_email")}</th>
+            <th className="screen__table-header vouchers__email">{t("member_email")}</th>
             {/* <li className="screen__table-header">{t("orderId")}</li> */}
             {/* <TableHeader
               label={t("orderId")}
