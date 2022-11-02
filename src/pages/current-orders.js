@@ -272,9 +272,11 @@ const CurrentOrders = () => {
                             order.innerOrder?.price
                           ) || "-"
                         } / ${
-                          convertExponentialToDecimal(
-                            order.innerOrder?.avgFillPrice
-                          ) || "-"
+                          order.innerOrder?.avgFillPrice
+                            ? convertExponentialToDecimal(
+                                order.innerOrder?.avgFillPrice
+                              )
+                            : "-"
                         }`}
                       </div>
                       {order.outerOrder && (
@@ -288,9 +290,11 @@ const CurrentOrders = () => {
                               order.outerOrder?.price
                             ) || "-"
                           } / ${
-                            convertExponentialToDecimal(
-                              order.outerOrder?.avgFillPrice
-                            ) || "-"
+                            order.outerOrder?.avgFillPrice
+                              ? convertExponentialToDecimal(
+                                  order.outerOrder?.avgFillPrice
+                                )
+                              : "-"
                           }`}
                         </div>
                       )}

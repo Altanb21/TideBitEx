@@ -273,7 +273,7 @@
   &__box {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: flex-start !important;
   }
   &__email {
     min-width: 200px !important;

@@ -2332,7 +2332,7 @@ class ExchangeHub extends Bot {
                     : SafeMath.minus(fee, Math.abs(trade.outerTrade.fee))
                   : null;
               fillPrice = Utils.removeZeroEnd(voucher.price);
-              fillVolume = Utils.removeZeroEnd(voucher.fillVolume);
+              fillVolume = Utils.removeZeroEnd(voucher.volume);
               innerTrade = {
                 ...trade.innerTrade,
                 fillPrice,
