@@ -205,7 +205,7 @@ const Deposit = () => {
 
   const updateWithdrawSetting = useCallback(
     async (id, type, data) => {
-      setOpenDepositControlDialog(false);
+      setOpenWithdrawControlDialog(false);
       setIsLoading(true);
       try {
         const { coins: updateCoinsSettings } =
