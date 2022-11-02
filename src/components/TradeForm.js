@@ -6,30 +6,28 @@ import { useTranslation } from "react-i18next";
 
 const CustomKeyboard = React.lazy(() => import("./CustomKeyboard"));
 
-export const formatValue =
-  (({ value, precision, maximum }) => {
-    console.log(`formatValue value`, value)
-    console.log(`formatValue precision`, precision)
-    console.log(`formatValue maximum`, maximum)
-    let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
-    if (formatedValue.toString().includes(".")) {
-      if (formatedValue.toString().split(".")[1].length >= precision) {
-        let arr = formatedValue.toString().split(".");
-        let decimal = arr[1].substring(0, precision);
-        formatedValue = `${arr[0]}.${decimal}`;
-      }
-      if (formatedValue.toString().startsWith(".")) {
-        formatedValue = `0${formatedValue}`;
-      }
-    } else {
-      if (!!formatedValue && !isNaN(parseInt(formatedValue)))
-        formatedValue = parseInt(formatedValue).toString();
+export const formatValue = ({ value, precision, maximum }) => {
+  console.log(`formatValue value`, value);
+  console.log(`formatValue precision`, precision);
+  console.log(`formatValue maximum`, maximum);
+  let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+  if (formatedValue.toString().includes(".")) {
+    if (formatedValue.toString().split(".")[1].length >= precision) {
+      let arr = formatedValue.toString().split(".");
+      let decimal = arr[1].substring(0, precision);
+      formatedValue = `${arr[0]}.${decimal}`;
     }
-    if (SafeMath.gt(formatedValue, maximum)) formatedValue = maximum.toString();
-    console.log(`formatValue formatedValue`, formatedValue)
-    return formatedValue;
-  },
-  []);
+    if (formatedValue.toString().startsWith(".")) {
+      formatedValue = `0${formatedValue}`;
+    }
+  } else {
+    if (!!formatedValue && !isNaN(parseInt(formatedValue)))
+      formatedValue = parseInt(formatedValue).toString();
+  }
+  if (SafeMath.gt(formatedValue, maximum)) formatedValue = maximum.toString();
+  console.log(`formatValue formatedValue`, formatedValue);
+  return formatedValue;
+};
 
 const TradeForm = (props) => {
   const { t } = useTranslation();
