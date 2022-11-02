@@ -2268,6 +2268,9 @@ class ExchangeHub extends Bot {
               marketCode: tickerSetting.code,
               outerTrade,
               innerTrade,
+              fillPrice: outerTradeData.fillPx,
+              fillVolume: outerTradeData.fillSz,
+              fee: outerTradeData.fee,
               side: outerTradeData.side,
               exchange: SupportedExchange.OKEX,
               feeCurrency: outerTradeData.feeCcy,
@@ -2294,6 +2297,8 @@ class ExchangeHub extends Bot {
             fee,
             referralCommission,
             voucher,
+            fillPrice,
+            fillVolume,
             order;
           if (trade.innerTrade) {
             order = orders.find((o) =>
@@ -2326,10 +2331,12 @@ class ExchangeHub extends Bot {
                       )
                     : SafeMath.minus(fee, Math.abs(trade.outerTrade.fee))
                   : null;
+              fillPrice = Utils.removeZeroEnd(voucher.price);
+              fillVolume = Utils.removeZeroEnd(voucher.fillVolume);
               innerTrade = {
                 ...trade.innerTrade,
-                fillPrice: Utils.removeZeroEnd(voucher.price),
-                fillVolume: Utils.removeZeroEnd(voucher.volume),
+                fillPrice,
+                fillVolume,
                 fee,
                 // feeCurrency,
               };
@@ -2359,6 +2366,9 @@ class ExchangeHub extends Bot {
             {
               ...trade,
               innerTrade,
+              fillPrice: fillPrice || trade.outerOrder?.fillPrice,
+              fillVolume: fillVolume || trade.outerOrder?.fillVolume,
+              fee: fee ? SafeMath.plus(fee, trade.outerOrder?.fee) : fee,
               kind: order?.ord_type,
               feeCurrency: trade.feeCurrency || feeCurrency,
               referral,
@@ -2444,6 +2454,8 @@ class ExchangeHub extends Bot {
                 side: order.side,
                 outerOrder,
                 innerOrder,
+                price: order.px,
+                volume: order.sz,
                 exchange: SupportedExchange.OKEX,
                 feeCurrency: order.feeCcy,
                 ts: parseInt(order.cTime),
@@ -2454,16 +2466,20 @@ class ExchangeHub extends Bot {
           dbOrders = await this.database.getOrdersByIds(orderIds);
           for (let order of orders) {
             let dbOrder,
-              innerOrder = { ...order.innerOrder };
+              innerOrder = { ...order.innerOrder },
+              price,
+              volume;
             dbOrder = dbOrders.find(
               (o) =>
                 SafeMath.eq(order.innerOrder.orderId, o.id) &&
                 SafeMath.eq(order.memberId, o.member_id)
             );
             if (dbOrder) {
+              price = Utils.removeZeroEnd(dbOrder.price);
+              volume = Utils.removeZeroEnd(dbOrder.origin_volume);
               innerOrder = {
                 ...innerOrder,
-                price: dbOrder.price,
+                price,
                 avgFillPrice:
                   order.side === Database.ORDER_SIDE.BUY
                     ? SafeMath.div(
@@ -2474,7 +2490,7 @@ class ExchangeHub extends Bot {
                         dbOrder.funds_received,
                         SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
                       ),
-                volume: dbOrder.origin_volume,
+                volume,
                 accFillVolume: SafeMath.minus(
                   dbOrder.origin_volume,
                   dbOrder.volume
@@ -2494,7 +2510,15 @@ class ExchangeHub extends Bot {
                 received: dbOrder.funds_received,
               };
             }
-            processOrders = [...processOrders, { ...order, innerOrder }];
+            processOrders = [
+              ...processOrders,
+              {
+                ...order,
+                innerOrder,
+                price: price || order.outerOrder.price,
+                volume: volume || order.outerOrder.volume,
+              },
+            ];
           }
         }
         return new ResponseFormat({

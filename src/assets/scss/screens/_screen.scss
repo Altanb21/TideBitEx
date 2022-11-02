@@ -273,12 +273,12 @@
   &__box {
     display: flex;
     flex-direction: column;
-    align-items: flex-start
+    align-items: flex-start;
   }
-  &__email{
-    min-width: 200px;
+  &__email {
+    min-width: 200px !important;
   }
-  &__expand{
+  &__expand {
     min-width: 180px !important;
   }
   &__table-item,

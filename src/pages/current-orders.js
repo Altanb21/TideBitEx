@@ -60,9 +60,9 @@ const CurrentOrders = () => {
         setFilterExchange(exchange);
         if (orders[exchange]) _orders = orders[exchange];
         else {
-          setIsLoading(true)
+          setIsLoading(true);
           res = await getCurrentOrders(exchange);
-          setIsLoading(false)
+          setIsLoading(false);
           _orders = res.orders;
           _ticker = res.ticker;
         }
@@ -113,10 +113,10 @@ const CurrentOrders = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
-        setIsLoading(true)
+        setIsLoading(true);
         const res = await getCurrentOrders(exchanges[0]);
         filter({ filterOrders: res.orders, ticker: res.ticker });
-        setIsLoading(false)
+        setIsLoading(false);
         return !prev;
       } else return prev;
     });
@@ -218,16 +218,12 @@ const CurrentOrders = () => {
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-price")}
-                onClick={(ascending) =>
-                  sorting("pricce", ascending, "innerOrder")
-                }
+                onClick={(ascending) => sorting("price", ascending)}
               />
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-amount")}
-                onClick={(ascending) =>
-                  sorting("volume", ascending, "innerOrder")
-                }
+                onClick={(ascending) => sorting("volume", ascending)}
               />
               <TableHeader
                 label={t("funds-receive")}

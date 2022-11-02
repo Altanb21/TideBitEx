@@ -465,20 +465,16 @@ const Vouchers = () => {
     [dateStart, filter, getVouchers]
   );
 
-  const sorting = (key, ascending, trade) => {
+  const sorting = (key, ascending) => {
     // console.log(`key`, key);
     // console.log(`ascending`, ascending);
     setFilterTrades((prevTrades) => {
       // console.log(`prevTrades`, prevTrades);
       let sortedTrades = prevTrades.map((trade) => ({ ...trade }));
-      if (trade)
-        sortedTrades = ascending
-          ? sortedTrades?.sort((a, b) => +a[trade][key] - +b[trade][key])
-          : sortedTrades?.sort((a, b) => +b[trade][key] - +a[trade][key]);
-      else
-        sortedTrades = ascending
-          ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
-          : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
+
+      sortedTrades = ascending
+        ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
+        : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
       // console.log(`sortedTrades`, sortedTrades);
       return sortedTrades;
     });
@@ -655,21 +651,17 @@ const Vouchers = () => {
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-price")}
-                onClick={(ascending) =>
-                  sorting("fillPrice", ascending, "innerTrade")
-                }
+                onClick={(ascending) => sorting("fillPrice", ascending)}
               />
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-amount")}
-                onClick={(ascending) =>
-                  sorting("fillVolume", ascending, "innerTrade")
-                }
+                onClick={(ascending) => sorting("fillVolume", ascending)}
               />
               <TableHeader
                 className="screen__expand"
                 label={t("match-fee")}
-                onClick={(ascending) => sorting("fee", ascending, "innerTrade")}
+                onClick={(ascending) => sorting("fee", ascending)}
               />
               <TableHeader
                 className="screen__expand"
