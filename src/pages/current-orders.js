@@ -95,17 +95,12 @@ const CurrentOrders = () => {
     ]
   );
 
-  const sorting = (key, ascending, order) => {
+  const sorting = (key, ascending) => {
     setFilterOrders((prevOrders) => {
       let sortedOrders = prevOrders.map((order) => ({ ...order }));
-      if (order)
-        sortedOrders = ascending
-          ? sortedOrders?.sort((a, b) => +a[order][key] - +b[order][key])
-          : sortedOrders?.sort((a, b) => +b[order][key] - +a[order][key]);
-      else
-        sortedOrders = ascending
-          ? sortedOrders?.sort((a, b) => +a[key] - +b[key])
-          : sortedOrders?.sort((a, b) => +b[key] - +a[key]);
+      sortedOrders = ascending
+        ? sortedOrders?.sort((a, b) => +a[key] - +b[key])
+        : sortedOrders?.sort((a, b) => +b[key] - +a[key]);
       return sortedOrders;
     });
   };

@@ -2482,14 +2482,21 @@ class ExchangeHub extends Bot {
                 price,
                 avgFillPrice:
                   order.side === Database.ORDER_SIDE.BUY
-                    ? SafeMath.div(
-                        SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
-                        dbOrder.funds_received
+                    ? SafeMath.gt(dbOrder.funds_received, 0)
+                      ? SafeMath.div(
+                          SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+                          dbOrder.funds_received
+                        )
+                      : null
+                    : SafeMath.gt(
+                        SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+                        0
                       )
-                    : SafeMath.div(
+                    ? SafeMath.div(
                         dbOrder.funds_received,
                         SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
-                      ),
+                      )
+                    : null,
                 volume,
                 accFillVolume: SafeMath.minus(
                   dbOrder.origin_volume,
@@ -2503,11 +2510,11 @@ class ExchangeHub extends Bot {
                     : Database.ORDER_STATE.WAIT,
                 expect:
                   order.side === Database.ORDER_SIDE.BUY
-                    ? dbOrder.origin_volume
+                    ? Utils.removeZeroEnd(dbOrder.origin_volume)
                     : dbOrder.price
                     ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
                     : null,
-                received: dbOrder.funds_received,
+                received: Utils.removeZeroEnd(dbOrder.funds_received),
               };
             }
             processOrders = [
