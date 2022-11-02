@@ -468,6 +468,7 @@ class mysql {
     ORDER BY
         referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
     // LIMIT ${limit} OFFSET ${offset};`;
+    // ++ TODO 要小心資料量過大的問題
     try {
       this.logger.debug("getReferralCommissionsByConditions", query, values);
       const [referralCommissions] = await this.db.query({
