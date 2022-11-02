@@ -2394,7 +2394,9 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterPendingOrders ************`,
       query
     );
-    let orders = [],
+    let askOrders = [],
+      bidOrders = [],
+      orders = [],
       dbOrders = [],
       orderIds = [],
       emails = [],
@@ -2445,35 +2447,40 @@ class ExchangeHub extends Bot {
                 exchange: SupportedExchange.TIDEBIT,
               };
             }
-            emails = await this.database.getEmailsByMemberIds(
-              Object.values(memberIds)
-            );
-            orders = [
-              ...orders,
-              {
-                id: order.clOrdId,
-                instId: order.instId,
-                memberId,
-                kind: order.ordType,
-                side: order.side,
-                outerOrder,
-                innerOrder,
-                price: order.px,
-                volume: order.sz,
-                exchange: SupportedExchange.OKEX,
-                feeCurrency: order.feeCcy,
-                ts: parseInt(order.cTime),
-              },
-            ];
+            let processedOrder = {
+              id: order.clOrdId,
+              instId: order.instId,
+              memberId,
+              kind: order.ordType,
+              side: order.side,
+              outerOrder,
+              innerOrder,
+              price: order.px,
+              volume: order.sz,
+              exchange: SupportedExchange.OKEX,
+              feeCurrency: order.feeCcy,
+              ts: parseInt(order.cTime),
+            };
+            if (order.side === Database.ORDER_SIDE.BUY)
+              bidOrders = [...bidOrders, processedOrder];
+            else askOrders = [...askOrders, processedOrder];
           }
           // getOrdersByIds
+          askOrders.sort((a, b) => a.price - b.price);
+          bidOrders.sort((a, b) => b.price - a.price);
+          orders = bidOrders.concat(askOrders);
           dbOrders = await this.database.getOrdersByIds(orderIds);
+          emails = await this.database.getEmailsByMemberIds(
+            Object.values(memberIds)
+          );
           for (let order of orders) {
             let dbOrder,
               innerOrder = { ...order.innerOrder },
               price,
               volume,
-              email = emails.find((obj) => SafeMath.eq(obj.id, order.memberId))?.email;
+              email = emails.find((obj) =>
+                SafeMath.eq(obj.id, order.memberId)
+              )?.email;
             dbOrder = dbOrders.find(
               (o) =>
                 SafeMath.eq(order.innerOrder.orderId, o.id) &&
