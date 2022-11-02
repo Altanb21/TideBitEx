@@ -231,7 +231,7 @@ const CurrentOrders = () => {
                   <tr
                     className={`current-orders__tile screen__table-row${
                       order.email ? "" : " unknown"
-                    }`}
+                    }${order.alert ? " screen__table-row--alert" : ""}`}
                     key={order.id}
                   >
                     <td className="current-orders__text screen__table-item">

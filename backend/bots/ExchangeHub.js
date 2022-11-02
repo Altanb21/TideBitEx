@@ -2480,7 +2480,8 @@ class ExchangeHub extends Bot {
               volume,
               email = emails.find((obj) =>
                 SafeMath.eq(obj.id, order.memberId)
-              )?.email;
+              )?.email,
+              alert = false;
             dbOrder = dbOrders.find(
               (o) =>
                 SafeMath.eq(order.innerOrder.orderId, o.id) &&
@@ -2528,6 +2529,16 @@ class ExchangeHub extends Bot {
                     : null,
                 received: Utils.removeZeroEnd(dbOrder.funds_received),
               };
+              if (
+                !SafeMath.eq(
+                  order.outerOrder.accFillVolume,
+                  innerOrder.accFillVolume
+                ) ||
+                !SafeMath.eq(order.outerOrder.expect, innerOrder.expect) ||
+                !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
+                order.outerOrder.state !== innerOrder.state
+              )
+                alert = true;
             }
             processOrders = [
               ...processOrders,
@@ -2537,6 +2548,7 @@ class ExchangeHub extends Bot {
                 innerOrder,
                 price: price || order.outerOrder.price,
                 volume: volume || order.outerOrder.volume,
+                alert
               },
             ];
           }
