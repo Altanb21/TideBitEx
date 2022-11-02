@@ -2397,6 +2397,7 @@ class ExchangeHub extends Bot {
     let orders = [],
       dbOrders = [],
       orderIds = [],
+      emails = [],
       processOrders = [],
       memberIds = {};
     switch (query.exchange) {
@@ -2444,6 +2445,9 @@ class ExchangeHub extends Bot {
                 exchange: SupportedExchange.TIDEBIT,
               };
             }
+            emails = await this.database.getEmailsByMemberIds(
+              Object.values(memberIds)
+            );
             orders = [
               ...orders,
               {
@@ -2468,7 +2472,8 @@ class ExchangeHub extends Bot {
             let dbOrder,
               innerOrder = { ...order.innerOrder },
               price,
-              volume;
+              volume,
+              email = emails.find((obj) => SafeMath.eq(obj.id, order.memberId));
             dbOrder = dbOrders.find(
               (o) =>
                 SafeMath.eq(order.innerOrder.orderId, o.id) &&
@@ -2521,6 +2526,7 @@ class ExchangeHub extends Bot {
               ...processOrders,
               {
                 ...order,
+                email,
                 innerOrder,
                 price: price || order.outerOrder.price,
                 volume: volume || order.outerOrder.volume,
