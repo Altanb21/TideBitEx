@@ -2275,9 +2275,9 @@ class ExchangeHub extends Bot {
             },
           ];
         }
-        // getOrdersById
+        // getOrdersByIds
         orders = await this.database.getOrdersByIds(orderIds);
-        // getVouchersById
+        // getVouchersByIds
         vouchers = await this.database.getVouchersByIds(voucherIds);
         // getReferralCommissionsByMarkets
         referralCommissions =
@@ -2377,114 +2377,6 @@ class ExchangeHub extends Bot {
           payload: null,
         });
     }
-    // let outerTrades = [],
-    //   referralCommissions = {};
-    // switch (exchange) {
-    //   case SupportedExchange.OKEX:
-    //     // const _outerTrades = await this.database.getOuterTradesByDayAfter(
-    //     //   Database.EXCHANGE[exchange.toUpperCase()],
-    //     //   365 // ++ TODO
-    //     // );
-    //     const _outerTrades = await this.database.getOuterTrades({
-    //       type: Database.TIME_RANGE_TYPE.BETWEEN,
-    //       exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
-    //       start: startDate,
-    //       end: endtDate,
-    //     });
-    //     // const res = await this.okexConnector.router(
-    //     //   "fetchTradeFillsHistoryRecords",
-    //     //   {
-    //     //     query: { ...query, instType: Database.INST_TYPE.SPOT },
-    //     //   }
-    //     // );
-    //     // if (res.success) {
-    //     // for (let trade of res.payload) {
-    //     for (let _trade of _outerTrades) {
-    //       let trade = JSON.parse(_trade.data),
-    //         parsedClOrdId = Utils.parseClOrdId(trade.clOrdId),
-    //         memberId = parsedClOrdId.memberId,
-    //         orderId = parsedClOrdId.orderId,
-    //         tickerSetting =
-    //           this.tickersSettings[trade.instId.toLowerCase().replace("-", "")],
-    //         tmp = this.getMemberFeeRate(_trade.member_tag, tickerSetting),
-    //         askFeeRate = tmp.askFeeRate,
-    //         bidFeeRate = tmp.bidFeeRate,
-    //         fee,
-    //         processTrade,
-    //         profit,
-    //         referralCommission;
-    //       if (!referralCommissions[tickerSetting.id]) {
-    //         referralCommissions[tickerSetting.id] =
-    //           await this.database.getReferralCommissionsByConditions({
-    //             conditions: {
-    //               market: tickerSetting.code,
-    //               start: startDate,
-    //               end: endtDate,
-    //             },
-    //           });
-    //         this.logger.log(
-    //           `getOuterTradeFills referralCommissions[${tickerSetting.id}]`,
-    //           referralCommissions[tickerSetting.id]
-    //         );
-    //       }
-    //       referralCommission = referralCommissions[tickerSetting.id]?.find(
-    //         (rc) => rc.voucher_id === _trade.voucher_id
-    //       );
-    //       fee =
-    //         _trade.status === Database.OUTERTRADE_STATUS.DONE
-    //           ? trade.side === Database.ORDER_SIDE.SELL
-    //             ? SafeMath.mult(
-    //                 SafeMath.mult(trade.fillPx, trade.fillSz),
-    //                 askFeeRate
-    //               )
-    //             : SafeMath.mult(trade.fillSz, bidFeeRate)
-    //           : null;
-    //       profit =
-    //         _trade.status === Database.OUTERTRADE_STATUS.DONE
-    //           ? referralCommission?.ref_net_fee
-    //             ? SafeMath.minus(
-    //                 SafeMath.minus(fee, Math.abs(trade.fee)),
-    //                 Math.abs(referralCommission?.ref_net_fee)
-    //               )
-    //             : SafeMath.minus(fee, Math.abs(trade.fee))
-    //           : null;
-    //       processTrade = {
-    //         ...trade,
-    //         orderId,
-    //         px:
-    //           _trade.status === Database.OUTERTRADE_STATUS.DONE
-    //             ? Utils.removeZeroEnd(_trade.order_price)
-    //             : null,
-    //         sz:
-    //           _trade.status === Database.OUTERTRADE_STATUS.DONE
-    //             ? Utils.removeZeroEnd(_trade.order_origin_volume)
-    //             : null,
-    //         email: _trade?.email || null,
-    //         memberId,
-    //         externalFee: Math.abs(trade.fee),
-    //         fee,
-    //         profit: profit,
-    //         exchange: exchange,
-    //         referral: referralCommission?.ref_net_fee
-    //           ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
-    //           : null,
-    //         ts: parseInt(trade.ts || trade.uTime),
-    //       };
-    //       // this.logger.debug(`processTrade`, processTrade);
-    //       outerTrades = [...outerTrades, processTrade];
-    //     }
-    //     // }
-    //     this.logger.debug(`referralCommissions`, referralCommissions);
-    //     return new ResponseFormat({
-    //       message: "getOuterTradeFills",
-    //       payload: outerTrades,
-    //     });
-    //   default:
-    //     return new ResponseFormat({
-    //       message: "getOuterTradeFills",
-    //       payload: null,
-    //     });
-    // }
   }
 
   async getOuterPendingOrders({ query }) {
@@ -2492,7 +2384,10 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterPendingOrders ************`,
       query
     );
-    let outerOrders = [],
+    let orders = [],
+      dbOrders = [],
+      orderIds = [],
+      processOrders = [],
       memberIds = {};
     switch (query.exchange) {
       case SupportedExchange.OKEX:
@@ -2501,41 +2396,110 @@ class ExchangeHub extends Bot {
         });
         if (res.success) {
           for (let order of res.payload) {
-            let parsedClOrdId = Utils.parseClOrdId(order.clOrdId),
-              memberId = parsedClOrdId.memberId,
-              id = parsedClOrdId.orderId,
-              fundsReceived =
+            let parsedClOrdId, memberId, orderId, outerOrder, innerOrder;
+            outerOrder = {
+              orderId: order.ordId,
+              exchange: SupportedExchange.OKEX,
+              price: order.px,
+              avgFillPrice: order.avgPx,
+              volume: order.sz,
+              accFillVolume: order.accFillSz,
+              state:
+                order.state === Database.ORDER_STATE.CANCEL
+                  ? Database.ORDER_STATE.CANCEL
+                  : order.state === Database.ORDER_STATE.FILLED
+                  ? Database.ORDER_STATE.DONE
+                  : Database.ORDER_STATE.WAIT,
+              expect:
                 order.side === Database.ORDER_SIDE.BUY
-                  ? SafeMath.mult(order.avgPx, order.accFillSz)
-                  : order.accFillSz,
-              processOrder;
-            if (!memberIds[memberId]) memberIds[memberId] = memberId;
-            processOrder = {
-              ...order,
-              unFillSz: SafeMath.minus(order.sz, order.accFillSz),
-              id,
-              // email: dbOrder?.email || null,
-              memberId,
-              exchange: query.exchange,
-              fundsReceived,
-              ts: parseInt(order.uTime),
+                  ? order.sz
+                  : SafeMath.mult(order.px, order.sz),
+              received:
+                order.side === Database.ORDER_SIDE.BUY
+                  ? order.accFillSz
+                  : SafeMath.mult(order.avgPx, order.accFillSz),
             };
-            // this.logger.debug(`processOrder`, processOrder);
-            outerOrders = [...outerOrders, processOrder];
+            try {
+              parsedClOrdId = Utils.parseClOrdId(order.clOrdId);
+            } catch (error) {
+              this.logger.error(`OKX order parseClOrdId error`, order, error);
+            }
+            if (parsedClOrdId) {
+              memberId = parsedClOrdId.memberId;
+              if (!memberIds[memberId]) memberIds[memberId] = memberId;
+              orderId = parsedClOrdId.orderId;
+              orderIds = [...orderIds, orderId];
+              innerOrder = {
+                orderId,
+                exchange: SupportedExchange.TIDEBIT,
+              };
+            }
+            orders = [
+              ...orders,
+              {
+                id: order.clOrdId,
+                instId: order.instId,
+                memberId,
+                kind: order.ordType,
+                side: order.side,
+                outerOrder,
+                innerOrder,
+                exchange: SupportedExchange.OKEX,
+                feeCurrency: order.feeCcy,
+                ts: parseInt(order.cTime),
+              },
+            ];
           }
-          let emailsObj = await this.database.getEmailsByMemberIds(
-            Object.values(memberIds)
-          );
-          outerOrders = outerOrders.map((order) => {
-            let emailObj = emailsObj.find(
-              (obj) => obj.id.toString() === order.memberId.toString()
+          // getOrdersByIds
+          dbOrders = await this.database.getOrdersByIds(orderIds);
+          for (let order of orders) {
+            let dbOrder,
+              innerOrder = { ...order.innerOrder };
+            dbOrder = dbOrders.find(
+              (o) =>
+                SafeMath.eq(order.innerOrder.orderId, o.id) &&
+                SafeMath.eq(order.memberId, o.member_id)
             );
-            return { ...order, email: emailObj?.email };
-          });
+            if (dbOrder) {
+              innerOrder = {
+                ...innerOrder,
+                price: dbOrder.price,
+                avgFillPrice:
+                  order.side === Database.ORDER_SIDE.BUY
+                    ? SafeMath.div(
+                        SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+                        dbOrder.funds_received
+                      )
+                    : SafeMath.div(
+                        dbOrder.funds_received,
+                        SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
+                      ),
+                volume: dbOrder.origin_volume,
+                accFillVolume: SafeMath.minus(
+                  dbOrder.origin_volume,
+                  dbOrder.volume
+                ),
+                state:
+                  dbOrder.state === Database.ORDER_STATE_CODE.CANCEL
+                    ? Database.ORDER_STATE.CANCEL
+                    : dbOrder.state === Database.ORDER_STATE_CODE.DONE
+                    ? Database.ORDER_STATE.DONE
+                    : Database.ORDER_STATE.WAIT,
+                expect:
+                  order.side === Database.ORDER_SIDE.BUY
+                    ? dbOrder.origin_volume
+                    : dbOrder.price
+                    ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
+                    : null,
+                received: dbOrder.funds_received,
+              };
+            }
+            processOrders = [...processOrders, { ...order, innerOrder }];
+          }
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
-          payload: outerOrders,
+          payload: processOrders,
         });
       default:
         return new ResponseFormat({

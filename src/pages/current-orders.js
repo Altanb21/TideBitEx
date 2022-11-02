@@ -60,7 +60,9 @@ const CurrentOrders = () => {
         setFilterExchange(exchange);
         if (orders[exchange]) _orders = orders[exchange];
         else {
+          setIsLoading(true)
           res = await getCurrentOrders(exchange);
+          setIsLoading(false)
           _orders = res.orders;
           _ticker = res.ticker;
         }
@@ -111,8 +113,10 @@ const CurrentOrders = () => {
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
+        setIsLoading(true)
         const res = await getCurrentOrders(exchanges[0]);
         filter({ filterOrders: res.orders, ticker: res.ticker });
+        setIsLoading(false)
         return !prev;
       } else return prev;
     });
@@ -169,7 +173,7 @@ const CurrentOrders = () => {
               </li>
               <li
                 className={`screen__display-option${
-                  filterOption === "ask" ? " active" : ""
+                  filterOption === "sell" ? " active" : ""
                 }`}
                 onClick={() => filter({ side: "sell" })}
               >
@@ -177,7 +181,7 @@ const CurrentOrders = () => {
               </li>
               <li
                 className={`screen__display-option${
-                  filterOption === "bid" ? " active" : ""
+                  filterOption === "buy" ? " active" : ""
                 }`}
                 onClick={() => filter({ side: "buy" })}
               >
@@ -342,16 +346,11 @@ const CurrentOrders = () => {
                       >
                         {`${
                           convertExponentialToDecimal(
-                            order.side === "buy"
-                              ? order.innerOrder?.volume
-                              : SafeMath.mult(
-                                  order.innerOrder?.price,
-                                  order.innerOrder?.volume
-                                )
+                            order.innerOrder?.expect
                           ) || "-"
                         } / ${
                           convertExponentialToDecimal(
-                            order.innerOrder?.fundsReceived
+                            order.innerOrder?.received
                           ) || "-"
                         }`}
                       </div>
@@ -363,16 +362,11 @@ const CurrentOrders = () => {
                         >
                           {`${
                             convertExponentialToDecimal(
-                              order.side === "buy"
-                                ? order.outerOrder?.volume
-                                : SafeMath.mult(
-                                    order.outerOrder?.price,
-                                    order.outerOrder?.volume
-                                  )
+                              order.outerOrder?.expect
                             ) || "-"
                           } / ${
                             convertExponentialToDecimal(
-                              order.outerOrder?.fundsReceived
+                              order.outerOrder?.received
                             ) || "-"
                           }`}
                         </div>

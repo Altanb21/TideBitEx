@@ -1207,6 +1207,7 @@ class mysql {
     let query = `
     SELECT
 	    orders.id,
+	    orders.member_id,
 	    orders.price,
       orders.volume,
       orders.origin_volume,
