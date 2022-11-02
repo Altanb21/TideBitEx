@@ -8,6 +8,7 @@ import LoadingDialog from "../components/LoadingDialog";
 import SafeMath from "../utils/SafeMath";
 import { useSnackbar } from "notistack";
 import { COIN_SETTING_TYPE } from "../constant/CoinSetting";
+import { formatValue } from "../components/TradeForm";
 
 // let timer;
 
@@ -18,7 +19,7 @@ const FeeControlDialog = (props) => {
   const onConfirm = useCallback(() => {
     if (fee) {
       props.onConfirm(props.currency.id, COIN_SETTING_TYPE.FEE, {
-        fee,
+        fee: SafeMath.div(fee, 200),
       });
     }
   }, [fee, props]);
@@ -55,11 +56,14 @@ const FeeControlDialog = (props) => {
                     type="number"
                     min="0"
                     inputMode="decimal"
-                    value={fee ? SafeMath.mult(fee, 100) : null}
+                    value={fee}
                     onChange={(e) => {
-                      const value = Math.abs(e.target.value);
-                      const fee = SafeMath.div(value, 100);
-                      setFee(fee);
+                      const value = formatValue({
+                        value: e.target.value,
+                        precision: 2,
+                        maximum: 50,
+                      });
+                      setFee(value);
                     }}
                   />
                   <div className="screen__dialog-input-caption">{`${t(

@@ -8,6 +8,9 @@ const CustomKeyboard = React.lazy(() => import("./CustomKeyboard"));
 
 export const formatValue =
   (({ value, precision, maximum }) => {
+    console.log(`formatValue value`, value)
+    console.log(`formatValue precision`, precision)
+    console.log(`formatValue maximum`, maximum)
     let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
     if (formatedValue.toString().includes(".")) {
       if (formatedValue.toString().split(".")[1].length >= precision) {
@@ -23,6 +26,7 @@ export const formatValue =
         formatedValue = parseInt(formatedValue).toString();
     }
     if (SafeMath.gt(formatedValue, maximum)) formatedValue = maximum.toString();
+    console.log(`formatValue formatedValue`, formatedValue)
     return formatedValue;
   },
   []);
