@@ -42,7 +42,7 @@ const VoucherTile = (props) => {
           </div>
         )}
       </div>
-      <div className="vouchers__box screen__table-item">
+      <div className="vouchers__box screen__table-item screen__expand">
         <div
           className={`vouchers__text${
             trade.side === "buy" ? " positive" : " negative"
@@ -54,7 +54,7 @@ const VoucherTile = (props) => {
         </div>
         {trade.outerTrade && (
           <div
-            className={`vouchers__text screen__table-item${
+            className={`vouchers__text${
               trade.side === "buy" ? " positive" : " negative"
             }`}
           >
@@ -64,7 +64,7 @@ const VoucherTile = (props) => {
           </div>
         )}
       </div>
-      <div className="vouchers__box screen__table-item">
+      <div className="vouchers__box screen__table-item screen__expand">
         <div
           className={`vouchers__text${
             trade.side === "buy" ? " positive" : " negative"
@@ -86,7 +86,7 @@ const VoucherTile = (props) => {
           </div>
         )}
       </div>
-      <div className="vouchers__box screen__table-item">
+      <div className="vouchers__box screen__table-item screen__expand">
         <div className={`vouchers__text`}>
           {trade.innerTrade?.fee
             ? `${convertExponentialToDecimal(trade.innerTrade.fee)} ${
@@ -112,7 +112,7 @@ const VoucherTile = (props) => {
               // :
               " negative"
             : ""
-        }`}
+        } screen__expand`}
       >
         {trade.referral
           ? `${convertExponentialToDecimal(trade.referral)} ${
@@ -127,7 +127,7 @@ const VoucherTile = (props) => {
               ? " "
               : " negative negative--em"
             : ""
-        }`}
+        } screen__expand`}
       >
         {trade.profit
           ? `${convertExponentialToDecimal(trade.profit)} ${trade?.feeCurrency}`

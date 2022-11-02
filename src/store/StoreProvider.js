@@ -202,22 +202,22 @@ const StoreProvider = (props) => {
 
   const getOuterTradeFills = useCallback(
     async (exchange, start, end) => {
-      let exAccounts = {};
+      let outerTrades;
       try {
-        exAccounts = await middleman.getOuterTradeFills(exchange, start, end);
+        outerTrades = await middleman.getOuterTradeFills(exchange, start, end);
       } catch (error) {
         console.log(error);
       }
-      return exAccounts;
+      return outerTrades;
     },
     [middleman]
   );
 
   const getOuterPendingOrders = useCallback(
     async (exchange, limit, offset) => {
-      let exAccounts = {};
+      let pendingOrders;
       try {
-        exAccounts = await middleman.getOuterPendingOrders(
+        pendingOrders = await middleman.getOuterPendingOrders(
           exchange,
           limit,
           offset
@@ -225,7 +225,7 @@ const StoreProvider = (props) => {
       } catch (error) {
         console.log(error);
       }
-      return exAccounts;
+      return pendingOrders;
     },
     [middleman]
   );

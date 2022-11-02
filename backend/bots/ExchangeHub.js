@@ -2357,8 +2357,6 @@ class ExchangeHub extends Bot {
             },
           ];
         }
-        processTrades = processTrades.sort((a, b) => a.ts - b.ts);
-
         return new ResponseFormat({
           message: "getOuterTradeFills",
           payload: processTrades,

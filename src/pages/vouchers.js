@@ -29,7 +29,11 @@ const months = [
 export const TableHeader = (props) => {
   const [ascending, setAscending] = useState(null);
   return (
-    <th className="screen__table-header">
+    <th
+      className={`screen__table-header${
+        props.className ? ` ${props.className}` : ""
+      }`}
+    >
       <span
         className="screen__table-header--text"
         onClick={() =>
@@ -106,6 +110,7 @@ const Vouchers = () => {
     date.setDate(date.getDate() + 1);
     return date.getTime();
   };
+
   const getNextMonthlyBarTime = (barTime) => {
     const date = new Date(barTime);
     // console.log(`date`, date);
@@ -117,14 +122,13 @@ const Vouchers = () => {
     // console.log(`date`, date);
     return date.getTime();
   };
+
   const formateTrades = useCallback(
     async (trades) => {
-      // let exchangeRates = storeCtx.exchangeRates;
-      // if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
-      // console.log(`formateTrades trades[${trades.length}]`, trades);
       let chartData = { data: {}, xaxisType: "string" },
         data = {};
-      let _trades = trades.sort((a, b) => a.ts - b.ts); //asce
+      let _trades = trades.map((t) => ({ ...t }));
+      _trades.sort((a, b) => a.ts - b.ts); //asce
       if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
         let lastDailyBar = new Date(
             `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
@@ -622,77 +626,88 @@ const Vouchers = () => {
               ))}
           </div>
         </div>
-        <table className={`screen__table${showMore ? " show" : ""}`}>
-          <tr className="screen__table-headers">
-            {/* <li className="screen__table-header">{t("date")}</li> */}
-            <TableHeader
-              label={t("date")}
-              onClick={(ascending) => sorting("ts", ascending)}
-            />
-            <th className="screen__table-header vouchers__email">{t("member_email")}</th>
-            {/* <li className="screen__table-header">{t("orderId")}</li> */}
-            <TableHeader
-              label={t("orderId")}
-              onClick={(ascending) => sorting("orderId", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("ticker")}</li> */}
-            {/* <TableDropdown
+        <div className="screen__container">
+          <table className={`screen__table${showMore ? " show" : ""}`}>
+            <tr className="screen__table-headers">
+              {/* <li className="screen__table-header">{t("date")}</li> */}
+              <TableHeader
+                label={t("date")}
+                onClick={(ascending) => sorting("ts", ascending)}
+              />
+              <th className="screen__table-header vouchers__email">
+                {t("member_email")}
+              </th>
+              {/* <li className="screen__table-header">{t("orderId")}</li> */}
+              <TableHeader
+                label={t("orderId")}
+                onClick={(ascending) => sorting("orderId", ascending)}
+              />
+              {/* <li className="screen__table-header">{t("ticker")}</li> */}
+              {/* <TableDropdown
             className="screen__table-header"
             selectHandler={(option) => filter({ ticker: option })}
             options={Object.values(tickers)}
             selected={filterTicker}
           /> */}
-            <th className="screen__table-header">
-              <div className="screen__table-header--text">{t("exchange")}</div>
-              <div className="screen__table-header--switch"></div>
-            </th>
-            {/* <li className="screen__table-header">{t("transaction-side")}</li> */}
-            {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
-            <TableHeader
-              label={t("transaction-price")}
-              onClick={(ascending) => sorting("px", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
-            <TableHeader
-              label={t("transaction-amount")}
-              onClick={(ascending) => sorting("fillSz", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("match-fee")}</li> */}
-            <TableHeader
-              label={t("match-fee")}
-              onClick={(ascending) => sorting("fee", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("external-fee")}</li> */}
-            {/* <TableHeader
+              <th className="screen__table-header">
+                <div className="screen__table-header--text">
+                  {t("exchange")}
+                </div>
+                <div className="screen__table-header--switch"></div>
+              </th>
+              {/* <li className="screen__table-header">{t("transaction-side")}</li> */}
+              {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
+              <TableHeader
+                className="screen__expand"
+                label={t("transaction-price")}
+                onClick={(ascending) => sorting("px", ascending)}
+              />
+              {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
+              <TableHeader
+                className="screen__expand"
+                label={t("transaction-amount")}
+                onClick={(ascending) => sorting("fillSz", ascending)}
+              />
+              {/* <li className="screen__table-header">{t("match-fee")}</li> */}
+              <TableHeader
+                className="screen__expand"
+                label={t("match-fee")}
+                onClick={(ascending) => sorting("fee", ascending)}
+              />
+              {/* <li className="screen__table-header">{t("external-fee")}</li> */}
+              {/* <TableHeader
               label={t("external-fee")}
               onClick={(ascending) => sorting("externalFee", ascending)}
             /> */}
-            {/* <li className="screen__table-header">{t("referral")}</li> */}
-            <TableHeader
-              label={t("referral")}
-              onClick={(ascending) => sorting("referral", ascending)}
-            />
-            {/* <TableHeader
+              {/* <li className="screen__table-header">{t("referral")}</li> */}
+              <TableHeader
+                className="screen__expand"
+                label={t("referral")}
+                onClick={(ascending) => sorting("referral", ascending)}
+              />
+              {/* <TableHeader
             label={t("referral")}
             onClick={(ascending) => sorting("referral", ascending)}
           /> */}
-            {/* <li className="screen__table-header">{t("profit")}</li> */}
-            <TableHeader
-              label={t("profit")}
-              onClick={(ascending) => sorting("profit", ascending)}
-            />
-          </tr>
-          <tr className="screen__table-rows">
-            {filterTrades &&
-              filterTrades.map((trade) => <VoucherTile trade={trade} />)}
-          </tr>
-          <tfoot
-            className="screen__table-btn screen__table-text"
-            onClick={() => setShowMore((prev) => !prev)}
-          >
-            {showMore ? t("show-less") : t("show-more")}
-          </tfoot>
-        </table>
+              {/* <li className="screen__table-header">{t("profit")}</li> */}
+              <TableHeader
+                className="screen__expand"
+                label={t("profit")}
+                onClick={(ascending) => sorting("profit", ascending)}
+              />
+            </tr>
+            <tr className="screen__table-rows">
+              {filterTrades &&
+                filterTrades.map((trade) => <VoucherTile trade={trade} />)}
+            </tr>
+            <tfoot
+              className="screen__table-btn screen__table-text"
+              onClick={() => setShowMore((prev) => !prev)}
+            >
+              {showMore ? t("show-less") : t("show-more")}
+            </tfoot>
+          </table>
+        </div>
         <div className="screen__floating-box">
           <div
             className="screen__floating-btn"
