@@ -268,9 +268,11 @@ const CurrentOrders = () => {
                         }`}
                       >
                         {`${
-                          convertExponentialToDecimal(
-                            order.innerOrder?.price
-                          ) || "-"
+                          order.innerOrder?.price
+                            ? convertExponentialToDecimal(
+                                order.innerOrder?.price
+                              )
+                            : "-"
                         } / ${
                           order.innerOrder?.avgFillPrice
                             ? convertExponentialToDecimal(
@@ -286,9 +288,11 @@ const CurrentOrders = () => {
                           }`}
                         >
                           {`${
-                            convertExponentialToDecimal(
-                              order.outerOrder?.price
-                            ) || "-"
+                            order.outerOrder?.price
+                              ? convertExponentialToDecimal(
+                                  order.outerOrder?.price
+                                )
+                              : "-"
                           } / ${
                             order.outerOrder?.avgFillPrice
                               ? convertExponentialToDecimal(
@@ -306,13 +310,17 @@ const CurrentOrders = () => {
                         }`}
                       >
                         {`${
-                          convertExponentialToDecimal(
-                            order.innerOrder?.volume
-                          ) || "-"
+                          order.innerOrder?.volume
+                            ? convertExponentialToDecimal(
+                                order.innerOrder?.volume
+                              )
+                            : "-"
                         } / ${
-                          convertExponentialToDecimal(
-                            order.innerOrder?.accFillVolume
-                          ) || "-"
+                          order.innerOrder?.accFillVolume
+                            ? convertExponentialToDecimal(
+                                order.innerOrder?.accFillVolume
+                              )
+                            : "-"
                         }`}
                       </div>
                       {order.outerOrder && (
@@ -322,13 +330,17 @@ const CurrentOrders = () => {
                           }`}
                         >
                           {`${
-                            convertExponentialToDecimal(
-                              order.outerOrder?.volume
-                            ) || "-"
+                            order.outerOrder?.volume
+                              ? convertExponentialToDecimal(
+                                  order.outerOrder?.volume
+                                )
+                              : "-"
                           } / ${
-                            convertExponentialToDecimal(
-                              order.outerOrder?.accFillVolume
-                            ) || "-"
+                            order.outerOrder?.accFillVolume
+                              ? convertExponentialToDecimal(
+                                  order.outerOrder?.accFillVolume
+                                )
+                              : "-"
                           }`}
                         </div>
                       )}
@@ -340,13 +352,17 @@ const CurrentOrders = () => {
                         }`}
                       >
                         {`${
-                          convertExponentialToDecimal(
-                            order.innerOrder?.expect
-                          ) || "-"
+                          order.innerOrder?.expect
+                            ? convertExponentialToDecimal(
+                                order.innerOrder?.expect
+                              )
+                            : "-"
                         } / ${
-                          convertExponentialToDecimal(
-                            order.innerOrder?.received
-                          ) || "-"
+                          order.innerOrder?.received
+                            ? convertExponentialToDecimal(
+                                order.innerOrder?.received
+                              )
+                            : "-"
                         }`}
                       </div>
                       {order.outerOrder && (
@@ -356,13 +372,17 @@ const CurrentOrders = () => {
                           }`}
                         >
                           {`${
-                            convertExponentialToDecimal(
-                              order.outerOrder?.expect
-                            ) || "-"
+                            order.outerOrder?.expect
+                              ? convertExponentialToDecimal(
+                                  order.outerOrder?.expect
+                                )
+                              : "-"
                           } / ${
-                            convertExponentialToDecimal(
-                              order.outerOrder?.received
-                            ) || "-"
+                            order.outerOrder?.received
+                              ? convertExponentialToDecimal(
+                                  order.outerOrder?.received
+                                )
+                              : "-"
                           }`}
                         </div>
                       )}
