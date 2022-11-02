@@ -96,7 +96,7 @@ const AddUserDialog = (props) => {
               inputmode="email"
               onChange={(e) => {
                 if (hasError) setHasError(false);
-                setUser((prev) => ({ ...prev, email: e.target.value }));
+                setUser((prev) => ({ ...prev, email: e.target.value.trim() }));
               }}
             />
             <div className="user-setting__dialog-input-message">
@@ -390,10 +390,16 @@ const UserSetting = (props) => {
             },
           });
         }
-        setIsLoading(false);
       } else {
-        // ++TODO
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
       }
+      setIsLoading(false);
     },
     [adminUsers, enqueueSnackbar, filter, storeCtx, t]
   );

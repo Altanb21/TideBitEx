@@ -19,7 +19,7 @@ const FeeControlDialog = (props) => {
   const onConfirm = useCallback(() => {
     if (fee) {
       props.onConfirm(props.currency.id, COIN_SETTING_TYPE.FEE, {
-        fee: SafeMath.div(fee, 200),
+        fee: SafeMath.div(fee, 100),
       });
     }
   }, [fee, props]);
