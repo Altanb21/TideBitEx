@@ -2473,7 +2473,7 @@ class ExchangeHub extends Bot {
               innerOrder = { ...order.innerOrder },
               price,
               volume,
-              email = emails.find((obj) => SafeMath.eq(obj.id, order.memberId));
+              email = emails.find((obj) => SafeMath.eq(obj.id, order.memberId))?.email;
             dbOrder = dbOrders.find(
               (o) =>
                 SafeMath.eq(order.innerOrder.orderId, o.id) &&
