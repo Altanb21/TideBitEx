@@ -2,14 +2,6 @@
   & .screen__search-bar {
     justify-content: space-between;
   }
-  &__box {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start
-  }
-  &__email{
-    min-width: 200px;
-  }
   &__text.positive {
     color: #5ad998;
   }

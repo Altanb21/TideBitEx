@@ -2210,8 +2210,10 @@ class ExchangeHub extends Bot {
       `${exchange} startDate:${startDate}, endtDate:${endtDate}`
     );
     let trades = [],
+      orderIds = [],
       voucherIds = [],
       markets = {},
+      orders = [],
       vouchers = [],
       referralCommissions = [],
       processTrades = [],
@@ -2242,7 +2244,8 @@ class ExchangeHub extends Bot {
                 outerTradeData.instId.toLowerCase().replace("-", "")
               ],
             innerTrade = null;
-          if (dbOuterTrade.voucher_id) {
+          if (dbOuterTrade.order_id && dbOuterTrade.voucher_id) {
+            orderIds = [...orderIds, dbOuterTrade.order_id];
             voucherIds = [...voucherIds, dbOuterTrade.voucher_id];
             if (!markets[tickerSetting.id])
               markets[tickerSetting.id] = tickerSetting.code;
@@ -2272,6 +2275,8 @@ class ExchangeHub extends Bot {
             },
           ];
         }
+        // getOrdersById
+        orders = await this.database.getOrdersByIds(orderIds);
         // getVouchersById
         vouchers = await this.database.getVouchersByIds(voucherIds);
         // getReferralCommissionsByMarkets
@@ -2285,22 +2290,26 @@ class ExchangeHub extends Bot {
           let innerTrade,
             referral,
             profit,
-            alert = false;
+            alert = false,
+            fee,
+            referralCommission,
+            voucher,
+            order;
           if (trade.innerTrade) {
-            let voucher = vouchers.find((v) =>
-              SafeMath.eq(v.id, trade.voucherId)
+            order = orders.find((o) =>
+              SafeMath.eq(o.id, trade.innerTrade.orderId)
             );
+            voucher = vouchers.find((v) => SafeMath.eq(v.id, trade.voucherId));
             if (voucher) {
               feeCurrency = (
                 voucher.trend === Database.ORDER_KIND.ASK
                   ? voucher.bid
                   : voucher.ask
               )?.toUpperCase();
-
-              let fee = voucher
+              fee = voucher
                 ? Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`])
                 : null;
-              let referralCommission = referralCommissions.find(
+              referralCommission = referralCommissions.find(
                 (rc) =>
                   SafeMath.eq(rc.market, trade.marketCode) &&
                   SafeMath.eq(rc.voucher_id, trade.voucherId)
@@ -2350,6 +2359,7 @@ class ExchangeHub extends Bot {
             {
               ...trade,
               innerTrade,
+              kind: order?.ord_type,
               feeCurrency: trade.feeCurrency || feeCurrency,
               referral,
               profit,
@@ -2483,9 +2493,6 @@ class ExchangeHub extends Bot {
       query
     );
     let outerOrders = [],
-      // dbOrders = await this.database.getOrdersJoinMemberEmail(
-      //   Database.ORDER_STATE_CODE.WAIT
-      // );
       memberIds = {};
     switch (query.exchange) {
       case SupportedExchange.OKEX:

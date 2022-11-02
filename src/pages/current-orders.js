@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from "react";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
+import LoadingDialog from "../components/LoadingDialog";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import SafeMath from "../utils/SafeMath";
 import { TableHeader } from "./vouchers";
@@ -13,6 +14,7 @@ const CurrentOrders = () => {
   const { t } = useTranslation();
   const [showMore, setShowMore] = useState(false);
   const [isInit, setIsInit] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [orders, setOrders] = useState(null);
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
@@ -91,12 +93,17 @@ const CurrentOrders = () => {
     ]
   );
 
-  const sorting = (key, ascending) => {
+  const sorting = (key, ascending, order) => {
     setFilterOrders((prevOrders) => {
       let sortedOrders = prevOrders.map((order) => ({ ...order }));
-      sortedOrders = ascending
-        ? sortedOrders?.sort((a, b) => +a[key] - +b[key])
-        : sortedOrders?.sort((a, b) => +b[key] - +a[key]);
+      if (order)
+        sortedOrders = ascending
+          ? sortedOrders?.sort((a, b) => +a[order][key] - +b[order][key])
+          : sortedOrders?.sort((a, b) => +b[order][key] - +a[order][key]);
+      else
+        sortedOrders = ascending
+          ? sortedOrders?.sort((a, b) => +a[key] - +b[key])
+          : sortedOrders?.sort((a, b) => +b[key] - +a[key]);
       return sortedOrders;
     });
   };
@@ -117,179 +124,285 @@ const CurrentOrders = () => {
     }
   }, [init, isInit]);
 
-  useEffect(() => {
-    if (!isInit) {
-      init();
-    }
-  }, [init, isInit]);
-
   return (
-    <section className="screen__section current-orders">
-      <div className="screen__header">{t("current-orders")}</div>
-      <div className="screen__search-bar">
-        <TableDropdown
-          className="screen__filter"
-          selectHandler={(ticker) => {
-            filter({ ticker });
-          }}
-          options={tickers ? Object.values(tickers) : []}
-          selected={filterTicker}
-        />
-        <div className="screen__search-box">
-          <input
-            type="text"
-            inputMode="search"
-            className="screen__search-input"
-            placeholder={t("search-keywords")}
-            onInput={(e) => {
-              setFilterKey(e.target.value);
-              filter({ keyword: e.target.value });
+    <>
+      {isLoading && <LoadingDialog />}
+      <section className="screen__section current-orders">
+        <div className="screen__header">{t("current-orders")}</div>
+        <div className="screen__search-bar">
+          <TableDropdown
+            className="screen__filter"
+            selectHandler={(ticker) => {
+              filter({ ticker });
             }}
+            options={tickers ? Object.values(tickers) : []}
+            selected={filterTicker}
           />
-          <div className="screen__search-icon">
-            <div className="screen__search-icon--circle"></div>
-            <div className="screen__search-icon--rectangle"></div>
+          <div className="screen__search-box">
+            <input
+              type="text"
+              inputMode="search"
+              className="screen__search-input"
+              placeholder={t("search-keywords")}
+              onInput={(e) => {
+                setFilterKey(e.target.value);
+                filter({ keyword: e.target.value });
+              }}
+            />
+            <div className="screen__search-icon">
+              <div className="screen__search-icon--circle"></div>
+              <div className="screen__search-icon--rectangle"></div>
+            </div>
           </div>
         </div>
-      </div>
-      <div className="screen__tool-bar">
-        <div className="screen__display">
-          <div className="screen__display-title">{`${t("show")}:`}</div>
-          <ul className="screen__display-options">
-            <li
-              className={`screen__display-option${
-                filterOption === "all" ? " active" : ""
-              }`}
-              onClick={() => filter({ side: "all" })}
-            >
-              {t("all")}
-            </li>
-            <li
-              className={`screen__display-option${
-                filterOption === "ask" ? " active" : ""
-              }`}
-              onClick={() => filter({ side: "sell" })}
-            >
-              {t("bid")}
-            </li>
-            <li
-              className={`screen__display-option${
-                filterOption === "bid" ? " active" : ""
-              }`}
-              onClick={() => filter({ side: "buy" })}
-            >
-              {t("ask")}
-            </li>
-          </ul>
-        </div>
-        {/* <div className="screen__sorting" onClick={sorting}>
+        <div className="screen__tool-bar">
+          <div className="screen__display">
+            <div className="screen__display-title">{`${t("show")}:`}</div>
+            <ul className="screen__display-options">
+              <li
+                className={`screen__display-option${
+                  filterOption === "all" ? " active" : ""
+                }`}
+                onClick={() => filter({ side: "all" })}
+              >
+                {t("all")}
+              </li>
+              <li
+                className={`screen__display-option${
+                  filterOption === "ask" ? " active" : ""
+                }`}
+                onClick={() => filter({ side: "sell" })}
+              >
+                {t("bid")}
+              </li>
+              <li
+                className={`screen__display-option${
+                  filterOption === "bid" ? " active" : ""
+                }`}
+                onClick={() => filter({ side: "buy" })}
+              >
+                {t("ask")}
+              </li>
+            </ul>
+          </div>
+          {/* <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
         </div> */}
-      </div>
-      <table className={`screen__table${showMore ? " show" : ""}`}>
-        <tr className="screen__table-headers">
-          {/* <li className="screen__table-header">{t("date")}</li> */}
-          <TableHeader
-            label={t("date")}
-            onClick={(ascending) => sorting("ts", ascending)}
-          />
-          <th className="screen__table-header">{t("memberId_email")}</th>
-          <th className="screen__table-header">{t("transaction-side")}</th>
-          {/* <TableDropdown
-            className="screen__table-header"
-            selectHandler={(option) => filter({ ticker: option })}
-            options={Object.values(tickers)}
-            selected={filterTicker}
-          /> */}
-          <th className="screen__table-header">
-            <div className="screen__table-header--text">{t("exchange")}</div>
-            <div className="screen__table-header--switch"></div>
-          </th>
-          {/* <li className="screen__table-header">{t("match-volume")}</li> */}
-          <TableHeader
-            label={t("match-volume")}
-            onClick={(ascending) => sorting("accFillSz", ascending)}
-          />
-          {/* <li className="screen__table-header">{t("unmatch-volume")}</li> */}
-          <TableHeader
-            label={t("unmatch-volume")}
-            onClick={(ascending) => sorting("unFillSz", ascending)}
-          />
-          {/* <li className="screen__table-header">{t("funds-receive")}</li> */}
-          <TableHeader
-            label={t("funds-receive")}
-            onClick={(ascending) => sorting("fundsReceived", ascending)}
-          />
-        </tr>
-        <tr className="screen__table-rows">
-          {filterOrders &&
-            filterOrders.map((order) => (
-              <td
-                className={`current-orders__tile screen__table-row${
-                  order.email ? "" : " unknown"
-                }`}
-                key={order.id}
-              >
-                <div className="current-orders__text screen__table-item">
-                  {dateFormatter(order.ts).text}
-                </div>
-                <div className="current-orders__text screen__table-item">
-                  <div>{`${order.email ? order.email + "/" : "Unknown"}`}</div>
-                  <div>{`${order.email ? order.memberId : ""}`}</div>
-                </div>
-                <div
-                  className={`current-orders__text screen__table-item${
-                    order.side === "buy" ? " positive" : " negative"
-                  }`}
-                >
-                  {t(order.side)}
-                </div>
-                {/* <div className="current-orders__text screen__table-item">
-                  {order.instId}
-                </div> */}
-                <div className="current-orders__text screen__table-item">
-                  {order.exchange}
-                </div>
-                <div className="current-orders__text screen__table-item">
-                  {`${convertExponentialToDecimal(
-                    order.accFillSz
-                  )} / ${convertExponentialToDecimal(order.sz)}`}
-                </div>
-                <div className="current-orders__text screen__table-item">
-                  {`${convertExponentialToDecimal(
-                    order.unFillSz
-                  )} / ${convertExponentialToDecimal(order.sz)}`}
-                </div>
-                <div className="current-orders__text screen__table-item">
-                  {`${convertExponentialToDecimal(
-                    order.fundsReceived
-                  )} / ${convertExponentialToDecimal(
-                    SafeMath.mult(order.sz, order.px)
-                  )}`}
-                </div>
-              </td>
-            ))}
-        </tr>
-        <tfoot
-          className="screen__table-btn screen__table-text"
-          onClick={() => setShowMore((prev) => !prev)}
-        >
-          {showMore ? t("show-less") : t("show-more")}
-        </tfoot>
-      </table>
-      <div className="screen__floating-box">
-        <div
-          className="screen__floating-btn"
-          onClick={() => {
-            const screenSection =
-              window.document.querySelector(".screen__section");
-            screenSection.scroll(0, 0);
-          }}
-        >
-          <img src="/img/floating-btn@2x.png" alt="arrow" />
         </div>
-      </div>
-    </section>
+        <div className="screen__container">
+          <table className={`screen__table${showMore ? " show" : ""}`}>
+            <tr className="screen__table-headers">
+              {/* <li className="screen__table-header">{t("date")}</li> */}
+              <TableHeader
+                label={t("date")}
+                onClick={(ascending) => sorting("ts", ascending)}
+              />
+              <th className="screen__table-header screen__email">
+                {t("member_email")}
+              </th>
+              <th className="screen__table-header">
+                <div className="screen__table-header--text">
+                  {t("exchange")}
+                </div>
+                <div className="screen__table-header--switch"></div>
+              </th>
+              <th className="screen__table-header">{t("transaction-side")}</th>
+              <TableHeader
+                label={t("orderId")}
+                onClick={(ascending) => sorting("orderId", ascending)}
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("transaction-price")}
+                onClick={(ascending) =>
+                  sorting("pricce", ascending, "innerOrder")
+                }
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("transaction-amount")}
+                onClick={(ascending) =>
+                  sorting("volume", ascending, "innerOrder")
+                }
+              />
+              <TableHeader
+                label={t("funds-receive")}
+                onClick={(ascending) => sorting("fundsReceived", ascending)}
+              />
+            </tr>
+            <tr className="screen__table-rows">
+              {filterOrders &&
+                filterOrders.map((order) => (
+                  <tr
+                    className={`current-orders__tile screen__table-row${
+                      order.email ? "" : " unknown"
+                    }`}
+                    key={order.id}
+                  >
+                    <td className="current-orders__text screen__table-item">
+                      {dateFormatter(order.ts).text}
+                    </td>
+                    <td className="current-orders__text screen__email screen__table-item">
+                      {`${order.email ? order.email : "-"}`}
+                      {/* <div>{`${order.email ? order.memberId : ""}`}</div> */}
+                    </td>
+                    <td className="screen__box screen__table-item">
+                      <div className="current-orders__text">
+                        {order.innerOrder?.exchange || "-"}
+                      </div>
+                      {order.outerOrder && (
+                        <div className="current-orders__text">
+                          {order.outerOrder?.exchange || "-"}
+                        </div>
+                      )}
+                    </td>
+                    <td
+                      className={`current-orders__text screen__table-item${
+                        order.side === "buy" ? " positive" : " negative"
+                      }`}
+                    >
+                      {`${t(order.kind)}${t(order.side)}`}
+                    </td>
+                    <td className="current-orders__text screen__table-item">
+                      {order.innerOrder?.orderId || "-"}
+                    </td>
+                    <td className="screen__box screen__table-item screen__expand">
+                      <div
+                        className={`"current-orders__text${
+                          order.side === "buy" ? " positive" : " negative"
+                        }`}
+                      >
+                        {`${
+                          convertExponentialToDecimal(
+                            order.innerOrder?.price
+                          ) || "-"
+                        } / ${
+                          convertExponentialToDecimal(
+                            order.innerOrder?.avgFillPrice
+                          ) || "-"
+                        }`}
+                      </div>
+                      {order.outerOrder && (
+                        <div
+                          className={`"current-orders__text${
+                            order.side === "buy" ? " positive" : " negative"
+                          }`}
+                        >
+                          {`${
+                            convertExponentialToDecimal(
+                              order.outerOrder?.price
+                            ) || "-"
+                          } / ${
+                            convertExponentialToDecimal(
+                              order.outerOrder?.avgFillPrice
+                            ) || "-"
+                          }`}
+                        </div>
+                      )}
+                    </td>
+                    <td className="screen__box screen__table-item screen__expand">
+                      <div
+                        className={`"current-orders__text${
+                          order.side === "buy" ? " positive" : " negative"
+                        }`}
+                      >
+                        {`${
+                          convertExponentialToDecimal(
+                            order.innerOrder?.volume
+                          ) || "-"
+                        } / ${
+                          convertExponentialToDecimal(
+                            order.innerOrder?.accFillVolume
+                          ) || "-"
+                        }`}
+                      </div>
+                      {order.outerOrder && (
+                        <div
+                          className={`"current-orders__text${
+                            order.side === "buy" ? " positive" : " negative"
+                          }`}
+                        >
+                          {`${
+                            convertExponentialToDecimal(
+                              order.outerOrder?.volume
+                            ) || "-"
+                          } / ${
+                            convertExponentialToDecimal(
+                              order.outerOrder?.accFillVolume
+                            ) || "-"
+                          }`}
+                        </div>
+                      )}
+                    </td>
+                    <td className="screen__box screen__table-item screen__expand">
+                      <div
+                        className={`"current-orders__text${
+                          order.side === "buy" ? " positive" : " negative"
+                        }`}
+                      >
+                        {`${
+                          convertExponentialToDecimal(
+                            order.side === "buy"
+                              ? order.innerOrder?.volume
+                              : SafeMath.mult(
+                                  order.innerOrder?.price,
+                                  order.innerOrder?.volume
+                                )
+                          ) || "-"
+                        } / ${
+                          convertExponentialToDecimal(
+                            order.innerOrder?.fundsReceived
+                          ) || "-"
+                        }`}
+                      </div>
+                      {order.outerOrder && (
+                        <div
+                          className={`"current-orders__text${
+                            order.side === "buy" ? " positive" : " negative"
+                          }`}
+                        >
+                          {`${
+                            convertExponentialToDecimal(
+                              order.side === "buy"
+                                ? order.outerOrder?.volume
+                                : SafeMath.mult(
+                                    order.outerOrder?.price,
+                                    order.outerOrder?.volume
+                                  )
+                            ) || "-"
+                          } / ${
+                            convertExponentialToDecimal(
+                              order.outerOrder?.fundsReceived
+                            ) || "-"
+                          }`}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+            </tr>
+            <tfoot
+              className="screen__table-btn screen__table-text"
+              onClick={() => setShowMore((prev) => !prev)}
+            >
+              {showMore ? t("show-less") : t("show-more")}
+            </tfoot>
+          </table>
+        </div>
+        <div className="screen__floating-box">
+          <div
+            className="screen__floating-btn"
+            onClick={() => {
+              const screenSection =
+                window.document.querySelector(".screen__section");
+              screenSection.scroll(0, 0);
+            }}
+          >
+            <img src="/img/floating-btn@2x.png" alt="arrow" />
+          </div>
+        </div>
+      </section>
+    </>
   );
 };
 

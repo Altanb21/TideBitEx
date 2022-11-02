@@ -465,15 +465,20 @@ const Vouchers = () => {
     [dateStart, filter, getVouchers]
   );
 
-  const sorting = (key, ascending) => {
+  const sorting = (key, ascending, trade) => {
     // console.log(`key`, key);
     // console.log(`ascending`, ascending);
     setFilterTrades((prevTrades) => {
       // console.log(`prevTrades`, prevTrades);
       let sortedTrades = prevTrades.map((trade) => ({ ...trade }));
-      sortedTrades = ascending
-        ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
-        : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
+      if (trade)
+        sortedTrades = ascending
+          ? sortedTrades?.sort((a, b) => +a[trade][key] - +b[trade][key])
+          : sortedTrades?.sort((a, b) => +b[trade][key] - +a[trade][key]);
+      else
+        sortedTrades = ascending
+          ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
+          : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
       // console.log(`sortedTrades`, sortedTrades);
       return sortedTrades;
     });
@@ -629,67 +634,48 @@ const Vouchers = () => {
         <div className="screen__container">
           <table className={`screen__table${showMore ? " show" : ""}`}>
             <tr className="screen__table-headers">
-              {/* <li className="screen__table-header">{t("date")}</li> */}
               <TableHeader
                 label={t("date")}
                 onClick={(ascending) => sorting("ts", ascending)}
               />
-              <th className="screen__table-header vouchers__email">
+              <th className="screen__table-header screen__email">
                 {t("member_email")}
               </th>
-              {/* <li className="screen__table-header">{t("orderId")}</li> */}
-              <TableHeader
-                label={t("orderId")}
-                onClick={(ascending) => sorting("orderId", ascending)}
-              />
-              {/* <li className="screen__table-header">{t("ticker")}</li> */}
-              {/* <TableDropdown
-            className="screen__table-header"
-            selectHandler={(option) => filter({ ticker: option })}
-            options={Object.values(tickers)}
-            selected={filterTicker}
-          /> */}
               <th className="screen__table-header">
                 <div className="screen__table-header--text">
                   {t("exchange")}
                 </div>
                 <div className="screen__table-header--switch"></div>
               </th>
-              {/* <li className="screen__table-header">{t("transaction-side")}</li> */}
-              {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
+              <th className="screen__table-header">{t("transaction-side")}</th>
+              <TableHeader
+                label={t("orderId")}
+                onClick={(ascending) => sorting("orderId", ascending)}
+              />
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-price")}
-                onClick={(ascending) => sorting("px", ascending)}
+                onClick={(ascending) =>
+                  sorting("fillPrice", ascending, "innerTrade")
+                }
               />
-              {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-amount")}
-                onClick={(ascending) => sorting("fillSz", ascending)}
+                onClick={(ascending) =>
+                  sorting("fillVolume", ascending, "innerTrade")
+                }
               />
-              {/* <li className="screen__table-header">{t("match-fee")}</li> */}
               <TableHeader
                 className="screen__expand"
                 label={t("match-fee")}
-                onClick={(ascending) => sorting("fee", ascending)}
+                onClick={(ascending) => sorting("fee", ascending, "innerTrade")}
               />
-              {/* <li className="screen__table-header">{t("external-fee")}</li> */}
-              {/* <TableHeader
-              label={t("external-fee")}
-              onClick={(ascending) => sorting("externalFee", ascending)}
-            /> */}
-              {/* <li className="screen__table-header">{t("referral")}</li> */}
               <TableHeader
                 className="screen__expand"
                 label={t("referral")}
                 onClick={(ascending) => sorting("referral", ascending)}
               />
-              {/* <TableHeader
-            label={t("referral")}
-            onClick={(ascending) => sorting("referral", ascending)}
-          /> */}
-              {/* <li className="screen__table-header">{t("profit")}</li> */}
               <TableHeader
                 className="screen__expand"
                 label={t("profit")}

@@ -270,8 +270,16 @@
     gap: 10px;
     width: 100%;
   }
+  &__box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start
+  }
+  &__email{
+    min-width: 200px;
+  }
   &__expand{
-    min-width: 180px;
+    min-width: 180px !important;
   }
   &__table-item,
   &__table-header {

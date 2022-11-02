@@ -343,6 +343,10 @@ class DBOperator {
     });
   }
 
+  async getOrdersByIds(ids) {
+    return this.database.getOrdersByIds(ids);
+  }
+
   async getVouchersByIds(ids) {
     return this.database.getVouchersByIds(ids);
   }

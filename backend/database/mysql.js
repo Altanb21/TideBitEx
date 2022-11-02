@@ -1202,6 +1202,35 @@ class mysql {
     }
   }
 
+  async getOrdersByIds(ids) {
+    let placeholder = ids.join(`,`);
+    let query = `
+    SELECT
+	    orders.id,
+	    orders.price,
+      orders.volume,
+      orders.origin_volume,
+      orders.state,
+      orders.ord_type,
+      orders.funds_received
+    FROM
+      orders
+    WHERE
+      orders.id in(${placeholder});
+    `;
+    try {
+      this.logger.debug("[mysql] getOrdersByIds", query, ids);
+      const [orders] = await this.db.query({
+        query,
+        values: ids,
+      });
+      return orders;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+
   async getVouchersByIds(ids) {
     let placeholder = ids.join(`,`);
     let query = `

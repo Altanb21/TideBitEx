@@ -1,38 +1,25 @@
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 
 const VoucherTile = (props) => {
+  const { t } = useTranslation();
   const { trade } = props;
   return (
-    <td
+    <tr
       className={`vouchers__tile screen__table-row${
         trade.email ? "" : " unknown"
       }${trade.alert ? " screen__table-row--alert" : ""}`}
       key={`${trade.id}`}
     >
-      <div className="vouchers__text screen__table-item">
+      <td className="vouchers__text screen__table-item">
         {dateFormatter(trade.ts).text}
-      </div>
-      <div className="vouchers__text vouchers__email screen__table-item">
+      </td>
+      <td className="vouchers__text screen__email screen__table-item">
         {`${trade.email ? trade.email : "-"}`}
         {/* <div>{`${trade.email ? trade.memberId : ""}`}</div> */}
-      </div>
-      <div className="vouchers__text screen__table-item">
-        {trade.innerTrade?.orderId || "-"}
-      </div>
-      {/* <div className="vouchers__box screen__table-item">
-        <div className="vouchers__text screen__table-item">
-          {trade.innerTrade?.orderId || "-"}
-        </div>
-        {trade.outerTrade && (
-          <div className="vouchers__text screen__table-item">
-            {trade.outerTrade?.orderId || "-"}
-          </div>
-        )}
-      </div> */}
-      {/* <div className="vouchers__text screen__table-item">
-        {trade.instId}
-      </div> */}
-      <div className="vouchers__box screen__table-item">
+      </td>
+      <td className="screen__box screen__table-item">
         <div className="vouchers__text">
           {trade.innerTrade?.exchange || "-"}
         </div>
@@ -41,8 +28,18 @@ const VoucherTile = (props) => {
             {trade.outerTrade?.exchange || "-"}
           </div>
         )}
-      </div>
-      <div className="vouchers__box screen__table-item screen__expand">
+      </td>
+      <td
+        className={`vouchers__text${
+          trade.side === "buy" ? " positive" : " negative"
+        } screen__table-item`}
+      >
+        {`${t(trade.kind)}${t(trade.side)}`}
+      </td>
+      <td className="vouchers__text screen__table-item">
+        {trade.innerTrade?.orderId || "-"}
+      </td>
+      <td className="screen__box screen__table-item screen__expand">
         <div
           className={`vouchers__text${
             trade.side === "buy" ? " positive" : " negative"
@@ -63,8 +60,8 @@ const VoucherTile = (props) => {
             }`}
           </div>
         )}
-      </div>
-      <div className="vouchers__box screen__table-item screen__expand">
+      </td>
+      <td className="screen__box screen__table-item screen__expand">
         <div
           className={`vouchers__text${
             trade.side === "buy" ? " positive" : " negative"
@@ -85,8 +82,8 @@ const VoucherTile = (props) => {
             }`}
           </div>
         )}
-      </div>
-      <div className="vouchers__box screen__table-item screen__expand">
+      </td>
+      <td className="screen__box screen__table-item screen__expand">
         <div className={`vouchers__text`}>
           {trade.innerTrade?.fee
             ? `${convertExponentialToDecimal(trade.innerTrade.fee)} ${
@@ -103,8 +100,8 @@ const VoucherTile = (props) => {
               : "-"}
           </div>
         )}
-      </div>
-      <div
+      </td>
+      <td
         className={`vouchers__text screen__table-item${
           trade.referral
             ? // trade.referral > 0
@@ -119,8 +116,8 @@ const VoucherTile = (props) => {
               trade?.feeCurrency
             }`
           : "-"}
-      </div>
-      <div
+      </td>
+      <td
         className={`vouchers__text screen__table-item${
           trade.profit
             ? trade.profit > 0
@@ -132,8 +129,8 @@ const VoucherTile = (props) => {
         {trade.profit
           ? `${convertExponentialToDecimal(trade.profit)} ${trade?.feeCurrency}`
           : "-"}
-      </div>
-    </td>
+      </td>
+    </tr>
   );
 };
 
