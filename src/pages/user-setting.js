@@ -391,7 +391,7 @@ const UserSetting = (props) => {
           });
         }
       } else {
-        enqueueSnackbar(`${t("error-happen")}`, {
+        enqueueSnackbar(`${t("email-exist")}`, {
           variant: "error",
           anchorOrigin: {
             vertical: "top",

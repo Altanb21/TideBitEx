@@ -236,5 +236,6 @@
   "sub-account": "Sub Account",
   "asset-balance": "Asset Balance",
   "value": "Value",
-  "tokex_expire": "Token Expired. Please re-loginin."
+  "tokex_expire": "Token Expired. Please re-loginin.",
+  "email-exist":"This email already has administrator privileges"
 }
