@@ -430,6 +430,7 @@ const Vouchers = () => {
       filterKey,
       filterOption,
       filterTicker,
+      formateTrades,
       getVouchers,
       limit,
       page,
