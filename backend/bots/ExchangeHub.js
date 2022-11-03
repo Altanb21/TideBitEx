@@ -2362,7 +2362,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
-          payload: { totalCounts: counts, trades: processTrades },
+          payload: { totalCounts: counts['count(*)'], trades: processTrades },
         });
       default:
         return new ResponseFormat({

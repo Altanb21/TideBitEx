@@ -92,6 +92,8 @@ const Vouchers = () => {
   const [filterTicker, setFilterTicker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [dateStart, setDateStart] = useState(
     new Date(
       `${currentDate.getFullYear()}-${
@@ -304,12 +306,12 @@ const Vouchers = () => {
 
   const getVouchers = useCallback(
     async ({ exchange, start, end, limit, offset }) => {
-      if (start) setDateStart(start);
-      if (end) setDateEnd(end);
+      if (start) setStartDate(start);
+      if (end) setEndDate(end);
       const { totalCounts, trades } = await storeCtx.getOuterTradeFills({
         exchange,
-        start: start || dateStart,
-        end: end || dateEnd,
+        start: start || startDate,
+        end: end || endDate,
         limit,
         offset,
       });
@@ -331,12 +333,14 @@ const Vouchers = () => {
         setFilterTicker(ticker);
       }
       // trade fromate ++ TODO
-      const chartData = await formateTrades(trades);
-      // console.log(`formateTrades chartData`, chartData);
-      setChartData(chartData);
+      if (trades.length > 0) {
+        const chartData = await formateTrades(trades);
+        // console.log(`formateTrades chartData`, chartData);
+        setChartData(chartData);
+      }
       return { trades, tickers, ticker: ticker };
     },
-    [dateEnd, dateStart, formateTrades, storeCtx]
+    [endDate, formateTrades, startDate, storeCtx]
   );
 
   const filter = useCallback(
@@ -509,7 +513,7 @@ const Vouchers = () => {
       setIsLoading(true);
       const res = await getVouchers({
         exchange: exchanges[0],
-        offset: newPage - 1 * limit,
+        offset: (newPage - 1) * limit,
         limit: limit,
       });
       filter({ filterTrades: res.trades, ticker: res.ticker, newPage });
@@ -757,19 +761,27 @@ const Vouchers = () => {
               {showMore ? t("show-less") : t("show-more")}
             </tfoot> */}
             <tfoot className="screen__table-tools">
-              {SafeMath.gt(page, 1) && (
-                <div className={`screen__table-tool`} onClick={prevPageHandler}>
-                  <div className="screen__table-tool-left"></div>
-                </div>
-              )}
-              <div className="screen_page">{`${page} / ${Math.ceil(
+              <div
+                className={`screen__table-tool${
+                  SafeMath.gt(page, 1) ? "" : " disable"
+                }`}
+                onClick={prevPageHandler}
+              >
+                <div className="screen__table-tool--left"></div>
+              </div>
+              <div className="screen__page">{`${page} / ${Math.ceil(
                 totalCounts / limit
               )}`}</div>
-              {SafeMath.lt(page, Math.ceil(totalCounts / limit)) && (
-                <div className={`screen__table-tool`} onClick={nextPageHandler}>
-                  <div className="screen__table-tool-right"></div>
-                </div>
-              )}
+              <div
+                className={`screen__table-tool${
+                  SafeMath.lt(page, Math.ceil(totalCounts / limit))
+                    ? ""
+                    : " disable"
+                }`}
+                onClick={nextPageHandler}
+              >
+                <div className="screen__table-tool--right"></div>
+              </div>
             </tfoot>
           </table>
         </div>

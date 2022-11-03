@@ -1039,14 +1039,17 @@ class mysql {
             : `[${exchangeCode}, ${start}, ${end}]`
         }`
       );
-      const [outerTrades] = await this.db.query({
+      const [[counts]] = await this.db.query({
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
             ? [exchangeCode, days]
             : [exchangeCode, start, end],
       });
-      return outerTrades;
+      this.logger.debug(
+        `counts`, counts
+      );
+      return  counts;
     } catch (error) {
       this.logger.debug(error);
       return [];
