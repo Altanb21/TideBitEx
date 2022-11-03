@@ -751,7 +751,7 @@ const Vouchers = () => {
             <tr className="screen__table-rows">
               {filterTrades &&
                 filterTrades.map((trade, index) => (
-                  <VoucherTile trade={trade} number={index + 1 * page} />
+                  <VoucherTile trade={trade} number={(index + 1) * page} />
                 ))}
             </tr>
             {/* <tfoot
