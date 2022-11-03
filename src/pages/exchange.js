@@ -27,7 +27,7 @@ const Exchange = () => {
     //   setIsInit(false);
     //   storeCtx.init().then((_) => setIsInit(true));
     // }
-    if (!isStart && location.pathname?.includes("/markets")) {
+    if (storeCtx.isInit && !isStart && location.pathname?.includes("/markets")) {
       window.storeCtx = storeCtx;
       storeCtx.start();
       setIsStart(true);
