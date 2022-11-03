@@ -952,9 +952,10 @@ class TibeBitConnector extends ConnectorBase {
     this.logger.debug(`[FROM TideBit memberId:${memberId}] orderData`, data);
     const tickerSetting = this.tickersSettings[data.market];
     const instId = tickerSetting?.instId;
-    let price = data.price || "market",dbOrder;
+    let price = data.price || "market",
+      dbOrder;
     if (!data.price) {
-       dbOrder = await this.database.getDoneOrders({ orderId: data.id });
+      [dbOrder] = await this.database.getDoneOrders({ orderId: data.id });
       this.logger.debug(`[FROM DB order`, dbOrder);
       price = dbOrder?.price;
       if (!price) {

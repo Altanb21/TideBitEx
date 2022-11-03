@@ -605,7 +605,7 @@ class mysql {
           AND orders.type = ?
           AND orders.ord_type <> '${ordType}'
       ORDER BY 
-          created_at DESC
+          updated_at DESC
       LIMIT ${limit} OFFSET ${offset}
       `
           }
@@ -663,7 +663,7 @@ class mysql {
       ${state ? `AND orders.state = ${state}` : ``}
       ${orderType ? `AND orders.ord_type = ${orderType}` : ``}
     ORDER BY
-      orders.created_at ${asc ? "ASC" : "DESC"};`;
+      orders.updated_at ${asc ? "ASC" : "DESC"};`;
     // AND orders.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     // LIMIT ${limit} OFFSET ${offset};`;// -- TODO
     try {
