@@ -3,6 +3,7 @@ import React from "react";
 const StoreContext = React.createContext({
   defaultMarket: null,
   // exchangeRates: null,
+  isInit: null,
   languageKey: null,
   isLogin: null,
   selectedTicker: null,

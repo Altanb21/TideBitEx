@@ -271,7 +271,7 @@ const TradeForm = (props) => {
       storeCtx.accounts?.accounts,
       storeCtx.lotSz,
       storeCtx.selectedTicker?.baseUnit,
-      storeCtx.selectedTicker.last,
+      storeCtx.selectedTicker?.last,
       storeCtx.selectedTicker?.quoteUnit,
       storeCtx.tickSz,
     ]
@@ -345,7 +345,7 @@ const TradeForm = (props) => {
       storeCtx.accounts?.accounts,
       storeCtx.lotSz,
       storeCtx.selectedTicker?.baseUnit,
-      storeCtx.selectedTicker.last,
+      storeCtx.selectedTicker?.last,
       storeCtx.selectedTicker?.quoteUnit,
       storeCtx.tickSz,
     ]

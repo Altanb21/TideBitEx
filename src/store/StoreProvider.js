@@ -21,6 +21,7 @@ const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
+  const [isInit, setIsInit] = useState(null);
   const [defaultMarket, setDefaultMarket] = useState("btcusdt");
   const [disableTrade, setDisableTrade] = useState(false);
   const [market, setMarket] = useState(null);
@@ -73,16 +74,20 @@ const StoreProvider = (props) => {
   );
 
   const setPrecision = (ticker) => {
-    const tickSz =
-      ticker.tickSz?.split(".").length > 1
-        ? ticker.tickSz?.split(".")[1].length
-        : 0;
-    const lotSz =
-      ticker.lotSz?.split(".").length > 1
-        ? ticker.lotSz?.split(".")[1].length
-        : 0;
-    setTickSz(tickSz);
-    setLotSz(lotSz);
+    if (ticker) {
+      const tickSz =
+        ticker.tickSz?.split(".").length > 1
+          ? ticker.tickSz?.split(".")[1].length
+          : 0;
+      const lotSz =
+        ticker.lotSz?.split(".").length > 1
+          ? ticker.lotSz?.split(".")[1].length
+          : 0;
+      setTickSz(tickSz);
+      setLotSz(lotSz);
+    } else {
+      console.error(`setPrecision before ticker eixit`);
+    }
   };
 
   const selectMarket = useCallback(
@@ -452,6 +457,7 @@ const StoreProvider = (props) => {
       setMemberEmail(middleman.email);
       countDown();
     }
+    setIsInit(true);
     // console.log(`storeCtx init end`);
   }, [countDown, eventListener, middleman]);
 
@@ -463,44 +469,46 @@ const StoreProvider = (props) => {
         .pop()
         ?.split("=")[1] || location.pathname?.includes("/markets/")
         ? location.pathname?.replace("/markets/", "")
-        : "";
-    if (market) {
-      middleman.tickerBook.setCurrentMarket(market);
-      setMarket(market);
-      setSelectedTicker(middleman.getTickerSnapshot());
-      setPrecision(middleman.getTickerSnapshot());
-      if (!isLogin) {
-        await middleman.getAccounts();
-        setIsLogin(middleman.isLogin);
-        if (middleman.isLogin) {
-          setAccounts(middleman.getAccountsSnapshot());
-          setMemberEmail(middleman.email);
-          countDown();
-        }
-      }
-      await middleman.selectMarket(market);
-      // console.log(
-      //   `middleman.getDepthBooksSnapshot(${market})`,
-      //   middleman.getDepthBooksSnapshot(market)
-      // );
-      setBooks(middleman.getDepthBooksSnapshot(market));
-      // console.log(
-      //   `middleman.getTradesSnapshot(${market})`,
-      //   middleman.getTradesSnapshot(market)
-      // );
-      setTrades(middleman.getTradesSnapshot(market));
+        : "btcusdt";
+    if (!location.pathname?.includes("/markets/"))
+      history.push({
+        pathname: `/markets/${market}`,
+      });
+    middleman.tickerBook.setCurrentMarket(market);
+    setMarket(market);
+    setSelectedTicker(middleman.getTickerSnapshot());
+    setPrecision(middleman.getTickerSnapshot());
+    if (!isLogin) {
+      await middleman.getAccounts();
+      setIsLogin(middleman.isLogin);
       if (middleman.isLogin) {
-        // console.log(
-        //   `middleman.getMyOrdersSnapshot(${market})`,
-        //   middleman.getMyOrdersSnapshot(market)
-        // );
-        const orders = middleman.getMyOrdersSnapshot(market);
-        setPendingOrders(orders.pendingOrders);
-        setCloseOrders(orders.closedOrders);
+        setAccounts(middleman.getAccountsSnapshot());
+        setMemberEmail(middleman.email);
+        countDown();
       }
     }
+    await middleman.selectMarket(market);
+    // console.log(
+    //   `middleman.getDepthBooksSnapshot(${market})`,
+    //   middleman.getDepthBooksSnapshot(market)
+    // );
+    setBooks(middleman.getDepthBooksSnapshot(market));
+    // console.log(
+    //   `middleman.getTradesSnapshot(${market})`,
+    //   middleman.getTradesSnapshot(market)
+    // );
+    setTrades(middleman.getTradesSnapshot(market));
+    if (middleman.isLogin) {
+      // console.log(
+      //   `middleman.getMyOrdersSnapshot(${market})`,
+      //   middleman.getMyOrdersSnapshot(market)
+      // );
+      const orders = middleman.getMyOrdersSnapshot(market);
+      setPendingOrders(orders.pendingOrders);
+      setCloseOrders(orders.closedOrders);
+    }
     // console.log(`storeCtx start end`);
-  }, [countDown, isLogin, location.pathname, middleman]);
+  }, [countDown, history, isLogin, location.pathname, middleman]);
 
   const stop = useCallback(() => {
     console.log(`stop`);
@@ -511,6 +519,7 @@ const StoreProvider = (props) => {
     <StoreContext.Provider
       value={{
         defaultMarket,
+        isInit,
         isLogin,
         tickers,
         books,
