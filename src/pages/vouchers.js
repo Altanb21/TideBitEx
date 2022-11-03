@@ -78,7 +78,9 @@ let currentDate = new Date();
 const Vouchers = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
-  const [showMore, setShowMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [totalCounts, setTotalCounts] = useState(1);
   const [isInit, setIsInit] = useState(null);
   const [trades, setTrades] = useState(null);
   const [profits, setProfits] = useState(null);
@@ -301,14 +303,21 @@ const Vouchers = () => {
   );
 
   const getVouchers = useCallback(
-    async (exchange, start, end) => {
-      // console.log(`getVouchers end`, end);
-      // console.log(`getVouchers start`, start);
-      // const trades = await storeCtx.getOuterTradeFills(exchange, 365);
-      const trades = await storeCtx.getOuterTradeFills(exchange, start, end);
+    async ({ exchange, start, end, limit, offset }) => {
+      if (start) setDateStart(start);
+      if (end) setDateEnd(end);
+      const { totalCounts, trades } = await storeCtx.getOuterTradeFills({
+        exchange,
+        start: start || dateStart,
+        end: end || dateEnd,
+        limit,
+        offset,
+      });
+      setTotalCounts(totalCounts);
       setTrades((prev) => {
         let _trades = { ...prev };
-        _trades[exchange] = trades;
+        _trades[exchange] =
+          offset === 0 ? trades : _trades[exchange].concat(trades);
         return _trades;
       });
       let tickers = {},
@@ -327,15 +336,16 @@ const Vouchers = () => {
       setChartData(chartData);
       return { trades, tickers, ticker: ticker };
     },
-    [formateTrades, storeCtx]
+    [dateEnd, dateStart, formateTrades, storeCtx]
   );
 
   const filter = useCallback(
-    async ({ keyword, exchange, filterTrades, ticker }) => {
+    async ({ keyword, exchange, filterTrades, ticker, newPage }) => {
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         _trades = filterTrades || trades[_exchange],
         _ticker = ticker || filterTicker,
+        _page = newPage || page,
         res;
       if (ticker) setFilterTicker(ticker);
       if (exchange) {
@@ -356,38 +366,42 @@ const Vouchers = () => {
               startTime.getMonth() + 1
             }-${startTime.getDate()} 08:00:00`
           );
-          res = await getVouchers(
+          res = await getVouchers({
             exchange,
-            start.toISOString().substring(0, 10),
-            end.toISOString().substring(0, 10)
-          );
+            start: start.toISOString().substring(0, 10),
+            end: end.toISOString().substring(0, 10),
+            offset: 0,
+            limit: 50,
+          });
           _trades = res.trades;
           _ticker = res.ticker;
         }
       }
       if (_trades) {
-        _trades = _trades.filter((trade) => {
-          let condition =
-            // trade.innerTrade?.orderId?.includes(_keyword) ||
-            // trade.outerTrade?.orderId?.includes(_keyword) ||
-            trade.instId?.includes(_keyword) ||
-            trade.email?.includes(_keyword) ||
-            trade.memberId?.includes(_keyword) ||
-            trade.exchange?.includes(_keyword);
-          // console.log(`timeInterval`, timeInterval);
-          // console.log(`filterOption`, filterOption);
-          // console.log(
-          //   `ts[${ts}] - trade.ts[${trade.ts}] = ${
-          //     ts - trade.ts
-          //   } < _option[${_option}]`,
-          //   ts - trade.ts < _option,
-          //   new Date(trade.ts)
-          // );
-          if (_exchange !== "ALL")
-            condition = condition && trade.exchange === _exchange;
-          if (_ticker) condition = condition && trade.instId === _ticker;
-          return condition;
-        });
+        _trades = _trades
+          .slice(_page * 1 - 1, _page * limit)
+          .filter((trade) => {
+            let condition =
+              // trade.innerTrade?.orderId?.includes(_keyword) ||
+              // trade.outerTrade?.orderId?.includes(_keyword) ||
+              trade.instId?.includes(_keyword) ||
+              trade.email?.includes(_keyword) ||
+              trade.memberId?.includes(_keyword) ||
+              trade.exchange?.includes(_keyword);
+            // console.log(`timeInterval`, timeInterval);
+            // console.log(`filterOption`, filterOption);
+            // console.log(
+            //   `ts[${ts}] - trade.ts[${trade.ts}] = ${
+            //     ts - trade.ts
+            //   } < _option[${_option}]`,
+            //   ts - trade.ts < _option,
+            //   new Date(trade.ts)
+            // );
+            if (_exchange !== "ALL")
+              condition = condition && trade.exchange === _exchange;
+            if (_ticker) condition = condition && trade.instId === _ticker;
+            return condition;
+          });
         setFilterTrades(_trades);
         let profits = _trades.reduce((prev, trade) => {
           if (trade.profit) {
@@ -407,7 +421,16 @@ const Vouchers = () => {
         setProfits(profits);
       }
     },
-    [filterExchange, filterKey, filterOption, filterTicker, getVouchers, trades]
+    [
+      filterExchange,
+      filterKey,
+      filterOption,
+      filterTicker,
+      getVouchers,
+      limit,
+      page,
+      trades,
+    ]
   );
 
   const updateInterval = useCallback(
@@ -423,16 +446,18 @@ const Vouchers = () => {
           startTime.getMonth() + 1
         }-${startTime.getDate()} 08:00:00`
       );
-      const res = await getVouchers(
-        exchanges[0],
-        start.toISOString().substring(0, 10),
-        end.toISOString().substring(0, 10)
-      );
+      const res = await getVouchers({
+        exchange: exchanges[0],
+        start: start.toISOString().substring(0, 10),
+        end: end.toISOString().substring(0, 10),
+        limit: limit,
+        offset: 0,
+      });
       filter({ filterTrades: res.trades, ticker: res.ticker });
       setFilterOption(option);
       setIsLoading(false);
     },
-    [filter, getVouchers]
+    [filter, getVouchers, limit]
   );
 
   const dateStartUpdateHandler = useCallback(
@@ -442,12 +467,18 @@ const Vouchers = () => {
       setDateStart(date);
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
-      const res = await getVouchers(exchanges[0], start, end);
+      const res = await getVouchers({
+        exchange: exchanges[0],
+        start,
+        end,
+        offset: 0,
+        limit: limit,
+      });
       filter({ filterTrades: res.trades, ticker: res.ticker });
       setIsLoading(false);
       // }
     },
-    [dateEnd, filter, getVouchers]
+    [dateEnd, filter, getVouchers, limit]
   );
 
   const dateEndUpdateHandler = useCallback(
@@ -457,13 +488,49 @@ const Vouchers = () => {
       setDateEnd(date);
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
-      const res = await getVouchers(exchanges[0], start, end);
+      const res = await getVouchers({
+        exchange: exchanges[0],
+        start,
+        end,
+        offset: 0,
+        limit: limit,
+      });
       filter({ filterTrades: res.trades, ticker: res.ticker });
       setIsLoading(false);
       // }
     },
-    [dateStart, filter, getVouchers]
+    [dateStart, filter, getVouchers, limit]
   );
+
+  const nextPageHandler = useCallback(async () => {
+    let newPage = page + 1;
+    if (SafeMath.lte(newPage, Math.ceil(totalCounts, limit))) {
+      setPage(newPage);
+      setIsLoading(true);
+      const res = await getVouchers({
+        exchange: exchanges[0],
+        offset: newPage - 1 * limit,
+        limit: limit,
+      });
+      filter({ filterTrades: res.trades, ticker: res.ticker, newPage });
+      setIsLoading(false);
+    }
+  }, [filter, getVouchers, limit, page, totalCounts]);
+
+  const prevPageHandler = useCallback(async () => {
+    let newPage = page - 1;
+    if (SafeMath.gte(newPage, 1)) {
+      setPage(newPage);
+      setIsLoading(true);
+      // const res = await getVouchers({
+      //   exchange: exchanges[0],
+      //   offset: page - 1 * limit,
+      //   limit: limit,
+      // });
+      filter({ newPage });
+      setIsLoading(false);
+    }
+  }, [filter, page]);
 
   const sorting = (key, ascending) => {
     // console.log(`key`, key);
@@ -501,17 +568,19 @@ const Vouchers = () => {
             startTime.getMonth() + 1
           }-${startTime.getDate()} 08:00:00`
         );
-        const res = await getVouchers(
-          exchanges[0],
-          start.toISOString().substring(0, 10),
-          end.toISOString().substring(0, 10)
-        );
+        const res = await getVouchers({
+          exchange: exchanges[0],
+          start: start.toISOString().substring(0, 10),
+          end: end.toISOString().substring(0, 10),
+          offset: 0,
+          limit,
+        });
         setIsLoading(false);
         filter({ filterTrades: res.trades, ticker: res.ticker });
         return !prev;
       } else return prev;
     });
-  }, [filterOption, getVouchers, filter]);
+  }, [filterOption, getVouchers, limit, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -628,8 +697,9 @@ const Vouchers = () => {
           </div>
         </div>
         <div className="screen__container">
-          <table className={`screen__table${showMore ? " show" : ""}`}>
+          <table className={`screen__table`}>
             <tr className="screen__table-headers">
+              <th className="screen__table-header screen__shrink">#</th>
               <TableHeader
                 label={t("date")}
                 onClick={(ascending) => sorting("ts", ascending)}
@@ -676,13 +746,30 @@ const Vouchers = () => {
             </tr>
             <tr className="screen__table-rows">
               {filterTrades &&
-                filterTrades.map((trade) => <VoucherTile trade={trade} />)}
+                filterTrades.map((trade, index) => (
+                  <VoucherTile trade={trade} number={index + 1 * page} />
+                ))}
             </tr>
-            <tfoot
+            {/* <tfoot
               className="screen__table-btn screen__table-text"
               onClick={() => setShowMore((prev) => !prev)}
             >
               {showMore ? t("show-less") : t("show-more")}
+            </tfoot> */}
+            <tfoot className="screen__table-tools">
+              {SafeMath.gt(page, 1) && (
+                <div className={`screen__table-tool`} onClick={prevPageHandler}>
+                  <div className="screen__table-tool-left"></div>
+                </div>
+              )}
+              <div className="screen_page">{`${page} / ${Math.ceil(
+                totalCounts / limit
+              )}`}</div>
+              {SafeMath.lt(page, Math.ceil(totalCounts / limit)) && (
+                <div className={`screen__table-tool`} onClick={nextPageHandler}>
+                  <div className="screen__table-tool-right"></div>
+                </div>
+              )}
             </tfoot>
           </table>
         </div>

@@ -343,6 +343,16 @@ class DBOperator {
     });
   }
 
+  async countOuterTrades({ type, exchangeCode, days, start, end }) {
+    return this.database.countOuterTrades({
+      type,
+      exchangeCode,
+      days,
+      start,
+      end,
+    });
+  }
+
   async getOrdersByIds(ids) {
     return this.database.getOrdersByIds(ids);
   }

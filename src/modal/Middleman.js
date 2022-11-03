@@ -198,9 +198,21 @@ class Middleman {
     }
   }
 
-  async getOuterTradeFills(exchange, start, end) {
+  async getOuterTradeFills({
+        exchange,
+        start,
+        end,
+        limit,
+        offset,
+      }) {
     try {
-      return await this.communicator.getOuterTradeFills(exchange, start, end);
+      return await this.communicator.getOuterTradeFills({
+        exchange,
+        start,
+        end,
+        limit,
+        offset,
+      });
     } catch (error) {
       throw error;
     }

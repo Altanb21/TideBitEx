@@ -2146,12 +2146,39 @@ class ExchangeHub extends Bot {
     }
   }
 
+  // async countOuterTradeFills({ query }) {
+  //   this.logger.debug(
+  //     `*********** [${this.name}] countOuterTradeFills ************`,
+  //     query
+  //   );
+  //   let { exchange, start, end } = query;
+  //   let startDate = `${start} 00:00:00`,
+  //     endtDate = `${end} 23:59:59`,
+  //     counts = 0;
+  //   switch (exchange) {
+  //     case SupportedExchange.OKEX:
+  //       counts = await this.database.countOuterTrades({
+  //         type: Database.TIME_RANGE_TYPE.BETWEEN,
+  //         exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+  //         start: startDate,
+  //         end: endtDate,
+  //       });
+  //       break;
+  //     default:
+  //       break;
+  //   }
+  //   return new ResponseFormat({
+  //     message: "getOuterTradeFills",
+  //     payload: counts,
+  //   });
+  // }
+
   async getOuterTradeFills({ query }) {
     this.logger.debug(
       `*********** [${this.name}] getOuterTradeFills ************`,
       query
     );
-    let { exchange, start, end } = query;
+    let { exchange, start, end, limit, offset } = query;
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
     this.logger.debug(
@@ -2165,15 +2192,23 @@ class ExchangeHub extends Bot {
       vouchers = [],
       referralCommissions = [],
       processTrades = [],
-      feeCurrency;
+      feeCurrency,
+      counts;
     switch (exchange) {
       case SupportedExchange.OKEX:
+        counts = await this.database.countOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          start: startDate,
+          end: endtDate,
+        });
         const dbOuterTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           start: startDate,
           end: endtDate,
-          limit: 1000,
+          limit,
+          offset,
         });
         for (let dbOuterTrade of dbOuterTrades) {
           let outerTradeData = JSON.parse(dbOuterTrade.data),
@@ -2327,7 +2362,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
-          payload: processTrades,
+          payload: { totalCounts: counts, trades: processTrades },
         });
       default:
         return new ResponseFormat({

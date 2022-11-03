@@ -374,10 +374,10 @@ class Communicator {
     }
   }
 
-  async getOuterTradeFills(exchange, start, end) {
+  async getOuterTradeFills({ exchange, start, end, limit, offset }) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
-      const url = `/trade/fill-history?exchange=${exchange}&start=${start}&end=${end}`;
+      const url = `/trade/fill-history?exchange=${exchange}&start=${start}&end=${end}}&offset=${offset}}&limit=${limit}`;
       const res = await this._request({
         method: "GET",
         url,

@@ -12,6 +12,9 @@ const VoucherTile = (props) => {
       }${trade.alert ? " screen__table-row--alert" : ""}`}
       key={`${trade.id}`}
     >
+      <td className="vouchers__text screen__shrink">
+        {props.number}
+      </td>
       <td className="vouchers__text screen__table-item">
         {dateFormatter(trade.ts).text}
       </td>

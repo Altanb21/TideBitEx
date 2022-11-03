@@ -1005,6 +1005,54 @@ class mysql {
     }
   }
 
+  async countOuterTrades({
+    type,
+    exchangeCode,
+    days,
+    start,
+    end,
+  }) {
+    const query = `
+    SELECT 
+        count(*)
+    FROM 
+        outer_trades
+    WHERE 
+        outer_trades.exchange_code = ?
+      ${
+        type === Database.TIME_RANGE_TYPE.DAY_AFTER
+          ? `
+        AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
+        `
+          : `
+        AND outer_trades.create_at BETWEEN ?
+        AND ?
+        `
+      };`;
+    try {
+      this.logger.debug(
+        "countOuterTrades",
+        query,
+        `${
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? `[${exchangeCode}, ${days}]`
+            : `[${exchangeCode}, ${start}, ${end}]`
+        }`
+      );
+      const [outerTrades] = await this.db.query({
+        query,
+        values:
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? [exchangeCode, days]
+            : [exchangeCode, start, end],
+      });
+      return outerTrades;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
   async getOrder(orderId, { dbTransaction }) {
     const query = `
       SELECT
