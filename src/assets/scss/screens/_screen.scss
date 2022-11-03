@@ -253,7 +253,8 @@
     margin: 0 auto;
     border: 1px solid #707070;
     color: #767676;
-    overflow-y: hidden;
+    // overflow-y: hidden;
+    height: fit-content;
     width: 100%;
   }
   &__table-text {
@@ -427,13 +428,13 @@
     flex-direction: column;
     width: 100%;
     border-bottom: 1px solid #707070;
-    overflow: hidden;
-    height: 57vh;
-    min-height: 500px;
+    // overflow: hidden;
+    // height: 57vh;
+    // min-height: 500px;
   }
-  &__table.show > &__table-rows {
-    height: fit-content;
-  }
+  // &__table.show > &__table-rows {
+  //   height: fit-content;
+  // }
   &__table-row {
     display: flex;
     padding: 10px 20px;
