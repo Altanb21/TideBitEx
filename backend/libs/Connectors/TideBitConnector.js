@@ -952,15 +952,33 @@ class TibeBitConnector extends ConnectorBase {
     this.logger.debug(`[FROM TideBit memberId:${memberId}] orderData`, data);
     const tickerSetting = this.tickersSettings[data.market];
     const instId = tickerSetting?.instId;
-    let price = data.price;
-    if (!price) {
-      let _order = await this.database.getDoneOrders({ orderId: data.id });
-      this.logger.debug(`[FROM DB _order`, _order);
-      price = _order?.price;
+    let price = data.price || "market",dbOrder;
+    if (!data.price) {
+       dbOrder = await this.database.getDoneOrders({ orderId: data.id });
+      this.logger.debug(`[FROM DB order`, dbOrder);
+      price = dbOrder?.price;
+      if (!price) {
+        price =
+          dbOrder.type === Database.TYPE.ORDER_BID
+            ? SafeMath.gt(dbOrder.funds_received, 0)
+              ? SafeMath.div(
+                  SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+                  dbOrder.funds_received
+                )
+              : "market"
+            : SafeMath.gt(
+                SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+                0
+              )
+            ? SafeMath.div(
+                dbOrder.funds_received,
+                SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
+              )
+            : "market";
+      }
     }
     const formatOrder = {
       ...data,
-      // ordId: data.id,
       clOrdId: data.id,
       instId,
       ordType:
@@ -970,11 +988,6 @@ class TibeBitConnector extends ConnectorBase {
       ts: parseInt(SafeMath.mult(data.at, "1000")),
       at: parseInt(data.at),
       price,
-      // px: data.price,
-      // side: data.kind === "bid" ? "buy" : "sell",
-      // sz: Utils.removeZeroEnd(
-      //   SafeMath.eq(data.volume, "0") ? data.origin_volume : data.volume
-      // ),
       filled: data.volume !== data.origin_volume,
       state:
         data.state === Database.ORDER_STATE.WAIT

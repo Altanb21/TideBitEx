@@ -614,11 +614,17 @@ class mysql {
       this.logger.debug(
         "getDoneOrders",
         query,
-        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
+        `${
+          orderId
+            ? `[${orderId}]`
+            : `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
+        }`
       );
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy, state, type],
+        values: orderId
+          ? [orderId]
+          : [memberId, quoteCcy, baseCcy, state, type],
       });
       return orders;
     } catch (error) {
@@ -1232,7 +1238,7 @@ class mysql {
     }
   }
 
-
+  
   async getVouchersByIds(ids) {
     let placeholder = ids.join(`,`);
     let query = `

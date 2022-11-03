@@ -1737,118 +1737,66 @@ class ExchangeHub extends Bot {
     if (!ask) {
       throw new Error(`ask not found${query.tickerSetting?.baseUnit}`);
     }
-    let _orders,
-      _doneMarketBidOrders,
+    let dbOrders,
       orders = [];
-    _orders = await this.database.getOrderList({
+    dbOrders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
     });
-    _doneMarketBidOrders = await this.database.getDoneOrders({
-      quoteCcy: bid,
-      baseCcy: ask,
-      memberId: query.memberId,
-      state: Database.ORDER_STATE_CODE.DONE,
-      type: Database.TYPE.ORDER_BID,
-    });
-    _orders = _orders
-      .filter(
-        (_order) =>
-          !(
-            _order.type === Database.TYPE.ORDER_BID &&
-            _order.state === Database.ORDER_STATE_CODE.DONE &&
-            _order.ord_type !== Database.ORD_TYPE.LIMIT
-          )
-      )
-      .concat(_doneMarketBidOrders);
-    for (let _order of _orders) {
+    for (let dbOrder of dbOrders) {
       let order,
-        price = _order.price ? Utils.removeZeroEnd(_order.price) : _order.price;
-      if (_order.state === Database.ORDER_STATE_CODE.DONE) {
-        if (_order.ord_type === Database.TYPE.ORDER_ASK) {
-          price = SafeMath.div(_order.funds_received, _order.origin_volume);
-        }
-        if (_order.ord_type === Database.TYPE.ORDER_BID) {
+        price = dbOrder.price ? Utils.removeZeroEnd(dbOrder.price) : "market";
+      if (dbOrder.state === Database.ORDER_STATE_CODE.DONE) {
+        if (dbOrder.type === Database.TYPE.ORDER_ASK) {
           price = SafeMath.div(
-            SafeMath.minus(_order.origin_locked, _order.locked),
-            _order.funds_received
+            dbOrder.funds_received,
+            SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
+          );
+        }
+        if (dbOrder.type === Database.TYPE.ORDER_BID) {
+          price = SafeMath.div(
+            SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+            dbOrder.funds_received
           );
         }
       }
       order = {
-        id: _order.id,
-        ts: parseInt(new Date(_order.updated_at).getTime()),
+        id: dbOrder.id,
+        ts: parseInt(new Date(dbOrder.updated_at).getTime()),
         at: parseInt(
-          SafeMath.div(new Date(_order.updated_at).getTime(), "1000")
+          SafeMath.div(new Date(dbOrder.updated_at).getTime(), "1000")
         ),
         market: query.tickerSetting?.market,
         kind:
-          _order.type === Database.TYPE.ORDER_ASK
+          dbOrder.type === Database.TYPE.ORDER_ASK
             ? Database.ORDER_KIND.ASK
             : Database.ORDER_KIND.BID,
         price,
-        origin_volume: Utils.removeZeroEnd(_order.origin_volume),
-        volume: Utils.removeZeroEnd(_order.volume),
-        state_code: _order.state,
-        state: SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.CANCEL)
+        origin_volume: Utils.removeZeroEnd(dbOrder.origin_volume),
+        volume: Utils.removeZeroEnd(dbOrder.volume),
+        state_code: dbOrder.state,
+        state: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
           ? Database.ORDER_STATE.CANCEL
-          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.WAIT)
+          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
           ? Database.ORDER_STATE.WAIT
-          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.DONE)
+          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.DONE)
           ? Database.ORDER_STATE.DONE
           : Database.ORDER_STATE.UNKNOWN,
-        state_text: SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.CANCEL)
+        state_text: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
           ? Database.ORDER_STATE_TEXT.CANCEL
-          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.WAIT)
+          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
           ? Database.ORDER_STATE_TEXT.WAIT
-          : SafeMath.eq(_order.state, Database.ORDER_STATE_CODE.DONE)
+          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.DONE)
           ? Database.ORDER_STATE_TEXT.DONE
           : Database.ORDER_STATE_TEXT.UNKNOWN,
-        clOrdId: _order.id,
+        clOrdId: dbOrder.id,
         instId: query.tickerSetting?.instId,
-        ordType: _order.ord_type,
-        filled: _order.volume !== _order.origin_volume,
+        ordType: dbOrder.ord_type,
+        filled: dbOrder.volume !== dbOrder.origin_volume,
       };
-      if (
-        order.state_code === Database.ORDER_STATE_CODE.DONE &&
-        order.ordType !== Database.ORD_TYPE.LIMIT &&
-        _order.type === Database.TYPE.ORDER_ASK
-      ) {
-        orders.push({
-          ...order,
-          price: SafeMath.div(_order.funds_received, _order.origin_volume),
-        });
-      } else if (
-        (order.state_code === Database.ORDER_STATE_CODE.WAIT &&
-          order.ordType === Database.ORD_TYPE.LIMIT) || // 非限價單不顯示在 pendingOrders)
-        order.state_code === Database.ORDER_STATE_CODE.CANCEL || // canceled 單
-        (order.state_code === Database.ORDER_STATE_CODE.DONE &&
-          order.ordType === Database.ORD_TYPE.LIMIT) ||
-        (order.state_code === Database.ORDER_STATE_CODE.DONE &&
-          order.ordType !== Database.ORD_TYPE.LIMIT &&
-          _order.type === Database.TYPE.ORDER_BID)
-      ) {
-        if (order.price) {
-          // _canceledOrders.push(order);
-          orders.push(order);
-        }
-        // tidebit 市價單（no price）是否會出現交易失敗導致交易 canceled ？ okex 市價單或ioc單失敗會顯示 cancled 且有price
-        else
-          this.logger.error(
-            `!!! NOTICE !!! canceledOrder without price`,
-            order
-          );
-      } else if (
-        order.state_code === Database.ORDER_STATE_CODE.DONE &&
-        _order.type === Database.TYPE.ORDER_BID
-      ) {
-      }
+      orders = [...orders, order];
     }
-    // const orders = _pendingOrders
-    //   .concat(_canceledOrders)
-    //   .concat(_doneOrders)
-    //   .sort((a, b) => b.ts - a.ts);
     return orders;
   }
 
@@ -2548,7 +2496,7 @@ class ExchangeHub extends Bot {
                 innerOrder,
                 price: price || order.outerOrder.price,
                 volume: volume || order.outerOrder.volume,
-                alert
+                alert,
               },
             ];
           }
