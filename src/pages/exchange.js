@@ -15,7 +15,7 @@ const LoadingDialog = React.lazy(() => import("../components/LoadingDialog"));
 const Exchange = () => {
   const storeCtx = useContext(StoreContext);
   const location = useLocation();
-  const [isInit, setIsInit] = useState(null);
+  // const [isInit, setIsInit] = useState(null);
   const [isStart, setIsStart] = useState(false);
   const { width } = useViewport();
   const history = useHistory();
@@ -23,11 +23,11 @@ const Exchange = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (isInit === null) {
-      setIsInit(false);
-      storeCtx.init().then((_) => setIsInit(true));
-    }
-    if (isInit && !isStart && location.pathname?.includes("/markets")) {
+    // if (isInit === null) {
+    //   setIsInit(false);
+    //   storeCtx.init().then((_) => setIsInit(true));
+    // }
+    if (storeCtx.isInit && !isStart && location.pathname?.includes("/markets")) {
       window.storeCtx = storeCtx;
       storeCtx.start();
       setIsStart(true);
@@ -37,7 +37,7 @@ const Exchange = () => {
       // storeCtx.stop();
       // clearInterval(interval)
     };
-  }, [isInit, isStart, location.pathname, storeCtx]);
+  }, [isStart, location.pathname, storeCtx]);
 
   return (
     <>
@@ -46,12 +46,12 @@ const Exchange = () => {
           className="exchange"
           title="Info"
           block={true}
-          onConfirm={() =>
-            {history.replace({
+          onConfirm={() => {
+            history.replace({
               pathname: `/signin`,
             });
-            window.location.reload()}
-          }
+            window.location.reload();
+          }}
         >
           <p className="info__text">{t("tokex_expire")}</p>
         </Dialog>

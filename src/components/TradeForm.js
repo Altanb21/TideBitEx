@@ -6,6 +6,29 @@ import { useTranslation } from "react-i18next";
 
 const CustomKeyboard = React.lazy(() => import("./CustomKeyboard"));
 
+export const formatValue = ({ value, precision, maximum }) => {
+  // console.log(`formatValue value`, value);
+  // console.log(`formatValue precision`, precision);
+  // console.log(`formatValue maximum`, maximum);
+  let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
+  if (formatedValue.toString().includes(".")) {
+    if (formatedValue.toString().split(".")[1].length >= precision) {
+      let arr = formatedValue.toString().split(".");
+      let decimal = arr[1].substring(0, precision);
+      formatedValue = `${arr[0]}.${decimal}`;
+    }
+    if (formatedValue.toString().startsWith(".")) {
+      formatedValue = `0${formatedValue}`;
+    }
+  } else {
+    if (!!formatedValue && !isNaN(parseInt(formatedValue)))
+      formatedValue = parseInt(formatedValue).toString();
+  }
+  if (SafeMath.gt(formatedValue, maximum)) formatedValue = maximum.toString();
+  // console.log(`formatValue formatedValue`, formatedValue);
+  return formatedValue;
+};
+
 const TradeForm = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
@@ -18,40 +41,6 @@ const TradeForm = (props) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedTicker, setSelectedTicker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  const formatValue = useCallback(({ value, precision }) => {
-    // console.log(`value: ${+value < 0 }`, value);
-    let formatedValue = +value < 0 ? "0" : convertExponentialToDecimal(value);
-    // if (props.isMobile && formatedValue.match(/\./g).length > 1) {
-    //   formatedValue = formatedValue.substring(0, formatedValue.length - 1);
-    // }
-    // console.log(
-    //   `formatedValue[includes('.')?${formatedValue.toString().includes(".")}]`,
-    //   formatedValue
-    // );
-    if (formatedValue.toString().includes(".")) {
-      if (formatedValue.toString().split(".")[1].length >= precision) {
-        let arr = formatedValue.toString().split(".");
-        let decimal = arr[1].substring(0, precision);
-        formatedValue = `${arr[0]}.${decimal}`;
-        // console.log(
-        //   `formatedValue[('.')length?${
-        //     formatedValue.toString().split(".")[1]
-        //   }]`,
-        //   formatedValue
-        // );
-      }
-      if (formatedValue.toString().startsWith(".")) {
-        // console.log(`formatedValue='0${formatedValue}'`);
-        formatedValue = `0${formatedValue}`;
-      }
-    } else {
-      if (!!formatedValue && !isNaN(parseInt(formatedValue)))
-        formatedValue = parseInt(formatedValue).toString();
-      // console.log(`formatedValue`, formatedValue);
-    }
-    return formatedValue;
-  }, []);
 
   const formatPrice = useCallback(
     (value) => {
@@ -112,7 +101,6 @@ const TradeForm = (props) => {
       } else setErrorMessage(null);
     },
     [
-      formatValue,
       props.kind,
       props.ordType,
       storeCtx.accounts?.accounts,
@@ -200,7 +188,6 @@ const TradeForm = (props) => {
       storeCtx.accounts?.accounts,
       storeCtx.tickSz,
       price,
-      formatValue,
     ]
   );
 
@@ -278,7 +265,6 @@ const TradeForm = (props) => {
       }
     },
     [
-      formatValue,
       price,
       props.ordType,
       props.kind,
@@ -353,7 +339,6 @@ const TradeForm = (props) => {
       }
     },
     [
-      formatValue,
       price,
       props.ordType,
       props.kind,

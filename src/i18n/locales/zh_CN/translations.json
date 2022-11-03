@@ -42,6 +42,7 @@
   "trades": "成交回报",
   "limit": "现价",
   "market": "市价",
+  "ioc": "市价",
   "sell": "卖出",
   "buy": "买入",
   "available": "余额",
@@ -149,6 +150,7 @@
   "show": "显示",
   "date": "日期",
   "memberId_email": "用戶 Email & ID",
+  "member_email": "用戶 Email",
   "match-fee": "撮合手续费",
   "external-fee": "外部手续费成本",
   "referral": "推荐回馈",
@@ -157,7 +159,7 @@
   "profit-trend": "撮合毛利走勢",
   "transaction-side": "交易类型",
   "transaction-price": "掛单/成交价格",
-  "transaction-amount": "成交数量",
+  "transaction-amount": "掛单/成交数量",
   "exchange": "交易所",
   "match-volume": "已撮合数量",
   "unmatch-volume": "未撮合数量",
@@ -233,5 +235,6 @@
   "sub-account": "子账号",
   "asset-balance": "资产水位",
   "value": "数量",
-  "tokex_expire": "页面闲置过久，请重新登入"
+  "tokex_expire": "页面闲置过久，请重新登入",
+  "email-exist": "此 Email 已有管理者权限"
 }

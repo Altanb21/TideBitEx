@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Sidebar from "../components/AdminSidebar";
 import CurrencySetting from "./currency-setting";
 import Deposit from "./deposit";
 import InfoSetting from "./info-setting";
@@ -12,16 +11,11 @@ import CurrentOrders from "./current-orders";
 import UserSetting from "./user-setting";
 
 const Manager = (props) => {
-  const [activePage, setActivePage] = useState("ticker-setting");
-  const onSelected = (page) => {
-    setActivePage(page);
-  };
   return (
     <div className="screen manager">
-      <Sidebar activePage={activePage} onSelected={onSelected} />
-      {activePage === "ticker-setting" && <TickerSetting />}
-      {activePage === "currency-setting" && <CurrencySetting />}
-      {activePage === "deposit" && (
+      {props.activeSection === "ticker-setting" && <TickerSetting />}
+      {props.activeSection === "currency-setting" && <CurrencySetting />}
+      {props.activeSection === "deposit" && (
         <Deposit
           canDeposit={!props.user?.ability?.canNotManage?.includes("Deposit")}
           canManulDeposit={
@@ -29,13 +23,15 @@ const Manager = (props) => {
           }
         />
       )}
-      {activePage === "sub-account" && <SubAccounts />}
-      {activePage === "platform-assets" && <PlatformAssets />}
-      {activePage === "user-assets" && <UserAssets />}
-      {activePage === "user-setting" && <UserSetting currentUser={props.user}/>}
-      {activePage === "info-setting" && <InfoSetting />}
-      {activePage === "match-orders" && <Vouchers />}
-      {activePage === "current-orders" && <CurrentOrders />}
+      {props.activeSection === "sub-account" && <SubAccounts />}
+      {props.activeSection === "platform-assets" && <PlatformAssets />}
+      {props.activeSection === "user-assets" && <UserAssets />}
+      {props.activeSection === "user-setting" && (
+        <UserSetting currentUser={props.user} />
+      )}
+      {props.activeSection === "info-setting" && <InfoSetting />}
+      {props.activeSection === "match-orders" && <Vouchers />}
+      {props.activeSection === "current-orders" && <CurrentOrders />}
     </div>
   );
 };

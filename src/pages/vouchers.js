@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import StoreContext from "../store/store-context";
 import TableDropdown from "../components/TableDropdown";
-import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
+import { convertExponentialToDecimal } from "../utils/Utils";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import DatePicker from "../components/DatePicker";
 import LoadingDialog from "../components/LoadingDialog";
 import ProfitTrendingChart from "../components/ProfitTrendingChart";
+import VoucherTile from "../components/VoucherTile";
 
 const exchanges = ["OKEx"];
 const monthInterval = 30 * 24 * 60 * 60 * 1000;
@@ -28,7 +29,11 @@ const months = [
 export const TableHeader = (props) => {
   const [ascending, setAscending] = useState(null);
   return (
-    <th className="screen__table-header">
+    <th
+      className={`screen__table-header${
+        props.className ? ` ${props.className}` : ""
+      }`}
+    >
       <span
         className="screen__table-header--text"
         onClick={() =>
@@ -105,6 +110,7 @@ const Vouchers = () => {
     date.setDate(date.getDate() + 1);
     return date.getTime();
   };
+
   const getNextMonthlyBarTime = (barTime) => {
     const date = new Date(barTime);
     // console.log(`date`, date);
@@ -116,14 +122,13 @@ const Vouchers = () => {
     // console.log(`date`, date);
     return date.getTime();
   };
+
   const formateTrades = useCallback(
     async (trades) => {
-      // let exchangeRates = storeCtx.exchangeRates;
-      // if (!exchangeRates) exchangeRates = await storeCtx.getExchangeRates();
-      // console.log(`formateTrades trades[${trades.length}]`, trades);
       let chartData = { data: {}, xaxisType: "string" },
         data = {};
-      let _trades = trades.sort((a, b) => a.ts - b.ts); //asce
+      let _trades = trades.map((t) => ({ ...t }));
+      _trades.sort((a, b) => a.ts - b.ts); //asce
       if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
         let lastDailyBar = new Date(
             `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
@@ -180,7 +185,7 @@ const Vouchers = () => {
               lastDailyBar.getMonth() + 1
             }-${lastDailyBar.getDate()}`;
             // console.log(`formateTrades key`, key);
-            let price = storeCtx.getPrice(trade.feeCcy);
+            let price = storeCtx.getPrice(trade.feeCurrency);
             if (!data[key])
               data[key] = {
                 y: SafeMath.mult(trade.profit, price),
@@ -266,7 +271,7 @@ const Vouchers = () => {
               lastMonthlyBar.getMonth() + 1
             }`;
             // console.log(`formateTrades key`, key);
-            let price = storeCtx.getPrice(trade.feeCcy);
+            let price = storeCtx.getPrice(trade.feeCurrency);
             if (!data[key])
               data[key] = {
                 y: SafeMath.mult(trade.profit, price),
@@ -318,7 +323,7 @@ const Vouchers = () => {
       }
       // trade fromate ++ TODO
       const chartData = await formateTrades(trades);
-      console.log(`formateTrades chartData`, chartData);
+      // console.log(`formateTrades chartData`, chartData);
       setChartData(chartData);
       return { trades, tickers, ticker: ticker };
     },
@@ -363,7 +368,8 @@ const Vouchers = () => {
       if (_trades) {
         _trades = _trades.filter((trade) => {
           let condition =
-            trade.orderId?.includes(_keyword) ||
+            // trade.innerTrade?.orderId?.includes(_keyword) ||
+            // trade.outerTrade?.orderId?.includes(_keyword) ||
             trade.instId?.includes(_keyword) ||
             trade.email?.includes(_keyword) ||
             trade.memberId?.includes(_keyword) ||
@@ -385,14 +391,14 @@ const Vouchers = () => {
         setFilterTrades(_trades);
         let profits = _trades.reduce((prev, trade) => {
           if (trade.profit) {
-            if (!prev[trade.feeCcy]) {
-              prev[trade.feeCcy] = {
+            if (!prev[trade.feeCurrency]) {
+              prev[trade.feeCurrency] = {
                 sum: 0,
-                currency: trade.feeCcy,
+                currency: trade.feeCurrency,
               };
             }
-            prev[trade.feeCcy].sum = SafeMath.plus(
-              prev[trade.feeCcy].sum,
+            prev[trade.feeCurrency].sum = SafeMath.plus(
+              prev[trade.feeCurrency].sum,
               trade.profit
             );
           }
@@ -465,6 +471,7 @@ const Vouchers = () => {
     setFilterTrades((prevTrades) => {
       // console.log(`prevTrades`, prevTrades);
       let sortedTrades = prevTrades.map((trade) => ({ ...trade }));
+
       sortedTrades = ascending
         ? sortedTrades?.sort((a, b) => +a[key] - +b[key])
         : sortedTrades?.sort((a, b) => +b[key] - +a[key]);
@@ -477,6 +484,9 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
+        /**
+         * [deprecated] 2022/10/28
+         */
         // await storeCtx.getExchangeRates();
         // console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
@@ -501,7 +511,7 @@ const Vouchers = () => {
         return !prev;
       } else return prev;
     });
-  }, [storeCtx, filterOption, getVouchers, filter]);
+  }, [filterOption, getVouchers, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -617,164 +627,65 @@ const Vouchers = () => {
               ))}
           </div>
         </div>
-        <table className={`screen__table${showMore ? " show" : ""}`}>
-          <tr className="screen__table-headers">
-            {/* <li className="screen__table-header">{t("date")}</li> */}
-            <TableHeader
-              label={t("date")}
-              onClick={(ascending) => sorting("ts", ascending)}
-            />
-            <th className="screen__table-header">{t("memberId_email")}</th>
-            {/* <li className="screen__table-header">{t("orderId")}</li> */}
-            <TableHeader
-              label={t("orderId")}
-              onClick={(ascending) => sorting("orderId", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("ticker")}</li> */}
-            {/* <TableDropdown
-            className="screen__table-header"
-            selectHandler={(option) => filter({ ticker: option })}
-            options={Object.values(tickers)}
-            selected={filterTicker}
-          /> */}
-            <th className="screen__table-header">
-              <div className="screen__table-header--text">{t("exchange")}</div>
-              <div className="screen__table-header--switch"></div>
-            </th>
-            {/* <li className="screen__table-header">{t("transaction-side")}</li> */}
-            {/* <li className="screen__table-header">{t("transaction-price")}</li> */}
-            <TableHeader
-              label={t("transaction-price")}
-              onClick={(ascending) => sorting("px", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("transaction-amount")}</li> */}
-            <TableHeader
-              label={t("transaction-amount")}
-              onClick={(ascending) => sorting("fillSz", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("match-fee")}</li> */}
-            <TableHeader
-              label={t("match-fee")}
-              onClick={(ascending) => sorting("fee", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("external-fee")}</li> */}
-            <TableHeader
-              label={t("external-fee")}
-              onClick={(ascending) => sorting("externalFee", ascending)}
-            />
-            {/* <li className="screen__table-header">{t("referral")}</li> */}
-            <TableHeader
-              label={t("referral")}
-              onClick={(ascending) => sorting("referral", ascending)}
-            />
-            {/* <TableHeader
-            label={t("referral")}
-            onClick={(ascending) => sorting("referral", ascending)}
-          /> */}
-            {/* <li className="screen__table-header">{t("profit")}</li> */}
-            <TableHeader
-              label={t("profit")}
-              onClick={(ascending) => sorting("profit", ascending)}
-            />
-          </tr>
-          <tr className="screen__table-rows">
-            {filterTrades &&
-              filterTrades.map((trade, i) => (
-                <td
-                  className={`vouchers__tile screen__table-row${
-                    trade.email ? "" : " unknown"
-                  }`}
-                  key={`${i}-${trade.orderId}`}
-                >
-                  <div className="vouchers__text screen__table-item">
-                    {dateFormatter(trade.ts).text}
-                  </div>
-                  <div className="vouchers__text screen__table-item">
-                    <div>{`${
-                      trade.email ? trade.email + "/" : "Unknown"
-                    }`}</div>
-                    <div>{`${trade.email ? trade.memberId : ""}`}</div>
-                  </div>
-                  <div className="vouchers__text screen__table-item">
-                    {trade.orderId || "Unknown"}
-                  </div>
-                  {/* <div className="vouchers__text screen__table-item">
-                  {trade.instId}
-                </div> */}
-                  <div className="vouchers__text screen__table-item">
-                    {trade.exchange}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.side === "buy" ? " positive" : " negative"
-                    }`}
-                  >
-                    {trade.email
-                      ? `${trade.px} / ${trade.fillPx}` || "--"
-                      : "Unknown"}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.side === "buy" ? " positive" : " negative"
-                    }`}
-                  >
-                    {trade.email ? trade.fillSz || "--" : "Unknown"}
-                  </div>
-                  <div className={`vouchers__text screen__table-item`}>
-                    {trade.fee
-                      ? `${convertExponentialToDecimal(trade.fee)} ${
-                          trade.feeCcy
-                        }`
-                      : "Unknown"}
-                  </div>
-                  <div className={`vouchers__text screen__table-item`}>
-                    {trade.externalFee
-                      ? `${convertExponentialToDecimal(trade.externalFee)} ${
-                          trade.feeCcy
-                        }`
-                      : "--"}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.referral
-                        ? // trade.referral > 0
-                          //   ? " positive"
-                          // :
-                          " negative"
-                        : ""
-                    }`}
-                  >
-                    {trade.referral
-                      ? `${convertExponentialToDecimal(trade.referral)} ${
-                          trade.feeCcy
-                        }`
-                      : "--"}
-                  </div>
-                  <div
-                    className={`vouchers__text screen__table-item${
-                      trade.profit
-                        ? trade.profit > 0
-                          ? " "
-                          : " negative negative--em"
-                        : ""
-                    }`}
-                  >
-                    {trade.profit
-                      ? `${convertExponentialToDecimal(trade.profit)} ${
-                          trade.feeCcy
-                        }`
-                      : "Unknown"}
-                  </div>
-                </td>
-              ))}
-          </tr>
-          <tfoot
-            className="screen__table-btn screen__table-text"
-            onClick={() => setShowMore((prev) => !prev)}
-          >
-            {showMore ? t("show-less") : t("show-more")}
-          </tfoot>
-        </table>
+        <div className="screen__container">
+          <table className={`screen__table${showMore ? " show" : ""}`}>
+            <tr className="screen__table-headers">
+              <TableHeader
+                label={t("date")}
+                onClick={(ascending) => sorting("ts", ascending)}
+              />
+              <th className="screen__table-header screen__email">
+                {t("member_email")}
+              </th>
+              <th className="screen__table-header">
+                <div className="screen__table-header--text">
+                  {t("exchange")}
+                </div>
+                <div className="screen__table-header--switch"></div>
+              </th>
+              <th className="screen__table-header">{t("transaction-side")}</th>
+              <TableHeader
+                label={t("orderId")}
+                onClick={(ascending) => sorting("orderId", ascending)}
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("transaction-price")}
+                onClick={(ascending) => sorting("fillPrice", ascending)}
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("transaction-amount")}
+                onClick={(ascending) => sorting("fillVolume", ascending)}
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("match-fee")}
+                onClick={(ascending) => sorting("fee", ascending)}
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("referral")}
+                onClick={(ascending) => sorting("referral", ascending)}
+              />
+              <TableHeader
+                className="screen__expand"
+                label={t("profit")}
+                onClick={(ascending) => sorting("profit", ascending)}
+              />
+            </tr>
+            <tr className="screen__table-rows">
+              {filterTrades &&
+                filterTrades.map((trade) => <VoucherTile trade={trade} />)}
+            </tr>
+            <tfoot
+              className="screen__table-btn screen__table-text"
+              onClick={() => setShowMore((prev) => !prev)}
+            >
+              {showMore ? t("show-less") : t("show-more")}
+            </tfoot>
+          </table>
+        </div>
         <div className="screen__floating-box">
           <div
             className="screen__floating-btn"

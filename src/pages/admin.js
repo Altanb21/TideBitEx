@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
 import { useContext } from "react";
 import AdminHeader from "../components/AdminHeader";
+import Sidebar from "../components/AdminSidebar";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import { useSnackbar } from "notistack";
@@ -16,123 +17,80 @@ const Admin = () => {
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
+  const [activeSection, setActiveSection] = useState("ticker-setting");
+  const [openSidebar, setOpenSidebar] = useState(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { t } = useTranslation();
 
-  const onSelected = (page) => {
+  const onSelectedPage = (page) => {
     setActivePage(page);
+    setOpenSidebar(false);
+  };
+  const onSelectedSection = (section) => {
+    setActiveSection(section);
+    setOpenSidebar(false);
   };
 
   const userAbility = (user) => {
-    let _user = user ? { ...user } : {};
-    if (user.roles?.includes("root")) {
-      _user.ability = {
+    let _user = {
+      ...user,
+      ability: {
         canNotManage: [],
         canNotRead: [],
-      };
-    } else if (user.roles?.includes("deposit maker")) {
-      _user.ability = {
-        canNotManage: ["Deposit"],
-        canNotRead: !user.roles?.includes("withdraw checker")
-          ? [
-              "BankTransaction",
-              "BankTransactionRequest",
-              "Verify Account",
-              "Withdraw",
-            ]
-          : [`BankTransaction`, `BankTransactionRequest`, "Verify Account"],
-      };
-    } else if (user.roles?.includes("deposit checker")) {
-      _user.ability = {
-        canNotManage: [],
-        canNotRead: !user.roles?.includes("withdraw checker")
-          ? ["Manual Deposit", "Verify Account", "Withdraw"]
-          : ["Manual Deposit", "Verify Account"],
-      };
-    } else if (user.roles?.includes("withdraw checker")) {
-      _user.ability = {
-        canNotManage: user.roles?.includes("deposit checker")
-          ? []
-          : ["Deposit"],
-        canNotRead:
-          user.roles?.includes("deposit checker") ||
-          user.roles?.includes("deposit maker") ||
-          user.roles?.includes("deposit viewer")
-            ? user.roles?.includes("deposit maker")
-              ? user.roles?.includes("deposit checker")
-                ? ["Verify Account"]
-                : [
-                    "BankTransaction",
-                    "BankTransactionRequest",
-                    "Verify Account",
-                  ]
-              : user.roles?.includes("deposit checker")
-              ? ["Verify Account", "Manual Deposit"]
-              : [
-                  "BankTransaction",
-                  "BankTransactionRequest",
-                  "Verify Account",
-                  "Manual Deposit",
-                ]
-            : user.roles?.includes("deposit maker")
-            ? user.roles?.includes("deposit checker")
-              ? ["Verify Account", "Deposit"]
-              : [
-                  "BankTransaction",
-                  "BankTransactionRequest",
-                  "Verify Account",
-                  "Deposit",
-                ]
-            : user.roles?.includes("deposit checker")
-            ? ["Verify Account", "Manual Deposit", "Deposit"]
-            : [
-                "BankTransaction",
-                "BankTransactionRequest",
-                "Verify Account",
-                "Manual Deposit",
-                "Deposit",
-              ],
-      };
-    } else if (user.roles?.includes("KYC checker")) {
-      _user.ability = {
-        canNotManage: user.roles?.includes("deposit viewer") ? ["Deposit"] : [],
-        canNotRead: user.roles?.includes("deposit viewer")
-          ? [
-              "BankTransaction",
-              "BankTransactionRequest",
-              "Manual Deposit",
-              "Withdraw",
-            ]
-          : [
-              "BankTransaction",
-              "BankTransactionRequest",
-              "Manual Deposit",
-              "Withdraw",
-              "Deposit",
-            ],
-      };
-    } else if (user.roles?.includes("deposit viewer")) {
-      _user.ability = {
-        canNotManage: ["Deposit"],
-        canNotRead: [
+      },
+    };
+    if (_user.roles?.includes("deposit_maker")) {
+      _user.ability.canNotManage = ["Deposit"];
+      if (user.roles?.includes("withdraw_checker")) {
+        _user.ability.canNotRead = [
           "BankTransaction",
           "BankTransactionRequest",
+          "Verify Account",
+        ];
+      } else {
+        _user.ability.canNotRead = [
+          "BankTransaction",
+          "BankTransactionRequest",
+          "Verify Account",
+          "Withdraw",
+        ];
+      }
+    } else if (user.roles?.includes("deposit_checker")) {
+      if (user.roles?.includes("withdraw_checker")) {
+        _user.ability.canNotRead = ["Manual Deposit", "Verify Account"];
+      } else {
+        _user.ability.canNotRead = [
           "Manual Deposit",
           "Verify Account",
           "Withdraw",
-        ],
-      };
-    } else
-      _user.ability = {
-        canNotRead: "all",
-      };
+        ];
+      }
+    } else if (user.roles?.includes("withdraw_checker")) {
+      _user.ability.canNotRead = [
+        "Deposit",
+        "BankTransaction",
+        "BankTransactionRequest",
+        "Manual Deposit",
+        "Verify Account",
+      ];
+      _user.ability.canNotManage = ["Deposit"];
+    } else if (user.roles?.includes("kyc_checker")) {
+      _user.ability.canNotRead = [
+        "BankTransaction",
+        "BankTransactionRequest",
+        "Manual Deposit",
+        "Withdraw",
+        "Deposit",
+      ];
+      _user.ability.canNotManage = ["Deposit"];
+    }
     return _user;
   };
 
   useEffect(() => {
     if (!isInit) {
       storeCtx.getAdminUser().then((user) => {
-        if (!user || userAbility(user).ability.canNotRead === "all") {
+        if (!user) {
           enqueueSnackbar(`${t("no-access")}`, {
             variant: "error",
             anchorOrigin: {
@@ -160,15 +118,21 @@ const Admin = () => {
       <div className="admin">
         <AdminHeader
           activePage={activePage}
-          onSelected={onSelected}
+          onSelected={onSelectedPage}
           user={user}
+          open={openSidebar}
+          openSidebar={(open) => setOpenSidebar(open)}
         />
-        {user &&
-          user.ability?.canNotRead !== "all" &&
-          activePage === "manager" && <Manager user={user} />}
-           {user &&
-          user.ability?.canNotRead !== "all" &&
-          activePage === "dashboard" && <Dashboard user={user} />}
+        <Sidebar
+          activeSection={activeSection}
+          onSelected={onSelectedSection}
+          open={openSidebar}
+          openSidebar={(open) => setOpenSidebar(open)}
+        />
+        {user && activePage === "manager" && (
+          <Manager user={user} activeSection={activeSection} />
+        )}
+        {user && activePage === "dashboard" && <Dashboard user={user} />}
       </div>
     </>
   );
