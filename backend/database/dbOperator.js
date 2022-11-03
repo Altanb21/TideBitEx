@@ -343,6 +343,23 @@ class DBOperator {
     });
   }
 
+  async getOrdersByIds(ids) {
+    return this.database.getOrdersByIds(ids);
+  }
+
+  async getVouchersByIds(ids) {
+    return this.database.getVouchersByIds(ids);
+  }
+
+  async getReferralCommissionsByMarkets({ markets, start, end, asc = false }) {
+    return this.database.getReferralCommissionsByMarkets({
+      markets,
+      start,
+      end,
+      asc,
+    });
+  }
+
   /* !!! HIGH RISK (start) !!! */
   async insertOrder({
     bid,

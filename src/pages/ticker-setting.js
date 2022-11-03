@@ -11,6 +11,7 @@ import {
   TICKER_SETTING_FEE_SIDE,
   TICKER_SETTING_TYPE,
 } from "../constant/TickerSetting";
+import { formatValue } from "../components/TradeForm";
 
 // let timer;
 
@@ -77,7 +78,11 @@ const FeeControlDialog = (props) => {
                     inputMode="decimal"
                     value={defaultFee}
                     onChange={(e) => {
-                      const value = Math.abs(e.target.value);
+                      const value = formatValue({
+                        value: e.target.value,
+                        precision: 2,
+                        maximum: 50,
+                      });
                       setDefaultFee(value);
                     }}
                   />
@@ -108,7 +113,11 @@ const FeeControlDialog = (props) => {
                     inputMode="decimal"
                     value={vipFee}
                     onChange={(e) => {
-                      const value = Math.abs(e.target.value);
+                      const value = formatValue({
+                        value: e.target.value,
+                        precision: 2,
+                        maximum: 50,
+                      });
                       setVIPFee(value);
                     }}
                   />
@@ -139,7 +148,11 @@ const FeeControlDialog = (props) => {
                     inputMode="decimal"
                     value={heroFee}
                     onChange={(e) => {
-                      const value = Math.abs(e.target.value);
+                      const value = formatValue({
+                        value: e.target.value,
+                        precision: 2,
+                        maximum: 50,
+                      });
                       setHeroFee(value);
                     }}
                   />

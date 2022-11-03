@@ -42,6 +42,7 @@
   "trades": "最新成交",
   "limit": "限價",
   "market": "市價",
+  "ioc": "市價",
   "sell": "賣出",
   "buy": "買入",
   "available": "可用",
@@ -148,6 +149,7 @@
   "show": "顯示",
   "date": "日期",
   "memberId_email": "用戶 Email & ID",
+  "member_email": "用戶 Email",
   "orderId": "訂單 ID",
   "match-fee": "搓合手續費",
   "external-fee": "外部手續費成本",
@@ -157,7 +159,7 @@
   "profit-trend": "撮合毛利走勢",
   "transaction-side": "交易類型",
   "transaction-price": "掛單/成交價格",
-  "transaction-amount": "成交數量",
+  "transaction-amount": "掛單/成交數量",
   "exchange": "交易所",
   "match-volume": "已搓合數量",
   "unmatch-volume": "未搓合數量",
@@ -233,5 +235,6 @@
   "sub-account": "子帳號",
   "asset-balance": "資產水位",
   "value": "數量",
-  "tokex_expire": "頁面閒置過久，請重新登入"
+  "tokex_expire": "頁面閒置過久，請重新登入",
+  "email-exist": "此 Email 已有管理者權限"
 }

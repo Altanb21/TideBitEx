@@ -468,6 +468,7 @@ class mysql {
     ORDER BY
         referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
     // LIMIT ${limit} OFFSET ${offset};`;
+    // ++ TODO 要小心資料量過大的問題
     try {
       this.logger.debug("getReferralCommissionsByConditions", query, values);
       const [referralCommissions] = await this.db.query({
@@ -954,6 +955,7 @@ class mysql {
         outer_trades.order_price,
         outer_trades.order_origin_volume,
         outer_trades.trade_id,
+        outer_trades.create_at,
         outer_trades.update_at,
         outer_trades.voucher_id
     FROM 
@@ -1198,6 +1200,102 @@ class mysql {
     } catch (error) {
       this.logger.debug(error);
       return null;
+    }
+  }
+
+  async getOrdersByIds(ids) {
+    let placeholder = ids.join(`,`);
+    let query = `
+    SELECT
+	    orders.id,
+	    orders.member_id,
+	    orders.price,
+      orders.volume,
+      orders.origin_volume,
+      orders.state,
+      orders.ord_type,
+      orders.funds_received
+    FROM
+      orders
+    WHERE
+      orders.id in(${placeholder});
+    `;
+    try {
+      this.logger.debug("[mysql] getOrdersByIds", query, ids);
+      const [orders] = await this.db.query({
+        query,
+        values: ids,
+      });
+      return orders;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+
+  async getVouchersByIds(ids) {
+    let placeholder = ids.join(`,`);
+    let query = `
+    SELECT
+	    vouchers.id,
+	    vouchers.price,
+      vouchers.volume,
+      vouchers.trend,
+      vouchers.ask,
+      vouchers.bid,
+      vouchers.ask_fee,
+      vouchers.bid_fee
+    FROM
+      vouchers
+    WHERE
+      vouchers.id in(${placeholder});
+    `;
+    try {
+      this.logger.debug("[mysql] getVouchersByIds", query, ids);
+      const [vouchers] = await this.db.query({
+        query,
+        values: ids,
+      });
+      return vouchers;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async getReferralCommissionsByMarkets({ markets, start, end, asc }) {
+    let placeholder = markets.join(`,`);
+    const query = `
+    SELECT 
+        referral_commissions.id,
+        referral_commissions.referred_by_member_id,
+        referral_commissions.trade_member_id,
+        referral_commissions.voucher_id,
+        referral_commissions.market,
+        referral_commissions.currency,
+        referral_commissions.ref_gross_fee,
+        referral_commissions.ref_net_fee,
+        referral_commissions.amount,
+        referral_commissions.state,
+        referral_commissions.created_at,
+        referral_commissions.updated_at
+    FROM
+	      referral_commissions
+    WHERE 
+        referral_commissions.market in(${placeholder})
+        AND referral_commissions.created_at BETWEEN "${start}"
+        AND "${end}"
+    ORDER BY
+        referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
+    try {
+      this.logger.debug("getReferralCommissionsByConditions", query, markets);
+      const [referralCommissions] = await this.db.query({
+        query,
+        values: markets,
+      });
+      return referralCommissions;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
     }
   }
 

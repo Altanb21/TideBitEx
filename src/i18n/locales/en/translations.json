@@ -42,6 +42,7 @@
   "trades": "Trades",
   "limit": "Limit",
   "market": "Market",
+  "ioc": "Market",
   "sell": "Sell",
   "buy": "Buy",
   "available": "Available",
@@ -149,6 +150,7 @@
   "show": "Show",
   "date": "Date",
   "memberId_email": "Member Email & ID",
+  "member_email": "Member Email",
   "orderId": "Order ID",
   "match-fee": "Fee",
   "external-fee": "External Fee",
@@ -158,7 +160,7 @@
   "profit-trend": "Gross Profit Trend",
   "transaction-side": "Side",
   "transaction-price": "Price/Filled Price",
-  "transaction-amount": "Filled Amount",
+  "transaction-amount": "Amount/Filled Amount",
   "exchange": "Exchange",
   "match-volume": "Matched quantity",
   "unmatch-volume": "Unmatched quantity",
@@ -234,5 +236,6 @@
   "sub-account": "Sub Account",
   "asset-balance": "Asset Balance",
   "value": "Value",
-  "tokex_expire": "Token Expired. Please re-loginin."
+  "tokex_expire": "Token Expired. Please re-loginin.",
+  "email-exist":"This email already has administrator privileges"
 }

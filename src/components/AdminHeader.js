@@ -12,15 +12,15 @@ const AdminHeader = (props) => {
         />
       </a>
       <div
-          className={`admin-header__button${
-            props.activePage === "dashboard" ? " active" : ""
-          }`}
-          onClick={() => {
-            props.onSelected("dashboard");
-          }}
-        >
-          Dashboard
-        </div>
+        className={`admin-header__button${
+          props.activePage === "dashboard" ? " active" : ""
+        }`}
+        onClick={() => {
+          props.onSelected("dashboard");
+        }}
+      >
+        Dashboard
+      </div>
       <div className="admin-header__button-box">
         <div
           className={`admin-header__button${
@@ -42,6 +42,14 @@ const AdminHeader = (props) => {
         >
           分析
         </div>
+      </div>
+      <div
+        className={`admin-header__hamburger${props.open ? " active" : ""}`}
+        onClick={() => props.openSidebar(!props.open)}
+      >
+        <div></div>
+        <div></div>
+        <div></div>
       </div>
     </header>
   );
