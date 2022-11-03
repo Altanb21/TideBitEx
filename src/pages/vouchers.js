@@ -332,9 +332,15 @@ const Vouchers = () => {
         ticker = Object.values(tickers)[0];
         setFilterTicker(ticker);
       }
+      // trade fromate ++ TODO
+      if (trades.length > 0) {
+        const chartData = await formateTrades(trades);
+        // console.log(`formateTrades chartData`, chartData);
+        setChartData(chartData);
+      }
       return { trades, tickers, ticker: ticker };
     },
-    [endDate, startDate, storeCtx]
+    [endDate, formateTrades, startDate, storeCtx]
   );
 
   const filter = useCallback(
@@ -401,12 +407,6 @@ const Vouchers = () => {
             return condition;
           });
         setFilterTrades(_trades);
-        // trade fromate ++ TODO
-        if (trades.length > 0) {
-          const chartData = await formateTrades(_trades);
-          // console.log(`formateTrades chartData`, chartData);
-          setChartData(chartData);
-        }
         let profits = _trades.reduce((prev, trade) => {
           if (trade.profit) {
             if (!prev[trade.feeCurrency]) {
@@ -430,7 +430,6 @@ const Vouchers = () => {
       filterKey,
       filterOption,
       filterTicker,
-      formateTrades,
       getVouchers,
       limit,
       page,
