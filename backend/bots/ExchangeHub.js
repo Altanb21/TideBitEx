@@ -2178,7 +2178,7 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterTradeFills ************`,
       query
     );
-    let { exchange, start, end, limit, offset } = query;
+    let { exchange, start, end, limit, offset, instId } = query;
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
     this.logger.debug(
@@ -2187,7 +2187,9 @@ class ExchangeHub extends Bot {
     let trades = [],
       orderIds = [],
       voucherIds = [],
-      markets = {},
+      id = instId.replace("-", "").toLowerCase(),
+      tickerSetting = this.tickersSettings[id],
+      // markets = {},
       orders = [],
       vouchers = [],
       referralCommissions = [],
@@ -2197,6 +2199,7 @@ class ExchangeHub extends Bot {
     switch (exchange) {
       case SupportedExchange.OKEX:
         counts = await this.database.countOuterTrades({
+          currency: tickerSetting.code,
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           start: startDate,
@@ -2205,6 +2208,7 @@ class ExchangeHub extends Bot {
         const dbOuterTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          currency: tickerSetting.code,
           start: startDate,
           end: endtDate,
           limit,
@@ -2220,8 +2224,8 @@ class ExchangeHub extends Bot {
               fillPrice: outerTradeData.fillPx,
               fillVolume: outerTradeData.fillSz,
               fee: outerTradeData.avgPx
-                ? outerTradeData.fillFee
-                : outerTradeData.fee,
+                ? outerTradeData.fillFee // data source is OKx order
+                : outerTradeData.fee, // data source is Okx trade
               // feeCurrency: outerTradeData.feeCcy,
             },
             tickerSetting =
@@ -2232,8 +2236,8 @@ class ExchangeHub extends Bot {
           if (dbOuterTrade.order_id && dbOuterTrade.voucher_id) {
             orderIds = [...orderIds, dbOuterTrade.order_id];
             voucherIds = [...voucherIds, dbOuterTrade.voucher_id];
-            if (!markets[tickerSetting.id])
-              markets[tickerSetting.id] = tickerSetting.code;
+            // if (!markets[tickerSetting.id])
+            //   markets[tickerSetting.id] = tickerSetting.code;
             innerTrade = {
               orderId: dbOuterTrade.order_id,
               price: Utils.removeZeroEnd(dbOuterTrade.order_price),
@@ -2270,7 +2274,8 @@ class ExchangeHub extends Bot {
         // getReferralCommissionsByMarkets
         referralCommissions =
           await this.database.getReferralCommissionsByMarkets({
-            markets: Object.values(markets),
+            // markets: Object.values(markets),
+            markets: [tickerSetting.code],
             start,
             end,
           });
@@ -2309,10 +2314,10 @@ class ExchangeHub extends Bot {
                 : null;
               profit =
                 trade.status === Database.OUTERTRADE_STATUS.DONE
-                  ? referralCommission?.ref_net_fee
+                  ? referral
                     ? SafeMath.minus(
                         SafeMath.minus(fee, Math.abs(trade.outerTrade.fee)),
-                        Math.abs(referralCommission?.ref_net_fee)
+                        Math.abs(referral)
                       )
                     : SafeMath.minus(fee, Math.abs(trade.outerTrade.fee))
                   : null;
@@ -3989,10 +3994,21 @@ class ExchangeHub extends Bot {
               email: member.email,
               trade_id: trade.id,
               voucher_id: voucher.id,
-              // ask_account_version_id: askAccountVersion.id || null,
-              // bid_account_version_id: bidAccountVersion.id || null,
-              // order_full_filled_account_version_id:
-              //   orderFullFilledAccountVersion?.id || null,
+              currency: trade.currency,
+              kind: dbOrder.ord_type,
+              voucher_price: voucher.price,
+              voucher_volume: voucher.volume,
+              voucher_fee: voucher ? voucher[`${voucher.trend}_fee`] : null,
+              voucher_fee_currency:
+                voucher.trend === Database.ORDER_KIND.ASK
+                  ? voucher.bid
+                  : voucher.ask,
+              ask_account_version_id: askAccountVersion.id || null,
+              bid_account_version_id: bidAccountVersion.id || null,
+              order_full_filled_account_version_id:
+                orderFullFilledAccountVersion?.id || null,
+              // referral_commission_id:,
+              // referral:,
             },
             { dbTransaction }
           );
@@ -4033,7 +4049,7 @@ class ExchangeHub extends Bot {
      */
     let tradeId,
       voucherId,
-      referralCommissionId,
+      // referralCommissionId,
       newAskAccountVersion,
       newBidAccountVersion,
       newOrderFullFilledAccountVersion,
@@ -4249,13 +4265,16 @@ class ExchangeHub extends Bot {
       await this.updateOuterTrade({
         id: tradeFk,
         status: Database.OUTERTRADE_STATUS.DONE,
+        currency: market.id,
         member,
         dbOrder,
+        updatedOrder,
         trade: { ...trade, id: tradeId },
         voucher: { ...voucher, id: voucherId },
         askAccountVersion: newAskAccountVersion,
         bidAccountVersion: newBidAccountVersion,
         orderFullFilledAccountVersion: newOrderFullFilledAccountVersion,
+        // referralCommission: {referralCommission, id: referralCommissionId},
         dbTransaction,
       });
     } catch (error) {

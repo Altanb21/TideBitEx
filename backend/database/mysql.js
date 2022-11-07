@@ -941,6 +941,7 @@ class mysql {
   async getOuterTrades({
     type,
     exchangeCode,
+    currency,
     days,
     start,
     end,
@@ -968,6 +969,7 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
+        AND outer_trades.currency = ?
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
@@ -987,16 +989,16 @@ class mysql {
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${days}]`
-            : `[${exchangeCode}, ${start}, ${end}]`
+            ? `[${exchangeCode}, ${currency} ${days}]`
+            : `[${exchangeCode}, ${currency} ${start}, ${end}]`
         }`
       );
       const [outerTrades] = await this.db.query({
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, days]
-            : [exchangeCode, start, end],
+            ? [exchangeCode, currency, days]
+            : [exchangeCode, currency, start, end],
       });
       return outerTrades;
     } catch (error) {
@@ -1005,13 +1007,7 @@ class mysql {
     }
   }
 
-  async countOuterTrades({
-    type,
-    exchangeCode,
-    days,
-    start,
-    end,
-  }) {
+  async countOuterTrades({ currency, type, exchangeCode, days, start, end }) {
     const query = `
     SELECT 
         count(*)
@@ -1019,6 +1015,7 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
+        AND outer_trades.currency = ?
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
@@ -1035,21 +1032,19 @@ class mysql {
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${days}]`
-            : `[${exchangeCode}, ${start}, ${end}]`
+            ? `[${exchangeCode}, ${currency} ${days}]`
+            : `[${exchangeCode}, ${currency} ${start}, ${end}]`
         }`
       );
       const [[counts]] = await this.db.query({
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, days]
-            : [exchangeCode, start, end],
+            ? [exchangeCode, currency, days]
+            : [exchangeCode, currency, start, end],
       });
-      this.logger.debug(
-        `counts`, counts
-      );
-      return  counts;
+      this.logger.debug(`counts`, counts);
+      return counts;
     } catch (error) {
       this.logger.debug(error);
       return [];
@@ -1289,7 +1284,6 @@ class mysql {
     }
   }
 
-  
   async getVouchersByIds(ids) {
     let placeholder = ids.join(`,`);
     let query = `

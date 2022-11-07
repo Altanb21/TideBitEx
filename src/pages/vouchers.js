@@ -10,6 +10,7 @@ import ProfitTrendingChart from "../components/ProfitTrendingChart";
 import VoucherTile from "../components/VoucherTile";
 
 const exchanges = ["OKEx"];
+const tickers = { "BTC-USDT": "BTC-USDT", "ETH-USDT": "ETH-USDT" };
 const monthInterval = 30 * 24 * 60 * 60 * 1000;
 const months = [
   "Jan",
@@ -88,8 +89,8 @@ const Vouchers = () => {
   const [filterOption, setFilterOption] = useState(30); // 30, 365
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  const [tickers, setTickers] = useState(null);
-  const [filterTicker, setFilterTicker] = useState(null);
+  // const [tickers, setTickers] = useState(null);
+  const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
   const [startDate, setStartDate] = useState(null);
@@ -305,51 +306,68 @@ const Vouchers = () => {
   );
 
   const getVouchers = useCallback(
-    async ({ exchange, start, end, limit, offset }) => {
+    async ({ exchange, ticker, start, end, limit, offset }) => {
       if (start) setStartDate(start);
       if (end) setEndDate(end);
-      const { totalCounts, trades } = await storeCtx.getOuterTradeFills({
-        exchange,
-        start: start || startDate,
-        end: end || endDate,
-        limit,
-        offset,
-      });
-      setTotalCounts(totalCounts);
-      setTrades((prev) => {
-        let _trades = { ...prev };
-        _trades[exchange] =
-          offset === 0 ? trades : _trades[exchange].concat(trades);
-        return _trades;
-      });
-      let tickers = {},
-        ticker;
-      for (let trade of trades) {
-        if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
-      }
-      setTickers(tickers);
-      if (Object.values(tickers).length > 0) {
-        ticker = Object.values(tickers)[0];
-        setFilterTicker(ticker);
+      let page = offset / limit,
+        totalCounts,
+        newTrades,
+        updateTrades;
+      if (
+        trades &&
+        trades[exchange] &&
+        trades[exchange][ticker] &&
+        trades[exchange][ticker][page]
+      ) {
+        newTrades = trades[exchange][ticker][page]
+      } else {
+        let res = await storeCtx.getOuterTradeFills({
+          instId: ticker,
+          exchange,
+          start: start || startDate,
+          end: end || endDate,
+          limit,
+          offset,
+        });
+        totalCounts = res.totalCounts;
+        newTrades = res.trades;
+        setTotalCounts(totalCounts);
+        setTrades((prev) => {
+          updateTrades = { ...prev };
+          let page = offset / limit;
+          if (!updateTrades[exchange]) updateTrades[exchange] = {};
+          if (!updateTrades[exchange][ticker])
+            updateTrades[exchange][ticker] = {};
+          updateTrades[exchange][ticker][page] = newTrades;
+          // updateTrades[exchange] =
+          //   offset === 0 ? trades : updateTrades[exchange].concat(trades);
+          console.log(`updateTrades`, updateTrades);
+          return updateTrades;
+        });
       }
       // trade fromate ++ TODO
-      if (trades.length > 0) {
-        const chartData = await formateTrades(trades);
+      if (newTrades.length > 0) {
+        const chartData = await formateTrades(newTrades);
         // console.log(`formateTrades chartData`, chartData);
         setChartData(chartData);
       }
-      return { trades, tickers, ticker: ticker };
+      return { trades: newTrades };
     },
-    [endDate, formateTrades, startDate, storeCtx]
+    [endDate, formateTrades, startDate, storeCtx, trades]
   );
 
   const filter = useCallback(
     async ({ keyword, exchange, filterTrades, ticker, newPage }) => {
+      console.log(`filterTrades[:${filterTrades.length}]`, filterTrades);
+      console.log(`trades`, trades);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _trades = filterTrades || trades[_exchange],
-        _ticker = ticker || filterTicker,
         _page = newPage || page,
+        _trades =
+          filterTrades || trades[_exchange]
+            ? trades[_exchange][_page - 1]
+            : null,
+        _ticker = ticker || filterTicker,
         res;
       if (ticker) setFilterTicker(ticker);
       if (exchange) {
@@ -371,6 +389,7 @@ const Vouchers = () => {
             }-${startTime.getDate()} 08:00:00`
           );
           res = await getVouchers({
+            ticker: _ticker,
             exchange,
             start: start.toISOString().substring(0, 10),
             end: end.toISOString().substring(0, 10),
@@ -378,34 +397,22 @@ const Vouchers = () => {
             limit: 50,
           });
           _trades = res.trades;
-          _ticker = res.ticker;
         }
       }
       if (_trades) {
-        _trades = _trades
-          .slice(_page * 1 - 1, _page * limit)
-          .filter((trade) => {
-            let condition =
-              // trade.innerTrade?.orderId?.includes(_keyword) ||
-              // trade.outerTrade?.orderId?.includes(_keyword) ||
-              trade.instId?.includes(_keyword) ||
-              trade.email?.includes(_keyword) ||
-              trade.memberId?.includes(_keyword) ||
-              trade.exchange?.includes(_keyword);
-            // console.log(`timeInterval`, timeInterval);
-            // console.log(`filterOption`, filterOption);
-            // console.log(
-            //   `ts[${ts}] - trade.ts[${trade.ts}] = ${
-            //     ts - trade.ts
-            //   } < _option[${_option}]`,
-            //   ts - trade.ts < _option,
-            //   new Date(trade.ts)
-            // );
-            if (_exchange !== "ALL")
-              condition = condition && trade.exchange === _exchange;
-            if (_ticker) condition = condition && trade.instId === _ticker;
-            return condition;
-          });
+        console.log(`before filter _trades[:${_trades.length}]`);
+        _trades = _trades.filter((trade) => {
+          let condition =
+            trade.instId?.includes(_keyword) ||
+            trade.email?.includes(_keyword) ||
+            trade.memberId?.includes(_keyword) ||
+            trade.exchange?.includes(_keyword);
+          if (_exchange !== "ALL")
+            condition = condition && trade.exchange === _exchange;
+          if (_ticker) condition = condition && trade.instId === _ticker;
+          return condition;
+        });
+        console.log(`after filter _trades[:${_trades.length}]`);
         setFilterTrades(_trades);
         let profits = _trades.reduce((prev, trade) => {
           if (trade.profit) {
@@ -431,7 +438,6 @@ const Vouchers = () => {
       filterOption,
       filterTicker,
       getVouchers,
-      limit,
       page,
       trades,
     ]
@@ -451,17 +457,18 @@ const Vouchers = () => {
         }-${startTime.getDate()} 08:00:00`
       );
       const res = await getVouchers({
+        ticker: filterTicker,
         exchange: exchanges[0],
         start: start.toISOString().substring(0, 10),
         end: end.toISOString().substring(0, 10),
         limit: limit,
         offset: 0,
       });
-      filter({ filterTrades: res.trades, ticker: res.ticker });
+      filter({ filterTrades: res.trades });
       setFilterOption(option);
       setIsLoading(false);
     },
-    [filter, getVouchers, limit]
+    [filter, filterTicker, getVouchers, limit]
   );
 
   const dateStartUpdateHandler = useCallback(
@@ -472,17 +479,18 @@ const Vouchers = () => {
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
       const res = await getVouchers({
+        ticker: filterTicker,
         exchange: exchanges[0],
         start,
         end,
         offset: 0,
         limit: limit,
       });
-      filter({ filterTrades: res.trades, ticker: res.ticker });
+      filter({ filterTrades: res.trades });
       setIsLoading(false);
       // }
     },
-    [dateEnd, filter, getVouchers, limit]
+    [dateEnd, filter, filterTicker, getVouchers, limit]
   );
 
   const dateEndUpdateHandler = useCallback(
@@ -493,17 +501,18 @@ const Vouchers = () => {
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
       const res = await getVouchers({
+        ticker: filterTicker,
         exchange: exchanges[0],
         start,
         end,
         offset: 0,
         limit: limit,
       });
-      filter({ filterTrades: res.trades, ticker: res.ticker });
+      filter({ filterTrades: res.trades });
       setIsLoading(false);
       // }
     },
-    [dateStart, filter, getVouchers, limit]
+    [dateStart, filter, filterTicker, getVouchers, limit]
   );
 
   const nextPageHandler = useCallback(async () => {
@@ -512,14 +521,15 @@ const Vouchers = () => {
       setPage(newPage);
       setIsLoading(true);
       const res = await getVouchers({
+        ticker: filterTicker,
         exchange: exchanges[0],
         offset: (newPage - 1) * limit,
         limit: limit,
       });
-      filter({ filterTrades: res.trades, ticker: res.ticker, newPage });
+      filter({ filterTrades: res.trades, newPage });
       setIsLoading(false);
     }
-  }, [filter, getVouchers, limit, page, totalCounts]);
+  }, [filter, filterTicker, getVouchers, limit, page, totalCounts]);
 
   const prevPageHandler = useCallback(async () => {
     let newPage = page - 1;
@@ -573,6 +583,7 @@ const Vouchers = () => {
           }-${startTime.getDate()} 08:00:00`
         );
         const res = await getVouchers({
+          ticker: filterTicker,
           exchange: exchanges[0],
           start: start.toISOString().substring(0, 10),
           end: end.toISOString().substring(0, 10),
@@ -584,7 +595,7 @@ const Vouchers = () => {
         return !prev;
       } else return prev;
     });
-  }, [filterOption, getVouchers, limit, filter]);
+  }, [filterOption, getVouchers, filterTicker, limit, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -751,7 +762,10 @@ const Vouchers = () => {
             <tr className="screen__table-rows">
               {filterTrades &&
                 filterTrades.map((trade, index) => (
-                  <VoucherTile trade={trade} number={(index + 1) * page} />
+                  <VoucherTile
+                    trade={trade}
+                    number={(page - 1) * limit + (index + 1)}
+                  />
                 ))}
             </tr>
             {/* <tfoot

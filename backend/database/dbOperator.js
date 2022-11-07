@@ -324,6 +324,7 @@ class DBOperator {
   async getOuterTrades({
     type,
     exchangeCode,
+    currency,
     days,
     start,
     end,
@@ -334,6 +335,7 @@ class DBOperator {
     return this.database.getOuterTrades({
       type,
       exchangeCode,
+      currency,
       days,
       start,
       end,
@@ -343,8 +345,9 @@ class DBOperator {
     });
   }
 
-  async countOuterTrades({ type, exchangeCode, days, start, end }) {
+  async countOuterTrades({ currency, type, exchangeCode, days, start, end }) {
     return this.database.countOuterTrades({
+      currency,
       type,
       exchangeCode,
       days,
