@@ -313,13 +313,21 @@ const Vouchers = () => {
         totalCounts,
         newTrades,
         updateTrades;
+      console.log(
+        `trades[${exchange}][${ticker}][${page}]`,trades
+        // trades[exchange][ticker][page]
+      );
       if (
         trades &&
         trades[exchange] &&
         trades[exchange][ticker] &&
         trades[exchange][ticker][page]
       ) {
-        newTrades = trades[exchange][ticker][page]
+        newTrades = trades[exchange][ticker][page];
+        console.log(
+          `newTrades`,
+          newTrades
+        );
       } else {
         let res = await storeCtx.getOuterTradeFills({
           instId: ticker,
@@ -331,14 +339,16 @@ const Vouchers = () => {
         });
         totalCounts = res.totalCounts;
         newTrades = res.trades;
+        console.log(`newTrades`, newTrades);
         setTotalCounts(totalCounts);
         setTrades((prev) => {
           updateTrades = { ...prev };
           let page = offset / limit;
-          if (!updateTrades[exchange]) updateTrades[exchange] = {};
+          if(exchange)
+         { if (!updateTrades[exchange]) updateTrades[exchange] = {};
           if (!updateTrades[exchange][ticker])
             updateTrades[exchange][ticker] = {};
-          updateTrades[exchange][ticker][page] = newTrades;
+          updateTrades[exchange][ticker][page] = newTrades;}
           // updateTrades[exchange] =
           //   offset === 0 ? trades : updateTrades[exchange].concat(trades);
           console.log(`updateTrades`, updateTrades);
@@ -358,46 +368,44 @@ const Vouchers = () => {
 
   const filter = useCallback(
     async ({ keyword, exchange, filterTrades, ticker, newPage }) => {
-      console.log(`filterTrades[:${filterTrades.length}]`, filterTrades);
+      console.log(`filterTrades[:${filterTrades?.length}]`, filterTrades);
       console.log(`trades`, trades);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         _page = newPage || page,
-        _trades =
-          filterTrades || trades[_exchange]
-            ? trades[_exchange][_page - 1]
-            : null,
+        _trades = filterTrades,
         _ticker = ticker || filterTicker,
         res;
       if (ticker) setFilterTicker(ticker);
-      if (exchange) {
-        setFilterExchange(exchange);
-        if (trades[exchange]) _trades = trades[exchange];
-        else {
-          const now = new Date();
-          const end = new Date(
-            `${now.getFullYear()}-${
-              now.getMonth() + 1
-            }-${now.getDate()} 08:00:00`
-          );
-          const startTime = new Date(
-            end.getTime() - filterOption * 24 * 60 * 60 * 1000
-          );
-          const start = new Date(
-            `${startTime.getFullYear()}-${
-              startTime.getMonth() + 1
-            }-${startTime.getDate()} 08:00:00`
-          );
-          res = await getVouchers({
-            ticker: _ticker,
-            exchange,
-            start: start.toISOString().substring(0, 10),
-            end: end.toISOString().substring(0, 10),
-            offset: 0,
-            limit: 50,
-          });
-          _trades = res.trades;
-        }
+      if (
+        !_trades &&
+        trades[_exchange] &&
+        trades[_exchange][_ticker] &&
+        trades[_exchange][ticker][_page - 1]
+      ) {
+        _trades = trades[_exchange][ticker][_page - 1];
+      } else {
+        const now = new Date();
+        const end = new Date(
+          `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
+        );
+        const startTime = new Date(
+          end.getTime() - filterOption * 24 * 60 * 60 * 1000
+        );
+        const start = new Date(
+          `${startTime.getFullYear()}-${
+            startTime.getMonth() + 1
+          }-${startTime.getDate()} 08:00:00`
+        );
+        res = await getVouchers({
+          ticker: _ticker,
+          exchange: _exchange,
+          start: start.toISOString().substring(0, 10),
+          end: end.toISOString().substring(0, 10),
+          offset: 0,
+          limit: limit,
+        });
+        _trades = res.trades;
       }
       if (_trades) {
         console.log(`before filter _trades[:${_trades.length}]`);
@@ -438,6 +446,7 @@ const Vouchers = () => {
       filterOption,
       filterTicker,
       getVouchers,
+      limit,
       page,
       trades,
     ]
