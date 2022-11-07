@@ -2219,7 +2219,9 @@ class ExchangeHub extends Bot {
               exchange: SupportedExchange.OKEX,
               fillPrice: outerTradeData.fillPx,
               fillVolume: outerTradeData.fillSz,
-              fee: outerTradeData.fee,
+              fee: outerTradeData.avgPx
+                ? outerTradeData.fillFee
+                : outerTradeData.fee,
               // feeCurrency: outerTradeData.feeCcy,
             },
             tickerSetting =
@@ -2362,7 +2364,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
-          payload: { totalCounts: counts['count(*)'], trades: processTrades },
+          payload: { totalCounts: counts["count(*)"], trades: processTrades },
         });
       default:
         return new ResponseFormat({

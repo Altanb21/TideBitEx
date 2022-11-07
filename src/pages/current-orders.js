@@ -168,17 +168,17 @@ const CurrentOrders = () => {
               </li>
               <li
                 className={`screen__display-option${
-                  filterOption === "sell" ? " active" : ""
+                  filterOption === "buy" ? " active" : ""
                 }`}
-                onClick={() => filter({ side: "sell" })}
+                onClick={() => filter({ side: "buy" })}
               >
                 {t("bid")}
               </li>
               <li
                 className={`screen__display-option${
-                  filterOption === "buy" ? " active" : ""
+                  filterOption === "sell" ? " active" : ""
                 }`}
-                onClick={() => filter({ side: "buy" })}
+                onClick={() => filter({ side: "sell" })}
               >
                 {t("ask")}
               </li>

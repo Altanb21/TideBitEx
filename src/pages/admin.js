@@ -90,7 +90,7 @@ const Admin = () => {
   useEffect(() => {
     if (!isInit) {
       storeCtx.getAdminUser().then((user) => {
-        if (!user) {
+        if (!user || !user?.roles) {
           enqueueSnackbar(`${t("no-access")}`, {
             variant: "error",
             anchorOrigin: {

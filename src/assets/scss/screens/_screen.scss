@@ -315,6 +315,7 @@
   }
   &__shrink {
     width: 40px !important;
+    min-width: unset !important;
   }
   &__expand {
     min-width: 180px !important;
