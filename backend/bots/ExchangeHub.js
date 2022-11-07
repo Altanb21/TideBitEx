@@ -3995,14 +3995,14 @@ class ExchangeHub extends Bot {
               trade_id: trade.id,
               voucher_id: voucher.id,
               currency: trade.currency,
-              kind: dbOrder.ord_type,
+              kind: `"${dbOrder.ord_type}"`,
               voucher_price: voucher.price,
               voucher_volume: voucher.volume,
               voucher_fee: voucher ? voucher[`${voucher.trend}_fee`] : null,
               voucher_fee_currency:
                 voucher.trend === Database.ORDER_KIND.ASK
-                  ? voucher.bid
-                  : voucher.ask,
+                  ? `"${voucher.bid}"`
+                  : `"${voucher.ask}"`,
               ask_account_version_id: askAccountVersion.id || null,
               bid_account_version_id: bidAccountVersion.id || null,
               order_full_filled_account_version_id:
@@ -4063,7 +4063,9 @@ class ExchangeHub extends Bot {
         await this.database.updateOrder(updatedOrder, { dbTransaction });
         this.logger.debug(`updater updateOrder success`, updatedOrder);
       } else {
-        this.logger.error("order is marked as done", trade);
+        this.logger.error("order is marked as done or canceled");
+        this.logger.error(`dbOrder`, dbOrder);
+        this.logger.error(`trade`, trade);
       }
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
@@ -4156,9 +4158,7 @@ class ExchangeHub extends Bot {
           : null;
       if (dbBidAccountVersion) {
         this.logger.error(`bidAccountVersion exist`);
-        if (
-          this.accountVersionVerifier(newBidAccountVersion, dbBidAccountVersion)
-        )
+        if (this.accountVersionVerifier(bidAccountVersion, dbBidAccountVersion))
           newBidAccountVersion = dbBidAccountVersion;
         else {
           this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
@@ -4189,7 +4189,7 @@ class ExchangeHub extends Bot {
           this.logger.error(`orderFullFilledAccountVersion exist`);
           if (
             this.accountVersionVerifier(
-              newOrderFullFilledAccountVersion,
+              orderFullFilledAccountVersion,
               dbOrderFullFilledAccountVersion
             )
           )
@@ -4229,22 +4229,22 @@ class ExchangeHub extends Bot {
         this.logger.log(`updater dbReferrerCommission`, dbReferrerCommission);
         if (dbReferrerCommission) {
           this.logger.error(`referralCommission exist`);
-          if (
-            SafeMath.eq(
-              dbReferrerCommission.referred_by_member_id,
-              referralCommission.referredByMemberId
-            ) ||
-            SafeMath.eq(
-              dbReferrerCommission.ref_net_fee,
-              referralCommission.refNetFee
-            )
-          ) {
-            this.logger.error(`referralCommission`, referralCommission);
-            this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
-          }
-          throw Error(
-            `db update referralCommission is different from outer data`
-          );
+          // if (
+          //   SafeMath.eq(
+          //     dbReferrerCommission.referred_by_member_id,
+          //     referralCommission.referredByMemberId
+          //   ) ||
+          //   SafeMath.eq(
+          //     dbReferrerCommission.ref_net_fee,
+          //     referralCommission.refNetFee
+          //   )
+          // ) {
+          this.logger.error(`referralCommission`, referralCommission);
+          this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
+          // }
+          // throw Error(
+          //   `db update referralCommission is different from outer data`
+          // );
         } else {
           /**
            * ++ TODO after verify

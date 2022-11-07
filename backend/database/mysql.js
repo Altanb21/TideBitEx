@@ -819,10 +819,6 @@ class mysql {
     }
   }
 
-  /**
-   * [deprecated] 2022/10/19
-   * 沒有地方呼叫
-   */
   async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
     const query = `
     SELECT
@@ -833,10 +829,7 @@ class mysql {
       outer_trades
     WHERE
       outer_trades.exchange_code = ?
-      AND(outer_trades.status = ?
-        OR outer_trades.order_id IS NULL
-        OR outer_trades.create_at IS NULL
-        OR outer_trades.currency IS NULL)
+      AND outer_trades.status = ?
     ORDER BY
       outer_trades.create_at ${asc ? "ASC" : "DESC"}
     LIMIT ${limit} OFFSET ${offset};`;
@@ -970,7 +963,7 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
-        AND outer_trades.currency = ?
+        ${currency ? `AND outer_trades.currency = ?` : ``}
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
@@ -990,16 +983,24 @@ class mysql {
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${currency} ${days}]`
-            : `[${exchangeCode}, ${currency} ${start}, ${end}]`
+            ? currency
+              ? `[${exchangeCode}, ${currency}, ${days}]`
+              : `[${exchangeCode} ${days}]`
+            : currency
+            ? `[${exchangeCode}, ${currency}, ${start}, ${end}]`
+            : `[${exchangeCode}, ${start}, ${end}]`
         }`
       );
       const [outerTrades] = await this.db.query({
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, currency, days]
-            : [exchangeCode, currency, start, end],
+            ? currency
+              ? [exchangeCode, currency, days]
+              : [exchangeCode, days]
+            : currency
+            ? [exchangeCode, currency, start, end]
+            : [exchangeCode, start, end],
       });
       return outerTrades;
     } catch (error) {
