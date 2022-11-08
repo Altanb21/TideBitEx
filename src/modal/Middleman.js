@@ -213,13 +213,13 @@ class Middleman {
     }
   }
 
-  async getOuterPendingOrders({ instId, exchange, limit, offset }) {
+  async getOuterPendingOrders({ instId, exchange, limit, after }) {
     try {
       return await this.communicator.getOuterPendingOrders({
         instId,
         exchange,
         limit,
-        offset,
+        after,
       });
     } catch (error) {
       throw error;

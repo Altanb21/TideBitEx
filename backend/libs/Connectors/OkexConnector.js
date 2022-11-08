@@ -1335,6 +1335,8 @@ class OkexConnector extends ConnectorBase {
     const path = "/api/v5/trade/orders-pending";
     const arr = [];
     if (query.instType) arr.push(`instType=${query.instType}`);
+    if (query.instId) arr.push(`instId=${query.instId}`);
+    if (query.after) arr.push(`after=${query.after}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
     const okAccessSign = await this.okAccessSign({

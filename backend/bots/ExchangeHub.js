@@ -2425,14 +2425,17 @@ class ExchangeHub extends Bot {
       orderIds = [],
       emails = [],
       processOrders = [],
-      memberIds = {};
-    let { instId, exchange, offset, limit } = query;
-    switch (exchange) {
+      memberIds = {},
+      oldestOrderId;
+    switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
         if (res.success) {
+          // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
+          if (SafeMath.eq(res.payload.length, query.limit))
+            oldestOrderId = res.payload[res.payload.length - 1]?.ordId;
           for (let order of res.payload) {
             let parsedClOrdId, memberId, orderId, outerOrder, innerOrder;
             outerOrder = {
@@ -2486,14 +2489,15 @@ class ExchangeHub extends Bot {
               feeCurrency: order.feeCcy,
               ts: parseInt(order.cTime),
             };
-            if (order.side === Database.ORDER_SIDE.BUY)
-              bidOrders = [...bidOrders, processedOrder];
-            else askOrders = [...askOrders, processedOrder];
+            orders = [...orders, processOrders];
+            // if (order.side === Database.ORDER_SIDE.BUY)
+            //   bidOrders = [...bidOrders, processedOrder];
+            // else askOrders = [...askOrders, processedOrder];
           }
           // getOrdersByIds
-          askOrders.sort((a, b) => a.price - b.price);
-          bidOrders.sort((a, b) => b.price - a.price);
-          orders = bidOrders.concat(askOrders);
+          // askOrders.sort((a, b) => a.price - b.price);
+          // bidOrders.sort((a, b) => b.price - a.price);
+          // orders = bidOrders.concat(askOrders);
           dbOrders = await this.database.getOrdersByIds(orderIds);
           emails = await this.database.getEmailsByMemberIds(
             Object.values(memberIds)
@@ -2580,7 +2584,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
-          payload: processOrders,
+          payload: { pendingOrders: processOrders, oldestOrderId },
         });
       default:
         return new ResponseFormat({

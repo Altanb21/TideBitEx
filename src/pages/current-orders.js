@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import LoadingDialog from "../components/LoadingDialog";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
-import SafeMath from "../utils/SafeMath";
 import { TableHeader } from "./vouchers";
 
 const exchanges = ["OKEx"];
@@ -17,9 +16,9 @@ const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   // const [showMore, setShowMore] = useState(false);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
-  const [totalCounts, setTotalCounts] = useState(0);
+  const [limit, setLimit] = useState(10);
+  // const [offset, setOffset] = useState(0);
+  const [oldestOrderId, setOldestOrderId] = useState(null); // ordId
   const [isInit, setIsInit] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [orders, setOrders] = useState(null);
@@ -31,54 +30,61 @@ const CurrentOrders = () => {
   const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
 
   const getCurrentOrders = useCallback(
-    async (exchange, instId) => {
-      const orders = await storeCtx.getOuterPendingOrders({
-        instId,
-        exchange,
-        limit,
-        offset: 0,
-      });
-      setOrders((prev) => {
-        let _orders = { ...prev };
-        _orders[exchange][instId] = orders;
-        return _orders;
-      });
-      // let tickers = {},
-      //   ticker;
-      // for (let order of orders) {
-      //   if (!tickers[order.instId]) tickers[order.instId] = order.instId;
-      // }
-      // setTickers(tickers);
-      // if (Object.values(tickers).length > 0) {
-      //   ticker = Object.values(tickers)[0];
-      //   setFilterTicker(ticker);
-      // }
-      return orders;
+    async ({ exchange, ticker, limit, after }) => {
+      if (exchange && ticker) {
+        const res = await storeCtx.getOuterPendingOrders({
+          instId: ticker,
+          exchange,
+          limit,
+          after,
+        });
+        const pendingOrders = res.pendingOrders;
+        const oldestOrderId = res.oldestOrderId;
+        let updatedOrders;
+        setOldestOrderId(oldestOrderId);
+        setOrders((prev) => {
+          let updatedOrders = { ...prev },askOrders=[],bidOrders=[];
+          if (!updatedOrders[exchange]) updatedOrders[exchange] = {};
+          if (!updatedOrders[exchange][ticker])
+            updatedOrders[exchange][ticker] = [];
+          updatedOrders[exchange][ticker] = [
+            ...updatedOrders[exchange][ticker],
+            ...pendingOrders,
+          ];
+          for(let o of updatedOrders){
+            if (o.side === 'buy')
+              bidOrders = [...bidOrders, o];
+            else askOrders = [...askOrders, o];
+          }
+          askOrders.sort((a, b) => a.price - b.price);
+          bidOrders.sort((a, b) => b.price - a.price);
+          updatedOrders = bidOrders.concat(askOrders);
+          return updatedOrders;
+        });
+        return updatedOrders[exchange][ticker];
+      }
     },
-    [limit, storeCtx]
+    [storeCtx]
   );
 
   const filter = useCallback(
-    async (orders, { keyword, side, exchange, ticker }) => {
+    async ({ newOrders, keyword, side, exchange, ticker }) => {
       let _option = side || filterOption,
         _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _orders,
+        _orders = newOrders || [],
         // _orders = filterOrders || orders[_exchange],
         _ticker = ticker || filterTicker;
-      if (ticker) setFilterTicker(ticker);
       if (side) setFilterOption(side);
-      if (exchange) {
-        setFilterExchange(exchange);
-        // if (orders[exchange]) _orders = orders[exchange];
-        // else {
-        //   setIsLoading(true);
-        //   res = await getCurrentOrders(exchange);
-        //   setIsLoading(false);
-        //   _orders = res.orders;
-        //   _ticker = res.ticker;
-        // }
-      }
+      if (ticker) setFilterTicker(ticker);
+      if (exchange) setFilterExchange(exchange);
+      if (
+        !newOrders &&
+        orders &&
+        orders[_exchange] &&
+        orders[_exchange][_ticker]
+      )
+        _orders = orders[_exchange][_ticker];
       _orders = orders.filter((order) => {
         let condition =
           order.id.includes(_keyword) ||
@@ -94,7 +100,7 @@ const CurrentOrders = () => {
       });
       setFilterOrders(_orders);
     },
-    [filterExchange, filterKey, filterOption, filterTicker]
+    [filterExchange, filterKey, filterOption, filterTicker, orders]
   );
 
   const sorting = (key, ascending) => {
@@ -109,25 +115,49 @@ const CurrentOrders = () => {
 
   const selectTickerHandler = useCallback(
     async (ticker) => {
-      setFilterTicker(ticker);
-      // ++ TODO
-      const orders = await getCurrentOrders(filterExchange, ticker);
-      filter(orders, {});
+      setIsLoading(true);
+      const orders = await getCurrentOrders({
+        exchange: filterExchange,
+        ticker,
+        limit,
+      });
+      filter({ newOrders: orders });
+      setIsLoading(false);
     },
-    [filter, filterExchange, getCurrentOrders]
+    [filter, filterExchange, getCurrentOrders, limit]
   );
+
+  const showMoreHandler = useCallback(async () => {
+    let newOrders;
+    setIsLoading(true);
+    if (oldestOrderId) {
+      await getCurrentOrders({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        after: oldestOrderId,
+        limit: limit,
+      });
+      // setOffset((prev) => (prev + 1) * limit);
+    }
+    filter(newOrders, {});
+    setIsLoading(false);
+  }, [oldestOrderId, getCurrentOrders, filterTicker, limit, filter]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        const orders = await getCurrentOrders(exchanges[0]);
-        filter(orders, {});
+        const orders = await getCurrentOrders({
+          exchange: exchanges[0],
+          ticker: filterTicker,
+          limit,
+        });
+        filter({ newOrders: orders });
         setIsLoading(false);
         return !prev;
       } else return prev;
     });
-  }, [getCurrentOrders, filter]);
+  }, [getCurrentOrders, filterTicker, limit, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -208,7 +238,7 @@ const CurrentOrders = () => {
         <div className="screen__container">
           <table className={`screen__table`}>
             <tr className="screen__table-headers">
-              {/* <li className="screen__table-header">{t("date")}</li> */}
+              <th className="screen__table-header screen__shrink">#</th>
               <TableHeader
                 label={t("date")}
                 onClick={(ascending) => sorting("ts", ascending)}
@@ -244,13 +274,16 @@ const CurrentOrders = () => {
             </tr>
             <tr className="screen__table-rows">
               {filterOrders &&
-                filterOrders.map((order) => (
+                filterOrders.map((order, index) => (
                   <tr
                     className={`current-orders__tile screen__table-row${
                       order.email ? "" : " unknown"
                     }${order.alert ? " screen__table-row--alert" : ""}`}
                     key={order.id}
                   >
+                    <td className="vouchers__text screen__shrink">
+                      {index + 1}
+                    </td>
                     <td className="current-orders__text screen__table-item">
                       {dateFormatter(order.ts).text}
                     </td>
@@ -407,34 +440,12 @@ const CurrentOrders = () => {
                   </tr>
                 ))}
             </tr>
-            {/* <tfoot
+            <tfoot
               className="screen__table-btn screen__table-text"
-              onClick={() => setShowMore((prev) => !prev)}
+              onClick={showMoreHandler}
             >
-              {showMore ? t("show-less") : t("show-more")}
-            </tfoot> */}
-            <tfoot className="screen__table-tools">
-              <div
-                className={`screen__table-tool${
-                  SafeMath.gt(page, 1) ? "" : " disable"
-                }`}
-                onClick={prevPageHandler}
-              >
-                <div className="screen__table-tool--left"></div>
-              </div>
-              <div className="screen__page">{`${page} / ${Math.ceil(
-                totalCounts / limit
-              )}`}</div>
-              <div
-                className={`screen__table-tool${
-                  SafeMath.lt(page, Math.ceil(totalCounts / limit))
-                    ? ""
-                    : " disable"
-                }`}
-                onClick={nextPageHandler}
-              >
-                <div className="screen__table-tool--right"></div>
-              </div>
+              {/* {showMore ? t("show-less") : t("show-more")} */}
+              {t("show-more")}
             </tfoot>
           </table>
         </div>
