@@ -951,10 +951,17 @@ class mysql {
         outer_trades.data,
         outer_trades.member_id,
         outer_trades.member_tag,
+        outer_trades.kind,
         outer_trades.email,
         outer_trades.order_id,
         outer_trades.order_price,
         outer_trades.order_origin_volume,
+        outer_trades.voucher_price,
+        outer_trades.voucher_volume,
+        outer_trades.voucher_fee,
+        outer_trades.voucher_fee_currency,
+        outer_trades.referral_commission_id,
+        outer_trades.referral,
         outer_trades.trade_id,
         outer_trades.create_at,
         outer_trades.update_at,
@@ -1034,8 +1041,8 @@ class mysql {
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${currency} ${days}]`
-            : `[${exchangeCode}, ${currency} ${start}, ${end}]`
+            ? `[${exchangeCode}, ${currency}, ${days}]`
+            : `[${exchangeCode}, ${currency}, ${start}, ${end}]`
         }`
       );
       const [[counts]] = await this.db.query({

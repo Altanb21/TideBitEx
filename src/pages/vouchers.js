@@ -10,7 +10,11 @@ import ProfitTrendingChart from "../components/ProfitTrendingChart";
 import VoucherTile from "../components/VoucherTile";
 
 const exchanges = ["OKEx"];
-const tickers = { "BTC-USDT": "BTC-USDT", "ETH-USDT": "ETH-USDT" };
+const tickers = {
+  "BTC-USDT": "BTC-USDT",
+  "ETH-USDT": "ETH-USDT",
+  "LTC-USDT": "LTC-USDT",
+};
 const monthInterval = 30 * 24 * 60 * 60 * 1000;
 const months = [
   "Jan",
@@ -300,6 +304,8 @@ const Vouchers = () => {
         chartData.data = data;
         chartData.xaxisType = "string";
       }
+      console.log(`formateTrades chartData`, chartData);
+      setChartData(chartData);
       return chartData;
     },
     [storeCtx]
@@ -309,151 +315,92 @@ const Vouchers = () => {
     async ({ exchange, ticker, start, end, limit, offset }) => {
       if (start) setStartDate(start);
       if (end) setEndDate(end);
-      let page = offset / limit,
+      let page = Math.ceil(offset / limit) + 1,
         totalCounts,
         newTrades,
         updateTrades;
       console.log(
-        `trades[${exchange}][${ticker}][${page}]`,trades
-        // trades[exchange][ticker][page]
+        `trades[${exchange}][${ticker}][${start}][${end}][${limit}][${offset}][${page}]`
       );
-      if (
-        trades &&
-        trades[exchange] &&
-        trades[exchange][ticker] &&
-        trades[exchange][ticker][page]
-      ) {
-        newTrades = trades[exchange][ticker][page];
-        console.log(
-          `newTrades`,
-          newTrades
-        );
-      } else {
-        let res = await storeCtx.getOuterTradeFills({
-          instId: ticker,
-          exchange,
-          start: start || startDate,
-          end: end || endDate,
-          limit,
-          offset,
-        });
-        totalCounts = res.totalCounts;
-        newTrades = res.trades;
-        console.log(`newTrades`, newTrades);
-        setTotalCounts(totalCounts);
-        setTrades((prev) => {
-          updateTrades = { ...prev };
-          let page = offset / limit;
-          if(exchange)
-         { if (!updateTrades[exchange]) updateTrades[exchange] = {};
-          if (!updateTrades[exchange][ticker])
-            updateTrades[exchange][ticker] = {};
-          updateTrades[exchange][ticker][page] = newTrades;}
-          // updateTrades[exchange] =
-          //   offset === 0 ? trades : updateTrades[exchange].concat(trades);
-          console.log(`updateTrades`, updateTrades);
-          return updateTrades;
-        });
-      }
-      // trade fromate ++ TODO
-      if (newTrades.length > 0) {
-        const chartData = await formateTrades(newTrades);
-        // console.log(`formateTrades chartData`, chartData);
-        setChartData(chartData);
-      }
-      return { trades: newTrades };
+      let res = await storeCtx.getOuterTradeFills({
+        instId: ticker,
+        exchange,
+        start: start || startDate,
+        end: end || endDate,
+        limit,
+        offset,
+      });
+      totalCounts = res.totalCounts;
+      newTrades = res.trades;
+      console.log(`newTrades`, newTrades);
+      setTotalCounts(totalCounts);
+      setTrades((prev) => {
+        updateTrades = { ...prev };
+        if (exchange) {
+          if (!updateTrades[exchange]) updateTrades[exchange] = {};
+          if (ticker) {
+            if (!updateTrades[exchange][ticker])
+              updateTrades[exchange][ticker] = {};
+            updateTrades[exchange][ticker][page] = newTrades;
+          }
+        }
+        console.log(`updateTrades`, updateTrades);
+        return updateTrades;
+      });
+      return newTrades;
     },
-    [endDate, formateTrades, startDate, storeCtx, trades]
+    [endDate, startDate, storeCtx]
   );
 
   const filter = useCallback(
-    async ({ keyword, exchange, filterTrades, ticker, newPage }) => {
-      console.log(`filterTrades[:${filterTrades?.length}]`, filterTrades);
-      console.log(`trades`, trades);
+    (trades, { keyword, exchange, ticker }) => {
+      console.log(`trades[:${trades?.length}]`, trades);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _page = newPage || page,
-        _trades = filterTrades,
         _ticker = ticker || filterTicker,
-        res;
+        _trades;
       if (ticker) setFilterTicker(ticker);
-      if (
-        !_trades &&
-        trades[_exchange] &&
-        trades[_exchange][_ticker] &&
-        trades[_exchange][ticker][_page - 1]
-      ) {
-        _trades = trades[_exchange][ticker][_page - 1];
-      } else {
-        const now = new Date();
-        const end = new Date(
-          `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
-        );
-        const startTime = new Date(
-          end.getTime() - filterOption * 24 * 60 * 60 * 1000
-        );
-        const start = new Date(
-          `${startTime.getFullYear()}-${
-            startTime.getMonth() + 1
-          }-${startTime.getDate()} 08:00:00`
-        );
-        res = await getVouchers({
-          ticker: _ticker,
-          exchange: _exchange,
-          start: start.toISOString().substring(0, 10),
-          end: end.toISOString().substring(0, 10),
-          offset: 0,
-          limit: limit,
-        });
-        _trades = res.trades;
-      }
-      if (_trades) {
-        console.log(`before filter _trades[:${_trades.length}]`);
-        _trades = _trades.filter((trade) => {
-          let condition =
-            trade.instId?.includes(_keyword) ||
-            trade.email?.includes(_keyword) ||
-            trade.memberId?.includes(_keyword) ||
-            trade.exchange?.includes(_keyword);
-          if (_exchange !== "ALL")
-            condition = condition && trade.exchange === _exchange;
-          if (_ticker) condition = condition && trade.instId === _ticker;
-          return condition;
-        });
-        console.log(`after filter _trades[:${_trades.length}]`);
-        setFilterTrades(_trades);
-        let profits = _trades.reduce((prev, trade) => {
-          if (trade.profit) {
-            if (!prev[trade.feeCurrency]) {
-              prev[trade.feeCurrency] = {
-                sum: 0,
-                currency: trade.feeCurrency,
-              };
-            }
-            prev[trade.feeCurrency].sum = SafeMath.plus(
-              prev[trade.feeCurrency].sum,
-              trade.profit
-            );
+      console.log(`before filter trades[:${trades.length}]`);
+      _trades = trades.filter((trade) => {
+        let condition =
+          trade.instId?.includes(_keyword) ||
+          trade.email?.includes(_keyword) ||
+          trade.memberId?.includes(_keyword) ||
+          trade.exchange?.includes(_keyword);
+        if (_exchange !== "ALL")
+          condition = condition && trade.exchange === _exchange;
+        if (_ticker) condition = condition && trade.instId === _ticker;
+        return condition;
+      });
+      console.log(`after filter _trades[:${_trades.length}]`);
+
+      formateTrades(_trades);
+
+      setFilterTrades(_trades);
+      let profits = _trades.reduce((prev, trade) => {
+        if (trade.profit) {
+          if (!prev[trade.feeCurrency]) {
+            prev[trade.feeCurrency] = {
+              sum: 0,
+              currency: trade.feeCurrency,
+            };
           }
-          return prev;
-        }, {});
-        setProfits(profits);
-      }
+          prev[trade.feeCurrency].sum = SafeMath.plus(
+            prev[trade.feeCurrency].sum,
+            trade.profit
+          );
+        }
+        return prev;
+      }, {});
+      setProfits(profits);
     },
-    [
-      filterExchange,
-      filterKey,
-      filterOption,
-      filterTicker,
-      getVouchers,
-      limit,
-      page,
-      trades,
-    ]
+    [filterExchange, filterKey, filterTicker, formateTrades]
   );
 
   const updateInterval = useCallback(
     async (option) => {
+      const newPage = 1;
+      setPage(newPage);
       setIsLoading(true);
       const now = new Date();
       const end = new Date(
@@ -465,7 +412,7 @@ const Vouchers = () => {
           startTime.getMonth() + 1
         }-${startTime.getDate()} 08:00:00`
       );
-      const res = await getVouchers({
+      const trades = await getVouchers({
         ticker: filterTicker,
         exchange: exchanges[0],
         start: start.toISOString().substring(0, 10),
@@ -473,7 +420,7 @@ const Vouchers = () => {
         limit: limit,
         offset: 0,
       });
-      filter({ filterTrades: res.trades });
+      filter(trades, {});
       setFilterOption(option);
       setIsLoading(false);
     },
@@ -482,12 +429,13 @@ const Vouchers = () => {
 
   const dateStartUpdateHandler = useCallback(
     async (date) => {
-      // if (date.getTime() <= dateEnd.getTime()) {
+      const newPage = 1;
+      setPage(newPage);
       setIsLoading(true);
       setDateStart(date);
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
-      const res = await getVouchers({
+      const trades = await getVouchers({
         ticker: filterTicker,
         exchange: exchanges[0],
         start,
@@ -495,21 +443,21 @@ const Vouchers = () => {
         offset: 0,
         limit: limit,
       });
-      filter({ filterTrades: res.trades });
+      filter(trades, {});
       setIsLoading(false);
-      // }
     },
     [dateEnd, filter, filterTicker, getVouchers, limit]
   );
 
   const dateEndUpdateHandler = useCallback(
     async (date) => {
-      // if (date.getTime() >= dateStart.getTime()) {
+      const newPage = 1;
+      setPage(newPage);
       setIsLoading(true);
       setDateEnd(date);
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
-      const res = await getVouchers({
+      const trades = await getVouchers({
         ticker: filterTicker,
         exchange: exchanges[0],
         start,
@@ -517,43 +465,101 @@ const Vouchers = () => {
         offset: 0,
         limit: limit,
       });
-      filter({ filterTrades: res.trades });
+      filter(trades, {});
       setIsLoading(false);
-      // }
     },
     [dateStart, filter, filterTicker, getVouchers, limit]
   );
 
+  const selectTickerHandler = useCallback(
+    async (ticker) => {
+      let newTrades,
+        newPage = 1;
+      setPage(newPage);
+      setIsLoading(true);
+      setFilterTicker(ticker);
+      if (
+        trades &&
+        trades[filterExchange] &&
+        trades[filterExchange][ticker] &&
+        trades[filterExchange][ticker][newPage]
+      ) {
+        newTrades = trades[filterExchange][ticker][newPage];
+        console.log(`newTrades`, newTrades);
+      } else {
+        newTrades = await getVouchers({
+          ticker,
+          exchange: exchanges[0],
+          offset: (newPage - 1) * limit,
+          limit: limit,
+        });
+        console.log(`newTrades`, newTrades);
+      }
+      filter(newTrades, { ticker });
+      setIsLoading(false);
+    },
+    [getVouchers, filter, filterExchange, limit, trades]
+  );
+
   const nextPageHandler = useCallback(async () => {
-    let newPage = page + 1;
+    let newTrades,
+      newPage = page + 1;
     if (SafeMath.lte(newPage, Math.ceil(totalCounts, limit))) {
       setPage(newPage);
       setIsLoading(true);
-      const res = await getVouchers({
-        ticker: filterTicker,
-        exchange: exchanges[0],
-        offset: (newPage - 1) * limit,
-        limit: limit,
-      });
-      filter({ filterTrades: res.trades, newPage });
+      if (
+        trades &&
+        trades[filterExchange] &&
+        trades[filterExchange][filterTicker] &&
+        trades[filterExchange][filterTicker][newPage]
+      ) {
+        newTrades = trades[filterExchange][filterTicker][newPage];
+        console.log(`newTrades`, newTrades);
+      } else {
+        newTrades = await getVouchers({
+          ticker: filterTicker,
+          exchange: exchanges[0],
+          offset: (newPage - 1) * limit,
+          limit: limit,
+        });
+        console.log(`newTrades`, newTrades);
+      }
+      filter(newTrades, {});
       setIsLoading(false);
     }
-  }, [filter, filterTicker, getVouchers, limit, page, totalCounts]);
+  }, [
+    getVouchers,
+    filter,
+    filterExchange,
+    filterTicker,
+    limit,
+    page,
+    totalCounts,
+    trades,
+  ]);
 
   const prevPageHandler = useCallback(async () => {
-    let newPage = page - 1;
-    if (SafeMath.gte(newPage, 1)) {
+    let newTrades,
+      newPage = page - 1;
+    console.log(`prevPageHandler newPage`, newPage);
+    console.log(
+      `trades[${filterExchange}][${filterTicker}][${newPage}]`,
+      trades
+    );
+    if (
+      SafeMath.gte(newPage, 1) &&
+      trades &&
+      trades[filterExchange] &&
+      trades[filterExchange][filterTicker] &&
+      trades[filterExchange][filterTicker][newPage]
+    ) {
       setPage(newPage);
       setIsLoading(true);
-      // const res = await getVouchers({
-      //   exchange: exchanges[0],
-      //   offset: page - 1 * limit,
-      //   limit: limit,
-      // });
-      filter({ newPage });
+      newTrades = trades[filterExchange][filterTicker][newPage];
+      filter(newTrades, {});
       setIsLoading(false);
     }
-  }, [filter, page]);
+  }, [filter, filterExchange, filterTicker, page, trades]);
 
   const sorting = (key, ascending) => {
     // console.log(`key`, key);
@@ -574,11 +580,6 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        /**
-         * [deprecated] 2022/10/28
-         */
-        // await storeCtx.getExchangeRates();
-        // console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
         const end = new Date(
           `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
@@ -591,16 +592,16 @@ const Vouchers = () => {
             startTime.getMonth() + 1
           }-${startTime.getDate()} 08:00:00`
         );
-        const res = await getVouchers({
-          ticker: filterTicker,
+        const trades = await getVouchers({
           exchange: exchanges[0],
+          ticker: filterTicker,
           start: start.toISOString().substring(0, 10),
           end: end.toISOString().substring(0, 10),
           offset: 0,
           limit,
         });
+        filter(trades, {});
         setIsLoading(false);
-        filter({ filterTrades: res.trades, ticker: res.ticker });
         return !prev;
       } else return prev;
     });
@@ -624,9 +625,7 @@ const Vouchers = () => {
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"
-            selectHandler={(ticker) => {
-              filter({ ticker });
-            }}
+            selectHandler={(ticker) => selectTickerHandler(ticker)}
             options={tickers ? Object.values(tickers) : []}
             selected={filterTicker}
           />
@@ -638,7 +637,20 @@ const Vouchers = () => {
               placeholder={t("search-keywords")}
               onInput={(e) => {
                 setFilterKey(e.target.value);
-                filter({ keyword: e.target.value });
+                console.log(`setFilterKey e.target.value`, e.target.value);
+                console.log(
+                  `trades[${filterExchange}][${filterTicker}][${page}]`,
+                  trades
+                );
+                if (
+                  trades &&
+                  trades[filterExchange] &&
+                  trades[filterExchange][filterTicker] &&
+                  trades[filterExchange][filterTicker][page]
+                )
+                  filter(trades[filterExchange][filterTicker][page], {
+                    keyword: e.target.value,
+                  });
               }}
             />
             <div className="screen__search-icon">
