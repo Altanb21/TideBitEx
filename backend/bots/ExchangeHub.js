@@ -2426,7 +2426,8 @@ class ExchangeHub extends Bot {
       emails = [],
       processOrders = [],
       memberIds = {};
-    switch (query.exchange) {
+    let { instId, exchange, offset, limit } = query;
+    switch (exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },

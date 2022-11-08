@@ -226,14 +226,15 @@ const StoreProvider = (props) => {
   );
 
   const getOuterPendingOrders = useCallback(
-    async (exchange, limit, offset) => {
+    async ({ instId, exchange, limit, offset }) => {
       let pendingOrders;
       try {
-        pendingOrders = await middleman.getOuterPendingOrders(
+        pendingOrders = await middleman.getOuterPendingOrders({
+          instId,
           exchange,
           limit,
-          offset
-        );
+          offset,
+        });
       } catch (error) {
         console.log(error);
       }

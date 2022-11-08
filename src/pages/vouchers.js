@@ -373,9 +373,7 @@ const Vouchers = () => {
         return condition;
       });
       console.log(`after filter _trades[:${_trades.length}]`);
-
       formateTrades(_trades);
-
       setFilterTrades(_trades);
       let profits = _trades.reduce((prev, trade) => {
         if (trade.profit) {
