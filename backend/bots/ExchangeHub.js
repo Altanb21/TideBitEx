@@ -3002,7 +3002,7 @@ class ExchangeHub extends Bot {
               ...pendingOrders,
               {
                 ...order,
-                email,
+                email: dbOrder ? email : null,
                 innerOrder,
                 price: price || order.outerOrder.price,
                 volume: volume || order.outerOrder.volume,
