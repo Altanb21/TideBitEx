@@ -133,6 +133,7 @@ const CurrentOrders = () => {
     async (ticker) => {
       setIsLoading(true);
       setFilterTicker(ticker);
+      setDisable(false);
       const orders = await getCurrentOrders({
         exchange: filterExchange,
         ticker,

@@ -6,10 +6,10 @@
     gap: 2px;
     display: flex;
     flex-direction: row;
-    max-height: 940px;
     &--left,
     &__right {
       flex: 1;
+      max-height: 940px;
     }
     &--left {
       flex: 2;
