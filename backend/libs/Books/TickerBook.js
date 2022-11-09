@@ -43,7 +43,7 @@ class TickerBook extends BookBase {
   /**
    * @param {String} currency
    */
-   set baseCurrency(currency) {
+  set baseCurrency(currency) {
     this._baseCurrency = currency.toLowerCase();
   }
 
@@ -52,12 +52,21 @@ class TickerBook extends BookBase {
   }
 
   getPrice(currency) {
+    // this.logger.debug(
+    //   `this._snapshot[${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}]`,
+    //   this._snapshot[
+    //     `${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}`
+    //   ]
+    // );
     let price = 0,
       ticker;
     if (this._ratio[currency.toLowerCase()])
       price = this._ratio[currency.toLowerCase()];
     else {
-      ticker = this._snapshot[`${currency.toLowerCase()}${this._baseCurrency}`];
+      ticker =
+        this._snapshot[
+          `${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}`
+        ];
       if (ticker) {
         price = ticker.last;
       } else {

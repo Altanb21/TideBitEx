@@ -2200,10 +2200,11 @@ class ExchangeHub extends Bot {
           Math.abs(dbOuterTrade.referral)
         );
       if (profit) {
+        // this.logger.debug(`formateDailyProfitChart profit`, profit);
         if (!profits[dbOuterTrade.voucher_fee_currency]) {
           profits[dbOuterTrade.voucher_fee_currency] = {
             sum: 0,
-            currency: dbOuterTrade.voucher_fee_currency,
+            currency: dbOuterTrade.voucher_fee_currency.toUpperCase(),
           };
         }
         profits[dbOuterTrade.voucher_fee_currency].sum = SafeMath.plus(
@@ -2220,6 +2221,7 @@ class ExchangeHub extends Bot {
             date: lastDailyBar,
           };
         let time = outerTradeData.ts || outerTradeData.cTime;
+        // this.logger.debug(`formateDailyProfitChart time`, time);
         while (nextDailyBarTime <= time) {
           lastDailyBar = new Date(nextDailyBarTime);
           nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
@@ -2237,6 +2239,7 @@ class ExchangeHub extends Bot {
           lastDailyBar.getMonth() + 1
         }-${lastDailyBar.getDate()}`;
         let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
+        this.logger.debug(`formateDailyProfitChart price`, price);
         if (!data[key])
           data[key] = {
             y: SafeMath.mult(profit, price),
@@ -2291,6 +2294,17 @@ class ExchangeHub extends Bot {
           Math.abs(dbOuterTrade.referral)
         );
       if (profit) {
+        // this.logger.debug(`formateMonthlyProfitChart profit`, profit);
+        if (!profits[dbOuterTrade.voucher_fee_currency]) {
+          profits[dbOuterTrade.voucher_fee_currency] = {
+            sum: 0,
+            currency: dbOuterTrade.voucher_fee_currency.toUpperCase(),
+          };
+        }
+        profits[dbOuterTrade.voucher_fee_currency].sum = SafeMath.plus(
+          profits[dbOuterTrade.voucher_fee_currency].sum,
+          profit
+        );
         let key = `${lastMonthlyBar.getFullYear()}-${
           lastMonthlyBar.getMonth() + 1
         }`;

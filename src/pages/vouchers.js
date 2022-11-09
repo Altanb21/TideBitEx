@@ -501,7 +501,7 @@ const Vouchers = () => {
       setIsLoading(true);
       setFilterTicker(ticker);
       const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
+        ticker: ticker,
         exchange: exchanges[0],
         start: startDate,
         end: endDate,
@@ -530,7 +530,6 @@ const Vouchers = () => {
     },
     [
       storeCtx,
-      filterTicker,
       startDate,
       endDate,
       trades,
