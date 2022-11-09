@@ -1336,6 +1336,7 @@ class OkexConnector extends ConnectorBase {
     const arr = [];
     if (query.instType) arr.push(`instType=${query.instType}`);
     if (query.instId) arr.push(`instId=${query.instId}`);
+    if (query.before) arr.push(`before=${query.before}`);
     if (query.after) arr.push(`after=${query.after}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();

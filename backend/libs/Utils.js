@@ -949,6 +949,24 @@ class Utils {
       return str;
     }
   };
+
+  static getNextDailyBarTime = (barTime) => {
+    const date = new Date(barTime);
+    date.setDate(date.getDate() + 1);
+    return date.getTime();
+  };
+
+  static getNextMonthlyBarTime = (barTime) => {
+    const date = new Date(barTime);
+    // console.log(`date`, date);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    let dateLength = new Date(year, month + 1, 0).getDate();
+    // console.log(`dateLength`, dateLength);
+    date.setDate(date.getDate() + dateLength + 1);
+    // console.log(`date`, date);
+    return date.getTime();
+  };
 }
 
 module.exports = Utils;

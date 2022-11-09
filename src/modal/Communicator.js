@@ -374,6 +374,23 @@ class Communicator {
     }
   }
 
+  async getOuterTradesProfits({ instId, exchange, start, end }) {
+    try {
+      if (!exchange) return { message: "exchange cannot be null" };
+      const url = `/trade/profits?instId=${instId}&exchange=${exchange}&start=${start}&end=${end}`;
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
   async getOuterTradeFills({ instId, exchange, start, end, limit, offset }) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
@@ -391,13 +408,14 @@ class Communicator {
     }
   }
 
-  async getOuterPendingOrders({ instId, exchange, limit, after }) {
+  async getOuterPendingOrders({ instId, exchange, limit, before, after }) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
       let arr = [];
       arr.push(`exchange=${exchange}`);
       if (instId) arr.push(`instId=${instId}`);
       if (limit) arr.push(`limit=${limit}`);
+      if (before) arr.push(`before=${before}`);
       if (after) arr.push(`after=${after}`);
       const qs = !!arr.length ? `?${arr.join("&")}` : "";
       const url = `/trade/pending-orders${qs}`;

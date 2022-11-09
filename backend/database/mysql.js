@@ -936,6 +936,7 @@ class mysql {
     type,
     exchangeCode,
     currency,
+    status,
     days,
     start,
     end,
@@ -970,7 +971,8 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
-        ${currency ? `AND outer_trades.currency = ?` : ``}
+        ${currency ? `AND outer_trades.currency = ${currency}` : ``}
+        ${status ? `AND outer_trades.status = ${status}` : ``}
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
@@ -983,18 +985,15 @@ class mysql {
       }
     ORDER BY
         outer_trades.create_at ${asc ? "ASC" : "DESC"}
-    LIMIT ${limit} OFFSET ${offset};`;
+    ${limit ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}` : ``}
+    ;`;
     try {
       this.logger.debug(
         "getOuterTrades",
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? currency
-              ? `[${exchangeCode}, ${currency}, ${days}]`
-              : `[${exchangeCode} ${days}]`
-            : currency
-            ? `[${exchangeCode}, ${currency}, ${start}, ${end}]`
+            ? `[${exchangeCode} ${days}]`
             : `[${exchangeCode}, ${start}, ${end}]`
         }`
       );
@@ -1002,11 +1001,7 @@ class mysql {
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? currency
-              ? [exchangeCode, currency, days]
-              : [exchangeCode, days]
-            : currency
-            ? [exchangeCode, currency, start, end]
+            ? [exchangeCode, days]
             : [exchangeCode, start, end],
       });
       return outerTrades;
@@ -1016,7 +1011,15 @@ class mysql {
     }
   }
 
-  async countOuterTrades({ currency, type, exchangeCode, days, start, end }) {
+  async countOuterTrades({
+    currency,
+    type,
+    exchangeCode,
+    status,
+    days,
+    start,
+    end,
+  }) {
     const query = `
     SELECT 
         count(*)
@@ -1024,7 +1027,8 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
-        AND outer_trades.currency = ?
+        ${currency ? `AND outer_trades.currency = ${currency}` : ``}
+        ${status ? `AND outer_trades.status = ${status}` : ``}
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
@@ -1041,16 +1045,16 @@ class mysql {
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${currency}, ${days}]`
-            : `[${exchangeCode}, ${currency}, ${start}, ${end}]`
+            ? `[${exchangeCode}, ${days}]`
+            : `[${exchangeCode}, ${start}, ${end}]`
         }`
       );
       const [[counts]] = await this.db.query({
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, currency, days]
-            : [exchangeCode, currency, start, end],
+            ? [exchangeCode, days]
+            : [exchangeCode, start, end],
       });
       this.logger.debug(`counts`, counts);
       return counts;

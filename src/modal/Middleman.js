@@ -198,6 +198,19 @@ class Middleman {
     }
   }
 
+  async getOuterTradesProfits({ instId, exchange, start, end }) {
+    try {
+      return await this.communicator.getOuterTradesProfits({
+        instId,
+        exchange,
+        start,
+        end,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getOuterTradeFills({ instId, exchange, start, end, limit, offset }) {
     try {
       return await this.communicator.getOuterTradeFills({
@@ -213,12 +226,13 @@ class Middleman {
     }
   }
 
-  async getOuterPendingOrders({ instId, exchange, limit, after }) {
+  async getOuterPendingOrders({ instId, exchange, limit, before, after }) {
     try {
       return await this.communicator.getOuterPendingOrders({
         instId,
         exchange,
         limit,
+        before,
         after,
       });
     } catch (error) {

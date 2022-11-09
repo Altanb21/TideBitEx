@@ -205,6 +205,24 @@ const StoreProvider = (props) => {
     return usersAccounts;
   }, [middleman]);
 
+  const getOuterTradesProfits = useCallback(
+    async ({ exchange, instId, start, end }) => {
+      let outerTrades;
+      try {
+        outerTrades = await middleman.getOuterTradesProfits({
+          exchange,
+          instId,
+          start,
+          end,
+        });
+      } catch (error) {
+        console.log(error);
+      }
+      return outerTrades;
+    },
+    [middleman]
+  );
+
   const getOuterTradeFills = useCallback(
     async ({ exchange, instId, start, end, limit, offset }) => {
       let outerTrades;
@@ -226,13 +244,14 @@ const StoreProvider = (props) => {
   );
 
   const getOuterPendingOrders = useCallback(
-    async ({ instId, exchange, limit, after }) => {
+    async ({ instId, exchange, limit, before, after }) => {
       let pendingOrders;
       try {
         pendingOrders = await middleman.getOuterPendingOrders({
           instId,
           exchange,
           limit,
+          before,
           after,
         });
       } catch (error) {
@@ -566,6 +585,7 @@ const StoreProvider = (props) => {
         activePageHandler,
         getExAccounts,
         getUsersAccounts,
+        getOuterTradesProfits,
         getOuterTradeFills,
         getOuterPendingOrders,
         setFocusEl,

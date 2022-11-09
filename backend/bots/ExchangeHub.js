@@ -27,6 +27,11 @@ const {
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
 
 class ExchangeHub extends Bot {
+  dbOuterTradesData = {
+    startTime: null,
+    endTime: null,
+    data: [],
+  };
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
   systemMemberId;
@@ -1236,15 +1241,15 @@ class ExchangeHub extends Bot {
   }
 
   async getMemberReferral(member) {
-    let referredByMember, referral;
+    let referredByMember, memberReferral;
     referredByMember = await this.database.getMemberByCondition({
       refer_code: member.refer,
     });
-    referral = await this.database.getMemberReferral({
+    memberReferral = await this.database.getMemberReferral({
       referrerId: referredByMember.id,
       refereeId: member.id,
     });
-    return { referredByMember, referral };
+    return { referredByMember, memberReferral };
   }
 
   async getReferrerCommissionPlan(referral) {
@@ -2173,6 +2178,324 @@ class ExchangeHub extends Bot {
   //   });
   // }
 
+  formateDailyProfitChart = (dbOuterTrades) => {
+    let chartData = { data: {}, xaxisType: "string" },
+      data = {},
+      profits = {},
+      lastDailyBar = new Date(
+        `${new Date(dbOuterTrades[0].ts)
+          .toISOString()
+          .substring(0, 10)} 00:00:00`
+      ),
+      nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
+    for (let dbOuterTrade of dbOuterTrades) {
+      let outerTradeData = JSON.parse(dbOuterTrade.data),
+        outerFee = outerTradeData.avgPx
+          ? outerTradeData.fillFee // data source is OKx order
+          : outerTradeData.fee,
+        profit = SafeMath.minus(
+          SafeMath.minus(dbOuterTrade.voucher_fee, Math.abs(outerFee)),
+          Math.abs(dbOuterTrade.referral)
+        );
+      if (profit) {
+        if (!profits[dbOuterTrade.voucher_fee_currency]) {
+          profits[dbOuterTrade.voucher_fee_currency] = {
+            sum: 0,
+            currency: dbOuterTrade.voucher_fee_currency,
+          };
+        }
+        profits[dbOuterTrade.voucher_fee_currency].sum = SafeMath.plus(
+          profits[dbOuterTrade.voucher_fee_currency].sum,
+          profit
+        );
+        let key = `${lastDailyBar.getFullYear()}-${
+          lastDailyBar.getMonth() + 1
+        }-${lastDailyBar.getDate()}`;
+        if (!data[key])
+          data[key] = {
+            y: "0",
+            x: key,
+            date: lastDailyBar,
+          };
+        let time = outerTradeData.ts || outerTradeData.cTime;
+        while (nextDailyBarTime <= time) {
+          lastDailyBar = new Date(nextDailyBarTime);
+          nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
+          key = `${lastDailyBar.getFullYear()}-${
+            lastDailyBar.getMonth() + 1
+          }-${lastDailyBar.getDate()}`;
+          if (!data[key])
+            data[key] = {
+              y: "0",
+              x: key,
+              date: lastDailyBar,
+            };
+        }
+        key = `${lastDailyBar.getFullYear()}-${
+          lastDailyBar.getMonth() + 1
+        }-${lastDailyBar.getDate()}`;
+        let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
+        if (!data[key])
+          data[key] = {
+            y: SafeMath.mult(profit, price),
+            x: key,
+            date: lastDailyBar,
+          };
+        else
+          data[key] = {
+            ...data[key],
+            y: SafeMath.plus(data[key].y, SafeMath.mult(profit, price)),
+          };
+      }
+    }
+    chartData.data = data;
+    chartData.xaxisType = "datetime";
+    return { chartData, profits };
+  };
+
+  formateMonthlyProfitChart = (dbOuterTrades) => {
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    let chartData = { data: {}, xaxisType: "string" },
+      data = {},
+      profits = {},
+      lastMonthlyBar = new Date(
+        `${new Date(dbOuterTrades[0].ts)
+          .toISOString()
+          .substring(0, 7)}-01 00:00:00`
+      ),
+      nextMonthlyBarTime = Utils.getNextMonthlyBarTime(
+        lastMonthlyBar.getTime()
+      );
+    for (let dbOuterTrade of dbOuterTrades) {
+      let outerTradeData = JSON.parse(dbOuterTrade.data),
+        outerFee = outerTradeData.avgPx
+          ? outerTradeData.fillFee // data source is OKx order
+          : outerTradeData.fee,
+        profit = SafeMath.minus(
+          SafeMath.minus(dbOuterTrade.voucher_fee, Math.abs(outerFee)),
+          Math.abs(dbOuterTrade.referral)
+        );
+      if (profit) {
+        let key = `${lastMonthlyBar.getFullYear()}-${
+          lastMonthlyBar.getMonth() + 1
+        }`;
+        if (!data[key])
+          data[key] = {
+            y: "0",
+            x: `${
+              months[lastMonthlyBar.getMonth()]
+            } ${lastMonthlyBar.getFullYear()}`,
+            date: lastMonthlyBar,
+          };
+        let time = outerTradeData.ts || outerTradeData.cTime;
+        while (nextMonthlyBarTime <= time) {
+          lastMonthlyBar = new Date(nextMonthlyBarTime);
+          nextMonthlyBarTime = Utils.getNextMonthlyBarTime(
+            lastMonthlyBar.getTime()
+          );
+          key = `${lastMonthlyBar.getFullYear()}-${
+            lastMonthlyBar.getMonth() + 1
+          }`;
+          if (!data[key])
+            data[key] = {
+              y: "0",
+              x: `${
+                months[lastMonthlyBar.getMonth()]
+              } ${lastMonthlyBar.getFullYear()}`,
+              date: lastMonthlyBar,
+            };
+        }
+        key = `${lastMonthlyBar.getFullYear()}-${
+          lastMonthlyBar.getMonth() + 1
+        }`;
+        let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
+        if (!data[key])
+          data[key] = {
+            y: SafeMath.mult(profit, price),
+            x: `${
+              months[lastMonthlyBar.getMonth()]
+            } ${lastMonthlyBar.getFullYear()}`,
+            date: lastMonthlyBar,
+          };
+        else
+          data[key] = {
+            ...data[key],
+            y: SafeMath.plus(data[key].y, SafeMath.mult(profit, price)),
+          };
+      }
+    }
+    chartData.data = data;
+    chartData.xaxisType = "string";
+    return { chartData, profits };
+  };
+
+  /**  !!! Heavy Loading*/
+  async getOuterTradesProfits({ query }) {
+    this.logger.debug(
+      `*********** [${this.name}] getOuterTradesProfits ************`,
+      query
+    );
+    const monthInterval = 30 * 24 * 60 * 60 * 1000;
+
+    let { exchange, start, end, instId } = query;
+    let id = instId.replace("-", "").toLowerCase(),
+      tickerSetting = this.tickersSettings[id],
+      startTime = new Date(start).getTime(),
+      endTime = new Date(end).getTime(),
+      startDate = `${start} 00:00:00`,
+      endtDate = `${end} 23:59:59`,
+      result,
+      chartData,
+      profits,
+      dbOuterTrades,
+      mDBOTrades;
+    this.logger.debug(
+      `${exchange} startDate:${startDate}, endtDate:${endtDate}`
+    );
+    if (!this.dbOuterTradesData.startTime || !this.dbOuterTradesData.endTime) {
+      // getOuterTradesWithFee asce
+      dbOuterTrades = await this.database.getOuterTrades({
+        type: Database.TIME_RANGE_TYPE.BETWEEN,
+        exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+        status: Database.OUTERTRADE_STATUS.DONE,
+        currency: tickerSetting.code,
+        start: startDate,
+        end: endtDate,
+        asc: true,
+      });
+      this.dbOuterTradesData.startTime = startTime;
+      this.dbOuterTradesData.endTime = endTime;
+      this.dbOuterTradesData.data = dbOuterTrades.map((dbOuterTrade) => ({
+        ...dbOuterTrade,
+      }));
+    } else {
+      if (
+        startTime >= this.dbOuterTradesData.startTime &&
+        endTime <= this.dbOuterTradesData.endTime
+      ) {
+        dbOuterTrades = this.dbOuterTradesData.filter(
+          (dbOuterTrades) =>
+            dbOuterTrades.ts >= startTime && dbOuterTrades.ts <= endTime
+        );
+      }
+      if (
+        startTime >= this.dbOuterTradesData.startTime &&
+        endTime > this.dbOuterTradesData.endTime
+      ) {
+        dbOuterTrades = this.dbOuterTradesData.filter(
+          (dbOuterTrades) =>
+            dbOuterTrades.ts >= startTime && dbOuterTrades.ts <= endTime
+        );
+        mDBOTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          status: Database.OUTERTRADE_STATUS.DONE,
+          currency: tickerSetting.code,
+          start: `${new Date(this.dbOuterTradesData.endTime).getFullYear()}-${
+            new Date(this.dbOuterTradesData.endTime).getMonth() + 1
+          }-${new Date(this.dbOuterTradesData.endTime).getDate() + 1}`,
+          end: endtDate,
+          asc: true,
+        });
+        dbOuterTrades = dbOuterTrades.concat(mDBOTrades.map((t) => ({ ...t })));
+        this.dbOuterTradesData.data = dbOuterTrades.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        this.dbOuterTradesData.endTime = endTime;
+      }
+      if (
+        startTime < this.dbOuterTradesData.startTime &&
+        endTime <= this.dbOuterTradesData.endTime
+      ) {
+        dbOuterTrades = this.dbOuterTradesData.filter(
+          (dbOuterTrades) =>
+            dbOuterTrades.ts >= startTime && dbOuterTrades.ts <= endTime
+        );
+        mDBOTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          status: Database.OUTERTRADE_STATUS.DONE,
+          currency: tickerSetting.code,
+          start: startDate,
+          end: `${new Date(this.dbOuterTradesData.startTime).getFullYear()}-${
+            new Date(this.dbOuterTradesData.startTime).getMonth() + 1
+          }-${new Date(this.dbOuterTradesData.startTime).getDate() - 1}`,
+          asc: true,
+        });
+        dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
+        this.dbOuterTradesData.data = dbOuterTrades.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        this.dbOuterTradesData.startTime = startTime;
+      }
+      if (
+        startTime < this.dbOuterTradesData.startTime &&
+        endTime > this.dbOuterTradesData.endTime
+      ) {
+        dbOuterTrades = this.dbOuterTradesData.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        mDBOTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          status: Database.OUTERTRADE_STATUS.DONE,
+          currency: tickerSetting.code,
+          start: `${new Date(this.dbOuterTradesData.endTime).getFullYear()}-${
+            new Date(this.dbOuterTradesData.endTime).getMonth() + 1
+          }-${new Date(this.dbOuterTradesData.endTime).getDate() + 1}`,
+          end: endtDate,
+          asc: true,
+        });
+        dbOuterTrades = dbOuterTrades.concat(mDBOTrades.map((t) => ({ ...t })));
+        this.dbOuterTradesData.endTime = endTime;
+        mDBOTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          status: Database.OUTERTRADE_STATUS.DONE,
+          currency: tickerSetting.code,
+          start: startDate,
+          end: `${new Date(this.dbOuterTradesData.startTime).getFullYear()}-${
+            new Date(this.dbOuterTradesData.startTime).getMonth() + 1
+          }-${new Date(this.dbOuterTradesData.startTime).getDate() - 1}`,
+          asc: true,
+        });
+        dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
+        this.dbOuterTradesData.data = dbOuterTrades.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        this.dbOuterTradesData.startTime = startTime;
+      }
+    }
+
+    if (endTime - startTime < 3 * monthInterval) {
+      result = this.formateDailyProfitChart(dbOuterTrades);
+      chartData = result.chartData;
+      profits = result.profits;
+    } else {
+      result = this.formateMonthlyProfitChart(dbOuterTrades);
+      chartData = result.chartData;
+      profits = result.profits;
+    }
+    console.log(`formateTrades chartData`, chartData);
+    return new ResponseFormat({
+      message: "getOuterTradesProfit",
+      payload: { chartData: chartData, profits: profits },
+    });
+  }
+
   async getOuterTradeFills({ query }) {
     this.logger.debug(
       `*********** [${this.name}] getOuterTradeFills ************`,
@@ -2332,8 +2655,8 @@ class ExchangeHub extends Bot {
                     SafeMath.eq(rc.market, trade.marketCode) &&
                     SafeMath.eq(rc.voucher_id, trade.voucherId)
                 );
-                referral = referralCommission?.ref_net_fee
-                  ? Utils.removeZeroEnd(referralCommission?.ref_net_fee)
+                referral = referralCommission?.amount
+                  ? Utils.removeZeroEnd(referralCommission?.amount)
                   : null;
                 profit =
                   trade.status === Database.OUTERTRADE_STATUS.DONE
@@ -2418,15 +2741,12 @@ class ExchangeHub extends Bot {
       `*********** [${this.name}] getOuterPendingOrders ************`,
       query
     );
-    let askOrders = [],
-      bidOrders = [],
-      orders = [],
+    let orders = [],
       dbOrders = [],
       orderIds = [],
       emails = [],
-      processOrders = [],
-      memberIds = {},
-      oldestOrderId;
+      pendingOrders = [],
+      memberIds = {};
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
@@ -2434,8 +2754,6 @@ class ExchangeHub extends Bot {
         });
         if (res.success) {
           // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
-          if (SafeMath.eq(res.payload.length, query.limit))
-            oldestOrderId = res.payload[res.payload.length - 1]?.ordId;
           for (let order of res.payload) {
             let parsedClOrdId, memberId, orderId, outerOrder, innerOrder;
             outerOrder = {
@@ -2489,7 +2807,7 @@ class ExchangeHub extends Bot {
               feeCurrency: order.feeCcy,
               ts: parseInt(order.cTime),
             };
-            orders = [...orders, processOrders];
+            orders = [...orders, processedOrder];
             // if (order.side === Database.ORDER_SIDE.BUY)
             //   bidOrders = [...bidOrders, processedOrder];
             // else askOrders = [...askOrders, processedOrder];
@@ -2566,11 +2884,40 @@ class ExchangeHub extends Bot {
                 !SafeMath.eq(order.outerOrder.expect, innerOrder.expect) ||
                 !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
                 order.outerOrder.state !== innerOrder.state
-              )
+              ) {
+                this.logger.error(
+                  `add alert !SafeMath.eq(
+                  order.outerOrder.accFillVolume[:${order.outerOrder.accFillVolume}],
+                  innerOrder.accFillVolume[:${innerOrder.accFillVolume}]
+                )`,
+                  !SafeMath.eq(
+                    order.outerOrder.accFillVolume,
+                    innerOrder.accFillVolume
+                  )
+                );
+                this.logger.error(
+                  `add alert !SafeMath.eq(
+                  order.outerOrder.expect[:${order.outerOrder.expect}],
+                  innerOrder.expect[:${innerOrder.expect}]
+                )`,
+                  !SafeMath.eq(order.outerOrder.expect, innerOrder.expect)
+                );
+                this.logger.error(
+                  `add alert !SafeMath.eq(
+                  order.outerOrder.received[:${order.outerOrder.received}],
+                  innerOrder.received[:${innerOrder.received}]
+                )`,
+                  !SafeMath.eq(order.outerOrder.received, innerOrder.received)
+                );
+                this.logger.error(
+                  `add alert order.outerOrder.state[:${order.outerOrder.state}] !== innerOrder.state[:${innerOrder.state}]`,
+                  order.outerOrder.state !== innerOrder.state
+                );
                 alert = true;
+              }
             }
-            processOrders = [
-              ...processOrders,
+            pendingOrders = [
+              ...pendingOrders,
               {
                 ...order,
                 email,
@@ -2584,7 +2931,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
-          payload: { pendingOrders: processOrders, oldestOrderId },
+          payload: pendingOrders,
         });
       default:
         return new ResponseFormat({
@@ -3630,7 +3977,7 @@ class ExchangeHub extends Bot {
     orderDetail,
     data,
     referredByMember,
-    referral,
+    memberReferral,
   }) {
     this.logger.debug(`calculator `);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
@@ -3833,13 +4180,13 @@ class ExchangeHub extends Bot {
       this.logger.debug(`calculator updatedOrder`, updatedOrder);
       if (referredByMember) {
         this.logger.debug(`calculator referredByMember`, referredByMember);
-        this.logger.debug(`calculator referral`, referral);
+        this.logger.debug(`calculator memberReferral`, memberReferral);
         /**
          * referred_by_member: @referred_by_member => referredByMember.id
          * trade_member: @trade_member => member.id
          * voucher: @voucher => vouucher.id
-         * applied_plan: plan => getReferrerCommissionPlan(referral)
-         * applied_policy: policy => getReferrerCommissionPolicy(referral, voucher)
+         * applied_plan: plan => getReferrerCommissionPlan(memberReferral)
+         * applied_policy: policy => getReferrerCommissionPolicy(memberReferral, voucher)
          * trend: @trend,
          * market: @market_code,
          * currency: @currency_id,
@@ -3847,8 +4194,11 @@ class ExchangeHub extends Bot {
          * ref_net_fee: @fee - eligible_commission,
          * amount: eligible_commission
          */
-        let plan = await this.getReferrerCommissionPlan(referral);
-        let policy = await this.getReferrerCommissionPolicy(referral, voucher);
+        let plan = await this.getReferrerCommissionPlan(memberReferral);
+        let policy = await this.getReferrerCommissionPolicy(
+          memberReferral,
+          voucher
+        );
         if (policy) {
           let eligibleCommission = SafeMath.mult(refGrossFee, policy.rate);
           referralCommission = {
@@ -3918,6 +4268,7 @@ class ExchangeHub extends Bot {
     askAccountVersion,
     bidAccountVersion,
     orderFullFilledAccountVersion,
+    referralCommission,
     dbTransaction,
   }) {
     this.logger.debug(
@@ -4049,8 +4400,8 @@ class ExchangeHub extends Bot {
               bid_account_version_id: bidAccountVersion.id || null,
               order_full_filled_account_version_id:
                 orderFullFilledAccountVersion?.id || null,
-              // referral_commission_id:,
-              // referral:,
+              referral_commission_id: referralCommission?.id || null,
+              referral: referralCommission?.amount || null,
             },
             { dbTransaction }
           );
@@ -4091,7 +4442,7 @@ class ExchangeHub extends Bot {
      */
     let tradeId,
       voucherId,
-      // referralCommissionId,
+      referralCommissionId,
       newAskAccountVersion,
       newBidAccountVersion,
       newOrderFullFilledAccountVersion,
@@ -4271,37 +4622,38 @@ class ExchangeHub extends Bot {
         this.logger.log(`updater dbReferrerCommission`, dbReferrerCommission);
         if (dbReferrerCommission) {
           this.logger.error(`referralCommission exist`);
-          // if (
-          //   SafeMath.eq(
-          //     dbReferrerCommission.referred_by_member_id,
-          //     referralCommission.referredByMemberId
-          //   ) ||
-          //   SafeMath.eq(
-          //     dbReferrerCommission.ref_net_fee,
-          //     referralCommission.refNetFee
-          //   )
-          // ) {
-          this.logger.error(`referralCommission`, referralCommission);
-          this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
-          // }
-          // throw Error(
-          //   `db update referralCommission is different from outer data`
-          // );
+          if (
+            !SafeMath.eq(
+              dbReferrerCommission.referred_by_member_id,
+              referralCommission.referredByMemberId
+            ) ||
+            !SafeMath.eq(
+              dbReferrerCommission.ref_net_fee,
+              referralCommission.refNetFee
+            )
+          ) {
+            this.logger.error(`referralCommission`, referralCommission);
+            this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
+            throw Error(
+              `db update referralCommission is different from outer data`
+            );
+          }
+          referralCommissionId = dbReferrerCommission.id;
         } else {
           /**
            * ++ TODO after verify
            */
-          // referralCommissionId = await this.database.insertReferralCommission(
-          //   {
-          //     ...referralCommission,
-          //     voucherId,
-          //   },
-          //   { dbTransaction }
-          // );
-          // this.logger.debug(
-          //   `updater insertReferralCommission success referralCommissionId`,
-          //   referralCommissionId
-          // );
+          referralCommissionId = await this.database.insertReferralCommission(
+            {
+              ...referralCommission,
+              voucherId,
+            },
+            { dbTransaction }
+          );
+          this.logger.debug(
+            `updater insertReferralCommission success referralCommissionId`,
+            referralCommissionId
+          );
         }
       }
       await this.updateOuterTrade({
@@ -4316,7 +4668,7 @@ class ExchangeHub extends Bot {
         askAccountVersion: newAskAccountVersion,
         bidAccountVersion: newBidAccountVersion,
         orderFullFilledAccountVersion: newOrderFullFilledAccountVersion,
-        // referralCommission: {referralCommission, id: referralCommissionId},
+        referralCommission: { referralCommission, id: referralCommissionId },
         dbTransaction,
       });
     } catch (error) {
@@ -4340,7 +4692,7 @@ class ExchangeHub extends Bot {
       orderDetail,
       result,
       referredByMember,
-      referral,
+      memberReferral,
       dbTransaction = await this.database.transaction();
     this.logger.debug(`processor data`, data);
     if (!stop) {
@@ -4472,7 +4824,7 @@ class ExchangeHub extends Bot {
           if (member.refer) {
             let tmp = await this.getMemberReferral(member);
             referredByMember = tmp.referredByMember;
-            referral = tmp.referral;
+            memberReferral = tmp.memberReferral;
             this.logger.log(`updater tmp`, tmp);
           }
           result = await this.calculator({
@@ -4482,7 +4834,7 @@ class ExchangeHub extends Bot {
             orderDetail,
             data,
             referredByMember: referredByMember,
-            referral: referral,
+            memberReferral: memberReferral,
           });
         }
         if (!stop && result) {
