@@ -206,12 +206,12 @@ const StoreProvider = (props) => {
   }, [middleman]);
 
   const getOuterTradesProfits = useCallback(
-    async ({ exchange, instId, start, end }) => {
+    async ({ exchange, ticker, start, end }) => {
       let outerTrades;
       try {
         outerTrades = await middleman.getOuterTradesProfits({
           exchange,
-          instId,
+          ticker,
           start,
           end,
         });

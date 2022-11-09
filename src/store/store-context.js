@@ -246,7 +246,7 @@ const StoreContext = React.createContext({
   activePageHandler: () => {},
   getExAccounts: async (exchange) => {},
   getUsersAccounts: async () => {},
-  getOuterTradesProfits: async ({ instId, exchange, start, end }) => {},
+  getOuterTradesProfits: async ({ ticker, exchange, start, end }) => {},
   getOuterTradeFills: async ({
     instId,
     exchange,

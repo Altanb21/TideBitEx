@@ -198,10 +198,10 @@ class Middleman {
     }
   }
 
-  async getOuterTradesProfits({ instId, exchange, start, end }) {
+  async getOuterTradesProfits({ ticker, exchange, start, end }) {
     try {
       return await this.communicator.getOuterTradesProfits({
-        instId,
+        instId: ticker,
         exchange,
         start,
         end,
