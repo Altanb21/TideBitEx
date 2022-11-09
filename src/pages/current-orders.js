@@ -24,7 +24,7 @@ const onlyInLeft = (left, right) =>
 const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(50);
   const [offset, setOffset] = useState(0);
   const [disable, setDisable] = useState(false);
   const [newestOrderId, setNewestOrderId] = useState(null); // ordId
@@ -131,9 +131,9 @@ const CurrentOrders = () => {
 
   const selectTickerHandler = useCallback(
     async (ticker) => {
+      setDisable(false);
       setIsLoading(true);
       setFilterTicker(ticker);
-      setDisable(false);
       const orders = await getCurrentOrders({
         exchange: filterExchange,
         ticker,
@@ -147,6 +147,7 @@ const CurrentOrders = () => {
 
   const prevPageHandler = useCallback(async () => {
     let orders;
+    setDisable(false);
     setIsLoading(true);
     if (newestOrderId) {
       setOffset((prev) => (prev - limit > 0 ? prev - limit : 0));
