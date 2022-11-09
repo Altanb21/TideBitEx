@@ -665,6 +665,10 @@ class Utils {
     return byDay;
   }
 
+  static pad = (n) => {
+    return n < 10 ? "0" + n : n;
+  };
+
   static dateFormatter(timestamp) {
     const monthNames = [
       "Jan",
@@ -680,9 +684,7 @@ class Utils {
       "Nov",
       "Dec",
     ];
-    const pad = (n) => {
-      return n < 10 ? "0" + n : n;
-    };
+
     const dateTime = new Date(timestamp);
     const date = dateTime.getDate();
     const month = dateTime.getMonth();
@@ -697,21 +699,21 @@ class Utils {
     const mmddyyyykkmm =
       monthNames[month] +
       " " +
-      pad(date) +
+      Utils.pad(date) +
       ", " +
       year +
       " " +
       hours +
       ":" +
-      pad(minutes) +
+      Utils.pad(minutes) +
       " " +
       suffix;
     return {
       text: mmddyyyykkmm,
-      date: monthNames[month] + " " + pad(date) + ", " + year,
-      time: hours + ":" + pad(minutes) + " " + suffix,
+      date: monthNames[month] + " " + Utils.pad(date) + ", " + year,
+      time: hours + ":" + Utils.pad(minutes) + " " + suffix,
       month: monthNames[month],
-      day: pad(date),
+      day: Utils.pad(date),
       year: year,
     };
   }

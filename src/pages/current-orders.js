@@ -286,6 +286,7 @@ const CurrentOrders = () => {
                 label={t("orderId")}
                 onClick={(ascending) => sorting("orderId", ascending)}
               />
+              <th className="screen__table-header">{t("state")}</th>
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-price")}
@@ -341,6 +342,18 @@ const CurrentOrders = () => {
                       </td>
                       <td className="current-orders__text screen__table-item">
                         {order.innerOrder?.orderId || "-"}
+                      </td>
+                      <td className="screen__box screen__table-item">
+                        <div className="current-orders__text">
+                          {order.innerOrder?.state
+                            ? t(order.innerOrder?.state)
+                            : "-"}
+                        </div>
+                        <div className="current-orders__text">
+                          {order.outerOrder?.state
+                            ? t(order.outerOrder?.state)
+                            : "-"}
+                        </div>
                       </td>
                       <td className="screen__box screen__table-item screen__expand">
                         <div
