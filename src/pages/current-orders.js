@@ -88,6 +88,8 @@ const CurrentOrders = () => {
             updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
             if (newestOrder) setNewestOrderId(newestOrder.id);
             if (oldestOrder) setOldestOrderId(oldestOrder.id);
+            if (updatedOrders[exchange][ticker]?.length > totalCounts)
+              setTotalCounts(updatedOrders[exchange][ticker]?.length);
           }
           return updatedOrders;
         });
