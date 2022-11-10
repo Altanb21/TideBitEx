@@ -4725,17 +4725,17 @@ class ExchangeHub extends Bot {
           /**
            * ++ TODO after verify
            */
-          referralCommissionId = await this.database.insertReferralCommission(
-            {
-              ...referralCommission,
-              voucherId,
-            },
-            { dbTransaction }
-          );
-          this.logger.debug(
-            `updater insertReferralCommission success referralCommissionId`,
-            referralCommissionId
-          );
+          // referralCommissionId = await this.database.insertReferralCommission(
+          //   {
+          //     ...referralCommission,
+          //     voucherId,
+          //   },
+          //   { dbTransaction }
+          // );
+          // this.logger.debug(
+          //   `updater insertReferralCommission success referralCommissionId`,
+          //   referralCommissionId
+          // );
         }
       }
       await this.updateOuterTrade({
@@ -4750,7 +4750,7 @@ class ExchangeHub extends Bot {
         askAccountVersion: newAskAccountVersion,
         bidAccountVersion: newBidAccountVersion,
         orderFullFilledAccountVersion: newOrderFullFilledAccountVersion,
-        referralCommission: { referralCommission, id: referralCommissionId },
+        // referralCommission: { referralCommission, id: referralCommissionId },
         dbTransaction,
       });
     } catch (error) {
