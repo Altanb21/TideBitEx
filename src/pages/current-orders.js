@@ -5,6 +5,7 @@ import TableDropdown from "../components/TableDropdown";
 import LoadingDialog from "../components/LoadingDialog";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import { TableHeader } from "./vouchers";
+import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
 const tickers = {
@@ -24,7 +25,7 @@ const onlyInLeft = (left, right) =>
 const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(10);
   const [totalCounts, setTotalCounts] = useState(0);
   const [newestOrderId, setNewestOrderId] = useState(null); // ordId
   const [oldestOrderId, setOldestOrderId] = useState(null); // ordId
@@ -43,19 +44,18 @@ const CurrentOrders = () => {
       let newOrders = [],
         newestOrder,
         oldestOrder,
-        pendingOrders,
-        totalCounts;
+        totalCounts,
+        pendingOrders;
       if (exchange && ticker) {
         let result = await storeCtx.getOuterPendingOrders({
           instId: ticker,
           exchange,
-          limit,
+          limit: 100,
           before,
           after,
         });
+        // totalCounts = result.totalCounts;
         pendingOrders = result.pendingOrders;
-        totalCounts = result.totalCounts;
-        setTotalCounts(totalCounts);
         let updatedOrders = {},
           askOrders = [],
           bidOrders = [];
@@ -88,8 +88,7 @@ const CurrentOrders = () => {
             updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
             if (newestOrder) setNewestOrderId(newestOrder.id);
             if (oldestOrder) setOldestOrderId(oldestOrder.id);
-            if (updatedOrders[exchange][ticker]?.length > totalCounts)
-              setTotalCounts(updatedOrders[exchange][ticker]?.length);
+            setTotalCounts(updatedOrders[exchange][ticker].length);
           }
           return updatedOrders;
         });
@@ -149,12 +148,12 @@ const CurrentOrders = () => {
   );
 
   const prevPageHandler = useCallback(async () => {
-    let orders,
+    let newOrders,
       newPage = page - 1 > 0 ? page - 1 : 1;
     setPage(newPage);
     setIsLoading(true);
     if (newestOrderId) {
-      await getCurrentOrders({
+      newOrders = await getCurrentOrders({
         ticker: filterTicker,
         exchange: exchanges[0],
         before: newestOrderId,
@@ -162,17 +161,33 @@ const CurrentOrders = () => {
       });
       // setOffset((prev) => (prev + 1) * limit);
     }
-    filter({ orders: orders });
+    filter({ orders: newOrders });
     setIsLoading(false);
   }, [page, newestOrderId, filter, getCurrentOrders, filterTicker, limit]);
 
   const nextPageHandler = useCallback(async () => {
-    let orders,
-      newPage = page + 1;
-    setPage(newPage);
     setIsLoading(true);
-    if (oldestOrderId) {
-      orders = await getCurrentOrders({
+    let newOrders,
+      newPage = page + 1,
+      arr = [];
+    setPage(newPage);
+    if (
+      orders &&
+      orders[filterExchange] &&
+      orders[filterExchange][filterTicker]
+    ) {
+      newOrders = orders[filterExchange][filterTicker]
+        .map((o) => ({ ...o }))
+        .sort((a, b) => b.ts - a.ts);
+      arr = newOrders.slice((page - 1) * limit, page * limit);
+      console.log(
+        `arr[:${arr.length}] (page - 1) * limit[${
+          (page - 1) * limit
+        }] page * limit[${page * limit}] page[${page}] limit[:limit]`
+      );
+    }
+    if (arr.length < limit && oldestOrderId) {
+      newOrders = await getCurrentOrders({
         ticker: filterTicker,
         exchange: exchanges[0],
         after: oldestOrderId,
@@ -180,9 +195,18 @@ const CurrentOrders = () => {
       });
       // setOffset((prev) => (prev + 1) * limit);
     }
-    filter({ orders: orders });
+    filter({ orders: newOrders });
     setIsLoading(false);
-  }, [page, oldestOrderId, filter, getCurrentOrders, filterTicker, limit]);
+  }, [
+    page,
+    orders,
+    filterExchange,
+    filterTicker,
+    limit,
+    oldestOrderId,
+    filter,
+    getCurrentOrders,
+  ]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -310,7 +334,7 @@ const CurrentOrders = () => {
             <tr className="screen__table-rows">
               {filterOrders &&
                 filterOrders
-                  .slice((page - 1) * limit, (page + 1) * limit)
+                  .slice((page - 1) * limit, page * limit)
                   .map((order, index) => (
                     <tr
                       className={`current-orders__tile screen__table-row${
@@ -503,7 +527,11 @@ const CurrentOrders = () => {
                 totalCounts / limit
               )}`}</div>
               <div
-                className={`screen__table-tool${false ? " disable" : ""}`}
+                className={`screen__table-tool${
+                  SafeMath.gte(page, Math.ceil(totalCounts / limit))
+                    ? " disable"
+                    : ""
+                }`}
                 onClick={nextPageHandler}
               >
                 <div className="screen__table-tool--right"></div>

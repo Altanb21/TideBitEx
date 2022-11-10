@@ -2611,14 +2611,14 @@ class ExchangeHub extends Bot {
       counts;
     switch (exchange) {
       case SupportedExchange.OKEX:
-        let result = await this.database.countOuterTrades({
-          currency: tickerSetting.code,
-          type: Database.TIME_RANGE_TYPE.BETWEEN,
-          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
-          start: startDate,
-          end: endtDate,
-        });
-        counts = result["count(*)"];
+        // let result = await this.database.countOuterTrades({
+        //   currency: tickerSetting.code,
+        //   type: Database.TIME_RANGE_TYPE.BETWEEN,
+        //   exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+        //   start: startDate,
+        //   end: endtDate,
+        // });
+        // counts = result["count(*)"];
         if (counts > 0) {
           const dbOuterTrades = await this.database.getOuterTrades({
             type: Database.TIME_RANGE_TYPE.BETWEEN,
