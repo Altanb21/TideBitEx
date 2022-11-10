@@ -1512,6 +1512,8 @@ class mysql {
         amount,
         modifiable_id,
         modifiable_type,
+        created_at,
+        updated_at,
         currency,
         fun
       );

@@ -5257,6 +5257,7 @@ class ExchangeHub extends Bot {
 
   async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
+    // this.logger.debug(`_updateAccount accountVersion`, accountVersion)
     let accountVersionId, newAccountVersion;
     const account = await this.database.getAccountsByMemberId(
       accountVersion.member_id,
@@ -5295,8 +5296,8 @@ class ExchangeHub extends Bot {
       amount: amount,
       modifiableId: accountVersion.modifiable_id,
       modifiableType: accountVersion.modifiable_type,
-      createdAt: `"${accountVersion.created_at}"`,
-      updatedAt: `"${accountVersion.updated_at}"`,
+      createdAt: accountVersion.created_at,
+      updatedAt: accountVersion.updated_at,
       currency: account.currency,
       fun: accountVersion.fun,
     };
