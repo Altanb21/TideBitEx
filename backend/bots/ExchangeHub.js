@@ -2836,12 +2836,20 @@ class ExchangeHub extends Bot {
       orderIds = [],
       emails = [],
       pendingOrders = [],
-      memberIds = {};
+      memberIds = {},
+      totalCounts,
+      id = query.instId.replace("-", "").toLowerCase(),
+      tickerSetting = this.tickersSettings[id];
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
+        let result = await this.database.countOrders({
+          currency: tickerSetting.code,
+          state: Database.ORDER_STATE_CODE.WAIT,
+        });
+        totalCounts = result["count(*)"];
         if (res.success) {
           // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
           for (let order of res.payload) {
@@ -3021,7 +3029,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
-          payload: pendingOrders,
+          payload: { pendingOrders, totalCounts },
         });
       default:
         return new ResponseFormat({

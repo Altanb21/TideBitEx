@@ -1064,6 +1064,30 @@ class mysql {
     }
   }
 
+  async countOrders({ currency, state }) {
+    const query = `
+    SELECT 
+        count(*)
+    FROM 
+        orders
+    WHERE 
+      orders.currency = ?
+      AND orders.state = ?
+    ;`;
+    try {
+      this.logger.debug("countOrders", query, `${`[${currency}, ${state}]`}`);
+      const [[counts]] = await this.db.query({
+        query,
+        values: [currency, state],
+      });
+      this.logger.debug(`counts`, counts);
+      return counts;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
   async getOrder(orderId, { dbTransaction }) {
     const query = `
       SELECT

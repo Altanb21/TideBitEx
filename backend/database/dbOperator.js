@@ -367,6 +367,13 @@ class DBOperator {
     });
   }
 
+  async countOrders({ currency, state }) {
+    return this.database.countOrders({
+      currency,
+      state,
+    });
+  }
+
   async getOrdersByIds(ids) {
     return this.database.getOrdersByIds(ids);
   }

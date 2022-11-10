@@ -25,33 +25,37 @@ const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [limit, setLimit] = useState(50);
-  const [offset, setOffset] = useState(0);
-  const [disable, setDisable] = useState(false);
+  const [totalCounts, setTotalCounts] = useState(0);
   const [newestOrderId, setNewestOrderId] = useState(null); // ordId
   const [oldestOrderId, setOldestOrderId] = useState(null); // ordId
   const [isInit, setIsInit] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [orders, setOrders] = useState(null);
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
+  const [orders, setOrders] = useState(null);
   const [page, setPage] = useState(1);
 
   const getCurrentOrders = useCallback(
     async ({ exchange, ticker, limit, before, after }) => {
       let newOrders = [],
         newestOrder,
-        oldestOrder;
+        oldestOrder,
+        pendingOrders,
+        totalCounts;
       if (exchange && ticker) {
-        const pendingOrders = await storeCtx.getOuterPendingOrders({
+        let result = await storeCtx.getOuterPendingOrders({
           instId: ticker,
           exchange,
           limit,
           before,
           after,
         });
+        pendingOrders = result.pendingOrders;
+        totalCounts = result.totalCounts;
+        setTotalCounts(totalCounts);
         let updatedOrders = {},
           askOrders = [],
           bidOrders = [];
@@ -84,8 +88,6 @@ const CurrentOrders = () => {
             updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
             if (newestOrder) setNewestOrderId(newestOrder.id);
             if (oldestOrder) setOldestOrderId(oldestOrder.id);
-          } else {
-            setDisable(true);
           }
           return updatedOrders;
         });
@@ -131,7 +133,6 @@ const CurrentOrders = () => {
 
   const selectTickerHandler = useCallback(
     async (ticker) => {
-      setDisable(false);
       setIsLoading(true);
       setFilterTicker(ticker);
       const orders = await getCurrentOrders({
@@ -146,11 +147,11 @@ const CurrentOrders = () => {
   );
 
   const prevPageHandler = useCallback(async () => {
-    let orders;
-    setDisable(false);
+    let orders,
+      newPage = page - 1 > 0 ? page - 1 : 1;
+    setPage(newPage);
     setIsLoading(true);
     if (newestOrderId) {
-      setOffset((prev) => (prev - limit > 0 ? prev - limit : 0));
       await getCurrentOrders({
         ticker: filterTicker,
         exchange: exchanges[0],
@@ -161,13 +162,14 @@ const CurrentOrders = () => {
     }
     filter({ orders: orders });
     setIsLoading(false);
-  }, [newestOrderId, getCurrentOrders, filterTicker, limit, filter]);
+  }, [page, newestOrderId, filter, getCurrentOrders, filterTicker, limit]);
 
   const nextPageHandler = useCallback(async () => {
-    let orders;
+    let orders,
+      newPage = page + 1;
+    setPage(newPage);
     setIsLoading(true);
     if (oldestOrderId) {
-      setOffset((prev) => prev + limit);
       orders = await getCurrentOrders({
         ticker: filterTicker,
         exchange: exchanges[0],
@@ -178,7 +180,7 @@ const CurrentOrders = () => {
     }
     filter({ orders: orders });
     setIsLoading(false);
-  }, [oldestOrderId, getCurrentOrders, filterTicker, limit, filter]);
+  }, [page, oldestOrderId, filter, getCurrentOrders, filterTicker, limit]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -306,7 +308,7 @@ const CurrentOrders = () => {
             <tr className="screen__table-rows">
               {filterOrders &&
                 filterOrders
-                  .slice(offset * (page - 1), offset * (page - 1) + limit)
+                  .slice((page - 1) * limit, (page + 1) * limit)
                   .map((order, index) => (
                     <tr
                       className={`current-orders__tile screen__table-row${
@@ -496,10 +498,10 @@ const CurrentOrders = () => {
                 <div className="screen__table-tool--left"></div>
               </div>
               <div className="screen__page">{`${page}/${Math.ceil(
-                offset / limit + 1
+                totalCounts / limit
               )}`}</div>
               <div
-                className={`screen__table-tool${disable ? " disable" : ""}`}
+                className={`screen__table-tool${false ? " disable" : ""}`}
                 onClick={nextPageHandler}
               >
                 <div className="screen__table-tool--right"></div>
