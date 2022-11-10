@@ -11,7 +11,6 @@ const exchanges = ["OKEx"];
 const tickers = {
   "BTC-USDT": "BTC-USDT",
   "ETH-USDT": "ETH-USDT",
-  "LTC-USDT": "LTC-USDT",
 };
 const compareFunction = (leftValue, rightValue) => {
   return leftValue?.id !== rightValue?.id;

@@ -13,7 +13,6 @@ const exchanges = ["OKEx"];
 const tickers = {
   "BTC-USDT": "BTC-USDT",
   "ETH-USDT": "ETH-USDT",
-  "LTC-USDT": "LTC-USDT",
 };
 // const monthInterval = 30 * 24 * 60 * 60 * 1000;
 // const months = [
