@@ -3468,7 +3468,14 @@ class ExchangeHub extends Bot {
     }
   }
 
-  async updateOrderStatus({ transacion, orderId, memberId, orderData }) {
+  async updateOrderStatus({
+    transacion,
+    orderId,
+    memberId,
+    orderData,
+    dbOrder,
+    tickerSetting,
+  }) {
     /* !!! HIGH RISK (start) !!! */
     // 1. -get orderId from body-
     // 2. get order data from table
@@ -3493,13 +3500,15 @@ class ExchangeHub extends Bot {
       currencyId,
       // account,
       // updateAccount,
-      tickerSetting,
+      _tickerSetting,
       accountVersion,
       createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     try {
-      order = await this.database.getOrder(orderId, {
-        dbTransaction: transacion,
-      });
+      order = dbOrder
+        ? dbOrder
+        : await this.database.getOrder(orderId, {
+            dbTransaction: transacion,
+          });
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
@@ -3508,10 +3517,12 @@ class ExchangeHub extends Bot {
         //   limit: 1,
         //   dbTransaction: transacion,
         // });
-        tickerSetting = Object.values(this.tickersSettings).find((ts) =>
-          SafeMath.eq(ts.code, order.currency)
-        );
-        if (!tickerSetting) throw Error("Can't find instId");
+        _tickerSetting = tickerSetting
+          ? tickerSetting
+          : Object.values(this.tickersSettings).find((ts) =>
+              SafeMath.eq(ts.code, order.currency)
+            );
+        if (!_tickerSetting) throw Error("Can't find instId");
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
@@ -3543,7 +3554,7 @@ class ExchangeHub extends Bot {
         updatedOrder = {
           ...order,
           clOrdId: orderData.clOrdId,
-          instId: tickerSetting?.instId,
+          instId: _tickerSetting?.instId,
           state: Database.ORDER_STATE.CANCEL,
           state_text: Database.ORDER_STATE_TEXT.CANCEL,
           at: parseInt(SafeMath.div(Date.now(), "1000")),
@@ -3576,19 +3587,37 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
   async postCancelOrder({ header, params, query, body, memberId }) {
-    const tickerSetting = this.tickersSettings[body.market];
-    const source = tickerSetting?.source;
-    let result,
+    let transacion = await this.database.transaction(),
+      dbOrder,
+      tickerSetting,
+      result,
       dbUpdateR,
       apiR,
       orderId = body.orderId,
       clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
     try {
-      switch (source) {
+      dbOrder = await this.database.getOrder(orderId, {
+        dbTransaction: transacion,
+      });
+      this.logger.debug(
+        `postCancelOrder dbOrder[memberId:${memberId}](SafeMath.eq(dbOrder.member_id, memberId):${SafeMath.eq(
+          dbOrder.member_id,
+          memberId
+        )})`,
+        dbOrder
+      );
+      if (!SafeMath.eq(dbOrder.member_id, memberId))
+        throw Error("Order not found");
+      tickerSetting = Object.values(this.tickersSettings).find((ts) =>
+        SafeMath.eq(ts.code, dbOrder.currency)
+      );
+      this.logger.debug(`postCancelOrder tickerSetting`, tickerSetting);
+      if (!tickerSetting) throw Error("Can't find ticker");
+      switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
-          let transacion = await this.database.transaction();
+
           this.logger.debug(
             `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號 orderId:[${orderId}] clOrdId:[${clOrdId}]`
           );
@@ -3596,6 +3625,8 @@ class ExchangeHub extends Bot {
             transacion,
             orderId,
             memberId,
+            dbOrder,
+            tickerSetting,
             orderData: {
               id: orderId,
               clOrdId,
@@ -3618,7 +3649,7 @@ class ExchangeHub extends Bot {
               query,
               memberId,
               body: {
-                instId: dbUpdateR.updatedOrder.instId,
+                instId: tickerSetting.instId,
                 clOrdId,
               },
             });
@@ -3635,9 +3666,12 @@ class ExchangeHub extends Bot {
               this.logger.debug(`準備通知前端更新頁面`);
               this._emitUpdateOrder({
                 memberId,
-                instId: body.instId,
-                market: body.market,
-                order: dbUpdateR.updatedOrder,
+                instId: tickerSetting.instId,
+                market: tickerSetting.market,
+                order: {
+                  ...dbUpdateR.updatedOrder,
+                  ordId: apiR.payload[0].ordId,
+                },
               });
               // this._emitUpdateAccount({
               //   memberId,
@@ -3649,6 +3683,7 @@ class ExchangeHub extends Bot {
           result = apiR;
           break;
         case SupportedExchange.TIDEBIT:
+          await transacion.commit();
           result = this.tideBitConnector.router(`postCancelOrder`, {
             header,
             body: { ...body, orderId, market: tickerSetting },
