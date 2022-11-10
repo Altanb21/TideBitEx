@@ -249,7 +249,7 @@ class Middleman {
   }
 
   async postOrder(order) {
-    if (this.isLogin) return await this.communicator.order(order);
+    if (this.isLogin) return await this.communicator.order(order.id);
   }
   async cancelOrder(order) {
     if (this.isLogin) {

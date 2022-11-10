@@ -39,7 +39,7 @@ class OkexConnector extends ConnectorBase {
       key: pusher.key,
       secret: pusher.secret,
       host: pusher.host,
-      port: pusher.port
+      port: pusher.port,
     };
     super({ logger });
     this.websocket = new WebSocket({ logger });
@@ -1481,7 +1481,7 @@ class OkexConnector extends ConnectorBase {
 
     const filterBody = {
       instId: body.instId,
-      ordId: body.ordId,
+      // ordId: body.ordId,
       clOrdId: body.clOrdId,
     };
 
@@ -1499,7 +1499,7 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
         data: filterBody,
       });
-      this.logger.debug(res.data.data);
+      this.logger.debug(`postCancelOrder res`, res.data.data);
       if (res.data && res.data.code !== "0") {
         const [message] = res.data.data;
         this.logger.trace(res.data);
@@ -1808,25 +1808,26 @@ class OkexConnector extends ConnectorBase {
       // ++ workaround, to be optimized: broadcast to slanger
       trade_data[market] = trade_data[market] || [];
       trade_data[market] = trade_data[market].concat(trades);
-      
     } catch (error) {}
   }
 
-  // ++ workaround, to be optimized 
+  // ++ workaround, to be optimized
   _broadcast_to_slanger() {
     // broadcast ticker
     const ticker_data_string = JSON.stringify(this.ticker_data);
-    this.slanger.trigger("market-global", "tickers", ticker_data_string).catch(() => {});
+    this.slanger
+      .trigger("market-global", "tickers", ticker_data_string)
+      .catch(() => {});
 
     // broadcast trades
     Object.keys(this.trade_data).map((k) => {
       const d = this.trade_data[k].pop();
-      if(d !== undefined) {
+      if (d !== undefined) {
         const trade_data_string = JSON.stringify(d);
         const channel = `market-${k}-global`;
         pusher.trigger(channel, "trades", trade_data_string).catch(() => {});
       }
-    })
+    });
   }
 
   _updateCandle(market, trades) {
@@ -1893,7 +1894,7 @@ class OkexConnector extends ConnectorBase {
           volume: ticker.volume,
           sell: ticker.sell,
           buy: ticker.buy,
-          at: ticker.at
+          at: ticker.at,
         };
 
         const result = this.tickerBook.updateByDifference(d.instId, ticker);

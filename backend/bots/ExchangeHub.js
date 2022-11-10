@@ -3493,6 +3493,7 @@ class ExchangeHub extends Bot {
       currencyId,
       // account,
       // updateAccount,
+      tickerSetting,
       accountVersion,
       createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     try {
@@ -3507,6 +3508,10 @@ class ExchangeHub extends Bot {
         //   limit: 1,
         //   dbTransaction: transacion,
         // });
+        tickerSetting = Object.values(this.tickersSettings).find((ts) =>
+          SafeMath.eq(ts.code, order.currency)
+        );
+        if (!tickerSetting) throw Error("Can't find instId");
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
@@ -3536,12 +3541,15 @@ class ExchangeHub extends Bot {
         await this._updateAccount(accountVersion, transacion);
         this.logger.debug(`被取消訂單對應的用戶帳號更新了`);
         updatedOrder = {
-          ...orderData,
+          ...order,
+          clOrdId: orderData.clOrdId,
+          instId: tickerSetting?.instId,
           state: Database.ORDER_STATE.CANCEL,
           state_text: Database.ORDER_STATE_TEXT.CANCEL,
           at: parseInt(SafeMath.div(Date.now(), "1000")),
           ts: Date.now(),
         };
+        this.logger.debug(`回傳更新後的 order snapshot`, updatedOrder);
         // updateAccount = {
         //   balance: SafeMath.plus(account.balance, balance),
         //   locked: SafeMath.plus(account.locked, locked),
@@ -3573,7 +3581,8 @@ class ExchangeHub extends Bot {
     let result,
       dbUpdateR,
       apiR,
-      orderId = body.id;
+      orderId = body.orderId,
+      clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
     try {
       switch (source) {
         case SupportedExchange.OKEX:
@@ -3581,13 +3590,16 @@ class ExchangeHub extends Bot {
           /* !!! HIGH RISK (start) !!! */
           let transacion = await this.database.transaction();
           this.logger.debug(
-            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號`
+            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號 orderId:[${orderId}] clOrdId:[${clOrdId}]`
           );
           dbUpdateR = await this.updateOrderStatus({
             transacion,
             orderId,
             memberId,
-            orderData: body,
+            orderData: {
+              id: orderId,
+              clOrdId,
+            },
           });
           /* !!! HIGH RISK (end) !!! */
           if (!dbUpdateR?.success) {
@@ -3604,7 +3616,11 @@ class ExchangeHub extends Bot {
             apiR = await this.okexConnector.router("postCancelOrder", {
               params,
               query,
-              body,
+              memberId,
+              body: {
+                instId: dbUpdateR.updatedOrder.instId,
+                clOrdId,
+              },
             });
             this.logger.debug(`okexCancelOrderRes`, apiR);
           }
