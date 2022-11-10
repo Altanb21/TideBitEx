@@ -2182,10 +2182,16 @@ class ExchangeHub extends Bot {
     let chartData = { data: {}, xaxisType: "string" },
       data = {},
       profits = {},
-      lastDailyBar = new Date(
-        `${dbOuterTrades[0].create_at.toISOString().substring(0, 10)} 00:00:00`
-      ),
-      nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
+      lastDailyBar = dbOuterTrades[0]
+        ? new Date(
+            `${dbOuterTrades[0].create_at
+              .toISOString()
+              .substring(0, 10)} 00:00:00`
+          )
+        : null,
+      nextDailyBarTime = lastDailyBar
+        ? Utils.getNextDailyBarTime(lastDailyBar.getTime())
+        : null;
     for (let dbOuterTrade of dbOuterTrades) {
       let outerTradeData = JSON.parse(dbOuterTrade.data),
         outerFee = outerTradeData.avgPx
@@ -2272,14 +2278,16 @@ class ExchangeHub extends Bot {
     let chartData = { data: {}, xaxisType: "string" },
       data = {},
       profits = {},
-      lastMonthlyBar = new Date(
-        `${dbOuterTrades[0].create_at
-          .toISOString()
-          .substring(0, 7)}-01 00:00:00`
-      ),
-      nextMonthlyBarTime = Utils.getNextMonthlyBarTime(
-        lastMonthlyBar.getTime()
-      );
+      lastMonthlyBar = dbOuterTrades[0]
+        ? new Date(
+            `${dbOuterTrades[0].create_at
+              .toISOString()
+              .substring(0, 7)}-01 00:00:00`
+          )
+        : null,
+      nextMonthlyBarTime = lastMonthlyBar
+        ? Utils.getNextMonthlyBarTime(lastMonthlyBar.getTime())
+        : null;
     for (let dbOuterTrade of dbOuterTrades) {
       let outerTradeData = JSON.parse(dbOuterTrade.data),
         outerFee = outerTradeData.avgPx
