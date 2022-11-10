@@ -253,7 +253,8 @@
     margin: 0 auto;
     border: 1px solid #707070;
     color: #767676;
-    overflow-y: hidden;
+    // overflow-y: hidden;
+    height: fit-content;
     width: 100%;
   }
   &__table-text {
@@ -270,6 +271,40 @@
     gap: 10px;
     width: 100%;
   }
+  &__table-tool {
+    cursor: pointer;
+    &--right {
+      padding: 10px;
+      width: 20px;
+      height: 20px;
+      background-position: center;
+      background-size: contain;
+      background-image: url("../../images/arrow@2x.png");
+    }
+    &--left {
+      width: 20px;
+      height: 20px;
+      background-position: center;
+      background-size: contain;
+      background-image: url("../../images/arrow@2x.png");
+      transform: rotate(180deg);
+    }
+  }
+  &__table-tool.disable {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  &__table-tools {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 40px;
+    gap: 20px;
+  }
+  &__page {
+    font-size: 20px;
+  }
   &__box {
     display: flex;
     flex-direction: column;
@@ -277,6 +312,10 @@
   }
   &__email {
     min-width: 200px !important;
+  }
+  &__shrink {
+    width: 40px !important;
+    min-width: unset !important;
   }
   &__expand {
     min-width: 180px !important;
@@ -390,13 +429,13 @@
     flex-direction: column;
     width: 100%;
     border-bottom: 1px solid #707070;
-    overflow: hidden;
-    height: 57vh;
-    min-height: 500px;
+    // overflow: hidden;
+    // height: 57vh;
+    // min-height: 500px;
   }
-  &__table.show > &__table-rows {
-    height: fit-content;
-  }
+  // &__table.show > &__table-rows {
+  //   height: fit-content;
+  // }
   &__table-row {
     display: flex;
     padding: 10px 20px;

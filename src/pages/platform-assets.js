@@ -339,14 +339,14 @@ const PlatformAssets = () => {
       try {
         if (alert !== undefined) setAlertFilter(alert);
         let _assets = filterAssets || assets,
-          _option = alert !== undefined ? alert : filterAssets,
+          _option = alert !== undefined ? alert : alertFilter,
           _keyword = keyword === undefined ? filterKey : keyword;
         if (_assets) {
           _assets = Object.values(_assets).filter((asset) => {
             let condition =
               asset.key?.includes(_keyword.toLowerCase()) ||
               asset.code?.includes(_keyword.toLowerCase());
-            if (_option !== null && _option !== undefined)
+            if (_option)
               condition =
                 condition &&
                 Object.values(asset.sources).some(
@@ -360,7 +360,7 @@ const PlatformAssets = () => {
         console.error(e);
       }
     },
-    [assets, filterKey]
+    [alertFilter, assets, filterKey]
   );
 
   const updatePlatformAsset = useCallback(
@@ -475,7 +475,7 @@ const PlatformAssets = () => {
                 className={`screen__display-option${
                   alertFilter === true ? " active" : ""
                 }`}
-                onClick={() => filter({ option: "deposit" })}
+                onClick={() => filter({ alert: true })}
               >
                 警示
               </li>

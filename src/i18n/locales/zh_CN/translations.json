@@ -236,5 +236,6 @@
   "asset-balance": "资产水位",
   "value": "数量",
   "tokex_expire": "页面闲置过久，请重新登入",
-  "email-exist": "此 Email 已有管理者权限"
+  "email-exist": "此 Email 已有管理者权限",
+  "state": "状态"
 }

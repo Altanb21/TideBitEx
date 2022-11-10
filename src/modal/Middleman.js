@@ -198,21 +198,43 @@ class Middleman {
     }
   }
 
-  async getOuterTradeFills(exchange, start, end) {
+  async getOuterTradesProfits({ ticker, exchange, start, end }) {
     try {
-      return await this.communicator.getOuterTradeFills(exchange, start, end);
+      return await this.communicator.getOuterTradesProfits({
+        instId: ticker,
+        exchange,
+        start,
+        end,
+      });
     } catch (error) {
       throw error;
     }
   }
 
-  async getOuterPendingOrders(exchange, limit, offset) {
+  async getOuterTradeFills({ instId, exchange, start, end, limit, offset }) {
     try {
-      return await this.communicator.getOuterPendingOrders(
+      return await this.communicator.getOuterTradeFills({
+        instId,
+        exchange,
+        start,
+        end,
+        limit,
+        offset,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getOuterPendingOrders({ instId, exchange, limit, before, after }) {
+    try {
+      return await this.communicator.getOuterPendingOrders({
+        instId,
         exchange,
         limit,
-        offset
-      );
+        before,
+        after,
+      });
     } catch (error) {
       throw error;
     }
@@ -229,9 +251,10 @@ class Middleman {
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }
+  
   async cancelOrder(order) {
     if (this.isLogin) {
-      const result = await this.communicator.cancel(order);
+      const result = await this.communicator.cancel(order.id);
       console.log(`cancelOrder result`, result);
       if (result.success) {
         this.orderBook.updateByDifference(
