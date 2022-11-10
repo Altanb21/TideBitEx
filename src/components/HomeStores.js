@@ -1,9 +1,9 @@
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 
-const TickerTrend = () => {
+const HomeStores = () => {
   const storeCtx = useContext(StoreContext);
-  return <div className="ticker-trend"></div>;
+  return <div className="home-stores"></div>;
 };
 
-export default TickerTrend;
+export default HomeStores;

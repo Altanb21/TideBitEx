@@ -238,5 +238,6 @@
   "value": "Value",
   "tokex_expire": "Token Expired. Please re-loginin.",
   "email-exist": "This email already has administrator privileges",
-  "state": "State"
+  "state": "State",
+  "home-announcement-1": "Statement on cryptocurrency regulation and compliance"
 }

@@ -237,5 +237,6 @@
   "value": "数量",
   "tokex_expire": "页面闲置过久，请重新登入",
   "email-exist": "此 Email 已有管理者权限",
-  "state": "状态"
+  "state": "状态",
+  "home-announcement-1": "有关全球加密货币监管及合规声明"
 }
