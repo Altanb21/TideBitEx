@@ -374,10 +374,10 @@ class Communicator {
     }
   }
 
-  async getOuterTradeFills(exchange, start, end) {
+  async getOuterTradesProfits({ instId, exchange, start, end }) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
-      const url = `/trade/fill-history?exchange=${exchange}&start=${start}&end=${end}`;
+      const url = `/trade/profits?instId=${instId}&exchange=${exchange}&start=${start}&end=${end}`;
       const res = await this._request({
         method: "GET",
         url,
@@ -391,13 +391,32 @@ class Communicator {
     }
   }
 
-  async getOuterPendingOrders(exchange, limit, offset) {
+  async getOuterTradeFills({ instId, exchange, start, end, limit, offset }) {
+    try {
+      if (!exchange) return { message: "exchange cannot be null" };
+      const url = `/trade/fill-history?instId=${instId}&exchange=${exchange}&start=${start}&end=${end}&offset=${offset}&limit=${limit}`;
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getOuterPendingOrders({ instId, exchange, limit, before, after }) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
       let arr = [];
       arr.push(`exchange=${exchange}`);
+      if (instId) arr.push(`instId=${instId}`);
       if (limit) arr.push(`limit=${limit}`);
-      if (offset) arr.push(`offset=${offset}`);
+      if (before) arr.push(`before=${before}`);
+      if (after) arr.push(`after=${after}`);
       const qs = !!arr.length ? `?${arr.join("&")}` : "";
       const url = `/trade/pending-orders${qs}`;
       const res = await this._request({
@@ -432,13 +451,13 @@ class Communicator {
   }
 
   // Trade
-  async cancel(order) {
+  async cancel(orderId) {
     try {
       // const res = await this._post(`/trade/cancel-order`, order);
       const res = await this._request({
         method: "POST",
         url: `/trade/cancel-order`,
-        data: { ...order, "X-CSRF-Token": this.CSRFToken },
+        data: { orderId, "X-CSRF-Token": this.CSRFToken },
       });
       if (res.success) {
         return res.data;

@@ -605,7 +605,7 @@ class mysql {
           AND orders.type = ?
           AND orders.ord_type <> '${ordType}'
       ORDER BY 
-          created_at DESC
+          updated_at DESC
       LIMIT ${limit} OFFSET ${offset}
       `
           }
@@ -614,11 +614,17 @@ class mysql {
       this.logger.debug(
         "getDoneOrders",
         query,
-        `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
+        `${
+          orderId
+            ? `[${orderId}]`
+            : `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
+        }`
       );
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy, state, type],
+        values: orderId
+          ? [orderId]
+          : [memberId, quoteCcy, baseCcy, state, type],
       });
       return orders;
     } catch (error) {
@@ -657,7 +663,7 @@ class mysql {
       ${state ? `AND orders.state = ${state}` : ``}
       ${orderType ? `AND orders.ord_type = ${orderType}` : ``}
     ORDER BY
-      orders.created_at ${asc ? "ASC" : "DESC"};`;
+      orders.updated_at ${asc ? "ASC" : "DESC"};`;
     // AND orders.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     // LIMIT ${limit} OFFSET ${offset};`;// -- TODO
     try {
@@ -813,10 +819,6 @@ class mysql {
     }
   }
 
-  /**
-   * [deprecated] 2022/10/19
-   * 沒有地方呼叫
-   */
   async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
     const query = `
     SELECT
@@ -827,9 +829,7 @@ class mysql {
       outer_trades
     WHERE
       outer_trades.exchange_code = ?
-      AND(outer_trades.status = ?
-        OR outer_trades.order_id IS NULL
-        OR outer_trades.create_at IS NULL)
+      AND outer_trades.status = ?
     ORDER BY
       outer_trades.create_at ${asc ? "ASC" : "DESC"}
     LIMIT ${limit} OFFSET ${offset};`;
@@ -935,6 +935,8 @@ class mysql {
   async getOuterTrades({
     type,
     exchangeCode,
+    currency,
+    status,
     days,
     start,
     end,
@@ -950,10 +952,17 @@ class mysql {
         outer_trades.data,
         outer_trades.member_id,
         outer_trades.member_tag,
+        outer_trades.kind,
         outer_trades.email,
         outer_trades.order_id,
         outer_trades.order_price,
         outer_trades.order_origin_volume,
+        outer_trades.voucher_price,
+        outer_trades.voucher_volume,
+        outer_trades.voucher_fee,
+        outer_trades.voucher_fee_currency,
+        outer_trades.referral_commission_id,
+        outer_trades.referral,
         outer_trades.trade_id,
         outer_trades.create_at,
         outer_trades.update_at,
@@ -962,6 +971,8 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
+        ${currency ? `AND outer_trades.currency = ${currency}` : ``}
+        ${status ? `AND outer_trades.status = ${status}` : ``}
       ${
         type === Database.TIME_RANGE_TYPE.DAY_AFTER
           ? `
@@ -974,14 +985,15 @@ class mysql {
       }
     ORDER BY
         outer_trades.create_at ${asc ? "ASC" : "DESC"}
-    LIMIT ${limit} OFFSET ${offset};`;
+    ${limit ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}` : ``}
+    ;`;
     try {
       this.logger.debug(
         "getOuterTrades",
         query,
         `${
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${days}]`
+            ? `[${exchangeCode} ${days}]`
             : `[${exchangeCode}, ${start}, ${end}]`
         }`
       );
@@ -993,6 +1005,83 @@ class mysql {
             : [exchangeCode, start, end],
       });
       return outerTrades;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
+  async countOuterTrades({
+    currency,
+    type,
+    exchangeCode,
+    status,
+    days,
+    start,
+    end,
+  }) {
+    const query = `
+    SELECT 
+        count(*)
+    FROM 
+        outer_trades
+    WHERE 
+        outer_trades.exchange_code = ?
+        ${currency ? `AND outer_trades.currency = ${currency}` : ``}
+        ${status ? `AND outer_trades.status = ${status}` : ``}
+      ${
+        type === Database.TIME_RANGE_TYPE.DAY_AFTER
+          ? `
+        AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
+        `
+          : `
+        AND outer_trades.create_at BETWEEN ?
+        AND ?
+        `
+      };`;
+    try {
+      this.logger.debug(
+        "countOuterTrades",
+        query,
+        `${
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? `[${exchangeCode}, ${days}]`
+            : `[${exchangeCode}, ${start}, ${end}]`
+        }`
+      );
+      const [[counts]] = await this.db.query({
+        query,
+        values:
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? [exchangeCode, days]
+            : [exchangeCode, start, end],
+      });
+      this.logger.debug(`counts`, counts);
+      return counts;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
+  async countOrders({ currency, state }) {
+    const query = `
+    SELECT 
+        count(*)
+    FROM 
+        orders
+    WHERE 
+      orders.currency = ?
+      AND orders.state = ?
+    ;`;
+    try {
+      this.logger.debug("countOrders", query, `${`[${currency}, ${state}]`}`);
+      const [[counts]] = await this.db.query({
+        query,
+        values: [currency, state],
+      });
+      this.logger.debug(`counts`, counts);
+      return counts;
     } catch (error) {
       this.logger.debug(error);
       return [];
@@ -1232,7 +1321,6 @@ class mysql {
     }
   }
 
-
   async getVouchersByIds(ids) {
     let placeholder = ids.join(`,`);
     let query = `
@@ -1424,6 +1512,8 @@ class mysql {
         amount,
         modifiable_id,
         modifiable_type,
+        created_at,
+        updated_at,
         currency,
         fun
       );

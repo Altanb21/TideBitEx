@@ -4,95 +4,121 @@ import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import LoadingDialog from "../components/LoadingDialog";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
-import SafeMath from "../utils/SafeMath";
 import { TableHeader } from "./vouchers";
+import SafeMath from "../utils/SafeMath";
 
 const exchanges = ["OKEx"];
+const tickers = {
+  "BTC-USDT": "BTC-USDT",
+  "ETH-USDT": "ETH-USDT",
+};
+const compareFunction = (leftValue, rightValue) => {
+  return leftValue?.id !== rightValue?.id;
+};
+const onlyInLeft = (left, right) =>
+  left.filter(
+    (leftValue) =>
+      !right.some((rightValue) => compareFunction(leftValue, rightValue))
+  );
 
 const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
-  const [showMore, setShowMore] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const [totalCounts, setTotalCounts] = useState(0);
+  const [newestOrderId, setNewestOrderId] = useState(null); // ordId
+  const [oldestOrderId, setOldestOrderId] = useState(null); // ordId
   const [isInit, setIsInit] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [orders, setOrders] = useState(null);
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  const [tickers, setTickers] = useState({ ticker: t("ticker") });
-  const [filterTicker, setFilterTicker] = useState(t("ticker"));
+  const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
+  const [orders, setOrders] = useState(null);
+  const [page, setPage] = useState(1);
 
   const getCurrentOrders = useCallback(
-    async (exchange) => {
-      const orders = await storeCtx.getOuterPendingOrders(exchange, 100, 0);
-      setOrders((prev) => {
-        let _orders = { ...prev };
-        _orders[exchange] = orders;
-        return _orders;
-      });
-      let tickers = {},
-        ticker;
-      for (let order of orders) {
-        if (!tickers[order.instId]) tickers[order.instId] = order.instId;
+    async ({ exchange, ticker, limit, before, after }) => {
+      let newOrders = [],
+        newestOrder,
+        oldestOrder,
+        totalCounts,
+        pendingOrders;
+      if (exchange && ticker) {
+        let result = await storeCtx.getOuterPendingOrders({
+          instId: ticker,
+          exchange,
+          limit: 100,
+          before,
+          after,
+        });
+        // totalCounts = result.totalCounts;
+        pendingOrders = result.pendingOrders;
+        let updatedOrders = {},
+          askOrders = [],
+          bidOrders = [];
+        setOrders((prev) => {
+          updatedOrders = { ...prev };
+          if (!updatedOrders[exchange]) updatedOrders[exchange] = {};
+          if (!updatedOrders[exchange][ticker])
+            updatedOrders[exchange][ticker] = [];
+          if (pendingOrders.length > 0) {
+            let onlyInNewOrders = onlyInLeft(
+              pendingOrders,
+              updatedOrders[exchange][ticker]
+            );
+            console.log(
+              `onlyInNewOrders[:${onlyInNewOrders.length}]`,
+              updatedOrders
+            );
+            updatedOrders[exchange][ticker] =
+              updatedOrders[exchange][ticker].concat(onlyInNewOrders);
+            for (let o of updatedOrders[exchange][ticker]) {
+              if (!newestOrder) newestOrder = { ...o };
+              if (o.ts > newestOrder.ts) newestOrder = { ...o };
+              if (!oldestOrder) oldestOrder = { ...o };
+              if (o?.ts < oldestOrder?.ts) oldestOrder = { ...o };
+              if (o.side === "buy") bidOrders = [...bidOrders, o];
+              else askOrders = [...askOrders, o];
+            }
+            askOrders.sort((a, b) => a.price - b.price);
+            bidOrders.sort((a, b) => b.price - a.price);
+            updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
+            if (newestOrder) setNewestOrderId(newestOrder.id);
+            if (oldestOrder) setOldestOrderId(oldestOrder.id);
+            setTotalCounts(updatedOrders[exchange][ticker].length);
+          }
+          return updatedOrders;
+        });
+        console.log(`updatedOrders`, updatedOrders);
+        newOrders = updatedOrders[exchange][ticker];
+        console.log(`updatedOrders[${exchange}][${ticker}]`, newOrders);
       }
-      setTickers(tickers);
-      if (Object.values(tickers).length > 0) {
-        ticker = Object.values(tickers)[0];
-        setFilterTicker(ticker);
-      }
-      return { orders, tickers, ticker: ticker };
+      return newOrders;
     },
     [storeCtx]
   );
 
   const filter = useCallback(
-    async ({ keyword, side, exchange, filterOrders, ticker }) => {
+    async ({ orders, keyword, side }) => {
       let _option = side || filterOption,
         _keyword = keyword === undefined ? filterKey : keyword,
-        _exchange = exchange || filterExchange,
-        _orders = filterOrders || orders[_exchange],
-        _ticker = ticker || filterTicker,
-        res;
-      if (ticker) setFilterTicker(ticker);
+        filteredOrders;
       if (side) setFilterOption(side);
-      if (exchange) {
-        setFilterExchange(exchange);
-        if (orders[exchange]) _orders = orders[exchange];
-        else {
-          setIsLoading(true);
-          res = await getCurrentOrders(exchange);
-          setIsLoading(false);
-          _orders = res.orders;
-          _ticker = res.ticker;
-        }
-      }
-      if (_orders) {
-        _orders = _orders.filter((order) => {
-          let condition =
-            order.id.includes(_keyword) ||
-            order.memberId.includes(_keyword) ||
-            order.instId.includes(_keyword) ||
-            order.email.includes(_keyword) ||
-            order.exchange.includes(_keyword);
-          if (_ticker) condition = condition && order.instId === _ticker;
-          if (_option !== "all")
-            condition = condition && order.side === _option;
-          if (_exchange !== "ALL")
-            condition = condition && order.exchange === _exchange;
-          return condition;
-        });
-        setFilterOrders(_orders);
-      }
+      filteredOrders = orders.filter((order) => {
+        let condition =
+          order.id.includes(_keyword) ||
+          order.memberId.includes(_keyword) ||
+          order.instId.includes(_keyword) ||
+          order.email.includes(_keyword) ||
+          order.exchange.includes(_keyword);
+        if (_option !== "all") condition = condition && order.side === _option;
+        return condition;
+      });
+      setFilterOrders(filteredOrders);
     },
-    [
-      filterExchange,
-      filterKey,
-      filterOption,
-      filterTicker,
-      getCurrentOrders,
-      orders,
-    ]
+    [filterKey, filterOption]
   );
 
   const sorting = (key, ascending) => {
@@ -105,17 +131,97 @@ const CurrentOrders = () => {
     });
   };
 
+  const selectTickerHandler = useCallback(
+    async (ticker) => {
+      setIsLoading(true);
+      setFilterTicker(ticker);
+      const orders = await getCurrentOrders({
+        exchange: filterExchange,
+        ticker,
+        limit,
+      });
+      filter({ orders: orders });
+      setIsLoading(false);
+    },
+    [filter, filterExchange, getCurrentOrders, limit]
+  );
+
+  const prevPageHandler = useCallback(async () => {
+    let newOrders,
+      newPage = page - 1 > 0 ? page - 1 : 1;
+    setPage(newPage);
+    setIsLoading(true);
+    if (newestOrderId) {
+      newOrders = await getCurrentOrders({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        before: newestOrderId,
+        limit: limit,
+      });
+      // setOffset((prev) => (prev + 1) * limit);
+    }
+    filter({ orders: newOrders });
+    setIsLoading(false);
+  }, [page, newestOrderId, filter, getCurrentOrders, filterTicker, limit]);
+
+  const nextPageHandler = useCallback(async () => {
+    setIsLoading(true);
+    let newOrders,
+      newPage = page + 1,
+      arr = [];
+    setPage(newPage);
+    if (
+      orders &&
+      orders[filterExchange] &&
+      orders[filterExchange][filterTicker]
+    ) {
+      newOrders = orders[filterExchange][filterTicker]
+        .map((o) => ({ ...o }))
+        .sort((a, b) => b.ts - a.ts);
+      arr = newOrders.slice((page - 1) * limit, page * limit);
+      console.log(
+        `arr[:${arr.length}] (page - 1) * limit[${
+          (page - 1) * limit
+        }] page * limit[${page * limit}] page[${page}] limit[:limit]`
+      );
+    }
+    if (arr.length < limit && oldestOrderId) {
+      newOrders = await getCurrentOrders({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        after: oldestOrderId,
+        limit: limit,
+      });
+      // setOffset((prev) => (prev + 1) * limit);
+    }
+    filter({ orders: newOrders });
+    setIsLoading(false);
+  }, [
+    page,
+    orders,
+    filterExchange,
+    filterTicker,
+    limit,
+    oldestOrderId,
+    filter,
+    getCurrentOrders,
+  ]);
+
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        const res = await getCurrentOrders(exchanges[0]);
-        filter({ filterOrders: res.orders, ticker: res.ticker });
+        const orders = await getCurrentOrders({
+          exchange: exchanges[0],
+          ticker: filterTicker,
+          limit,
+        });
+        filter({ orders: orders });
         setIsLoading(false);
         return !prev;
       } else return prev;
     });
-  }, [getCurrentOrders, filter]);
+  }, [getCurrentOrders, filterTicker, limit, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -131,9 +237,7 @@ const CurrentOrders = () => {
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"
-            selectHandler={(ticker) => {
-              filter({ ticker });
-            }}
+            selectHandler={(ticker) => selectTickerHandler(ticker)}
             options={tickers ? Object.values(tickers) : []}
             selected={filterTicker}
           />
@@ -145,7 +249,7 @@ const CurrentOrders = () => {
               placeholder={t("search-keywords")}
               onInput={(e) => {
                 setFilterKey(e.target.value);
-                filter({ keyword: e.target.value });
+                filter({ orders: filterOrders, keyword: e.target.value });
               }}
             />
             <div className="screen__search-icon">
@@ -162,23 +266,23 @@ const CurrentOrders = () => {
                 className={`screen__display-option${
                   filterOption === "all" ? " active" : ""
                 }`}
-                onClick={() => filter({ side: "all" })}
+                onClick={() => filter({ orders: filterOrders, side: "all" })}
               >
                 {t("all")}
+              </li>
+              <li
+                className={`screen__display-option${
+                  filterOption === "buy" ? " active" : ""
+                }`}
+                onClick={() => filter({ orders: filterOrders, side: "buy" })}
+              >
+                {t("bid")}
               </li>
               <li
                 className={`screen__display-option${
                   filterOption === "sell" ? " active" : ""
                 }`}
                 onClick={() => filter({ side: "sell" })}
-              >
-                {t("bid")}
-              </li>
-              <li
-                className={`screen__display-option${
-                  filterOption === "buy" ? " active" : ""
-                }`}
-                onClick={() => filter({ side: "buy" })}
               >
                 {t("ask")}
               </li>
@@ -189,9 +293,9 @@ const CurrentOrders = () => {
         </div> */}
         </div>
         <div className="screen__container">
-          <table className={`screen__table${showMore ? " show" : ""}`}>
+          <table className={`screen__table`}>
             <tr className="screen__table-headers">
-              {/* <li className="screen__table-header">{t("date")}</li> */}
+              <th className="screen__table-header screen__shrink">#</th>
               <TableHeader
                 label={t("date")}
                 onClick={(ascending) => sorting("ts", ascending)}
@@ -210,6 +314,7 @@ const CurrentOrders = () => {
                 label={t("orderId")}
                 onClick={(ascending) => sorting("orderId", ascending)}
               />
+              <th className="screen__table-header">{t("state")}</th>
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-price")}
@@ -227,174 +332,209 @@ const CurrentOrders = () => {
             </tr>
             <tr className="screen__table-rows">
               {filterOrders &&
-                filterOrders.map((order) => (
-                  <tr
-                    className={`current-orders__tile screen__table-row${
-                      order.email ? "" : " unknown"
-                    }${order.alert ? " screen__table-row--alert" : ""}`}
-                    key={order.id}
-                  >
-                    <td className="current-orders__text screen__table-item">
-                      {dateFormatter(order.ts).text}
-                    </td>
-                    <td className="current-orders__text screen__email screen__table-item">
-                      {`${order.email ? order.email : "-"}`}
-                      {/* <div>{`${order.email ? order.memberId : ""}`}</div> */}
-                    </td>
-                    <td className="screen__box screen__table-item">
-                      <div className="current-orders__text">
-                        {order.innerOrder?.exchange || "-"}
-                      </div>
-                      {order.outerOrder && (
-                        <div className="current-orders__text">
-                          {order.outerOrder?.exchange || "-"}
-                        </div>
-                      )}
-                    </td>
-                    <td
-                      className={`current-orders__text screen__table-item${
-                        order.side === "buy" ? " positive" : " negative"
-                      }`}
+                filterOrders
+                  .slice((page - 1) * limit, page * limit)
+                  .map((order, index) => (
+                    <tr
+                      className={`current-orders__tile screen__table-row${
+                        order.email ? "" : " unknown"
+                      }${order.alert ? " screen__table-row--alert" : ""}`}
+                      key={order.id}
                     >
-                      {`${t(order.kind)}${t(order.side)}`}
-                    </td>
-                    <td className="current-orders__text screen__table-item">
-                      {order.innerOrder?.orderId || "-"}
-                    </td>
-                    <td className="screen__box screen__table-item screen__expand">
-                      <div
-                        className={`"current-orders__text${
+                      <td className="vouchers__text screen__shrink">
+                        {index + 1}
+                      </td>
+                      <td className="current-orders__text screen__table-item">
+                        {dateFormatter(order.ts).text}
+                      </td>
+                      <td className="current-orders__text screen__email screen__table-item">
+                        {`${order.email ? order.email : "-"}`}
+                        {/* <div>{`${order.email ? order.memberId : ""}`}</div> */}
+                      </td>
+                      <td className="screen__box screen__table-item">
+                        <div className="current-orders__text">
+                          {order.innerOrder?.exchange || "-"}
+                        </div>
+                        {order.outerOrder && (
+                          <div className="current-orders__text">
+                            {order.outerOrder?.exchange || "-"}
+                          </div>
+                        )}
+                      </td>
+                      <td
+                        className={`current-orders__text screen__table-item${
                           order.side === "buy" ? " positive" : " negative"
                         }`}
                       >
-                        {`${
-                          order.innerOrder?.price
-                            ? convertExponentialToDecimal(
-                                order.innerOrder?.price
-                              )
-                            : "-"
-                        } / ${
-                          order.innerOrder?.avgFillPrice
-                            ? convertExponentialToDecimal(
-                                order.innerOrder?.avgFillPrice
-                              )
-                            : "-"
-                        }`}
-                      </div>
-                      {order.outerOrder && (
+                        {`${t(order.kind)}${t(order.side)}`}
+                      </td>
+                      <td className="current-orders__text screen__table-item">
+                        {order.innerOrder?.orderId || "-"}
+                      </td>
+                      <td className="screen__box screen__table-item">
+                        <div className="current-orders__text">
+                          {order.innerOrder?.state
+                            ? t(order.innerOrder?.state)
+                            : "-"}
+                        </div>
+                        <div className="current-orders__text">
+                          {order.outerOrder?.state
+                            ? t(order.outerOrder?.state)
+                            : "-"}
+                        </div>
+                      </td>
+                      <td className="screen__box screen__table-item screen__expand">
                         <div
                           className={`"current-orders__text${
                             order.side === "buy" ? " positive" : " negative"
                           }`}
                         >
                           {`${
-                            order.outerOrder?.price
+                            order.innerOrder?.price
                               ? convertExponentialToDecimal(
-                                  order.outerOrder?.price
+                                  order.innerOrder?.price
                                 )
                               : "-"
                           } / ${
-                            order.outerOrder?.avgFillPrice
+                            order.innerOrder?.avgFillPrice
                               ? convertExponentialToDecimal(
-                                  order.outerOrder?.avgFillPrice
+                                  order.innerOrder?.avgFillPrice
                                 )
                               : "-"
                           }`}
                         </div>
-                      )}
-                    </td>
-                    <td className="screen__box screen__table-item screen__expand">
-                      <div
-                        className={`"current-orders__text${
-                          order.side === "buy" ? " positive" : " negative"
-                        }`}
-                      >
-                        {`${
-                          order.innerOrder?.volume
-                            ? convertExponentialToDecimal(
-                                order.innerOrder?.volume
-                              )
-                            : "-"
-                        } / ${
-                          order.innerOrder?.accFillVolume
-                            ? convertExponentialToDecimal(
-                                order.innerOrder?.accFillVolume
-                              )
-                            : "-"
-                        }`}
-                      </div>
-                      {order.outerOrder && (
+                        {order.outerOrder && (
+                          <div
+                            className={`"current-orders__text${
+                              order.side === "buy" ? " positive" : " negative"
+                            }`}
+                          >
+                            {`${
+                              order.outerOrder?.price
+                                ? convertExponentialToDecimal(
+                                    order.outerOrder?.price
+                                  )
+                                : "-"
+                            } / ${
+                              order.outerOrder?.avgFillPrice
+                                ? convertExponentialToDecimal(
+                                    order.outerOrder?.avgFillPrice
+                                  )
+                                : "-"
+                            }`}
+                          </div>
+                        )}
+                      </td>
+                      <td className="screen__box screen__table-item screen__expand">
                         <div
                           className={`"current-orders__text${
                             order.side === "buy" ? " positive" : " negative"
                           }`}
                         >
                           {`${
-                            order.outerOrder?.volume
+                            order.innerOrder?.volume
                               ? convertExponentialToDecimal(
-                                  order.outerOrder?.volume
+                                  order.innerOrder?.volume
                                 )
                               : "-"
                           } / ${
-                            order.outerOrder?.accFillVolume
+                            order.innerOrder?.accFillVolume
                               ? convertExponentialToDecimal(
-                                  order.outerOrder?.accFillVolume
+                                  order.innerOrder?.accFillVolume
                                 )
                               : "-"
                           }`}
                         </div>
-                      )}
-                    </td>
-                    <td className="screen__box screen__table-item screen__expand">
-                      <div
-                        className={`"current-orders__text${
-                          order.side === "buy" ? " positive" : " negative"
-                        }`}
-                      >
-                        {`${
-                          order.innerOrder?.expect
-                            ? convertExponentialToDecimal(
-                                order.innerOrder?.expect
-                              )
-                            : "-"
-                        } / ${
-                          order.innerOrder?.received
-                            ? convertExponentialToDecimal(
-                                order.innerOrder?.received
-                              )
-                            : "-"
-                        }`}
-                      </div>
-                      {order.outerOrder && (
+                        {order.outerOrder && (
+                          <div
+                            className={`"current-orders__text${
+                              order.side === "buy" ? " positive" : " negative"
+                            }`}
+                          >
+                            {`${
+                              order.outerOrder?.volume
+                                ? convertExponentialToDecimal(
+                                    order.outerOrder?.volume
+                                  )
+                                : "-"
+                            } / ${
+                              order.outerOrder?.accFillVolume
+                                ? convertExponentialToDecimal(
+                                    order.outerOrder?.accFillVolume
+                                  )
+                                : "-"
+                            }`}
+                          </div>
+                        )}
+                      </td>
+                      <td className="screen__box screen__table-item screen__expand">
                         <div
                           className={`"current-orders__text${
                             order.side === "buy" ? " positive" : " negative"
                           }`}
                         >
                           {`${
-                            order.outerOrder?.expect
+                            order.innerOrder?.expect
                               ? convertExponentialToDecimal(
-                                  order.outerOrder?.expect
+                                  order.innerOrder?.expect
                                 )
                               : "-"
                           } / ${
-                            order.outerOrder?.received
+                            order.innerOrder?.received
                               ? convertExponentialToDecimal(
-                                  order.outerOrder?.received
+                                  order.innerOrder?.received
                                 )
                               : "-"
                           }`}
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                        {order.outerOrder && (
+                          <div
+                            className={`"current-orders__text${
+                              order.side === "buy" ? " positive" : " negative"
+                            }`}
+                          >
+                            {`${
+                              order.outerOrder?.expect
+                                ? convertExponentialToDecimal(
+                                    order.outerOrder?.expect
+                                  )
+                                : "-"
+                            } / ${
+                              order.outerOrder?.received
+                                ? convertExponentialToDecimal(
+                                    order.outerOrder?.received
+                                  )
+                                : "-"
+                            }`}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
             </tr>
-            <tfoot
+            {/* <tfoot
               className="screen__table-btn screen__table-text"
-              onClick={() => setShowMore((prev) => !prev)}
+              onClick={showMoreHandler}
             >
               {showMore ? t("show-less") : t("show-more")}
+            </tfoot> */}
+            <tfoot className="screen__table-tools">
+              <div className={`screen__table-tool`} onClick={prevPageHandler}>
+                <div className="screen__table-tool--left"></div>
+              </div>
+              <div className="screen__page">{`${page}/${Math.ceil(
+                totalCounts / limit
+              )}`}</div>
+              <div
+                className={`screen__table-tool${
+                  SafeMath.gte(page, Math.ceil(totalCounts / limit))
+                    ? " disable"
+                    : ""
+                }`}
+                onClick={nextPageHandler}
+              >
+                <div className="screen__table-tool--right"></div>
+              </div>
             </tfoot>
           </table>
         </div>

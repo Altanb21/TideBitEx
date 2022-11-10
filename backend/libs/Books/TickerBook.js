@@ -6,6 +6,16 @@ const Utils = require("../Utils");
 class TickerBook extends BookBase {
   _instruments;
   _tickersSettings;
+  _baseCurrency = "hkd";
+  _ratio = {
+    hkd: 1,
+    twd: 0.2623,
+    jpy: 0.0715,
+    krw: 0.0073,
+    usd: 7.8,
+    eur: 8.9341,
+    try: 1.4637,
+  };
   constructor({ logger, markets, tickersSettings }) {
     super({ logger, markets });
     this.name = `TickerBook`;
@@ -28,6 +38,45 @@ class TickerBook extends BookBase {
 
   get instruments() {
     return this._instruments;
+  }
+
+  /**
+   * @param {String} currency
+   */
+  set baseCurrency(currency) {
+    this._baseCurrency = currency.toLowerCase();
+  }
+
+  get baseCurrency() {
+    return this._baseCurrency;
+  }
+
+  getPrice(currency) {
+    // this.logger.debug(
+    //   `this._snapshot[${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}]`,
+    //   this._snapshot[
+    //     `${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}`
+    //   ]
+    // );
+    let price = 0,
+      ticker;
+    if (this._ratio[currency.toLowerCase()])
+      price = this._ratio[currency.toLowerCase()];
+    else {
+      ticker =
+        this._snapshot[
+          `${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}`
+        ];
+      if (ticker) {
+        price = ticker.last;
+      } else {
+        ticker = Object.keys(this._snapshot)
+          .sort((a, b) => a.code - b.code)
+          .find((t) => t.baseUnit === currency.toLowerCase());
+        if (ticker) price = ticker.last * this.getPrice(this.quoteUnit);
+      }
+    }
+    return price;
   }
 
   formatTicker(data, source) {

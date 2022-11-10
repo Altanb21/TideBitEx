@@ -10,21 +10,25 @@ import ProfitTrendingChart from "../components/ProfitTrendingChart";
 import VoucherTile from "../components/VoucherTile";
 
 const exchanges = ["OKEx"];
-const monthInterval = 30 * 24 * 60 * 60 * 1000;
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const tickers = {
+  "BTC-USDT": "BTC-USDT",
+  "ETH-USDT": "ETH-USDT",
+};
+// const monthInterval = 30 * 24 * 60 * 60 * 1000;
+// const months = [
+//   "Jan",
+//   "Feb",
+//   "Mar",
+//   "Apr",
+//   "May",
+//   "Jun",
+//   "Jul",
+//   "Aug",
+//   "Sep",
+//   "Oct",
+//   "Nov",
+//   "Dec",
+// ];
 
 export const TableHeader = (props) => {
   const [ascending, setAscending] = useState(null);
@@ -78,7 +82,9 @@ let currentDate = new Date();
 const Vouchers = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
-  const [showMore, setShowMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(50);
+  const [totalCounts, setTotalCounts] = useState(1);
   const [isInit, setIsInit] = useState(null);
   const [trades, setTrades] = useState(null);
   const [profits, setProfits] = useState(null);
@@ -86,10 +92,12 @@ const Vouchers = () => {
   const [filterOption, setFilterOption] = useState(30); // 30, 365
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  const [tickers, setTickers] = useState(null);
-  const [filterTicker, setFilterTicker] = useState(null);
+  // const [tickers, setTickers] = useState(null);
+  const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [dateStart, setDateStart] = useState(
     new Date(
       `${currentDate.getFullYear()}-${
@@ -105,313 +113,291 @@ const Vouchers = () => {
     )
   );
 
-  const getNextDailyBarTime = (barTime) => {
-    const date = new Date(barTime);
-    date.setDate(date.getDate() + 1);
-    return date.getTime();
-  };
+  // const getNextDailyBarTime = (barTime) => {
+  //   const date = new Date(barTime);
+  //   date.setDate(date.getDate() + 1);
+  //   return date.getTime();
+  // };
 
-  const getNextMonthlyBarTime = (barTime) => {
-    const date = new Date(barTime);
-    // console.log(`date`, date);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    let dateLength = new Date(year, month + 1, 0).getDate();
-    // console.log(`dateLength`, dateLength);
-    date.setDate(date.getDate() + dateLength + 1);
-    // console.log(`date`, date);
-    return date.getTime();
-  };
+  // const getNextMonthlyBarTime = (barTime) => {
+  //   const date = new Date(barTime);
+  //   // console.log(`date`, date);
+  //   const year = date.getFullYear();
+  //   const month = date.getMonth() + 1;
+  //   let dateLength = new Date(year, month + 1, 0).getDate();
+  //   // console.log(`dateLength`, dateLength);
+  //   date.setDate(date.getDate() + dateLength + 1);
+  //   // console.log(`date`, date);
+  //   return date.getTime();
+  // };
 
-  const formateTrades = useCallback(
-    async (trades) => {
-      let chartData = { data: {}, xaxisType: "string" },
-        data = {};
-      let _trades = trades.map((t) => ({ ...t }));
-      _trades.sort((a, b) => a.ts - b.ts); //asce
-      if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
-        let lastDailyBar = new Date(
-            `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
-          ),
-          nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-        for (let trade of _trades) {
-          if (trade.profit) {
-            let key = `${lastDailyBar.getFullYear()}-${
-              lastDailyBar.getMonth() + 1
-            }-${lastDailyBar.getDate()}`;
-            // console.log(`formateTrades key`, key);
-            if (!data[key])
-              data[key] = {
-                y: "0",
-                x: key,
-                date: lastDailyBar,
-              };
-            // console.log(
-            //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-            //     trade.ts
-            //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
-            //   trade
-            // );
-            while (nextDailyBarTime <= trade.ts) {
-              // console.error(
-              //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
-              // );
-              // console.log(
-              //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-              //     trade.ts
-              //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
-              // );
-              lastDailyBar = new Date(nextDailyBarTime);
-              nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-              // console.log(
-              //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-              //     trade.ts
-              //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
-              // );
-              key = `${lastDailyBar.getFullYear()}-${
-                lastDailyBar.getMonth() + 1
-              }-${lastDailyBar.getDate()}`;
-              // console.log(`formateTrades key`, key);
-              if (!data[key])
-                data[key] = {
-                  y: "0",
-                  x: key,
-                  date: lastDailyBar,
-                };
-              // console.log(`data[${key}]`, data[key]);
-            }
-            //  else {
-            key = `${lastDailyBar.getFullYear()}-${
-              lastDailyBar.getMonth() + 1
-            }-${lastDailyBar.getDate()}`;
-            // console.log(`formateTrades key`, key);
-            let price = storeCtx.getPrice(trade.feeCurrency);
-            if (!data[key])
-              data[key] = {
-                y: SafeMath.mult(trade.profit, price),
-                x: key,
-                date: lastDailyBar,
-              };
-            else
-              data[key] = {
-                ...data[key],
-                y: SafeMath.plus(
-                  data[key].y,
-                  SafeMath.mult(trade.profit, price)
-                ),
-              };
+  // const formateTrades = useCallback(
+  //   async (trades) => {
+  //     let chartData = { data: {}, xaxisType: "string" },
+  //       data = {};
+  //     let _trades = trades.map((t) => ({ ...t }));
+  //     _trades.sort((a, b) => a.ts - b.ts); //asce
+  //     if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
+  //       let lastDailyBar = new Date(
+  //           `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
+  //         ),
+  //         nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
+  //       for (let trade of _trades) {
+  //         if (trade.profit) {
+  //           let key = `${lastDailyBar.getFullYear()}-${
+  //             lastDailyBar.getMonth() + 1
+  //           }-${lastDailyBar.getDate()}`;
+  //           // console.log(`formateTrades key`, key);
+  //           if (!data[key])
+  //             data[key] = {
+  //               y: "0",
+  //               x: key,
+  //               date: lastDailyBar,
+  //             };
+  //           // console.log(
+  //           //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+  //           //     trade.ts
+  //           //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
+  //           //   trade
+  //           // );
+  //           while (nextDailyBarTime <= trade.ts) {
+  //             // console.error(
+  //             //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
+  //             // );
+  //             // console.log(
+  //             //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+  //             //     trade.ts
+  //             //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
+  //             // );
+  //             lastDailyBar = new Date(nextDailyBarTime);
+  //             nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
+  //             // console.log(
+  //             //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
+  //             //     trade.ts
+  //             //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
+  //             // );
+  //             key = `${lastDailyBar.getFullYear()}-${
+  //               lastDailyBar.getMonth() + 1
+  //             }-${lastDailyBar.getDate()}`;
+  //             // console.log(`formateTrades key`, key);
+  //             if (!data[key])
+  //               data[key] = {
+  //                 y: "0",
+  //                 x: key,
+  //                 date: lastDailyBar,
+  //               };
+  //             // console.log(`data[${key}]`, data[key]);
+  //           }
+  //           //  else {
+  //           key = `${lastDailyBar.getFullYear()}-${
+  //             lastDailyBar.getMonth() + 1
+  //           }-${lastDailyBar.getDate()}`;
+  //           // console.log(`formateTrades key`, key);
+  //           let price = storeCtx.getPrice(trade.feeCurrency);
+  //           if (!data[key])
+  //             data[key] = {
+  //               y: SafeMath.mult(trade.profit, price),
+  //               x: key,
+  //               date: lastDailyBar,
+  //             };
+  //           else
+  //             data[key] = {
+  //               ...data[key],
+  //               y: SafeMath.plus(
+  //                 data[key].y,
+  //                 SafeMath.mult(trade.profit, price)
+  //               ),
+  //             };
 
-            // console.log(`formateTrades data[key]`, data[key]);
-            // }
-          }
-        }
-        chartData.data = data;
-        chartData.xaxisType = "datetime";
-      } else {
-        let lastMonthlyBar = new Date(
-            `${new Date(_trades[0].ts)
-              .toISOString()
-              .substring(0, 7)}-01 00:00:00`
-          ),
-          nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
-        for (let trade of _trades) {
-          if (trade.profit) {
-            let key = `${lastMonthlyBar.getFullYear()}-${
-              lastMonthlyBar.getMonth() + 1
-            }`;
-            if (!data[key])
-              data[key] = {
-                y: "0",
-                x: `${
-                  months[lastMonthlyBar.getMonth()]
-                } ${lastMonthlyBar.getFullYear()}`,
-                date: lastMonthlyBar,
-              };
-            // console.log(
-            //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-            //     trade.ts
-            //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`,
-            //   trade
-            // );
-            while (nextMonthlyBarTime <= trade.ts) {
-              // console.error(
-              //   `nextMonthlyBarTime <= trade.ts:${
-              //     nextMonthlyBarTime <= trade.ts
-              //   })`
-              // );
-              // console.log(
-              //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-              //     trade.ts
-              //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`
-              // );
-              lastMonthlyBar = new Date(nextMonthlyBarTime);
-              nextMonthlyBarTime = getNextMonthlyBarTime(
-                lastMonthlyBar.getTime()
-              );
-              // console.log(
-              //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-              //     trade.ts
-              //   )}) nextDailyBar(${new Date(nextMonthlyBarTime)})`
-              // );
-              key = `${lastMonthlyBar.getFullYear()}-${
-                lastMonthlyBar.getMonth() + 1
-              }`;
-              if (!data[key])
-                data[key] = {
-                  y: "0",
-                  x: `${
-                    months[lastMonthlyBar.getMonth()]
-                  } ${lastMonthlyBar.getFullYear()}`,
-                  date: lastMonthlyBar,
-                };
-              // console.log(`data[${key}]`, data[key]);
-            }
-            //  else {
-            key = `${lastMonthlyBar.getFullYear()}-${
-              lastMonthlyBar.getMonth() + 1
-            }`;
-            // console.log(`formateTrades key`, key);
-            let price = storeCtx.getPrice(trade.feeCurrency);
-            if (!data[key])
-              data[key] = {
-                y: SafeMath.mult(trade.profit, price),
-                x: `${
-                  months[lastMonthlyBar.getMonth()]
-                } ${lastMonthlyBar.getFullYear()}`,
-                date: lastMonthlyBar,
-              };
-            else
-              data[key] = {
-                ...data[key],
-                y: SafeMath.plus(
-                  data[key].y,
-                  SafeMath.mult(trade.profit, price)
-                ),
-              };
-            // }
-            // console.log(`formateTrades data[${key}]`, data[key]);
-          }
-        }
-        chartData.data = data;
-        chartData.xaxisType = "string";
-      }
-      return chartData;
-    },
-    [storeCtx]
-  );
+  //           // console.log(`formateTrades data[key]`, data[key]);
+  //           // }
+  //         }
+  //       }
+  //       chartData.data = data;
+  //       chartData.xaxisType = "datetime";
+  //     } else {
+  //       let lastMonthlyBar = new Date(
+  //           `${new Date(_trades[0].ts)
+  //             .toISOString()
+  //             .substring(0, 7)}-01 00:00:00`
+  //         ),
+  //         nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
+  //       for (let trade of _trades) {
+  //         if (trade.profit) {
+  //           let key = `${lastMonthlyBar.getFullYear()}-${
+  //             lastMonthlyBar.getMonth() + 1
+  //           }`;
+  //           if (!data[key])
+  //             data[key] = {
+  //               y: "0",
+  //               x: `${
+  //                 months[lastMonthlyBar.getMonth()]
+  //               } ${lastMonthlyBar.getFullYear()}`,
+  //               date: lastMonthlyBar,
+  //             };
+  //           // console.log(
+  //           //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+  //           //     trade.ts
+  //           //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`,
+  //           //   trade
+  //           // );
+  //           while (nextMonthlyBarTime <= trade.ts) {
+  //             // console.error(
+  //             //   `nextMonthlyBarTime <= trade.ts:${
+  //             //     nextMonthlyBarTime <= trade.ts
+  //             //   })`
+  //             // );
+  //             // console.log(
+  //             //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+  //             //     trade.ts
+  //             //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`
+  //             // );
+  //             lastMonthlyBar = new Date(nextMonthlyBarTime);
+  //             nextMonthlyBarTime = getNextMonthlyBarTime(
+  //               lastMonthlyBar.getTime()
+  //             );
+  //             // console.log(
+  //             //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
+  //             //     trade.ts
+  //             //   )}) nextDailyBar(${new Date(nextMonthlyBarTime)})`
+  //             // );
+  //             key = `${lastMonthlyBar.getFullYear()}-${
+  //               lastMonthlyBar.getMonth() + 1
+  //             }`;
+  //             if (!data[key])
+  //               data[key] = {
+  //                 y: "0",
+  //                 x: `${
+  //                   months[lastMonthlyBar.getMonth()]
+  //                 } ${lastMonthlyBar.getFullYear()}`,
+  //                 date: lastMonthlyBar,
+  //               };
+  //             // console.log(`data[${key}]`, data[key]);
+  //           }
+  //           //  else {
+  //           key = `${lastMonthlyBar.getFullYear()}-${
+  //             lastMonthlyBar.getMonth() + 1
+  //           }`;
+  //           // console.log(`formateTrades key`, key);
+  //           let price = storeCtx.getPrice(trade.feeCurrency);
+  //           if (!data[key])
+  //             data[key] = {
+  //               y: SafeMath.mult(trade.profit, price),
+  //               x: `${
+  //                 months[lastMonthlyBar.getMonth()]
+  //               } ${lastMonthlyBar.getFullYear()}`,
+  //               date: lastMonthlyBar,
+  //             };
+  //           else
+  //             data[key] = {
+  //               ...data[key],
+  //               y: SafeMath.plus(
+  //                 data[key].y,
+  //                 SafeMath.mult(trade.profit, price)
+  //               ),
+  //             };
+  //           // }
+  //           // console.log(`formateTrades data[${key}]`, data[key]);
+  //         }
+  //       }
+  //       chartData.data = data;
+  //       chartData.xaxisType = "string";
+  //     }
+  //     console.log(`formateTrades chartData`, chartData);
+  //     setChartData(chartData);
+  //     return chartData;
+  //   },
+  //   [storeCtx]
+  // );
 
   const getVouchers = useCallback(
-    async (exchange, start, end) => {
-      // console.log(`getVouchers end`, end);
-      // console.log(`getVouchers start`, start);
-      // const trades = await storeCtx.getOuterTradeFills(exchange, 365);
-      const trades = await storeCtx.getOuterTradeFills(exchange, start, end);
-      setTrades((prev) => {
-        let _trades = { ...prev };
-        _trades[exchange] = trades;
-        return _trades;
+    async ({ exchange, ticker, start, end, limit, offset }) => {
+      if (start) setStartDate(start);
+      if (end) setEndDate(end);
+      let page = Math.ceil(offset / limit) + 1,
+        totalCounts,
+        newTrades,
+        updateTrades;
+      console.log(
+        `trades[${exchange}][${ticker}][${start}][${end}][${limit}][${offset}][${page}]`
+      );
+      let res = await storeCtx.getOuterTradeFills({
+        instId: ticker,
+        exchange,
+        start: start || startDate,
+        end: end || endDate,
+        limit,
+        offset,
       });
-      let tickers = {},
-        ticker;
-      for (let trade of trades) {
-        if (!tickers[trade.instId]) tickers[trade.instId] = trade.instId;
-      }
-      setTickers(tickers);
-      if (Object.values(tickers).length > 0) {
-        ticker = Object.values(tickers)[0];
-        setFilterTicker(ticker);
-      }
-      // trade fromate ++ TODO
-      const chartData = await formateTrades(trades);
-      // console.log(`formateTrades chartData`, chartData);
-      setChartData(chartData);
-      return { trades, tickers, ticker: ticker };
+      totalCounts = res.totalCounts;
+      newTrades = res.trades;
+      console.log(`newTrades`, newTrades);
+      setTotalCounts(totalCounts);
+      setTrades((prev) => {
+        updateTrades = { ...prev };
+        if (exchange) {
+          if (!updateTrades[exchange]) updateTrades[exchange] = {};
+          if (ticker) {
+            if (!updateTrades[exchange][ticker])
+              updateTrades[exchange][ticker] = {};
+            updateTrades[exchange][ticker][page] = newTrades;
+          }
+        }
+        console.log(`updateTrades`, updateTrades);
+        return updateTrades;
+      });
+      return newTrades;
     },
-    [formateTrades, storeCtx]
+    [endDate, startDate, storeCtx]
   );
 
   const filter = useCallback(
-    async ({ keyword, exchange, filterTrades, ticker }) => {
+    (trades, { keyword, exchange, ticker }) => {
+      console.log(`trades[:${trades?.length}]`, trades);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
-        _trades = filterTrades || trades[_exchange],
         _ticker = ticker || filterTicker,
-        res;
+        _trades;
       if (ticker) setFilterTicker(ticker);
-      if (exchange) {
-        setFilterExchange(exchange);
-        if (trades[exchange]) _trades = trades[exchange];
-        else {
-          const now = new Date();
-          const end = new Date(
-            `${now.getFullYear()}-${
-              now.getMonth() + 1
-            }-${now.getDate()} 08:00:00`
-          );
-          const startTime = new Date(
-            end.getTime() - filterOption * 24 * 60 * 60 * 1000
-          );
-          const start = new Date(
-            `${startTime.getFullYear()}-${
-              startTime.getMonth() + 1
-            }-${startTime.getDate()} 08:00:00`
-          );
-          res = await getVouchers(
-            exchange,
-            start.toISOString().substring(0, 10),
-            end.toISOString().substring(0, 10)
-          );
-          _trades = res.trades;
-          _ticker = res.ticker;
-        }
-      }
-      if (_trades) {
-        _trades = _trades.filter((trade) => {
-          let condition =
-            // trade.innerTrade?.orderId?.includes(_keyword) ||
-            // trade.outerTrade?.orderId?.includes(_keyword) ||
-            trade.instId?.includes(_keyword) ||
-            trade.email?.includes(_keyword) ||
-            trade.memberId?.includes(_keyword) ||
-            trade.exchange?.includes(_keyword);
-          // console.log(`timeInterval`, timeInterval);
-          // console.log(`filterOption`, filterOption);
-          // console.log(
-          //   `ts[${ts}] - trade.ts[${trade.ts}] = ${
-          //     ts - trade.ts
-          //   } < _option[${_option}]`,
-          //   ts - trade.ts < _option,
-          //   new Date(trade.ts)
-          // );
-          if (_exchange !== "ALL")
-            condition = condition && trade.exchange === _exchange;
-          if (_ticker) condition = condition && trade.instId === _ticker;
-          return condition;
-        });
-        setFilterTrades(_trades);
-        let profits = _trades.reduce((prev, trade) => {
-          if (trade.profit) {
-            if (!prev[trade.feeCurrency]) {
-              prev[trade.feeCurrency] = {
-                sum: 0,
-                currency: trade.feeCurrency,
-              };
-            }
-            prev[trade.feeCurrency].sum = SafeMath.plus(
-              prev[trade.feeCurrency].sum,
-              trade.profit
-            );
-          }
-          return prev;
-        }, {});
-        setProfits(profits);
-      }
+      console.log(`before filter trades[:${trades.length}]`);
+      _trades = trades.filter((trade) => {
+        let condition =
+          trade.instId?.includes(_keyword) ||
+          trade.email?.includes(_keyword) ||
+          trade.memberId?.includes(_keyword) ||
+          trade.exchange?.includes(_keyword);
+        if (_exchange !== "ALL")
+          condition = condition && trade.exchange === _exchange;
+        if (_ticker) condition = condition && trade.instId === _ticker;
+        return condition;
+      });
+      console.log(`after filter _trades[:${_trades.length}]`);
+      setFilterTrades(_trades);
+      // formateTrades(_trades);
+      // let profits = _trades.reduce((prev, trade) => {
+      //   if (trade.profit) {
+      //     if (!prev[trade.feeCurrency]) {
+      //       prev[trade.feeCurrency] = {
+      //         sum: 0,
+      //         currency: trade.feeCurrency,
+      //       };
+      //     }
+      //     prev[trade.feeCurrency].sum = SafeMath.plus(
+      //       prev[trade.feeCurrency].sum,
+      //       trade.profit
+      //     );
+      //   }
+      //   return prev;
+      // }, {});
+      // setProfits(profits);
     },
-    [filterExchange, filterKey, filterOption, filterTicker, getVouchers, trades]
+    [filterExchange, filterKey, filterTicker]
   );
 
   const updateInterval = useCallback(
     async (option) => {
+      const newPage = 1;
+      setPage(newPage);
       setIsLoading(true);
       const now = new Date();
       const end = new Date(
@@ -423,47 +409,195 @@ const Vouchers = () => {
           startTime.getMonth() + 1
         }-${startTime.getDate()} 08:00:00`
       );
-      const res = await getVouchers(
-        exchanges[0],
-        start.toISOString().substring(0, 10),
-        end.toISOString().substring(0, 10)
-      );
-      filter({ filterTrades: res.trades, ticker: res.ticker });
+      const result = await storeCtx.getOuterTradesProfits({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        start: start.toISOString().substring(0, 10),
+        end: end.toISOString().substring(0, 10),
+      });
+      setChartData(result.chartData);
+      setProfits(result.profits);
+      const trades = await getVouchers({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        start: start.toISOString().substring(0, 10),
+        end: end.toISOString().substring(0, 10),
+        limit: limit,
+        offset: 0,
+      });
+      filter(trades, {});
       setFilterOption(option);
       setIsLoading(false);
     },
-    [filter, getVouchers]
+    [filter, filterTicker, getVouchers, limit, storeCtx]
   );
 
   const dateStartUpdateHandler = useCallback(
     async (date) => {
-      // if (date.getTime() <= dateEnd.getTime()) {
+      const newPage = 1;
+      setPage(newPage);
       setIsLoading(true);
       setDateStart(date);
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
-      const res = await getVouchers(exchanges[0], start, end);
-      filter({ filterTrades: res.trades, ticker: res.ticker });
+      const result = await storeCtx.getOuterTradesProfits({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        start: start.toISOString().substring(0, 10),
+        end: end.toISOString().substring(0, 10),
+      });
+      setChartData(result.chartData);
+      setProfits(result.profits);
+      const trades = await getVouchers({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        start,
+        end,
+        offset: 0,
+        limit: limit,
+      });
+      filter(trades, {});
       setIsLoading(false);
-      // }
     },
-    [dateEnd, filter, getVouchers]
+    [dateEnd, filter, filterTicker, getVouchers, limit, storeCtx]
   );
 
   const dateEndUpdateHandler = useCallback(
     async (date) => {
-      // if (date.getTime() >= dateStart.getTime()) {
+      const newPage = 1;
+      setPage(newPage);
       setIsLoading(true);
       setDateEnd(date);
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
-      const res = await getVouchers(exchanges[0], start, end);
-      filter({ filterTrades: res.trades, ticker: res.ticker });
+      const result = await storeCtx.getOuterTradesProfits({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        start: start.toISOString().substring(0, 10),
+        end: end.toISOString().substring(0, 10),
+      });
+      setChartData(result.chartData);
+      setProfits(result.profits);
+      const trades = await getVouchers({
+        ticker: filterTicker,
+        exchange: exchanges[0],
+        start,
+        end,
+        offset: 0,
+        limit: limit,
+      });
+      filter(trades, {});
       setIsLoading(false);
-      // }
     },
-    [dateStart, filter, getVouchers]
+    [dateStart, filter, filterTicker, getVouchers, limit, storeCtx]
   );
+
+  const selectTickerHandler = useCallback(
+    async (ticker) => {
+      let newTrades,
+        newPage = 1;
+      setPage(newPage);
+      setIsLoading(true);
+      setFilterTicker(ticker);
+      const result = await storeCtx.getOuterTradesProfits({
+        ticker: ticker,
+        exchange: exchanges[0],
+        start: startDate,
+        end: endDate,
+      });
+      setChartData(result.chartData);
+      setProfits(result.profits);
+      if (
+        trades &&
+        trades[filterExchange] &&
+        trades[filterExchange][ticker] &&
+        trades[filterExchange][ticker][newPage]
+      ) {
+        newTrades = trades[filterExchange][ticker][newPage];
+        console.log(`newTrades`, newTrades);
+      } else {
+        newTrades = await getVouchers({
+          ticker,
+          exchange: exchanges[0],
+          offset: (newPage - 1) * limit,
+          limit: limit,
+        });
+        console.log(`newTrades`, newTrades);
+      }
+      filter(newTrades, { ticker });
+      setIsLoading(false);
+    },
+    [
+      storeCtx,
+      startDate,
+      endDate,
+      trades,
+      filterExchange,
+      filter,
+      getVouchers,
+      limit,
+    ]
+  );
+
+  const nextPageHandler = useCallback(async () => {
+    let newTrades,
+      newPage = page + 1;
+    if (SafeMath.lte(newPage, Math.ceil(totalCounts, limit))) {
+      setPage(newPage);
+      setIsLoading(true);
+      if (
+        trades &&
+        trades[filterExchange] &&
+        trades[filterExchange][filterTicker] &&
+        trades[filterExchange][filterTicker][newPage]
+      ) {
+        newTrades = trades[filterExchange][filterTicker][newPage];
+        console.log(`newTrades`, newTrades);
+      } else {
+        newTrades = await getVouchers({
+          ticker: filterTicker,
+          exchange: exchanges[0],
+          offset: (newPage - 1) * limit,
+          limit: limit,
+        });
+        console.log(`newTrades`, newTrades);
+      }
+      filter(newTrades, {});
+      setIsLoading(false);
+    }
+  }, [
+    getVouchers,
+    filter,
+    filterExchange,
+    filterTicker,
+    limit,
+    page,
+    totalCounts,
+    trades,
+  ]);
+
+  const prevPageHandler = useCallback(async () => {
+    let newTrades,
+      newPage = page - 1;
+    console.log(`prevPageHandler newPage`, newPage);
+    console.log(
+      `trades[${filterExchange}][${filterTicker}][${newPage}]`,
+      trades
+    );
+    if (
+      SafeMath.gte(newPage, 1) &&
+      trades &&
+      trades[filterExchange] &&
+      trades[filterExchange][filterTicker] &&
+      trades[filterExchange][filterTicker][newPage]
+    ) {
+      setPage(newPage);
+      setIsLoading(true);
+      newTrades = trades[filterExchange][filterTicker][newPage];
+      filter(newTrades, {});
+      setIsLoading(false);
+    }
+  }, [filter, filterExchange, filterTicker, page, trades]);
 
   const sorting = (key, ascending) => {
     // console.log(`key`, key);
@@ -484,11 +618,6 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
-        /**
-         * [deprecated] 2022/10/28
-         */
-        // await storeCtx.getExchangeRates();
-        // console.log(`exchangeRates`, exchangeRates);
         const now = new Date();
         const end = new Date(
           `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
@@ -501,17 +630,28 @@ const Vouchers = () => {
             startTime.getMonth() + 1
           }-${startTime.getDate()} 08:00:00`
         );
-        const res = await getVouchers(
-          exchanges[0],
-          start.toISOString().substring(0, 10),
-          end.toISOString().substring(0, 10)
-        );
+        const result = await storeCtx.getOuterTradesProfits({
+          ticker: filterTicker,
+          exchange: exchanges[0],
+          start: start.toISOString().substring(0, 10),
+          end: end.toISOString().substring(0, 10),
+        });
+        setChartData(result.chartData);
+        setProfits(result.profits);
+        const trades = await getVouchers({
+          exchange: exchanges[0],
+          ticker: filterTicker,
+          start: start.toISOString().substring(0, 10),
+          end: end.toISOString().substring(0, 10),
+          offset: 0,
+          limit,
+        });
+        filter(trades, {});
         setIsLoading(false);
-        filter({ filterTrades: res.trades, ticker: res.ticker });
         return !prev;
       } else return prev;
     });
-  }, [filterOption, getVouchers, filter]);
+  }, [filterOption, storeCtx, filterTicker, getVouchers, limit, filter]);
 
   useEffect(() => {
     if (!isInit) {
@@ -531,9 +671,7 @@ const Vouchers = () => {
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"
-            selectHandler={(ticker) => {
-              filter({ ticker });
-            }}
+            selectHandler={(ticker) => selectTickerHandler(ticker)}
             options={tickers ? Object.values(tickers) : []}
             selected={filterTicker}
           />
@@ -545,7 +683,20 @@ const Vouchers = () => {
               placeholder={t("search-keywords")}
               onInput={(e) => {
                 setFilterKey(e.target.value);
-                filter({ keyword: e.target.value });
+                console.log(`setFilterKey e.target.value`, e.target.value);
+                console.log(
+                  `trades[${filterExchange}][${filterTicker}][${page}]`,
+                  trades
+                );
+                if (
+                  trades &&
+                  trades[filterExchange] &&
+                  trades[filterExchange][filterTicker] &&
+                  trades[filterExchange][filterTicker][page]
+                )
+                  filter(trades[filterExchange][filterTicker][page], {
+                    keyword: e.target.value,
+                  });
               }}
             />
             <div className="screen__search-icon">
@@ -628,8 +779,9 @@ const Vouchers = () => {
           </div>
         </div>
         <div className="screen__container">
-          <table className={`screen__table${showMore ? " show" : ""}`}>
+          <table className={`screen__table`}>
             <tr className="screen__table-headers">
+              <th className="screen__table-header screen__shrink">#</th>
               <TableHeader
                 label={t("date")}
                 onClick={(ascending) => sorting("ts", ascending)}
@@ -676,13 +828,41 @@ const Vouchers = () => {
             </tr>
             <tr className="screen__table-rows">
               {filterTrades &&
-                filterTrades.map((trade) => <VoucherTile trade={trade} />)}
+                filterTrades.map((trade, index) => (
+                  <VoucherTile
+                    trade={trade}
+                    number={(page - 1) * limit + (index + 1)}
+                  />
+                ))}
             </tr>
-            <tfoot
+            {/* <tfoot
               className="screen__table-btn screen__table-text"
               onClick={() => setShowMore((prev) => !prev)}
             >
               {showMore ? t("show-less") : t("show-more")}
+            </tfoot> */}
+            <tfoot className="screen__table-tools">
+              <div
+                className={`screen__table-tool${
+                  SafeMath.gt(page, 1) ? "" : " disable"
+                }`}
+                onClick={prevPageHandler}
+              >
+                <div className="screen__table-tool--left"></div>
+              </div>
+              <div className="screen__page">{`${page} / ${Math.ceil(
+                totalCounts / limit
+              )}`}</div>
+              <div
+                className={`screen__table-tool${
+                  SafeMath.lt(page, Math.ceil(totalCounts / limit))
+                    ? ""
+                    : " disable"
+                }`}
+                onClick={nextPageHandler}
+              >
+                <div className="screen__table-tool--right"></div>
+              </div>
             </tfoot>
           </table>
         </div>
