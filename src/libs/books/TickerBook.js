@@ -89,8 +89,11 @@ class TickerBook extends BookBase {
     return price;
   }
 
-  getTickerSnapshot() {
-    return this._snapshot[this._currentMarket];
+  getTickerSnapshot(market) {
+    let snapshot;
+    if (market) snapshot = this._snapshot[market];
+    else snapshot = this._snapshot[this._currentMarket];
+    return snapshot
   }
 
   getSnapshot() {

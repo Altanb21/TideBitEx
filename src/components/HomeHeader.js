@@ -1,9 +1,10 @@
-import { t } from "i18next";
+import { useTranslation } from "react-i18next";
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 
 const HomeHeader = (props) => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
   return (
     <div className="home-header">
       <a className="home-header__brand" href="/">

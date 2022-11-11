@@ -238,5 +238,16 @@
   "tokex_expire": "页面闲置过久，请重新登入",
   "email-exist": "此 Email 已有管理者权限",
   "state": "状态",
-  "home-announcement-1": "有关全球加密货币监管及合规声明"
+  "home-announcement-1": "有关全球加密货币监管及合规声明",
+  "home_info_bank_header": "安全的私人交易平台",
+  "home_info_bank_description": "超过5年时间研发，稳定高效。",
+  "home_info_shield_header": "链上交易，资产不经过平台",
+  "home_info_shield_description": "真正的去中心化系统，客户资产自己保管。",
+  "home_info_currency_header": "稳定法币进出",
+  "home_info_currency_description": "与全球知名加密货币支付机构合作，全球入金。",
+  "home_info_chat_header": "多渠道客服",
+  "home_info_chat_description": "用户可通过Whatsapp 、Facebook、电邮询问操作疑难及查询一切事项，行内独有。",
+  "custom_focus": "客户为先服务宗旨",
+  "custom_focus_description": "全球新手及专业用户的交易首选。",
+  "experience_now": "立即体验"
 }

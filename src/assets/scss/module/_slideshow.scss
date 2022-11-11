@@ -1,0 +1,60 @@
+.slideshow {
+  padding: 20px;
+  width: 100vw;
+  height: 200px;
+  background-position: center;
+  background-size: cover;
+  background-image: url("../../images/bitcoin_background.png");
+  &__container {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+  &__link {
+    display: block;
+    flex: 1;
+    min-height: 160px;
+  }
+  &__image {
+    height: 100%;
+    width: 100%;
+    background-position: center;
+    background-size: contain;
+  }
+  &__link:nth-child(1) > &__image {
+    background-image: url(var(--advertisement-1));
+  }
+  &__link:nth-child(2) > &__image {
+    background-image: url(var(--advertisement-2));
+  }
+  &__link:nth-child(3) > &__image {
+    background-image: url(var(--advertisement-3));
+  }
+  &__link:nth-child(4) > &__image {
+    background-image: url(var(--advertisement-4));
+  }
+}
+
+@media only screen and (max-width: $screen-md) {
+  .slideshow {
+    padding: 0px;
+    overflow: hidden;
+    &__container {
+      position: relative;
+      display: block;
+      gap: 0;
+      width: 100vw;
+    }
+    &__link {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: translate(-100vw);
+      transition: all 0.5s;
+    }
+    &__link.active {
+      transform: translate(0);
+    }
+  }
+}

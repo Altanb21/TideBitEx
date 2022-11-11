@@ -484,8 +484,12 @@ class Middleman {
     }
   }
 
-  getTickerSnapshot() {
+  getCurrentTicker() {
     return this.tickerBook.getCurrentTicker();
+  }
+
+  getTickerSnapshot(market) {
+    return this.tickerBook.getTickerSnapshot(market);
   }
 
   async _getTicker(market) {

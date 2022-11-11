@@ -98,7 +98,7 @@ const StoreProvider = (props) => {
         });
         setMarket(market);
         await middleman.selectMarket(market);
-        const ticker = middleman.getTickerSnapshot();
+        const ticker = middleman.getCurrentTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
         setTrades(middleman.getTradesSnapshot(market));
@@ -420,7 +420,7 @@ const StoreProvider = (props) => {
           break;
         case Events.tickers:
           middleman.tickerBook.updateByDifference(metaData.data);
-          let ticker = middleman.getTickerSnapshot();
+          let ticker = middleman.getCurrentTicker();
           if (ticker) setPrecision(ticker);
           // if (time - tickersLastTimeSync > tickersSyncInterval) {
           setSelectedTicker(ticker);
@@ -503,8 +503,8 @@ const StoreProvider = (props) => {
       });
     middleman.tickerBook.setCurrentMarket(market);
     setMarket(market);
-    setSelectedTicker(middleman.getTickerSnapshot());
-    setPrecision(middleman.getTickerSnapshot());
+    setSelectedTicker(middleman.getCurrentTicker());
+    setPrecision(middleman.getCurrentTicker());
     if (!isLogin) {
       await middleman.getAccounts();
       setIsLogin(middleman.isLogin);
@@ -541,6 +541,10 @@ const StoreProvider = (props) => {
     console.log(`stop`);
     clearInterval(interval);
   }, []);
+
+  const getTicker = (market) => {
+    return middleman.getTickerSnapshot(market)
+  };
 
   return (
     <StoreContext.Provider
@@ -607,6 +611,7 @@ const StoreProvider = (props) => {
         getPlatformAssets,
         updatePlatformAsset,
         getDashboardData,
+        getTicker,
       }}
     >
       {props.children}

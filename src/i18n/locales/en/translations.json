@@ -239,5 +239,16 @@
   "tokex_expire": "Token Expired. Please re-loginin.",
   "email-exist": "This email already has administrator privileges",
   "state": "State",
-  "home-announcement-1": "Statement on cryptocurrency regulation and compliance"
+  "home-announcement-1": "Statement on cryptocurrency regulation and compliance",
+  "home_info_bank_header": "Private Online Platform",
+  "home_info_bank_description": "Efficient and stable system with 5 years+ R&D.",
+  "home_info_shield_header": "Truly decentralized on-chain transaction",
+  "home_info_shield_description": "Digital assets are not going on a centralized platform, customer to hold the assets.",
+  "home_info_currency_header": "Stable fiat gateway",
+  "home_info_currency_description": "Partner with global crypto payment institutions to accept worldwide transfers.",
+  "home_info_chat_header": "Multi-channel customer service",
+  "home_info_chat_description": "Users can use Whatsapp, Facebook, email to ask questions and support, which is unique within the industry.",
+  "custom_focus": "Customer-focus",
+  "custom_focus_description": "First choice among new users and crypto natives.",
+  "experience_now": "Experience Now"
 }
