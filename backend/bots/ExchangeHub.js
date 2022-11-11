@@ -2618,7 +2618,8 @@ class ExchangeHub extends Bot {
           start: startDate,
           end: endtDate,
         });
-        counts = result["count(*)"];
+        this.logger.debug(`countOuterTrades result`, result);
+        counts = result["counts"];
         if (counts > 0) {
           const dbOuterTrades = await this.database.getOuterTrades({
             type: Database.TIME_RANGE_TYPE.BETWEEN,
@@ -2849,7 +2850,7 @@ class ExchangeHub extends Bot {
           currency: tickerSetting.code,
           state: Database.ORDER_STATE_CODE.WAIT,
         });
-        totalCounts = result["count(*)"];
+        totalCounts = result["counts"];
         if (res.success) {
           // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
           for (let order of res.payload) {
