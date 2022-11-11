@@ -2241,7 +2241,7 @@ class ExchangeHub extends Bot {
           lastDailyBar.getMonth() + 1
         }-${lastDailyBar.getDate()}`;
         let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
-        this.logger.debug(`formateDailyProfitChart price`, price);
+        // this.logger.debug(`formateDailyProfitChart price`, price);
         if (!data[key])
           data[key] = {
             y: SafeMath.mult(profit, price),
@@ -2579,7 +2579,7 @@ class ExchangeHub extends Bot {
     //   chartData = result.chartData;
     //   profits = result.profits;
     // }
-    this.logger.debug(`formateTrades result`, result);
+    // this.logger.debug(`formateTrades result`, result);
     return new ResponseFormat({
       message: "getOuterTradesProfit",
       payload: { chartData: chartData, profits: profits },
@@ -2611,14 +2611,15 @@ class ExchangeHub extends Bot {
       counts;
     switch (exchange) {
       case SupportedExchange.OKEX:
-        // let result = await this.database.countOuterTrades({
-        //   currency: tickerSetting.code,
-        //   type: Database.TIME_RANGE_TYPE.BETWEEN,
-        //   exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
-        //   start: startDate,
-        //   end: endtDate,
-        // });
-        // counts = result["count(*)"];
+        let result = await this.database.countOuterTrades({
+          currency: tickerSetting.code,
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          start: startDate,
+          end: endtDate,
+        });
+        this.logger.debug(`countOuterTrades result`, result);
+        counts = result["counts"];
         if (counts > 0) {
           const dbOuterTrades = await this.database.getOuterTrades({
             type: Database.TIME_RANGE_TYPE.BETWEEN,
@@ -2849,7 +2850,7 @@ class ExchangeHub extends Bot {
           currency: tickerSetting.code,
           state: Database.ORDER_STATE_CODE.WAIT,
         });
-        totalCounts = result["count(*)"];
+        totalCounts = result["counts"];
         if (res.success) {
           // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
           for (let order of res.payload) {

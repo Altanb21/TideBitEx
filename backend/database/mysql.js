@@ -1022,7 +1022,7 @@ class mysql {
   }) {
     const query = `
     SELECT 
-        count(*)
+        count(*) as counts
     FROM 
         outer_trades
     WHERE 
@@ -1067,7 +1067,7 @@ class mysql {
   async countOrders({ currency, state }) {
     const query = `
     SELECT 
-        count(*)
+        count(*) as counts
     FROM 
         orders
     WHERE 
