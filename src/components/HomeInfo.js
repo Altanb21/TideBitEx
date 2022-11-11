@@ -1,9 +1,7 @@
-import React, { useContext } from "react";
-import StoreContext from "../store/store-context";
+import React from "react";
 import { useTranslation } from "react-i18next";
 
 const HomeInfo = () => {
-  const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   return (
     <div className="home-info">

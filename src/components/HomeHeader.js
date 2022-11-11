@@ -87,18 +87,12 @@ const HomeHeader = (props) => {
             </label>
             <div className="home-header__options">
               <div className="home-header__option home-header__item">
-                <a
-                  className="home-header__link"
-                  href="/referral"
-                >
+                <a className="home-header__link" href="/referral">
                   <span>{t("refer_friend")}</span>
                 </a>
               </div>
               <div className="home-header__option home-header__item">
-                <a
-                  className="home-header__link"
-                  href="/transfer"
-                >
+                <a className="home-header__link" href="/transfer">
                   <span>{t("transfer")}</span>
                 </a>
               </div>
@@ -151,23 +145,44 @@ const HomeHeader = (props) => {
           </div>
         </div>
       </div>
-      <div className="home-header__box">
-        <div className="home-header__items">
-          <div className="home-header__item">
-            <a className="home-header__link" href="/signin">
-              {t("login")}
-            </a>
+      {!storeCtx.isLogin && (
+        <div className="home-header__box">
+          <div className="home-header__items">
+            <div className="home-header__item">
+              <a className="home-header__link" href="/signin">
+                {t("login")}
+              </a>
+            </div>
+            <div className="home-header__item">
+              <a className="home-header__link" href="/register">
+                {t("register")}
+              </a>
+            </div>
           </div>
-          <div className="home-header__item">
-            <a className="home-header__link" href="/register">
-              {t("register")}
-            </a>
+          <div className="home-header__sidebar-btn">
+            <label className="home-header__label home-header__label--img"></label>
           </div>
         </div>
-        <div className="home-header__sidebar-btn">
-          <label className="home-header__label home-header__label--img"></label>
+      )}
+      {storeCtx.isLogin && (
+        <div className="home-header__box">
+          <div className="home-header__items">
+            <div className="home-header__item">
+              <a className="home-header__link" href="/accounts">
+                {t("accounts")}
+              </a>
+            </div>
+            <div className="home-header__item">
+              <a className="home-header__link" href="/signout">
+                {t("logout")}
+              </a>
+            </div>
+          </div>
+          <div className="home-header__sidebar-btn">
+            <label className="home-header__label home-header__label--img"></label>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
