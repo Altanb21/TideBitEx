@@ -2182,10 +2182,16 @@ class ExchangeHub extends Bot {
     let chartData = { data: {}, xaxisType: "string" },
       data = {},
       profits = {},
-      lastDailyBar = new Date(
-        `${dbOuterTrades[0].create_at.toISOString().substring(0, 10)} 00:00:00`
-      ),
-      nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
+      lastDailyBar = dbOuterTrades[0]
+        ? new Date(
+            `${dbOuterTrades[0].create_at
+              .toISOString()
+              .substring(0, 10)} 00:00:00`
+          )
+        : null,
+      nextDailyBarTime = lastDailyBar
+        ? Utils.getNextDailyBarTime(lastDailyBar.getTime())
+        : null;
     for (let dbOuterTrade of dbOuterTrades) {
       let outerTradeData = JSON.parse(dbOuterTrade.data),
         outerFee = outerTradeData.avgPx
@@ -2235,7 +2241,7 @@ class ExchangeHub extends Bot {
           lastDailyBar.getMonth() + 1
         }-${lastDailyBar.getDate()}`;
         let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
-        this.logger.debug(`formateDailyProfitChart price`, price);
+        // this.logger.debug(`formateDailyProfitChart price`, price);
         if (!data[key])
           data[key] = {
             y: SafeMath.mult(profit, price),
@@ -2272,14 +2278,16 @@ class ExchangeHub extends Bot {
     let chartData = { data: {}, xaxisType: "string" },
       data = {},
       profits = {},
-      lastMonthlyBar = new Date(
-        `${dbOuterTrades[0].create_at
-          .toISOString()
-          .substring(0, 7)}-01 00:00:00`
-      ),
-      nextMonthlyBarTime = Utils.getNextMonthlyBarTime(
-        lastMonthlyBar.getTime()
-      );
+      lastMonthlyBar = dbOuterTrades[0]
+        ? new Date(
+            `${dbOuterTrades[0].create_at
+              .toISOString()
+              .substring(0, 7)}-01 00:00:00`
+          )
+        : null,
+      nextMonthlyBarTime = lastMonthlyBar
+        ? Utils.getNextMonthlyBarTime(lastMonthlyBar.getTime())
+        : null;
     for (let dbOuterTrade of dbOuterTrades) {
       let outerTradeData = JSON.parse(dbOuterTrade.data),
         outerFee = outerTradeData.avgPx
@@ -2571,7 +2579,7 @@ class ExchangeHub extends Bot {
     //   chartData = result.chartData;
     //   profits = result.profits;
     // }
-    this.logger.debug(`formateTrades result`, result);
+    // this.logger.debug(`formateTrades result`, result);
     return new ResponseFormat({
       message: "getOuterTradesProfit",
       payload: { chartData: chartData, profits: profits },
@@ -2610,7 +2618,8 @@ class ExchangeHub extends Bot {
           start: startDate,
           end: endtDate,
         });
-        counts = result["count(*)"];
+        this.logger.debug(`countOuterTrades result`, result);
+        counts = result["counts"];
         if (counts > 0) {
           const dbOuterTrades = await this.database.getOuterTrades({
             type: Database.TIME_RANGE_TYPE.BETWEEN,
@@ -2828,12 +2837,20 @@ class ExchangeHub extends Bot {
       orderIds = [],
       emails = [],
       pendingOrders = [],
-      memberIds = {};
+      memberIds = {},
+      totalCounts,
+      id = query.instId.replace("-", "").toLowerCase(),
+      tickerSetting = this.tickersSettings[id];
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
+        let result = await this.database.countOrders({
+          currency: tickerSetting.code,
+          state: Database.ORDER_STATE_CODE.WAIT,
+        });
+        totalCounts = result["counts"];
         if (res.success) {
           // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
           for (let order of res.payload) {
@@ -3013,7 +3030,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
-          payload: pendingOrders,
+          payload: { pendingOrders, totalCounts },
         });
       default:
         return new ResponseFormat({
@@ -3452,7 +3469,14 @@ class ExchangeHub extends Bot {
     }
   }
 
-  async updateOrderStatus({ transacion, orderId, memberId, orderData }) {
+  async updateOrderStatus({
+    transacion,
+    orderId,
+    memberId,
+    orderData,
+    dbOrder,
+    tickerSetting,
+  }) {
     /* !!! HIGH RISK (start) !!! */
     // 1. -get orderId from body-
     // 2. get order data from table
@@ -3477,12 +3501,15 @@ class ExchangeHub extends Bot {
       currencyId,
       // account,
       // updateAccount,
+      _tickerSetting,
       accountVersion,
       createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
     try {
-      order = await this.database.getOrder(orderId, {
-        dbTransaction: transacion,
-      });
+      order = dbOrder
+        ? dbOrder
+        : await this.database.getOrder(orderId, {
+            dbTransaction: transacion,
+          });
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
@@ -3491,6 +3518,12 @@ class ExchangeHub extends Bot {
         //   limit: 1,
         //   dbTransaction: transacion,
         // });
+        _tickerSetting = tickerSetting
+          ? tickerSetting
+          : Object.values(this.tickersSettings).find((ts) =>
+              SafeMath.eq(ts.code, order.currency)
+            );
+        if (!_tickerSetting) throw Error("Can't find instId");
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
@@ -3520,12 +3553,15 @@ class ExchangeHub extends Bot {
         await this._updateAccount(accountVersion, transacion);
         this.logger.debug(`被取消訂單對應的用戶帳號更新了`);
         updatedOrder = {
-          ...orderData,
+          ...order,
+          clOrdId: orderData.clOrdId,
+          instId: _tickerSetting?.instId,
           state: Database.ORDER_STATE.CANCEL,
           state_text: Database.ORDER_STATE_TEXT.CANCEL,
           at: parseInt(SafeMath.div(Date.now(), "1000")),
           ts: Date.now(),
         };
+        this.logger.debug(`回傳更新後的 order snapshot`, updatedOrder);
         // updateAccount = {
         //   balance: SafeMath.plus(account.balance, balance),
         //   locked: SafeMath.plus(account.locked, locked),
@@ -3552,26 +3588,50 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
   async postCancelOrder({ header, params, query, body, memberId }) {
-    const tickerSetting = this.tickersSettings[body.market];
-    const source = tickerSetting?.source;
-    let result,
+    let transacion = await this.database.transaction(),
+      dbOrder,
+      tickerSetting,
+      result,
       dbUpdateR,
       apiR,
-      orderId = body.id;
+      orderId = body.orderId,
+      clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
     try {
-      switch (source) {
+      dbOrder = await this.database.getOrder(orderId, {
+        dbTransaction: transacion,
+      });
+      this.logger.debug(
+        `postCancelOrder dbOrder[memberId:${memberId}](SafeMath.eq(dbOrder.member_id, memberId):${SafeMath.eq(
+          dbOrder.member_id,
+          memberId
+        )})`,
+        dbOrder
+      );
+      if (!SafeMath.eq(dbOrder.member_id, memberId))
+        throw Error("Order not found");
+      tickerSetting = Object.values(this.tickersSettings).find((ts) =>
+        SafeMath.eq(ts.code, dbOrder.currency)
+      );
+      this.logger.debug(`postCancelOrder tickerSetting`, tickerSetting);
+      if (!tickerSetting) throw Error("Can't find ticker");
+      switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
-          let transacion = await this.database.transaction();
+
           this.logger.debug(
-            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號`
+            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號 orderId:[${orderId}] clOrdId:[${clOrdId}]`
           );
           dbUpdateR = await this.updateOrderStatus({
             transacion,
             orderId,
             memberId,
-            orderData: body,
+            dbOrder,
+            tickerSetting,
+            orderData: {
+              id: orderId,
+              clOrdId,
+            },
           });
           /* !!! HIGH RISK (end) !!! */
           if (!dbUpdateR?.success) {
@@ -3588,7 +3648,11 @@ class ExchangeHub extends Bot {
             apiR = await this.okexConnector.router("postCancelOrder", {
               params,
               query,
-              body,
+              memberId,
+              body: {
+                instId: tickerSetting.instId,
+                clOrdId,
+              },
             });
             this.logger.debug(`okexCancelOrderRes`, apiR);
           }
@@ -3603,9 +3667,12 @@ class ExchangeHub extends Bot {
               this.logger.debug(`準備通知前端更新頁面`);
               this._emitUpdateOrder({
                 memberId,
-                instId: body.instId,
-                market: body.market,
-                order: dbUpdateR.updatedOrder,
+                instId: tickerSetting.instId,
+                market: tickerSetting.market,
+                order: {
+                  ...dbUpdateR.updatedOrder,
+                  ordId: apiR.payload[0].ordId,
+                },
               });
               // this._emitUpdateAccount({
               //   memberId,
@@ -3617,6 +3684,7 @@ class ExchangeHub extends Bot {
           result = apiR;
           break;
         case SupportedExchange.TIDEBIT:
+          await transacion.commit();
           result = this.tideBitConnector.router(`postCancelOrder`, {
             header,
             body: { ...body, orderId, market: tickerSetting },
@@ -5241,6 +5309,7 @@ class ExchangeHub extends Bot {
 
   async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
+    // this.logger.debug(`_updateAccount accountVersion`, accountVersion)
     let accountVersionId, newAccountVersion;
     const account = await this.database.getAccountsByMemberId(
       accountVersion.member_id,
@@ -5279,8 +5348,8 @@ class ExchangeHub extends Bot {
       amount: amount,
       modifiableId: accountVersion.modifiable_id,
       modifiableType: accountVersion.modifiable_type,
-      createdAt: `"${accountVersion.created_at}"`,
-      updatedAt: `"${accountVersion.updated_at}"`,
+      createdAt: accountVersion.created_at,
+      updatedAt: accountVersion.updated_at,
       currency: account.currency,
       fun: accountVersion.fun,
     };

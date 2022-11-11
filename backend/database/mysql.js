@@ -1022,7 +1022,7 @@ class mysql {
   }) {
     const query = `
     SELECT 
-        count(*)
+        count(*) as counts
     FROM 
         outer_trades
     WHERE 
@@ -1055,6 +1055,30 @@ class mysql {
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
             ? [exchangeCode, days]
             : [exchangeCode, start, end],
+      });
+      this.logger.debug(`counts`, counts);
+      return counts;
+    } catch (error) {
+      this.logger.debug(error);
+      return [];
+    }
+  }
+
+  async countOrders({ currency, state }) {
+    const query = `
+    SELECT 
+        count(*) as counts
+    FROM 
+        orders
+    WHERE 
+      orders.currency = ?
+      AND orders.state = ?
+    ;`;
+    try {
+      this.logger.debug("countOrders", query, `${`[${currency}, ${state}]`}`);
+      const [[counts]] = await this.db.query({
+        query,
+        values: [currency, state],
       });
       this.logger.debug(`counts`, counts);
       return counts;
@@ -1488,6 +1512,8 @@ class mysql {
         amount,
         modifiable_id,
         modifiable_type,
+        created_at,
+        updated_at,
         currency,
         fun
       );

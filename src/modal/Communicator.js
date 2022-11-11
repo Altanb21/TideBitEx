@@ -451,13 +451,13 @@ class Communicator {
   }
 
   // Trade
-  async cancel(order) {
+  async cancel(orderId) {
     try {
       // const res = await this._post(`/trade/cancel-order`, order);
       const res = await this._request({
         method: "POST",
         url: `/trade/cancel-order`,
-        data: { ...order, "X-CSRF-Token": this.CSRFToken },
+        data: { orderId, "X-CSRF-Token": this.CSRFToken },
       });
       if (res.success) {
         return res.data;
