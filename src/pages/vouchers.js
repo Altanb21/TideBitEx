@@ -443,8 +443,8 @@ const Vouchers = () => {
       const result = await storeCtx.getOuterTradesProfits({
         ticker: filterTicker,
         exchange: exchanges[0],
-        start: start.toISOString().substring(0, 10),
-        end: end.toISOString().substring(0, 10),
+        start,
+        end,
       });
       setChartData(result.chartData);
       setProfits(result.profits);
@@ -473,8 +473,8 @@ const Vouchers = () => {
       const result = await storeCtx.getOuterTradesProfits({
         ticker: filterTicker,
         exchange: exchanges[0],
-        start: start.toISOString().substring(0, 10),
-        end: end.toISOString().substring(0, 10),
+        start,
+        end,
       });
       setChartData(result.chartData);
       setProfits(result.profits);
