@@ -8,8 +8,18 @@
   right: 0;
   z-index: 1030;
   display: flex;
-  &__brand{
+  &__brand {
     padding: 14px 15px;
+    width: 175px;
+    height: 60px;
+    overflow: hidden;
+    & > div {
+      background-image: url(../../images/btn_header_logo.png);
+      width: 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+    }
   }
   &__container,
   &__box,

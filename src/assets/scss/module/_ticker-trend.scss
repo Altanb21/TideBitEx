@@ -5,9 +5,10 @@
   grid-template-rows: 1fr;
   font-family: PingFangHK-Regular;
   background-color: rgba(0, 0, 0, 0.7);
-  padding: 0;
   margin-bottom: 0;
   color: #fff;
+  padding: 10px 20px;
+  row-gap: 20px;
   &__container {
     padding-left: 0;
     padding-right: 0;

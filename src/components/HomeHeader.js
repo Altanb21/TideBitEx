@@ -9,13 +9,7 @@ const HomeHeader = (props) => {
   return (
     <div className="home-header">
       <a className="home-header__brand" href="/">
-        <img
-          src="/btn_header_logo.png"
-          className="d-inline-block align-top"
-          alt="TideBit"
-          width="175px"
-          height="60px"
-        />
+        <div></div>
       </a>
       <div className="home-header__container">
         <div className="home-header__collapse">
