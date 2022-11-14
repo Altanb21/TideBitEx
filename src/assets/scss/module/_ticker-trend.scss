@@ -31,7 +31,8 @@
       height: 100%;
     }
   }
-  &__text {
+  &__text,
+  &__price {
     display: inline-block;
     font-size: 24px;
   }
@@ -45,6 +46,14 @@
   }
 }
 
+@media only screen and (max-width: $screen-lg) {
+  .ticker-trend {
+    &__text {
+      display: inline-block;
+      font-size: 16px;
+    }
+  }
+}
 @media only screen and (max-width: $screen-md-2) {
   .ticker-trend {
     &__leading,
@@ -52,11 +61,11 @@
       flex-direction: column;
     }
     &__leading > div:nth-child(1),
-    &__content > div:nth-child(1){
+    &__content > div:nth-child(1) {
       align-items: flex-start;
     }
     &__leading > div:nth-child(2),
-    &__content > div:nth-child(2){
+    &__content > div:nth-child(2) {
       align-items: flex-end;
     }
   }

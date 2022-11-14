@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 import Languages from "../constant/Languages";
+import { FaCaretDown } from "react-icons/fa";
 
 const HomeSidebar = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -26,7 +27,7 @@ const HomeSidebar = (props) => {
           </li>
           <li className="home-sidebar__item">
             <a
-              className="home-sidebar__item"
+              className="home-sidebar__link"
               href={`/markets/${storeCtx.defaultMarket}`}
             >
               {t("spot_trade")}
@@ -34,7 +35,7 @@ const HomeSidebar = (props) => {
           </li>
           <li className="home-sidebar__item">
             <a
-              className="home-sidebar__item"
+              className="home-sidebar__link"
               href={`https://tidebit.zendesk.com/hc/zh-tw/articles/360003146914-%E5%A4%A7%E9%A1%8D%E4%BA%A4%E6%98%93Block-Trade-OTC-%E5%B0%88%E5%B1%AC-Whatsapp-852-62871829`}
             >
               {t("block_trade")}
@@ -47,7 +48,7 @@ const HomeSidebar = (props) => {
           </li>
           <li className="home-sidebar__item">
             <a className="home-sidebar__link" href="/tbt">
-              {t("tbt")}
+              TBT
             </a>
           </li>
           <li className="home-sidebar__item">
@@ -62,7 +63,7 @@ const HomeSidebar = (props) => {
           </li>
           <li className="home-sidebar__item">
             <a
-              className="home-sidebar__item"
+              className="home-sidebar__link"
               href="https://tidebit.zendesk.com/hc/zh-tw/sections/115002703828-公告"
             >
               {t("announcement")}
@@ -103,7 +104,10 @@ const HomeSidebar = (props) => {
               name="home-sidebar-dropdown"
             />
             <label className="home-sidebar__item home-sidebar__label">
-              {Languages[storeCtx.languageKey]}
+              <span>{Languages[storeCtx.languageKey]}</span>
+              <span>
+                <FaCaretDown />
+              </span>
             </label>
             <div className="home-sidebar__options">
               {Object.keys(Languages).map((key) => (
@@ -111,6 +115,7 @@ const HomeSidebar = (props) => {
                   className="home-sidebar__option home-sidebar__item"
                   key={key}
                   onClick={() => {
+                    props.sidebarHandler();
                     storeCtx.changeLanguage(key);
                   }}
                 >

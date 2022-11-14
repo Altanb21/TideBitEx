@@ -1,9 +1,11 @@
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
+import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 
 const TickerTrendContainer = (props) => {
+  const { t } = useTranslation();
   return (
     <div className="ticker-trend__container">
       <div className="ticker-trend__leading">
@@ -55,14 +57,10 @@ const TickerTrendContainer = (props) => {
             : "--"}
         </div>
         <div className="ticker-trend__volume">
-          {`Volume: ${
+          {`${t('volume')}: ${
             props.ticker
               ? formateDecimal(props.ticker?.volume, {
-                  decimalLength: props.ticker
-                    ? props.ticker.lotSz?.split(".").length > 1
-                      ? props.ticker.lotSz?.split(".")[1].length
-                      : 0
-                    : "0",
+                  decimalLength: 2,
                   pad: true,
                 })
               : "--"
