@@ -54,27 +54,42 @@
     }
   }
 }
-@media only screen and (max-width: $screen-md-2) {
+@media only screen and (max-width: $screen-md) {
   .ticker-trend {
+    height: 100px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
     &__leading,
     &__content {
       flex-direction: column;
     }
     &__leading > div:nth-child(1),
     &__content > div:nth-child(1) {
-      align-items: flex-start;
+      align-self: flex-start;
     }
     &__leading > div:nth-child(2),
     &__content > div:nth-child(2) {
-      align-items: flex-end;
+      align-self: flex-end;
     }
   }
 }
 
 @media only screen and (max-width: $screen-sm) {
   .ticker-trend {
-    height: 100px;
+    // height: 100px;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
+    &__leading,
+    &__content {
+      flex-direction: row;
+    }
+    &__leading > div:nth-child(1),
+    &__content > div:nth-child(1) {
+      align-self: flex-start;
+    }
+    &__leading > div:nth-child(2),
+    &__content > div:nth-child(2) {
+      align-self: flex-end;
+    }
   }
 }

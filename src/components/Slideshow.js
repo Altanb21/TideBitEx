@@ -22,6 +22,7 @@ const Slideshow = () => {
       }, 500);
     } else {
       clearInterval(interval);
+      setActiveIndex(null)
     }
   }, [activeIndex, width]);
 
