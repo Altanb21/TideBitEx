@@ -10,7 +10,7 @@ const HomeFooter = () => {
     <div className="home-footer">
       <div className="home-footer__container">
         <div className="home-footer__box home-footer__infos">
-          <a className="home-header__brand home-footer__item" href="/">
+          <a className="home-footer__brand home-footer__item" href="/">
             <img
               src="/tidebit_footer_logo.svg"
               className="d-inline-block align-top"
