@@ -8,7 +8,14 @@
   margin-bottom: 0;
   color: #fff;
   padding: 10px 20px;
-  row-gap: 20px;
+  column-gap: 20px;
+
+  &__leading,
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
   &__container {
     padding-left: 0;
     padding-right: 0;
@@ -34,6 +41,23 @@
     }
     &.increase {
       color: #03a66d;
+    }
+  }
+}
+
+@media only screen and (max-width: $screen-md-2) {
+  .ticker-trend {
+    &__leading,
+    &__content {
+      flex-direction: column;
+    }
+    &__leading > div:nth-child(1),
+    &__content > div:nth-child(1){
+      align-items: flex-start;
+    }
+    &__leading > div:nth-child(2),
+    &__content > div:nth-child(2){
+      align-items: flex-end;
     }
   }
 }

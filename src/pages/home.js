@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import HomeFooter from "../components/HomeFooter";
 import HomeHeader from "../components/HomeHeader";
 import HomeInfo from "../components/HomeInfo";
@@ -10,10 +10,14 @@ import HomeStores from "../components/HomeStores";
 
 const Home = () => {
   const { t } = useTranslation();
+  const [active, setActive] = useState(false);
   return (
     <div className="home">
-      <HomeHeader />
-      <HomeSidebar />
+      <HomeHeader sidebarHandler={() => setActive((prev) => !prev)} />
+      <HomeSidebar
+        active={active}
+        sidebarHandler={() => setActive((prev) => !prev)}
+      />
       <div className="home__infos">
         <Slideshow />
         <div className="home__announcement">

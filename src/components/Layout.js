@@ -21,14 +21,9 @@ const Layout = ({ children }) => {
           storeCtx.setFocusEl(e.target);
       }}
     >
-      {active && (
-        <SideBar
-        />
-      )}
+      {active && <SideBar />}
       <div className={`layout--pusher${active ? " active" : ""}`}>
-        <Header
-          sidebarHandler={() => setActive((prev) => !prev)}
-        />
+        <Header sidebarHandler={() => setActive((prev) => !prev)} />
         {children}
         <BottomNavigator />
         <div className="layout--cover" onClick={() => setActive(false)}></div>

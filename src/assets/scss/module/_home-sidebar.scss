@@ -4,6 +4,18 @@
   width: 100vw;
   height: 100vh;
   z-index: 1050;
+  &__brand {
+    padding: 14px 15px;
+    width: 205px;
+    height: 80px;
+    overflow: hidden;
+    & > div {
+      background-image: url(../../images/btn_header_logo.png);
+      background-size: 270px, 180px;
+      width: 175px;
+      height: 60px;
+    }
+  }
   &__overlay {
     display: none;
     pointer-events: none;
@@ -23,14 +35,23 @@
     transform: translate();
     background-color: #fff;
     box-shadow: -1px 10px 26px 0 #29485c;
-    transition: right .8s ease-out,z-index .8s ease-out;
+    transition: right 0.8s ease-out, z-index 0.8s ease-out;
     top: 0;
     right: -100%;
     z-index: 2000;
-    margin-top: 30px;
-    margin-right: 40px;
+    padding-top: 30px;
+    padding-right: 40px;
+    text-align: right;
   }
-  &.active{
+  &__link{
+    font-size: 12px;
+    text-align: right;
+    line-height: 40px;
+    padding: 0;
+    color: #4a4a4a;
+  }
+  &.active,
+  &.active > &__menu {
     display: block;
   }
   &.active > &__overlay {

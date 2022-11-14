@@ -81,7 +81,7 @@ const HomeHeader = (props) => {
               type="radio"
               name="home-header-dropdown"
             />
-            <label className="home-header__label home-header__label--text">
+            <label className="home-header__item home-header__label home-header__label--text">
               <span>{t("member")}</span>
               <span>
                 <FaCaretDown />
@@ -111,8 +111,8 @@ const HomeHeader = (props) => {
             </a>
           </div>
         </div>
-        <div className="home-header__collapse">
-          <div className="home-header__box">
+        <div className="home-header__box">
+          <div className="home-header__items">
             {!storeCtx.isLogin && (
               <>
                 <div className="home-header__item">
@@ -142,34 +142,39 @@ const HomeHeader = (props) => {
               </>
             )}
           </div>
-          <div className="home-header__dropdown">
-            <input
-              className="home-header__input"
-              type="radio"
-              name="home-header-dropdown"
-            />
-            <label className="home-header__item home-header__label home-header__label--border">
-              <span>{Languages[storeCtx.languageKey]}</span>
-              <span>
-                <FaCaretDown />
-              </span>
-            </label>
-            <div className="home-header__options">
-              {Object.keys(Languages).map((key) => (
-                <li
-                  className="home-header__option home-header__item"
-                  key={key}
-                  onClick={() => {
-                    storeCtx.changeLanguage(key);
-                  }}
-                >
-                  <div>{Languages[key]}</div>
-                </li>
-              ))}
+          <div className="home-header__collapse">
+            <div className="home-header__dropdown">
+              <input
+                className="home-header__input"
+                type="radio"
+                name="home-header-dropdown"
+              />
+              <label className="home-header__item home-header__label home-header__label--border">
+                <span>{Languages[storeCtx.languageKey]}</span>
+                <span>
+                  <FaCaretDown />
+                </span>
+              </label>
+              <div className="home-header__options">
+                {Object.keys(Languages).map((key) => (
+                  <li
+                    className="home-header__option home-header__item"
+                    key={key}
+                    onClick={() => {
+                      storeCtx.changeLanguage(key);
+                    }}
+                  >
+                    <div>{Languages[key]}</div>
+                  </li>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-        <div className="home-header__sidebar-btn">
+        <div
+          className="home-header__sidebar-btn"
+          onClick={props.sidebarHandler}
+        >
           <label className="home-header__label home-header__label--img">
             <div></div>
           </label>

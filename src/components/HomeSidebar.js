@@ -8,22 +8,19 @@ const HomeSidebar = (props) => {
   const { t } = useTranslation();
   return (
     <div className={`home-sidebar${props.active ? " active" : ""}`}>
-      <div className="home-sidebar__overlay"></div>
+      <div
+        className="home-sidebar__overlay"
+        onClick={props.sidebarHandler}
+      ></div>
       <div className="home-sidebar__menu">
         <div className="home-sidebar__header">
           <a className="home-sidebar__brand" href="/">
-            <img
-              src="/TideBit_White_hk.png"
-              className="d-inline-block align-top"
-              alt="TideBit"
-              width="175px"
-              height="60px"
-            />
+            <div></div>
           </a>
         </div>
         <ul className="home-sidebar__items">
           <li className="home-sidebar__item">
-            <a className="home-sidebar__item" href="/">
+            <a className="home-sidebar__link" href="/">
               {t("home")}
             </a>
           </li>
@@ -44,22 +41,22 @@ const HomeSidebar = (props) => {
             </a>
           </li>
           <li className="home-sidebar__item">
-            <a className="home-sidebar__item" href="/digital_staking/plans">
+            <a className="home-sidebar__link" href="/digital_staking/plans">
               {t("digital_staking")}
             </a>
           </li>
           <li className="home-sidebar__item">
-            <a className="home-sidebar__item" href="/tbt">
+            <a className="home-sidebar__link" href="/tbt">
               {t("tbt")}
             </a>
           </li>
           <li className="home-sidebar__item">
-            <a className="home-sidebar__item" href="/referral">
+            <a className="home-sidebar__link" href="/referral">
               {t("refer_now")}
             </a>
           </li>
           <li className="home-sidebar__item">
-            <a className="home-sidebar__item" href="/zendesk">
+            <a className="home-sidebar__link" href="/zendesk">
               {t("support_center")}
             </a>
           </li>
@@ -74,12 +71,12 @@ const HomeSidebar = (props) => {
           {!storeCtx.isLogin && (
             <>
               <li className="home-sidebar__item">
-                <a className="home-sidebar__item" href="/signin">
+                <a className="home-sidebar__link" href="/signin">
                   {t("login")}
                 </a>
               </li>
               <li className="home-sidebar__item">
-                <a className="home-sidebar__item" href="/register">
+                <a className="home-sidebar__link" href="/register">
                   {t("register")}
                 </a>
               </li>
@@ -88,12 +85,12 @@ const HomeSidebar = (props) => {
           {storeCtx.isLogin && (
             <>
               <li className="home-sidebar__item">
-                <a className="home-sidebar__item" href="/accounts">
+                <a className="home-sidebar__link" href="/accounts">
                   {t("accounts")}
                 </a>
               </li>
               <li className="home-sidebar__item">
-                <a className="home-sidebar__item" href="/signout">
+                <a className="home-sidebar__link" href="/signout">
                   {t("logout")}
                 </a>
               </li>
