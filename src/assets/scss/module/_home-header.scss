@@ -8,30 +8,49 @@
   right: 0;
   z-index: 1030;
   display: flex;
+  align-items: center;
+  padding-right: 20px;
   &__brand {
     padding: 14px 15px;
-    width: 175px;
-    height: 60px;
+    width: 205px;
+    height: 80px;
     overflow: hidden;
     & > div {
       background-image: url(../../images/btn_header_logo.png);
-      width: 100%;
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
+      background-size: 270px, 180px;
+      width: 175px;
+      height: 60px;
     }
   }
+  &__label {
+    margin-bottom: 0;
+    padding: 10px;
+    &--img > div {
+      width: 24px;
+      height: 24px;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: cover;
+      background-image: url(../../images/header_product_dropdown.svg);
+    }
+  }
+  &__container{
+    flex: auto;
+  }
+  &__collapse {
+    gap: 30px;
+  }
   &__container,
-  &__box,
   &__collapse,
-  &__items {
+  &__box {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
   }
-  &__box {
+  &__sidebar-btn{
     display: none;
+    
   }
   &__dropdown {
     position: relative;
@@ -63,7 +82,10 @@
       padding: 2px 28px;
     }
   }
-  &__item {
+  &__label--text > span,
+  &__item,
+  &__link {
+    display: inline-block;
     color: #4a4a4a;
     font-family: PingFangTC, helvetica neue, Helvetica;
     font-size: 18px;
@@ -72,6 +94,19 @@
   &__item:hover {
     color: #6db76d;
   }
+  &__logo{
+    width: 24px;
+    height: 24px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    &--isun{
+      background-image: url(../../images/isunone_header_logo.svg);
+    }
+    &--xpa{
+      background-image: url(../../images/xpa_header_logo.svg);
+    }
+  }
 }
 
 @media only screen and (max-width: $screen-lg) {
@@ -79,15 +114,12 @@
     &__container {
       display: none;
     }
-    &__box {
-      display: flex;
-    }
   }
 }
 
 @media only screen and (max-width: $screen-mini) {
   .home-header {
-    &__items {
+    &__box {
       display: none;
     }
   }

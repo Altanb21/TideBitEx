@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
 import Languages from "../constant/Languages";
+import { FaCaretDown } from "react-icons/fa";
 
 const HomeHeader = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -19,14 +20,16 @@ const HomeHeader = (props) => {
               type="radio"
               name="home-header-dropdown"
             />
-            <label className="home-header__label home-header__label--img"></label>
+            <label className="home-header__label home-header__label--img">
+              <div></div>
+            </label>
             <div className="home-header__options">
               <div className="home-header__option home-header__item">
                 <a
                   className="home-header__link home-header__link--logo"
                   href="http://isun.one/"
                 >
-                  <span className="home-header__logo-container home-header__logo-isun"></span>
+                  <span className="home-header__logo home-header__logo--isun"></span>
                   <span>iSunOne</span>
                 </a>
               </div>
@@ -35,7 +38,7 @@ const HomeHeader = (props) => {
                   className="home-header__link home-header__link--logo"
                   href="https://xpa.exchange"
                 >
-                  <span className="home-header__logo-container home-header__logo-xpa"></span>
+                  <span className="home-header__logo home-header__logo--xpa"></span>
                   <span>XPA Exchange</span>
                 </a>
               </div>
@@ -48,8 +51,10 @@ const HomeHeader = (props) => {
               name="home-header-dropdown"
             />
             <label className="home-header__item home-header__label home-header__label--text">
-              <span>{t("trade")}</span>
-              <span></span>
+              <span>{t("navigator_trade")}</span>
+              <span>
+                <FaCaretDown />
+              </span>
             </label>
             <div className="home-header__options">
               <div className="home-header__option home-header__item">
@@ -78,7 +83,9 @@ const HomeHeader = (props) => {
             />
             <label className="home-header__label home-header__label--text">
               <span>{t("member")}</span>
-              <span></span>
+              <span>
+                <FaCaretDown />
+              </span>
             </label>
             <div className="home-header__options">
               <div className="home-header__option home-header__item">
@@ -100,14 +107,14 @@ const HomeHeader = (props) => {
           </div>
           <div className="home-header__item">
             <a className="home-header__link" href="/tbt">
-              {t("tbt")}
+              TBT
             </a>
           </div>
         </div>
         <div className="home-header__collapse">
-          {!storeCtx.isLogin && (
-            <div className="home-header__box">
-              <div className="home-header__items">
+          <div className="home-header__box">
+            {!storeCtx.isLogin && (
+              <>
                 <div className="home-header__item">
                   <a className="home-header__link" href="/signin">
                     {t("login")}
@@ -118,15 +125,10 @@ const HomeHeader = (props) => {
                     {t("register")}
                   </a>
                 </div>
-              </div>
-              <div className="home-header__sidebar-btn">
-                <label className="home-header__label home-header__label--img"></label>
-              </div>
-            </div>
-          )}
-          {storeCtx.isLogin && (
-            <div className="home-header__box">
-              <div className="home-header__items">
+              </>
+            )}
+            {storeCtx.isLogin && (
+              <>
                 <div className="home-header__item">
                   <a className="home-header__link" href="/accounts">
                     {t("accounts")}
@@ -137,12 +139,9 @@ const HomeHeader = (props) => {
                     {t("logout")}
                   </a>
                 </div>
-              </div>
-              <div className="home-header__sidebar-btn">
-                <label className="home-header__label home-header__label--img"></label>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
           <div className="home-header__dropdown">
             <input
               className="home-header__input"
@@ -150,7 +149,10 @@ const HomeHeader = (props) => {
               name="home-header-dropdown"
             />
             <label className="home-header__item home-header__label home-header__label--border">
-              {Languages[storeCtx.languageKey]}
+              <span>{Languages[storeCtx.languageKey]}</span>
+              <span>
+                <FaCaretDown />
+              </span>
             </label>
             <div className="home-header__options">
               {Object.keys(Languages).map((key) => (
@@ -166,6 +168,11 @@ const HomeHeader = (props) => {
               ))}
             </div>
           </div>
+        </div>
+        <div className="home-header__sidebar-btn">
+          <label className="home-header__label home-header__label--img">
+            <div></div>
+          </label>
         </div>
       </div>
     </div>
