@@ -54,7 +54,15 @@
   &__input,
   &__options {
     display: none;
+    flex-direction: column;
+    align-items: flex-end;
   }
+  &__label {
+    margin-bottom: 0;
+    line-height: 40px;
+  }
+  &__item:hover > &__link,
+  &__link:hover,
   &__label:hover,
   &__label:hover > span,
   &__option:hover,
@@ -68,7 +76,7 @@
   &__option {
     border-bottom: 1px solid;
     color: #9e9e9e;
-    border-bottom: solid 1px #979797;
+    border-bottom: solid 1px #96969636;
     width: 100px;
     line-height: 40px;
   }

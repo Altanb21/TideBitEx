@@ -101,9 +101,9 @@ const HomeSidebar = (props) => {
             <input
               className="home-sidebar__input"
               type="checkbox"
-              name="home-sidebar-dropdown"
+              id="home-sidebar-dropdown"
             />
-            <label className="home-sidebar__item home-sidebar__label">
+            <label className="home-sidebar__item home-sidebar__label" htmlFor="home-sidebar-dropdown">
               <span>{Languages[storeCtx.languageKey]}</span>
               <span>
                 <FaCaretDown />

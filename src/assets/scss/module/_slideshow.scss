@@ -27,20 +27,18 @@
     padding: 0px;
     overflow: hidden;
     &__container {
-      position: relative;
       display: block;
       gap: 0;
       width: 100vw;
     }
     &__link {
-      position: absolute;
-      top: 0;
-      left: 0;
       transform: translate(-100vw);
-      transition: all 0.5s;
+      transition: translate 0.5s;
+      display: none;
     }
     &__link.active {
       transform: translate(0);
+      display: block;
     }
   }
 }
