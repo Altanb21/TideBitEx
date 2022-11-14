@@ -20,6 +20,8 @@ const Slideshow = () => {
           return index;
         });
       }, 500);
+    } else {
+      clearInterval(interval);
     }
   }, [activeIndex, width]);
 
@@ -51,23 +53,21 @@ const Slideshow = () => {
           className={`slideshow__link${activeIndex === 1 ? " active" : ""}`}
           href="/markets/galahkd"
         >
-          <div
+          <img
             className="slideshow__image"
-            style={{
-              backgroundImage: `../../images/advertisement_${storeCtx.languageKey}-1.png`,
-            }}
-          ></div>
+            src={`/advertisement_${storeCtx.languageKey}-1.png`}
+            alt="advertisement_1"
+          />
         </a>
         <a
           className={`slideshow__link${activeIndex === 2 ? " active" : ""}`}
           href="/tbt"
         >
-          <div
+          <img
             className="slideshow__image"
-            style={{
-              backgroundImage: `../../images/advertisement_${storeCtx.languageKey}-2.png`,
-            }}
-          ></div>
+            src={`/advertisement_${storeCtx.languageKey}-2.png`}
+            alt="advertisement_2"
+          />
         </a>
         <a
           className={`slideshow__link${activeIndex === 3 ? " active" : ""}`}
@@ -75,23 +75,21 @@ const Slideshow = () => {
             storeCtx.isLogin ? "/circle/transfer_instructions/new" : "/signin"
           }`}
         >
-          <div
+          <img
             className="slideshow__image"
-            style={{
-              backgroundImage: `../../images/advertisement_${storeCtx.languageKey}-3.png`,
-            }}
-          ></div>
+            src={`/advertisement_${storeCtx.languageKey}-3.png`}
+            alt="advertisement_3"
+          />
         </a>
         <a
           className={`slideshow__link${activeIndex === 4 ? " active" : ""}`}
           href={`${storeCtx.isLogin ? "/accounts" : "/signin"}`}
         >
-          <div
+          <img
             className="slideshow__image"
-            style={{
-              backgroundImage: `../../images/advertisement_${storeCtx.languageKey}-4.png`,
-            }}
-          ></div>
+            src={`/advertisement_${storeCtx.languageKey}-4.png`}
+            alt="advertisement_4"
+          />
         </a>
       </div>
     </div>

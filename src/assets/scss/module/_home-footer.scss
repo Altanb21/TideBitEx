@@ -17,6 +17,10 @@
   &__infos {
     margin-top: 0px;
   }
+  &__item{
+    display: flex;
+    flex-direction: column;
+  }
   &__item:nth-child(1) {
     flex: 5;
   }

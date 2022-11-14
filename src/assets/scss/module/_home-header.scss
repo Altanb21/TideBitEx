@@ -8,6 +8,9 @@
   right: 0;
   z-index: 1030;
   display: flex;
+  &__brand{
+    padding: 14px 15px;
+  }
   &__container,
   &__box,
   &__collapse,

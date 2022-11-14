@@ -13,7 +13,7 @@
     padding-right: 0;
     max-width: 1440px;
   }
-  &__ticker {
+  &__icon {
     display: inline-block;
     width: 40px;
     height: 40px;
@@ -26,6 +26,14 @@
   &__text {
     display: inline-block;
     font-size: 24px;
+  }
+  &__change-pct {
+    &.decrease {
+      color: #cf304a;
+    }
+    &.increase {
+      color: #03a66d;
+    }
   }
 }
 
