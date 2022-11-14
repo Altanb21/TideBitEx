@@ -14,7 +14,7 @@ const Slideshow = () => {
       interval = setInterval(() => {
         if (!activeIndex || activeIndex === 4) activeIndex = 1;
         else activeIndex = activeIndex + 1;
-      }, 1000);
+      }, 1500);
     } else {
       clearInterval(interval);
       activeIndex = null;

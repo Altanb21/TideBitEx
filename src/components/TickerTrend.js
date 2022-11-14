@@ -3,6 +3,7 @@ import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
+import ApexCharts from "react-apexcharts";
 
 const TickerTrendContainer = (props) => {
   const { t } = useTranslation();
@@ -67,7 +68,9 @@ const TickerTrendContainer = (props) => {
           }`}
         </div>
       </div>
-      <div className="ticker-trend__chart"></div>
+      <div className="ticker-trend__chart">
+
+      </div>
     </div>
   );
 };
