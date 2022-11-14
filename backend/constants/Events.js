@@ -17,6 +17,7 @@ module.exports = {
   tickerOnUnsubscribe: "tickerOnUnsubscribe",
   userOnSubscribe: "userOnSubscribe",
   userOnUnsubscribe: "userOnUnsubscribe",
+  registerMarkets: "registerMarkets",
 
   // update event
   tickers: "tickers",

@@ -101,6 +101,13 @@ class WSChannel extends Bot {
                 );
                 this._onOpSwitchMarket(ws, args);
                 break;
+              case Events.registerMarkets:
+                this.logger.debug(
+                  `[${this.constructor.name} registerMarkets]`,
+                  args
+                );
+                this._onOpRegisterMarkets(ws, args);
+                break;
               default:
                 ws.send(
                   JSON.stringify(
@@ -172,7 +179,7 @@ class WSChannel extends Bot {
         ...header,
         memberId: args.memberId,
         XSRFToken: args.XSRFToken,
-        peatioSession: args.peatioSession
+        peatioSession: args.peatioSession,
         // userid: args.userId
       },
       redis
@@ -218,6 +225,13 @@ class WSChannel extends Bot {
         wsId: ws.id,
       });
     }
+  }
+
+  _onOpRegisterMarkets(ws, arg) {
+    this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarkets[${arg}]`);
+    EventBus.emit(Events.registerMarkets, {
+      arg,
+    });
   }
 
   _onOpSwitchMarket(ws, args) {

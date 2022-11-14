@@ -11,12 +11,14 @@ const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
 const { getBar, convertExponentialToDecimal } = require("../Utils");
 const Database = require("../../constants/Database");
+const { IGNORE } = require("sequelize/types/index-hints");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {
   isStart = false;
   socketId;
   public_pusher = null;
+  registerMarkets = [];
   // private_pusher = {};
   sn = {};
 
@@ -588,6 +590,14 @@ class TibeBitConnector extends ConnectorBase {
       market,
       trades: this.tradeBook.getSnapshot(instId),
     });
+
+    if (this.registerMarkets.includes(market)) {
+      EventBus.emit(Events.trades, {
+        market,
+        trades: this.tradeBook.getSnapshot(instId),
+      });
+    }
+
     this.logger.debug(
       `---------- [${this.constructor.name}]  _updateTrades [END] ----------`
     );
@@ -1351,8 +1361,10 @@ class TibeBitConnector extends ConnectorBase {
             },
           })
         );
-        this.market_channel[`market-${market}-global`]["listener"] = [wsId];
-        this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
+        if (wsId)
+          this.market_channel[`market-${market}-global`]["listener"] = [wsId];
+        if (lotSz)
+          this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
       } catch (error) {
         this.logger.error(`_registerMarketChannel error`, error);
         throw error;
@@ -1666,6 +1678,21 @@ class TibeBitConnector extends ConnectorBase {
       this.logger.debug(
         `---------- [${this.constructor.name}]  _unsubscribeMarket [END] ----------`
       );
+    }
+  }
+
+  _registerMarkets(markets) {
+    for (let market of markets) {
+      let tickerSetting = this.tickersSettings[market];
+      this.logger.debug(
+        `[${this.constructor.name}]_registerMarkets tickerSetting`,
+        tickerSetting
+      );
+      if (tickerSetting.source === SupportedExchange.TIDEBIT) {
+        this.logger.debug(`source is Tidebit`);
+        this._registerMarketChannel(market);
+        this.registerMarkets = [...this.registerMarkets, market];
+      }
     }
   }
 }

@@ -27,6 +27,7 @@ const StoreContext = React.createContext({
   baseCurrency: "hkd",
   disableTrade: false,
   tokenExpired: null,
+  registerTickers: [],
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},

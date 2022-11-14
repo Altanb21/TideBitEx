@@ -251,7 +251,7 @@ class Middleman {
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }
-  
+
   async cancelOrder(order) {
     if (this.isLogin) {
       const result = await this.communicator.cancel(order.id);
@@ -675,7 +675,7 @@ class Middleman {
     }
   }
 
-  async initWs() {
+  async initWs(registerTickers) {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${
@@ -683,6 +683,7 @@ class Middleman {
       }/ws`,
       memberId: options.memberId,
     });
+    this.tbWebSocket.registerMarkets(registerTickers);
     if (options.memberId && options.peatioSession) {
       this.isLogin = true;
       this.memberId = options.memberId;

@@ -21,6 +21,7 @@ class OkexConnector extends ConnectorBase {
   okexWsChannels = {};
   instIds = [];
   slanger = {};
+  registerMarkets = [];
 
   fetchedTrades = {};
   fetchedBook = {};
@@ -1805,6 +1806,13 @@ class OkexConnector extends ConnectorBase {
         trades: this.tradeBook.getSnapshot(instId),
       });
 
+      if(this.registerMarkets.includes(market)){
+        EventBus.emit(Events.trades, {
+          market,
+          trades: this.tradeBook.getSnapshot(instId),
+        });
+      }
+
       // ++ workaround, to be optimized: broadcast to slanger
       trade_data[market] = trade_data[market] || [];
       trade_data[market] = trade_data[market].concat(trades);
@@ -2139,6 +2147,21 @@ class OkexConnector extends ConnectorBase {
       this.logger.debug(
         `---------- [${this.constructor.name}]  _unsubscribeMarket [END] ----------`
       );
+    }
+  }
+
+  _registerMarkets(markets) {
+    for (let market of markets) {
+      let tickerSetting = this.tickersSettings[market];
+      this.logger.debug(
+        `[${this.constructor.name}]_registerMarkets tickerSetting`,
+        tickerSetting
+      );
+      if (tickerSetting.source === SupportedExchange.OKEX) {
+        this.logger.debug(`source is OKx`);
+        this._subscribeTrades(tickerSetting?.instId);
+        this.registerMarkets = [...this.registerMarkets, market]
+      }
     }
   }
 

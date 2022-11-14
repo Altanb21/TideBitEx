@@ -45,6 +45,7 @@ const StoreProvider = (props) => {
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
   const [baseCurrency, setBaseCurrency] = useState("hkd");
+  const [registerTickers, setRgisterTickers] = useState(["btcusdt", "ethusdt"]);
   /**
    * [deprecated] 2022/10/28
    */
@@ -519,7 +520,7 @@ const StoreProvider = (props) => {
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
     initLanguage();
-    await middleman.initWs();
+    await middleman.initWs(registerTickers);
     eventListener();
     await middleman.getTickers();
     setTickers(middleman.getTickersSnapshot());
@@ -532,7 +533,7 @@ const StoreProvider = (props) => {
     }
     setIsInit(true);
     // console.log(`storeCtx init end`);
-  }, [initLanguage, countDown, eventListener, middleman]);
+  }, [initLanguage, middleman, registerTickers, eventListener, countDown]);
 
   const start = useCallback(async () => {
     let market =
@@ -614,6 +615,7 @@ const StoreProvider = (props) => {
         memberEmail,
         baseCurrency,
         depthChartData,
+        registerTickers,
         /**
          * [deprecated] 2022/10/28
          */

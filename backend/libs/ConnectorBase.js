@@ -49,6 +49,13 @@ class ConnectorBase {
     EventBus.on(Events.userOnUnsubscribe, (data) => {
       this._unsubscribeUser(data);
     });
+    EventBus.on(Events.registerMarkets, (data) => {
+      this._registerMarkets(data.markets);
+    });
+  }
+
+  _registerMarkets() {
+    throw new Error("need override _registerMarkets");
   }
 
   _subscribeUser() {

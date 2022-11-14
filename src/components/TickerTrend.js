@@ -8,7 +8,7 @@ import ApexCharts from "react-apexcharts";
 const TickerTrendContainer = (props) => {
   const { t } = useTranslation();
   return (
-    <div className="ticker-trend__container">
+    <div className="ticker-trend__container" key={props.key}>
       <div className="ticker-trend__leading">
         <div className="ticker-trend__ticker">
           <span className="ticker-trend__icon">
@@ -58,7 +58,7 @@ const TickerTrendContainer = (props) => {
             : "--"}
         </div>
         <div className="ticker-trend__volume">
-          {`${t('volume')}: ${
+          {`${t("volume")}: ${
             props.ticker
               ? formateDecimal(props.ticker?.volume, {
                   decimalLength: 2,
@@ -68,9 +68,7 @@ const TickerTrendContainer = (props) => {
           }`}
         </div>
       </div>
-      <div className="ticker-trend__chart">
-
-      </div>
+      <div className="ticker-trend__chart"></div>
     </div>
   );
 };
@@ -79,8 +77,12 @@ const TickerTrend = () => {
   const storeCtx = useContext(StoreContext);
   return (
     <div className="ticker-trend">
-      <TickerTrendContainer ticker={storeCtx.getTicker("btcusdt")} />
-      <TickerTrendContainer ticker={storeCtx.getTicker("ethusdt")} />
+      {storeCtx.registerTickers.map((ticker) => (
+        <TickerTrendContainer
+          ticker={storeCtx.getTicker(ticker)}
+          key={ticker}
+        />
+      ))}
     </div>
   );
 };
