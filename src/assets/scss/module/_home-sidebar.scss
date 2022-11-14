@@ -1,5 +1,6 @@
 .home-sidebar {
-  position: relative;
+  display: none;
+  position: fixed;
   width: 100vw;
   height: 100vh;
   z-index: 1050;
@@ -28,6 +29,9 @@
     z-index: 2000;
     margin-top: 30px;
     margin-right: 40px;
+  }
+  &.active{
+    display: block;
   }
   &.active > &__overlay {
     display: block;

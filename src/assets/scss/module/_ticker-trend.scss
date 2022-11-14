@@ -3,6 +3,30 @@
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   grid-template-rows: 1fr;
+  font-family: PingFangHK-Regular;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 0;
+  margin-bottom: 0;
+  color: #fff;
+  &__container {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: 1440px;
+  }
+  &__ticker {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+    & > img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  &__text {
+    display: inline-block;
+    font-size: 24px;
+  }
 }
 
 @media only screen and (max-width: $screen-sm) {

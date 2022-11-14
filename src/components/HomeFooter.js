@@ -12,7 +12,7 @@ const HomeFooter = () => {
         <div className="home-footer__box home-footer__infos">
           <a className="home-header__brand home-footer__item" href="/">
             <img
-              src="/TideBit_White_hk.png"
+              src="/tidebit_footer_logo.svg"
               className="d-inline-block align-top"
               alt="TideBit"
               width="175px"
@@ -21,7 +21,7 @@ const HomeFooter = () => {
           </a>
           {/* <div className="home-footer__items"> */}
           <div className="home-footer__item">
-            <div className="home-footer__header">{t("c")}</div>
+            <div className="home-footer__header">{t("services")}</div>
             <a
               className="home-footer__link"
               href={`/markets/${storeCtx.defaultMarket}`}

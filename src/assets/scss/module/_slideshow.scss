@@ -1,10 +1,7 @@
 .slideshow {
-  padding: 20px;
-  width: 100vw;
+  width: 100%;
   height: 200px;
-  background-position: center;
-  background-size: cover;
-  background-image: url("../../images/bitcoin_background.png");
+  padding: 20px;
   &__container {
     width: 100%;
     display: flex;
