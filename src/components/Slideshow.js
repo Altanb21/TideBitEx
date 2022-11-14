@@ -1,52 +1,26 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import { useViewport } from "../store/ViewportProvider";
 import StoreContext from "../store/store-context";
-let interval;
+let interval,
+  activeIndex = null;
 const Slideshow = () => {
   const storeCtx = useContext(StoreContext);
-  // const [languageKey, setLanguageKey] = useState(null);
-  const [activeIndex, setActiveIndex] = useState(null);
+  // const [activeIndex, setActiveIndex] = useState(null);
   const { width } = useViewport();
   const breakpoint = 992;
 
   useEffect(() => {
     if (!activeIndex && width <= breakpoint) {
-      clearInterval(interval);
       interval = setInterval(() => {
-        setActiveIndex((prev) => {
-          let index;
-          if (!prev || prev === 4) index = 1;
-          else index = prev + 1;
-          return index;
-        });
-      }, 500);
+        if (!activeIndex || activeIndex === 4) activeIndex = 1;
+        else activeIndex = activeIndex + 1;
+      }, 1000);
     } else {
       clearInterval(interval);
-      setActiveIndex(null)
+      activeIndex = null;
     }
-  }, [activeIndex, width]);
+  }, [width]);
 
-  // useEffect(() => {
-  //   if (!languageKey || languageKey !== storeCtx.languageKey) {
-  //     document.documentElement.style.setProperty(
-  //       `--advertisement-1`,
-  //       `../../images/advertisement_${storeCtx.languageKey}-1.png`
-  //     );
-  //     document.documentElement.style.setProperty(
-  //       `--advertisement-2`,
-  //       `../../images/advertisement_${storeCtx.languageKey}-2.png`
-  //     );
-  //     document.documentElement.style.setProperty(
-  //       `--advertisement-3`,
-  //       `../../images/advertisement_${storeCtx.languageKey}-3.png`
-  //     );
-  //     document.documentElement.style.setProperty(
-  //       `--advertisement-4`,
-  //       `../../images/advertisement_${storeCtx.languageKey}-4.png`
-  //     );
-  //     setLanguageKey(storeCtx.languageKey);
-  //   }
-  // }, [languageKey, storeCtx.languageKey]);
   return (
     <div className="slideshow">
       <div className="slideshow__container">

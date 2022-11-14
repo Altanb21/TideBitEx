@@ -81,7 +81,7 @@
     line-height: 40px;
   }
   &__input:checked ~ &__options {
-    display: block;
+    display: flex;
   }
   &.active {
     display: block;

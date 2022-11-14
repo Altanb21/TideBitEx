@@ -18,8 +18,10 @@
   &__icon {
     width: 55px;
     height: 55px;
+    min-width: 55px;
     background-position: center;
     background-size: contain;
+    background-repeat: no-repeat;
     &--bank {
       background-image: url("../../images/bank_icon.svg");
     }

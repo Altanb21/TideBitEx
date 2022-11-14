@@ -56,7 +56,7 @@
 }
 @media only screen and (max-width: $screen-md) {
   .ticker-trend {
-    height: 100px;
+    // height: 100px;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr;
     &__leading,
