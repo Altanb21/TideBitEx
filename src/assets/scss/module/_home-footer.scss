@@ -49,6 +49,9 @@
   &__link {
     color: #707070;
   }
+  &__social-medias {
+    gap: 50px;
+  }
   &__social-media {
     display: inline-block;
     height: 30px;
@@ -71,6 +74,7 @@
     }
   }
   &__copyright {
+    margin-top: 20px;
     text-align: left;
   }
 }

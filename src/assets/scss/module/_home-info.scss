@@ -8,10 +8,12 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr;
+    row-gap: 20px;
   }
   &__item {
     display: flex;
     flex-direction: row;
+    gap: 20px;
   }
   &__icon {
     width: 55px;
@@ -47,6 +49,7 @@
     align-items: center;
     justify-content: center;
     gap: 20px;
+    margin: 20px 0;
   }
   &__button {
     color: #e6e6e6;
