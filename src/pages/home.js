@@ -1,15 +1,13 @@
-import React, { useContext } from "react";
+import React from "react";
 import HomeFooter from "../components/HomeFooter";
 import HomeHeader from "../components/HomeHeader";
 import HomeInfo from "../components/HomeInfo";
 import HomeSidebar from "../components/HomeSidebar";
-import Slideshow from "../components/SlideShow";
+import Slideshow from "../components/Slideshow";
 import TickerTrend from "../components/TickerTrend";
-import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 
 const Home = () => {
-  const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   return (
     <div className="home">

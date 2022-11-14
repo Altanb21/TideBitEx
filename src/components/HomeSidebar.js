@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
+import Languages from "../constant/Languages";
 
 const HomeSidebar = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -101,22 +102,22 @@ const HomeSidebar = (props) => {
           <li className="home-sidebar__dropdown">
             <input
               className="home-sidebar__input"
-              type="radio"
+              type="checkbox"
               name="home-sidebar-dropdown"
             />
             <label className="home-sidebar__item home-sidebar__label">
-              {props.languageKey}
+              {Languages[storeCtx.languageKey]}
             </label>
             <div className="home-sidebar__options">
-              {Object.keys(props.languages).map((key) => (
+              {Object.keys(Languages).map((key) => (
                 <li
                   className="home-sidebar__option home-sidebar__item"
                   key={key}
                   onClick={() => {
-                    props.changeLanguage(key);
+                    storeCtx.changeLanguage(key);
                   }}
                 >
-                  <div>{props.languages[key]}</div>
+                  <div>{Languages[key]}</div>
                 </li>
               ))}
             </div>

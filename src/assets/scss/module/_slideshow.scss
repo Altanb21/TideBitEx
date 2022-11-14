@@ -22,18 +22,6 @@
     background-position: center;
     background-size: contain;
   }
-  &__link:nth-child(1) > &__image {
-    background-image: url(var(--advertisement-1));
-  }
-  &__link:nth-child(2) > &__image {
-    background-image: url(var(--advertisement-2));
-  }
-  &__link:nth-child(3) > &__image {
-    background-image: url(var(--advertisement-3));
-  }
-  &__link:nth-child(4) > &__image {
-    background-image: url(var(--advertisement-4));
-  }
 }
 
 @media only screen and (max-width: $screen-md) {

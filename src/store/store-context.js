@@ -281,7 +281,8 @@ const StoreContext = React.createContext({
   getPlatformAssets: async () => {},
   updatePlatformAsset: async (id, data) => {},
   getDashboardData: async () => {},
-  getTicker: (market) => {}
+  getTicker: (market) => {},
+  changeLanguage: (key) => {},
 });
 
 export default StoreContext;

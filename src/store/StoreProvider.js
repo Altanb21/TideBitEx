@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import Middleman from "../modal/Middleman";
@@ -6,6 +6,7 @@ import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import Events from "../constant/Events";
 import Codes from "../constant/Codes";
+import { useTranslation } from "react-i18next";
 
 let interval,
   depthBookSyncInterval = 500,
@@ -21,6 +22,7 @@ const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
   const location = useLocation();
   const history = useHistory();
+  const { i18n } = useTranslation();
   const [isInit, setIsInit] = useState(null);
   const [defaultMarket, setDefaultMarket] = useState("btcusdt");
   const [disableTrade, setDisableTrade] = useState(false);
@@ -48,6 +50,16 @@ const StoreProvider = (props) => {
    */
   const [exchangeRates, setExchangeRates] = useState(null);
   const [tokenExpired, setTokenExpired] = useState(null);
+
+  const changeLanguage = useCallback(
+    (key) => {
+      // await window.cookieStore.set("lang", key);
+      // document.cookie = `lang=${key}`;
+      setLanguageKey(key);
+      i18n.changeLanguage(key);
+    },
+    [i18n]
+  );
 
   const countDown = useCallback(() => {
     clearTimeout(timer);
@@ -471,8 +483,42 @@ const StoreProvider = (props) => {
     return _exchangeRates;
   }, [exchangeRates, middleman]);
 
+  const initLanguage = useCallback(() => {
+    const lang = (
+      document.cookie
+        .split(";")
+        .filter((v) => /lang/.test(v))
+        .pop()
+        ?.split("=")[1] || navigator.language
+    ).toLowerCase();
+    switch (lang.toLowerCase()) {
+      case "en":
+      case "en-us":
+      case "en_us":
+        setLanguageKey("en-US");
+        break;
+      case "zh-hk":
+      case "zh_hk":
+      case "zh_tw":
+      case "zh-tw":
+        setLanguageKey("zh-HK");
+        break;
+      case "zh_cn":
+      case "zh-cn":
+        setLanguageKey("zh-CN");
+        break;
+      // case "jp":
+      //   setLanguageKey("jp");
+      //   break;
+      default:
+        setLanguageKey("en-US");
+        break;
+    }
+  }, []);
+
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
+    initLanguage();
     await middleman.initWs();
     eventListener();
     await middleman.getTickers();
@@ -486,7 +532,7 @@ const StoreProvider = (props) => {
     }
     setIsInit(true);
     // console.log(`storeCtx init end`);
-  }, [countDown, eventListener, middleman]);
+  }, [initLanguage, countDown, eventListener, middleman]);
 
   const start = useCallback(async () => {
     let market =
@@ -543,7 +589,7 @@ const StoreProvider = (props) => {
   }, []);
 
   const getTicker = (market) => {
-    return middleman.getTickerSnapshot(market)
+    return middleman.getTickerSnapshot(market);
   };
 
   return (
@@ -612,6 +658,7 @@ const StoreProvider = (props) => {
         updatePlatformAsset,
         getDashboardData,
         getTicker,
+        changeLanguage,
       }}
     >
       {props.children}

@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import React, { useContext } from "react";
 import StoreContext from "../store/store-context";
+import Languages from "../constant/Languages";
 
 const HomeHeader = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -110,16 +111,44 @@ const HomeHeader = (props) => {
           </div>
         </div>
         <div className="home-header__collapse">
-          <div className="home-header__item">
-            <a className="home-header__link" href="/signin">
-              {t("login")}
-            </a>
-          </div>
-          <div className="home-header__item">
-            <a className="home-header__link" href="/register">
-              {t("register")}
-            </a>
-          </div>
+          {!storeCtx.isLogin && (
+            <div className="home-header__box">
+              <div className="home-header__items">
+                <div className="home-header__item">
+                  <a className="home-header__link" href="/signin">
+                    {t("login")}
+                  </a>
+                </div>
+                <div className="home-header__item">
+                  <a className="home-header__link" href="/register">
+                    {t("register")}
+                  </a>
+                </div>
+              </div>
+              <div className="home-header__sidebar-btn">
+                <label className="home-header__label home-header__label--img"></label>
+              </div>
+            </div>
+          )}
+          {storeCtx.isLogin && (
+            <div className="home-header__box">
+              <div className="home-header__items">
+                <div className="home-header__item">
+                  <a className="home-header__link" href="/accounts">
+                    {t("accounts")}
+                  </a>
+                </div>
+                <div className="home-header__item">
+                  <a className="home-header__link" href="/signout">
+                    {t("logout")}
+                  </a>
+                </div>
+              </div>
+              <div className="home-header__sidebar-btn">
+                <label className="home-header__label home-header__label--img"></label>
+              </div>
+            </div>
+          )}
           <div className="home-header__dropdown">
             <input
               className="home-header__input"
@@ -127,62 +156,24 @@ const HomeHeader = (props) => {
               name="home-header-dropdown"
             />
             <label className="home-header__item home-header__label home-header__label--border">
-              {props.languageKey}
+              {Languages[storeCtx.languageKey]}
             </label>
             <div className="home-header__options">
-              {Object.keys(props.languages).map((key) => (
+              {Object.keys(Languages).map((key) => (
                 <li
                   className="home-header__option home-header__item"
                   key={key}
                   onClick={() => {
-                    props.changeLanguage(key);
+                    storeCtx.changeLanguage(key);
                   }}
                 >
-                  <div>{props.languages[key]}</div>
+                  <div>{Languages[key]}</div>
                 </li>
               ))}
             </div>
           </div>
         </div>
       </div>
-      {!storeCtx.isLogin && (
-        <div className="home-header__box">
-          <div className="home-header__items">
-            <div className="home-header__item">
-              <a className="home-header__link" href="/signin">
-                {t("login")}
-              </a>
-            </div>
-            <div className="home-header__item">
-              <a className="home-header__link" href="/register">
-                {t("register")}
-              </a>
-            </div>
-          </div>
-          <div className="home-header__sidebar-btn">
-            <label className="home-header__label home-header__label--img"></label>
-          </div>
-        </div>
-      )}
-      {storeCtx.isLogin && (
-        <div className="home-header__box">
-          <div className="home-header__items">
-            <div className="home-header__item">
-              <a className="home-header__link" href="/accounts">
-                {t("accounts")}
-              </a>
-            </div>
-            <div className="home-header__item">
-              <a className="home-header__link" href="/signout">
-                {t("logout")}
-              </a>
-            </div>
-          </div>
-          <div className="home-header__sidebar-btn">
-            <label className="home-header__label home-header__label--img"></label>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

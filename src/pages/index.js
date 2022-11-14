@@ -16,6 +16,7 @@ import StoreContext from "../store/store-context";
 // import Notfound from "./notfound";
 // import Analysis from "./analysis";s
 
+const Home = lazy(() => import("./home"));
 const Exchange = lazy(() => import("./exchange"));
 const Admin = lazy(() => import("./admin"));
 
@@ -40,7 +41,7 @@ const Index = () => {
     <Suspense fallback={<div></div>}>
       <Switch>
         <Route exact path="/">
-          <Exchange />
+          <Home />
         </Route>
         <Route path="/markets">
           <Exchange />
