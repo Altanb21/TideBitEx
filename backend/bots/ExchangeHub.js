@@ -2566,11 +2566,11 @@ class ExchangeHub extends Bot {
                 //   feeCurrency,
                 // };
                 if (
-                  (trade.outerTrade.price &&
-                    !SafeMath.eq(
-                      trade.outerTrade.price,
-                      trade.innerTrade.price
-                    )) ||
+                  // (trade.outerTrade.price &&
+                  //   !SafeMath.eq(
+                  //     trade.outerTrade.price,
+                  //     trade.innerTrade.price
+                  //   )) ||
                   (trade.outerTrade.volume &&
                     !SafeMath.eq(
                       trade.outerTrade.volume,
