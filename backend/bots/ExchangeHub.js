@@ -4010,7 +4010,7 @@ class ExchangeHub extends Bot {
         bid_fee: bidFee,
         created_at: now,
       };
-      this.logger.debug(`calculator voucher`, voucher);
+      // this.logger.debug(`calculator voucher`, voucher);
       trade = {
         price: data.fillPx,
         volume: data.fillSz,
@@ -4588,7 +4588,7 @@ class ExchangeHub extends Bot {
       referredByMember,
       memberReferral,
       dbTransaction = await this.database.transaction();
-    this.logger.debug(`processor data`, data);
+    // this.logger.debug(`processor data`, data);
     if (!stop) {
       try {
         // 1. 判斷收到的資料是否為此系統的資料
@@ -4791,7 +4791,7 @@ class ExchangeHub extends Bot {
               dbTransaction,
             });
             await dbTransaction.commit();
-            this.logger.debug(`processor complete dbTransaction commit`);
+            // this.logger.debug(`processor complete dbTransaction commit`);
           } else await dbTransaction.rollback();
         }
       } catch (error) {

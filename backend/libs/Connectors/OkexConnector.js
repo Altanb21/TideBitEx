@@ -386,7 +386,7 @@ class OkexConnector extends ConnectorBase {
 
   async getOrderDetails({ query }) {
     const { instId, ordId } = query;
-    this.logger.debug(`[${this.constructor.name}] getOrderDetails`);
+    // this.logger.debug(`[${this.constructor.name}] getOrderDetails`);
     let result,
       arr = [];
     const method = "GET";
