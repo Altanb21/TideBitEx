@@ -4069,9 +4069,44 @@ class ExchangeHub extends Bot {
           //   orderFullFilledAccountVersion
           // );
         }
-      } else {
+      } else if (SafeMath.gt(orderVolume, "0")) {
         // 不為 0 即等待中
         orderState = Database.ORDER_STATE_CODE.WAIT;
+      } else {
+        this.logger.error(
+          `update orderVolume less than 0, orderDetail`,
+          orderDetail
+        );
+        switch (orderDetail.state) {
+          case Database.ORDER_STATE.CANCEL:
+            orderState = Database.ORDER_STATE_CODE.CANCEL;
+            break;
+          case Database.ORDER_STATE.FILLED:
+            orderState = Database.ORDER_STATE_CODE.DONE;
+            doneAt = `${new Date(orderDetail.uTime)
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`;
+            break;
+          default:
+            orderState = Database.ORDER_STATE_CODE.WAIT;
+            break;
+        }
+        orderVolume = SafeMath.minus(
+          dbOrder.origin_volume,
+          orderDetail.accFillSz
+        );
+        orderLocked =
+          orderDetail.side === Database.ORDER_SIDE.BUY
+            ? SafeMath.minus(
+                dbOrder.origin_locked,
+                SafeMath.mult(orderDetail.avgPx, orderDetail.accFillSz)
+              )
+            : SafeMath.minus(dbOrder.origin_locked, orderDetail.accFillSz);
+        orderFundsReceived =
+          orderDetail.side === Database.ORDER_SIDE.BUY
+            ? orderDetail.accFillSz
+            : SafeMath.mult(orderDetail.avgPx, orderDetail.accFillSz);
       }
       // 根據前 5 點 可以得到最終需要更新的 order
       updatedOrder = {
@@ -4084,7 +4119,7 @@ class ExchangeHub extends Bot {
         updated_at: `"${now}"`,
         done_at: `"${doneAt}"`,
       };
-      // this.logger.debug(`calculator updatedOrder`, updatedOrder);
+      this.logger.debug(`calculator updatedOrder`, updatedOrder);
       if (referredByMember) {
         // this.logger.debug(`calculator referredByMember`, referredByMember);
         // this.logger.debug(`calculator memberReferral`, memberReferral);
@@ -4344,7 +4379,7 @@ class ExchangeHub extends Bot {
      */
     let tradeId,
       voucherId,
-      referralCommissionId,
+      // referralCommissionId,
       newAskAccountVersion,
       newBidAccountVersion,
       newOrderFullFilledAccountVersion,
@@ -4540,7 +4575,7 @@ class ExchangeHub extends Bot {
               `db update referralCommission is different from outer data`
             );
           }
-          referralCommissionId = dbReferrerCommission.id;
+          // referralCommissionId = dbReferrerCommission.id;
         } else {
           /**
            * ++ TODO after verify
