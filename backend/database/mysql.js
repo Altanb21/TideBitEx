@@ -829,7 +829,7 @@ class mysql {
       outer_trades
     WHERE
       outer_trades.exchange_code = ?
-      AND outer_trades.kind = ?
+      AND outer_trades.status = ?
    ;`;
     try {
       // this.logger.debug(
