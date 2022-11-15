@@ -1230,10 +1230,8 @@ class ExchangeHubService {
       interval,
       clOrdId
     );
-    this.logger.debug(`_syncOuterTrades dbOuterTrades`, dbOuterTrades);
     let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
-      this.logger.debug(`_syncOuterTrades trade[${trade.tradeId}]`);
       if (!dbOuterTrades[trade.tradeId])
         needProcessTrades = [...needProcessTrades, trade];
     }

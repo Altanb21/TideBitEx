@@ -291,6 +291,7 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
+    this.logger.debug(`fetchTradeFillsHistoryRecords path:[${path}${qs}]`);
     try {
       const res = await axios({
         method: method.toLocaleLowerCase(),
@@ -310,9 +311,13 @@ class OkexConnector extends ConnectorBase {
           createdAt: new Date(parseInt(trade.ts)).toISOString(),
           data: JSON.stringify(trade),
         }));
+        this.logger.debug(
+          `data[0].ts[${data[0].createdAt}] - data[1].ts[${data[1].createdAt}] > 0 desc`,
+          data[0].ts - data[1].ts
+        );
         results = data.concat(results);
         if (data.length === this.maxDataLength) {
-          newBefore = data[0]?.billId;
+          newBefore = data[0]?.billId; // 请求此 ID 之后（更新的数据）的分页内容，传的值为对应接口的billId
           newRequest = requests - 1;
           if (newBefore) {
             if (requests > 0)
