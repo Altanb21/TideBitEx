@@ -270,7 +270,7 @@ class WSChannel extends Bot {
       });
     } else
       this.logger.debug(
-        `this memberId[${memberId}] is not online`,
+        `[${this.constructor.name}] this memberId[${memberId}] is not online`,
         this._privateClient[memberId]
       );
   }
@@ -284,7 +284,7 @@ class WSChannel extends Bot {
       });
     } else
       this.logger.debug(
-        `this memberId[${memberId}] is not online`,
+        `[${this.constructor.name}] this memberId[${memberId}] is not online`,
         this._privateClient[memberId]
       );
   }

@@ -4235,6 +4235,7 @@ class ExchangeHub extends Bot {
           await this.database.updateOrder(updatedOrder, {
             dbTransaction,
           });
+          this.logger.debug(`updateOuterTrade updateOrder`, updatedOrder);
           break;
         case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
           await this.database.updateOuterTrade(
@@ -4355,7 +4356,7 @@ class ExchangeHub extends Bot {
     try {
       if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
         await this.database.updateOrder(updatedOrder, { dbTransaction });
-        // this.logger.debug(`updater updateOrder success`, updatedOrder);
+        this.logger.debug(`updater updateOrder`, updatedOrder);
       } else {
         // this.logger.error("order is marked as done or canceled");
         // this.logger.error(`dbOrder`, dbOrder);
