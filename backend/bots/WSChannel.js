@@ -158,13 +158,9 @@ class WSChannel extends Bot {
         memberId: args.memberId,
         XSRFToken: args.XSRFToken,
         peatioSession: args.peatioSession,
-        // userid: args.userId
       },
       redis
     );
-    // console.log(
-    //   `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
-    // );
     if (memberId !== -1 && args.CSRFToken) {
       findClient.isPrivate = true;
       findClient.memberId = memberId;
@@ -190,9 +186,6 @@ class WSChannel extends Bot {
         memberId,
         wsId: ws.id,
       });
-      // } else {
-      //   this._privateClient[memberId][ws.id] = findClient;
-      // }
     } else {
       findClient.isPrivate = false;
       EventBus.emit(Events.userOnUnsubscribe, {

@@ -5156,9 +5156,9 @@ class ExchangeHub extends Bot {
    */
   _emitUpdateOrder({ memberId, instId, market, order }) {
     // this.logger.debug(`_emitUpdateOrder difference`, order);
-    // this.orderBook.updateByDifference(memberId, instId, {
-    //   add: [order],
-    // });
+    this.orderBook.updateByDifference(memberId, instId, {
+      add: [order],
+    });
     EventBus.emit(Events.order, memberId, market, {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
