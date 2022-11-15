@@ -828,11 +828,9 @@ class mysql {
     FROM
       outer_trades
     WHERE
-      outer_trades.exchange_code = ?
-      AND outer_trades.status = ?
-    ORDER BY
-      outer_trades.create_at ${asc ? "ASC" : "DESC"}
-    LIMIT ${limit} OFFSET ${offset};`;
+      outer_trades.exchange_code = 10
+      AND outer_trades.kind is NULL
+   ;`;
     try {
       // this.logger.debug(
       //   "getOuterTradesByStatus",
@@ -841,7 +839,7 @@ class mysql {
       // );
       const [outerTrades] = await this.db.query({
         query,
-        values: [exchangeCode, status],
+        // values: [exchangeCode, status],
       });
       return outerTrades;
     } catch (error) {
