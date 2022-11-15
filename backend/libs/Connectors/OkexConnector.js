@@ -326,12 +326,12 @@ class OkexConnector extends ConnectorBase {
           }] `,
           data[data.length - 1]
         );
-        let arr = onlyInLeft(
-          data,
-          results,
-          (objA, objB) => objA.tradeId === objB.tradeId
-        );
-        results = results.concat(arr);
+        // let arr = onlyInLeft(
+        //   data,
+        //   results,
+        //   (objA, objB) => objA.tradeId === objB.tradeId
+        // );
+        results = results.concat(data);
         if (data.length === this.maxDataLength) {
           newBefore = data[data.length - 1]?.billId; // 请求此 ID 之后（更新的数据）的分页内容，传的值为对应接口的billId
           newRequest = requests - 1;
@@ -360,7 +360,7 @@ class OkexConnector extends ConnectorBase {
             }
           }
         } else if (tryOnce > 0) {
-          newBefore = data[0]?.billId;
+          newBefore = data[data.length - 1]?.billId;
           newRequest = requests - 1;
           if (newBefore) {
             if (requests > 0)
