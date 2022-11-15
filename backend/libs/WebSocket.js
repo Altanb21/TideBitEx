@@ -20,14 +20,11 @@ class WebSocket {
       if (url) this.url = url;
       if (options) this.options = { ...options };
       this.heartBeatTime = heartBeat;
-      this.logger.debug("[WebSocket] connect url", this.url);
       if (!!this.options) {
         this.ws = new ws(this.url, this.options);
       } else this.ws = new ws(this.url);
-
       return new Promise((resolve) => {
         this.ws.onopen = (r) => {
-          this.logger.debug("[WebSocket] status", `onopen`);
           this.heartbeat();
           this.eventListener();
           return resolve(r);
@@ -46,7 +43,7 @@ class WebSocket {
     this.ws.on("pong", () => this.heartbeat());
     this.ws.on("close", async (event) => await this.clear(event));
     this.ws.on("error", async (err) => {
-      this.logger.error("custom WebSocket", err);
+      this.logger.error(`this.ws.on("error")`, err);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init();
@@ -57,7 +54,7 @@ class WebSocket {
   heartbeat() {
     clearTimeout(this.pingTimeout);
     this.pingTimeout = setTimeout(() => {
-      this.logger.debug("heartbeat");
+      // this.logger.debug("heartbeat");
       this.ws.ping();
     }, this.heartBeatTime);
   }
@@ -65,9 +62,9 @@ class WebSocket {
   async clear(event) {
     clearTimeout(this.wsReConnectTimeout);
     if (event.wasClean) {
-      this.logger.debug(
-        `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
-      );
+      // this.logger.debug(
+      //   `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
+      // );
       clearTimeout(this.pingTimeout);
     } else {
       // e.g. server process killed or network down

@@ -146,7 +146,6 @@ class ExchangeHub extends Bot {
   }
 
   emitUpdateData(updateData) {
-    this.logger.debug(`upateData`, updateData);
     if (updateData) {
       for (const data of updateData) {
         const memberId = data.memberId,
@@ -217,7 +216,7 @@ class ExchangeHub extends Bot {
       }, []);
       this.adminUsers = adminUsers;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`_getAdminUsers`, error);
       process.exit(1);
     }
     return adminUsers;
@@ -227,8 +226,7 @@ class ExchangeHub extends Bot {
     if (!this.adminUsers) {
       this.adminUsers = this._getAdminUsers();
     }
-    // this.logger.debug(`-*-*-*-*- getAdminUsers -*-*-*-*-`, adminUsers);
-    return Promise.resolve(
+   return Promise.resolve(
       new ResponseFormat({
         message: "getAdminUsers",
         payload: {
@@ -287,7 +285,7 @@ class ExchangeHub extends Bot {
         return prev;
       }, {});
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`_getTickersSettings`, error);
       process.exit(1);
     }
     return tickersSettings;
@@ -309,15 +307,13 @@ class ExchangeHub extends Bot {
           disable: coinSetting.disable === true ? true : false, // default: false
         }));
       } catch (error) {
-        this.logger.error(error);
+        this.logger.error(`_getCoinsSettings`, error);
         process.exit(1);
       }
     }
-    // this.logger.debug(`-*-*-*-*- getCoinsSettings -*-*-*-*-`, coinsSettings);
     return this.coinsSettings;
   }
 
-  // _getDepositsSettings({ query }) {
   _getDepositsSettings() {
     let depositsSettings, formatDepositsSettings;
     if (!this.depositsSettings) {
@@ -334,18 +330,17 @@ class ExchangeHub extends Bot {
               visible: deposit.visible === false ? false : true, // default: true
               disable: deposit.disable === true ? true : false, // default: false
             };
-          else
-            this.logger.error(
-              `[config/deposits.yml] duplicate deposit`,
-              prev[deposit.id.toString()],
-              deposit
-            );
+          // else
+          //   this.logger.error(
+          //     `[config/deposits.yml] duplicate deposit`,
+          //     prev[deposit.id.toString()],
+          //     deposit
+          //   );
           return prev;
         }, {});
-        // this.logger.debug(`-*-*-*-*- getDepositsSettings -*-*-*-*-`, depositsSettings);
         this.depositsSettings = formatDepositsSettings;
       } catch (error) {
-        this.logger.error(error);
+        this.logger.error(`_getDepositsSettings`, error);
         process.exit(1);
       }
     }
@@ -377,18 +372,17 @@ class ExchangeHub extends Bot {
               visible: withdraw.visible === false ? false : true, // default: true
               disable: withdraw.disable === true ? true : false, // default: false
             };
-          else
-            this.logger.error(
-              `[config/withdraws.yml] duplicate withdraw`,
-              prev[withdraw.id.toString()],
-              withdraw
-            );
+          // else
+          //   this.logger.error(
+          //     `[config/withdraws.yml] duplicate withdraw`,
+          //     prev[withdraw.id.toString()],
+          //     withdraw
+          //   );
           return prev;
         }, {});
-        // this.logger.debug(`-*-*-*-*- getWithdrawsSettings -*-*-*-*-`, withdrawsSettings);
         this.withdrawsSettings = formatWithdrawsSettings;
       } catch (error) {
-        this.logger.error(error);
+        this.logger.error(`_getWithdrawsSettings`, error);
         process.exit(1);
       }
     }
@@ -450,21 +444,12 @@ class ExchangeHub extends Bot {
   }
 
   async getPlatformAssets({ email, query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getPlatformAssets ************`
-    );
     let result = null,
       coins = {},
       coinsSettings,
       sources = {},
       hasError = false; //,
-    // currentUser = this.adminUsers.find((user) => user.email === email);
-    // this.logger.debug(
-    //   `currentUser[${currentUser.roles?.includes("root")}]`,
-    //   currentUser
-    // );
-    // if (currentUser.roles?.includes("root")) {
-    const _accounts = await this.database.getTotalAccountsAssets();
+     const _accounts = await this.database.getTotalAccountsAssets();
     coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
       if (!prev[coinSetting.id.toString()])
         prev[coinSetting.id.toString()] = { ...coinSetting };
@@ -482,7 +467,7 @@ class ExchangeHub extends Bot {
           if (response.success) {
             sources[exchange] = response.payload;
           } else {
-            this.logger.error(response);
+            // this.logger.error(response);
             hasError = true;
             result = new ResponseFormat({
               message: "",
@@ -529,11 +514,7 @@ class ExchangeHub extends Bot {
                 minimun: coinSetting.minimun,
                 sources: {},
               };
-              // this.logger.debug(
-              //   `getPlatformAssets coins[${coinSetting.code}]`,
-              //   coins[coinSetting.code]
-              // );
-              for (let exchange of Object.keys(SupportedExchange)) {
+               for (let exchange of Object.keys(SupportedExchange)) {
                 let alertLevel;
                 switch (SupportedExchange[exchange]) {
                   case SupportedExchange.OKEX:
@@ -589,13 +570,12 @@ class ExchangeHub extends Bot {
               }
             }
           } else {
-            this.logger.error(
-              `getPlatformAssets notic accounts.currency did not have correspond id in coins.yml but maybe in DB assets.base table`,
-              coins
-            );
+            // this.logger.error(
+            //   `getPlatformAssets notic accounts.currency did not have correspond id in coins.yml but maybe in DB assets.base table`,
+            //   coins
+            // );
           }
         }
-        this.logger.debug(`getPlatformAssets coins`, coins);
         result = new ResponseFormat({
           message: "getCoinsSettings",
           payload: coins,
@@ -624,24 +604,13 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/coins.yml"
     );
-    this.logger.debug(
-      `*********** [${this.name}] updatePlatformAsset ************`
-    );
-    this.logger.debug(`params.id`, params.id);
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
     try {
       if (currentUser.roles?.includes("root")) {
         let index = this.coinsSettings.findIndex(
           (coin) => coin.id.toString() === params.id.toString()
         );
-        this.logger.debug(`index`, index);
         if (index !== -1) {
           let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
             ...coin,
@@ -653,10 +622,6 @@ class ExchangeHub extends Bot {
             maximun: body.maximun,
             minimun: body.minimun,
           };
-          this.logger.debug(
-            `updatePlatformAsset[${index}]`,
-            updatedCoinsSettings[index]
-          );
           try {
             Utils.yamlUpdate(updatedCoinsSettings, p);
             this.coinsSettings = updatedCoinsSettings;
@@ -699,23 +664,11 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/markets.yml"
     );
-    this.logger.debug(
-      `*********** [${this.name}] updateTickerSetting ************`
-    );
-    this.logger.debug(`params.id`, params.id);
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
-    try {
+     try {
       const { type, data } = body;
-      this.logger.debug(`type`, type);
-      this.logger.debug(`data`, data);
-      if (currentUser.roles?.includes("root")) {
+       if (currentUser.roles?.includes("root")) {
         if (this.tickersSettings[params.id]) {
           let updatedTickersSettings = Object.values(
             this.tickersSettings
@@ -821,10 +774,6 @@ class ExchangeHub extends Bot {
             default:
               break;
           }
-          this.logger.debug(
-            `updatedTickersSettings[${params.id}]`,
-            updatedTickersSettings[params.id]
-          );
           try {
             Utils.yamlUpdate(Object.values(updatedTickersSettings), p);
             this.tickersSettings = Object.values(updatedTickersSettings).reduce(
@@ -915,26 +864,14 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/coins.yml"
     );
-    this.logger.debug(
-      `*********** [${this.name}] updateCoinSetting ************`
-    );
-    this.logger.debug(`params.id`, params.id);
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
     try {
       const { visible } = body;
-      this.logger.debug(`visible`, visible);
       if (currentUser.roles?.includes("root")) {
         let index = this.coinsSettings.findIndex(
           (coin) => coin.id.toString() === params.id.toString()
         );
-        this.logger.debug(`index`, index);
         if (index !== -1) {
           let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
             ...coin,
@@ -943,10 +880,6 @@ class ExchangeHub extends Bot {
             ...updatedCoinsSettings[index],
             visible: visible,
           };
-          this.logger.debug(
-            `updatedCoinsSettings[${index}]`,
-            updatedCoinsSettings[index]
-          );
           try {
             Utils.yamlUpdate(updatedCoinsSettings, p);
             this.coinsSettings = updatedCoinsSettings;
@@ -994,20 +927,10 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/coins.yml"
     );
-    this.logger.debug(
-      `*********** [${this.name}] updateCoinSetting ************`
-    );
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
-    let result = null,
+   let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
     try {
       const { visible } = body;
-      this.logger.debug(`visible`, visible);
       if (currentUser.roles?.includes("root")) {
         let updatedCoinsSettings = this.coinsSettings.map((coin) => ({
           ...coin,
@@ -1054,25 +977,13 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/deposits.yml"
     );
-    this.logger.debug(
-      `*********** [${this.name}] updateDepositSetting ************`
-    );
-    this.logger.debug(`params.id`, params.id);
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email),
       updatedDepositCoin;
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
     try {
       const { type, data } = body;
-      this.logger.debug(`updateDepositCoin`, type, data);
-      if (currentUser.roles?.includes("root")) {
+     if (currentUser.roles?.includes("root")) {
         updatedDepositCoin = this.depositsSettings[params.id];
-        this.logger.debug(`updatedDepositCoin`, updatedDepositCoin);
         if (updatedDepositCoin) {
           let updatedDepositsSettings = Object.values(
             this.depositsSettings
@@ -1097,10 +1008,6 @@ class ExchangeHub extends Bot {
             default:
           }
 
-          this.logger.debug(
-            `updatedDepositsSettings[${params.id}]`,
-            updatedDepositsSettings[params.id]
-          );
           try {
             Utils.yamlUpdate(Object.values(updatedDepositsSettings), p);
             this.depositsSettings = updatedDepositsSettings;
@@ -1148,25 +1055,13 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/withdraws.yml"
     );
-    this.logger.debug(
-      `*********** [${this.name}] updateWithdrawSetting ************`
-    );
-    this.logger.debug(`params.id`, params.id);
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
-    let result = null,
+   let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email),
       updatedWithdrawCoin;
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
     try {
       const { type, data } = body;
-      this.logger.debug(`updateWithdrawCoin`, type, data);
       if (currentUser.roles?.includes("root")) {
         updatedWithdrawCoin = this.withdrawsSettings[params.id];
-        this.logger.debug(`updatedWithdrawCoin`, updatedWithdrawCoin);
         if (updatedWithdrawCoin) {
           let updatedWithdrawsSettings = Object.values(
             this.withdrawsSettings
@@ -1190,10 +1085,7 @@ class ExchangeHub extends Bot {
               break;
             default:
           }
-          this.logger.debug(
-            `updatedWithdrawsSettings[${params.id}]`,
-            updatedWithdrawsSettings[params.id]
-          );
+
           try {
             Utils.yamlUpdate(Object.values(updatedWithdrawsSettings), p);
             this.withdrawsSettings = updatedWithdrawsSettings;
@@ -1260,7 +1152,6 @@ class ExchangeHub extends Bot {
       plan = await this.database.getDefaultCommissionPlan();
       planId = plan.id;
     }
-    this.logger.log(`getReferrerCommissionPlan planId`, planId);
     return planId;
   }
 
@@ -1279,7 +1170,6 @@ class ExchangeHub extends Bot {
           new Date(`${referral.created_at}`).getTime()) /
           dayTime
       );
-      this.logger.log(`getReferrerCommissionPolicy days`, days);
       if (days <= 365) {
         let index = 1;
         let year = new Date(`${referral.created_at}`).getFullYear();
@@ -1295,24 +1185,18 @@ class ExchangeHub extends Bot {
             year++;
           }
         }
-        this.logger.log(`getReferrerCommissionPolicy index`, index);
         policy = commissionPolicies.find((policy) =>
           SafeMath.eq(policy.referred_months, index)
         );
-        this.logger.log(`getReferrerCommissionPolicy policy`, policy);
-      }
+       }
     }
     return policy;
   }
 
   async addAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
-    this.logger.debug(`*********** [${this.name}] addAdminUser ************`);
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(`currentUser`, currentUser);
     try {
       const { newAdminUser } = body;
       const newAdminUserEmail = newAdminUser.email?.trim();
@@ -1325,7 +1209,6 @@ class ExchangeHub extends Bot {
             const member = await this.database.getMemberByCondition({
               email: newAdminUserEmail,
             });
-            this.logger.debug(`addAdminUser member`, member);
             if (member) {
               const updateAdminUsers = this.adminUsers
                 .map((user) => ({
@@ -1338,10 +1221,7 @@ class ExchangeHub extends Bot {
                   name: newAdminUser.name,
                   roles: newAdminUser.roles.map((key) => ROLES[key]),
                 });
-              this.logger.debug(
-                `addAdminUser updateAdminUsers`,
-                updateAdminUsers
-              );
+
               try {
                 Utils.yamlUpdate(updateAdminUsers, p);
                 this.adminUsers = updateAdminUsers.map((user) => ({
@@ -1400,26 +1280,15 @@ class ExchangeHub extends Bot {
 
   async updateAdminUser({ email, body }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
-    this.logger.debug(
-      `*********** [${this.name}] updateAdminUser ************`
-    );
-    this.logger.debug(`email`, email);
-    this.logger.debug(`body`, body);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(
-      `currentUser[${currentUser.roles?.includes("root")}]`,
-      currentUser
-    );
     try {
       const { updateAdminUser } = body;
-      this.logger.debug(`updateAdminUser`, updateAdminUser);
-      if (currentUser.roles?.includes("root")) {
+       if (currentUser.roles?.includes("root")) {
         if (updateAdminUser.email) {
           let index = this.adminUsers.findIndex(
             (user) => user.email === updateAdminUser.email
           );
-          this.logger.debug(`index`, index);
           if (index !== -1) {
             let updateAdminUsers = this.adminUsers.map((user) => ({
               ...user,
@@ -1431,10 +1300,6 @@ class ExchangeHub extends Bot {
               name: updateAdminUser.name,
               roles: updateAdminUser.roles.map((key) => ROLES[key]),
             };
-            this.logger.debug(
-              `updateAdminUser updateAdminUsers`,
-              updateAdminUsers
-            );
             try {
               Utils.yamlUpdate(updateAdminUsers, p);
               this.adminUsers = updateAdminUsers.map((user) => ({
@@ -1485,14 +1350,8 @@ class ExchangeHub extends Bot {
 
   async deleteAdminUser({ params, email }) {
     const p = path.join(this.config.base.TideBitLegacyPath, "config/roles.yml");
-    this.logger.debug(
-      `*********** [${this.name}] deleteAdminUser ************`
-    );
-    this.logger.debug(`params.id`, params.id);
-    this.logger.debug(`email`, email);
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-    this.logger.debug(`currentUser`, currentUser);
     try {
       if (currentUser.roles?.includes("root")) {
         if (params.id) {
@@ -1504,10 +1363,6 @@ class ExchangeHub extends Bot {
               ...user,
               roles: user.roles.map((key) => ROLES[key]),
             }));
-          this.logger.debug(
-            `deleteAdminUser updateAdminUsers`,
-            updateAdminUsers
-          );
           try {
             Utils.yamlUpdate(updateAdminUsers, p);
             this.adminUsers = updateAdminUsers.map((user) => ({
@@ -1556,9 +1411,6 @@ class ExchangeHub extends Bot {
   }
 
   async getDashboardData({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getDashboardData ************`
-    );
     return Promise.resolve(
       new ResponseFormat({
         message: "getDashboardData",
@@ -1845,10 +1697,6 @@ class ExchangeHub extends Bot {
 
   // account api
   async getAccounts({ memberId, email, token }) {
-    this.logger.debug(
-      `*********** [${this.name}] getAccounts memberId:[${memberId}]************`
-    );
-
     if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "getAccounts",
@@ -1861,20 +1709,13 @@ class ExchangeHub extends Bot {
   }
 
   async logout({ header }) {
-    this.logger.debug(`*********** [${this.name}] logout ************`);
-    return this.tideBitConnector.router("logout", { header });
+     return this.tideBitConnector.router("logout", { header });
   }
 
   async getTicker({ params, query }) {
-    this.logger.debug(`*********** [${this.name}] getTicker ************`);
-    // this.tickersSettings = this._getTickersSettings();
     const tickerSetting = this.tickersSettings[query.id];
     if (tickerSetting) {
       const source = tickerSetting.source;
-      this.logger.debug(
-        `[${this.constructor.name}] getTicker ticketSource`,
-        source
-      );
       switch (source) {
         case SupportedExchange.OKEX:
           return this.okexConnector.router("getTicker", {
@@ -1901,8 +1742,6 @@ class ExchangeHub extends Bot {
   }
 
   async getTickers({ query }) {
-    this.logger.debug(`*********** [${this.name}] getTickers ************`);
-    // this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
       let okexTickers,
         tidebitTickers = {};
@@ -1959,10 +1798,6 @@ class ExchangeHub extends Bot {
   }
 
   async getTickersSettings({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getTickersSettings ************`
-    );
-    // this.tickersSettings = this._getTickersSettings();
     if (!this.fetchedTickers) {
       let okexTickers,
         tidebitTickers = {};
@@ -2017,10 +1852,6 @@ class ExchangeHub extends Bot {
   }
 
   async getDepthBooks({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getDepthBooks ************`,
-      query
-    );
     const tickerSetting = this.tickersSettings[query.market];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
@@ -2040,10 +1871,6 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewConfig({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getTradingViewConfig ************`,
-      query
-    );
     return Promise.resolve({
       supported_resolutions: ["1", "5", "15", "30", "60", "1D", "1W"],
       supports_group_request: false,
@@ -2054,11 +1881,7 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewSymbol({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getTradingViewSymbol ************`,
-      query
-    );
-    const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
+     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
     const tickerSetting = this.tickersSettings[id];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
@@ -2088,10 +1911,6 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewHistory({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getTradingViewHistory ************`,
-      query
-    );
     const tickerSetting = this.tickersSettings[query.symbol];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
@@ -2125,10 +1944,6 @@ class ExchangeHub extends Bot {
   }
 
   async getTrades({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getTrades ************`,
-      query
-    );
     const tickerSetting = this.tickersSettings[query.market];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
@@ -2367,10 +2182,6 @@ class ExchangeHub extends Bot {
     // const pad = (n) => {
     //   return n < 10 ? "0" + n : n;
     // };
-    this.logger.debug(
-      `*********** [${this.name}] getOuterTradesProfits ************`,
-      query
-    );
     const monthInterval = 30 * 24 * 60 * 60 * 1000;
 
     let { exchange, start, end, instId } = query;
@@ -2385,9 +2196,6 @@ class ExchangeHub extends Bot {
       profits,
       dbOuterTrades,
       mDBOTrades;
-    this.logger.debug(
-      `${exchange} startDate:${startDate}, endtDate:${endtDate}`
-    );
     if (!this.dbOuterTradesData[instId]) {
       this.dbOuterTradesData[instId] = {
         startTime: null,
@@ -2416,8 +2224,7 @@ class ExchangeHub extends Bot {
         startTime >= this.dbOuterTradesData[instId].startTime &&
         endTime <= this.dbOuterTradesData[instId].endTime
       ) {
-        this.logger.debug(`inner`);
-        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
+       dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
           (dbOuterTrades) => {
             let ts = new Date(
               `${dbOuterTrades.create_at
@@ -2432,9 +2239,6 @@ class ExchangeHub extends Bot {
         startTime >= this.dbOuterTradesData[instId].startTime &&
         endTime > this.dbOuterTradesData[instId].endTime
       ) {
-        this.logger.debug(
-          `end is out of ragne, endTime:${endTime}, this.dbOuterTradesData[instId].endTime:${this.dbOuterTradesData[instId].endTime}`
-        );
         dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
           (dbOuterTrades) => {
             let ts = new Date(
@@ -2472,12 +2276,6 @@ class ExchangeHub extends Bot {
         startTime < this.dbOuterTradesData[instId].startTime &&
         endTime <= this.dbOuterTradesData[instId].endTime
       ) {
-        this.logger.debug(
-          `start is out of ragne, startTime:${startTime}, this.dbOuterTradesData[instId].startTime:${this.dbOuterTradesData[instId].startTime}`
-        );
-        this.logger.debug(
-          `this.dbOuterTradesData[instId].data [${this.dbOuterTradesData[instId].data.length}]`
-        );
         dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
           (dbOuterTrades) => {
             let ts = new Date(
@@ -2488,7 +2286,6 @@ class ExchangeHub extends Bot {
             return ts >= startTime && ts <= endTime;
           }
         );
-        this.logger.debug(`dbOuterTrades filter [${dbOuterTrades.length}]`);
         mDBOTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
@@ -2504,14 +2301,12 @@ class ExchangeHub extends Bot {
           )} 23:59:59`,
           asc: true,
         });
-        this.logger.debug(`mDBOTrades [${mDBOTrades.length}]`);
         dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
         this.dbOuterTradesData[instId].data = dbOuterTrades.map(
           (dbOuterTrade) => ({
             ...dbOuterTrade,
           })
         );
-        this.logger.debug(`dbOuterTrades concat [${dbOuterTrades.length}]`);
         this.dbOuterTradesData[instId].startTime = startTime;
       }
       if (
@@ -2569,7 +2364,6 @@ class ExchangeHub extends Bot {
         this.dbOuterTradesData[instId].startTime = startTime;
       }
     }
-    this.logger.debug(`dbOuterTrades[${dbOuterTrades.length}]`);
     // if (endTime - startTime < 3 * monthInterval) {
     result = this.formateDailyProfitChart(dbOuterTrades);
     chartData = result.chartData;
@@ -2579,7 +2373,6 @@ class ExchangeHub extends Bot {
     //   chartData = result.chartData;
     //   profits = result.profits;
     // }
-    // this.logger.debug(`formateTrades result`, result);
     return new ResponseFormat({
       message: "getOuterTradesProfit",
       payload: { chartData: chartData, profits: profits },
@@ -2587,16 +2380,9 @@ class ExchangeHub extends Bot {
   }
 
   async getOuterTradeFills({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getOuterTradeFills ************`,
-      query
-    );
-    let { exchange, start, end, limit, offset, instId } = query;
+   let { exchange, start, end, limit, offset, instId } = query;
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
-    this.logger.debug(
-      `${exchange} startDate:${startDate}, endtDate:${endtDate}`
-    );
     let trades = [],
       // orderIds = [],
       // voucherIds = [],
@@ -2618,7 +2404,6 @@ class ExchangeHub extends Bot {
           start: startDate,
           end: endtDate,
         });
-        this.logger.debug(`countOuterTrades result`, result);
         counts = result["counts"];
         if (counts > 0) {
           const dbOuterTrades = await this.database.getOuterTrades({
@@ -2828,10 +2613,6 @@ class ExchangeHub extends Bot {
   }
 
   async getOuterPendingOrders({ query }) {
-    this.logger.debug(
-      `*********** [${this.name}] getOuterPendingOrders ************`,
-      query
-    );
     let orders = [],
       dbOrders = [],
       orderIds = [],
@@ -2984,34 +2765,34 @@ class ExchangeHub extends Bot {
                 !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
                 order.outerOrder.state !== innerOrder.state
               ) {
-                this.logger.error(
-                  `add alert !SafeMath.eq(
-                  order.outerOrder.accFillVolume[:${order.outerOrder.accFillVolume}],
-                  innerOrder.accFillVolume[:${innerOrder.accFillVolume}]
-                )`,
-                  !SafeMath.eq(
-                    order.outerOrder.accFillVolume,
-                    innerOrder.accFillVolume
-                  )
-                );
-                this.logger.error(
-                  `add alert !SafeMath.eq(
-                  order.outerOrder.expect[:${order.outerOrder.expect}],
-                  innerOrder.expect[:${innerOrder.expect}]
-                )`,
-                  !SafeMath.eq(order.outerOrder.expect, innerOrder.expect)
-                );
-                this.logger.error(
-                  `add alert !SafeMath.eq(
-                  order.outerOrder.received[:${order.outerOrder.received}],
-                  innerOrder.received[:${innerOrder.received}]
-                )`,
-                  !SafeMath.eq(order.outerOrder.received, innerOrder.received)
-                );
-                this.logger.error(
-                  `add alert order.outerOrder.state[:${order.outerOrder.state}] !== innerOrder.state[:${innerOrder.state}]`,
-                  order.outerOrder.state !== innerOrder.state
-                );
+                // this.logger.error(
+                //   `add alert !SafeMath.eq(
+                //   order.outerOrder.accFillVolume[:${order.outerOrder.accFillVolume}],
+                //   innerOrder.accFillVolume[:${innerOrder.accFillVolume}]
+                // )`,
+                //   !SafeMath.eq(
+                //     order.outerOrder.accFillVolume,
+                //     innerOrder.accFillVolume
+                //   )
+                // );
+                // this.logger.error(
+                //   `add alert !SafeMath.eq(
+                //   order.outerOrder.expect[:${order.outerOrder.expect}],
+                //   innerOrder.expect[:${innerOrder.expect}]
+                // )`,
+                //   !SafeMath.eq(order.outerOrder.expect, innerOrder.expect)
+                // );
+                // this.logger.error(
+                //   `add alert !SafeMath.eq(
+                //   order.outerOrder.received[:${order.outerOrder.received}],
+                //   innerOrder.received[:${innerOrder.received}]
+                // )`,
+                //   !SafeMath.eq(order.outerOrder.received, innerOrder.received)
+                // );
+                // this.logger.error(
+                //   `add alert order.outerOrder.state[:${order.outerOrder.state}] !== innerOrder.state[:${innerOrder.state}]`,
+                //   order.outerOrder.state !== innerOrder.state
+                // );
                 alert = true;
               }
             }
@@ -3061,10 +2842,7 @@ class ExchangeHub extends Bot {
    * 6.2.5 commit transaction
    */
   async postPlaceOrder({ header, params, query, body, memberId }) {
-    this.logger.debug(
-      `---------- [${this.constructor.name}]  postPlaceOrder  ----------`
-    );
-    if (!memberId || memberId === -1) {
+   if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "member_id not found",
         code: Codes.USER_IS_LOGOUT,
@@ -3120,7 +2898,7 @@ class ExchangeHub extends Bot {
           // brokerId = 377bd372412fSCDE
           // memberId = 60976
           // orderId = 247674466
-          this.logger.error(`clOrdId`, clOrdId);
+          // this.logger.error(`clOrdId`, clOrdId);
           // * ~2.~ 3. 根據 order 單內容更新 account locked 與 balance
           // * ~3.~ 4. 新增 account version
           currencyId =
@@ -3170,7 +2948,7 @@ class ExchangeHub extends Bot {
               // tgtCcy: body.tgtCcy,
             },
           });
-          this.logger.debug("[RESPONSE]", response);
+          // this.logger.debug("[RESPONSE]", response);
           updateOrder = {
             instId: body.instId,
             ordType:
@@ -3267,10 +3045,6 @@ class ExchangeHub extends Bot {
   }
 
   async getOrders({ query, memberId }) {
-    this.logger.debug(
-      `*********** [${this.name}] getOrders memberId:[${memberId}]************`,
-      query
-    );
     const tickerSetting = this.tickersSettings[query.market];
     if (memberId && memberId !== -1) {
       let pendingOrders, orderHistories, orders;
@@ -3286,7 +3060,6 @@ class ExchangeHub extends Bot {
               },
             }
           );
-          this.logger.debug(`pendingOrdersRes`, pendingOrdersRes);
           pendingOrders = pendingOrdersRes.success
             ? pendingOrdersRes.payload
             : [];
@@ -3338,10 +3111,6 @@ class ExchangeHub extends Bot {
   }
   // TODO integrate getOrderList and getOrderHistory into one
   async getOrderList({ query, memberId }) {
-    this.logger.debug(
-      `-------------[${this.constructor.name} getOrderList]----------`
-    );
-    this.logger.debug(` memberId:`, memberId);
     const tickerSetting = this.tickersSettings[query.id];
     if (memberId !== -1) {
       switch (tickerSetting?.source) {
@@ -3612,7 +3381,7 @@ class ExchangeHub extends Bot {
       tickerSetting = Object.values(this.tickersSettings).find((ts) =>
         SafeMath.eq(ts.code, dbOrder.currency)
       );
-      this.logger.debug(`postCancelOrder tickerSetting`, tickerSetting);
+      // this.logger.debug(`postCancelOrder tickerSetting`, tickerSetting);
       if (!tickerSetting) throw Error("Can't find ticker");
       switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
@@ -3753,8 +3522,8 @@ class ExchangeHub extends Bot {
               "postCancelOrder",
               { body }
             );
-            this.logger.debug(`postCancelOrder`, body);
-            this.logger.debug(`okexCancelOrderRes`, okexCancelOrderRes);
+            // this.logger.debug(`postCancelOrder`, body);
+            // this.logger.debug(`okexCancelOrderRes`, okexCancelOrderRes);
             if (!okexCancelOrderRes.success) {
               err.push(okexCancelOrderRes);
               await t.rollback();
@@ -3866,14 +3635,10 @@ class ExchangeHub extends Bot {
   // public api end
   async getExAccounts({ query }) {
     const { exchange } = query;
-    this.logger.debug(`[${this.constructor.name}] getExAccounts`, exchange);
     switch (exchange) {
       case SupportedExchange.OKEX:
       default:
         try {
-          this.logger.debug(
-            `[${this.constructor.name}] getExAccounts run default`
-          );
           const okexRes = await this.okexConnector.router("getExAccounts", {
             query,
           });
@@ -3914,17 +3679,6 @@ class ExchangeHub extends Bot {
   }
 
   async getOptions({ query, memberId, email, token }) {
-    this.logger.debug(`*********** [${this.name}] getOptions ************`);
-    this.logger.debug(
-      `[${this.constructor.name}] getOptions`,
-      this.config.websocket.domain
-    );
-    this.logger.debug(
-      `[${this.constructor.name}] memberId`,
-      memberId,
-      `email`,
-      email
-    );
     // let roles = this.adminUsers.find((user) => user.email === email)?.roles;
     return Promise.resolve(
       new ResponseFormat({
@@ -4027,10 +3781,6 @@ class ExchangeHub extends Bot {
         });
       }
       let tmp = this.accountBook.getSnapshot(memberId, instId);
-      this.logger.log(
-        `emitter this.accountBook.getSnapshot([memberId: ${memberId}], [instId: ${instId}])`,
-        tmp
-      );
       if (!tmp) {
         tmp = [];
         tmp[0] = await this.database.getAccountsByMemberId(
@@ -4129,7 +3879,7 @@ class ExchangeHub extends Bot {
     referredByMember,
     memberReferral,
   }) {
-    this.logger.debug(`calculator `);
+    // this.logger.debug(`calculator `);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
       tmp = this.getMemberFeeRate(member.member_tag, market),
@@ -4242,8 +3992,8 @@ class ExchangeHub extends Bot {
           fun: Database.FUNC.PLUS_FUNDS,
         };
       }
-      this.logger.debug(`calculator askAccountVersion`, askAccountVersion);
-      this.logger.debug(`calculator bidAccountVersion`, bidAccountVersion);
+      // this.logger.debug(`calculator askAccountVersion`, askAccountVersion);
+      // this.logger.debug(`calculator bidAccountVersion`, bidAccountVersion);
       voucher = {
         // id: "", // -- filled by DB insert
         member_id: member.id,
@@ -4281,12 +4031,12 @@ class ExchangeHub extends Bot {
         funds: value,
         // trade_fk: data?.tradeId, ++ TODO
       };
-      this.logger.debug(`calculator trade`, trade);
+      // this.logger.debug(`calculator trade`, trade);
 
       // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
       // 4.1 更新 order doneAt
       // 4.2 更新 order state
-      this.logger.debug(`calculator orderVolume`, orderVolume);
+      // this.logger.debug(`calculator orderVolume`, orderVolume);
 
       if (SafeMath.eq(orderVolume, "0")) {
         orderState = Database.ORDER_STATE_CODE.DONE;
@@ -4307,10 +4057,10 @@ class ExchangeHub extends Bot {
             // ++TODO modifiable_id
           };
           // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
-          this.logger.debug(
-            `calculator orderFullFilledAccountVersion`,
-            orderFullFilledAccountVersion
-          );
+          // this.logger.debug(
+          //   `calculator orderFullFilledAccountVersion`,
+          //   orderFullFilledAccountVersion
+          // );
         }
       } else {
         // 不為 0 即等待中
@@ -4327,10 +4077,10 @@ class ExchangeHub extends Bot {
         updated_at: `"${now}"`,
         done_at: `"${doneAt}"`,
       };
-      this.logger.debug(`calculator updatedOrder`, updatedOrder);
+      // this.logger.debug(`calculator updatedOrder`, updatedOrder);
       if (referredByMember) {
-        this.logger.debug(`calculator referredByMember`, referredByMember);
-        this.logger.debug(`calculator memberReferral`, memberReferral);
+        // this.logger.debug(`calculator referredByMember`, referredByMember);
+        // this.logger.debug(`calculator memberReferral`, memberReferral);
         /**
          * referred_by_member: @referred_by_member => referredByMember.id
          * trade_member: @trade_member => member.id
@@ -4368,7 +4118,7 @@ class ExchangeHub extends Bot {
             createdAt: now,
             updatedAt: now,
           };
-          this.logger.log(`calculator referralCommission`, referralCommission);
+          // this.logger.debug(`calculator referralCommission`, referralCommission);
         }
       }
     } catch (error) {
@@ -4421,10 +4171,7 @@ class ExchangeHub extends Bot {
     referralCommission,
     dbTransaction,
   }) {
-    this.logger.debug(
-      `------------- [${this.constructor.name}] updateOuterTrade -------------`
-    );
-    this.logger.log(`updateOuterTrade status`, status);
+    // this.logger.log(`updateOuterTrade status`, status);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
     try {
       switch (status) {
@@ -4505,23 +4252,23 @@ class ExchangeHub extends Bot {
             !askAccountVersion?.id ||
             !bidAccountVersion?.id
           ) {
-            this.logger.debug(`updateOuterTrade id`, id);
-            this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
-            this.logger.debug(`updateOuterTrade trade`, trade);
-            this.logger.debug(`updateOuterTrade voucher`, voucher);
-            this.logger.debug(`updateOuterTrade member`, member);
-            this.logger.debug(
-              `updateOuterTrade askAccountVersion`,
-              askAccountVersion
-            );
-            this.logger.debug(
-              `updateOuterTrade bidAccountVersion`,
-              bidAccountVersion
-            );
-            this.logger.debug(
-              `updateOuterTrade orderFullFilledAccountVersions`,
-              orderFullFilledAccountVersion
-            );
+            // this.logger.debug(`updateOuterTrade id`, id);
+            // this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
+            // this.logger.debug(`updateOuterTrade trade`, trade);
+            // this.logger.debug(`updateOuterTrade voucher`, voucher);
+            // this.logger.debug(`updateOuterTrade member`, member);
+            // this.logger.debug(
+            //   `updateOuterTrade askAccountVersion`,
+            //   askAccountVersion
+            // );
+            // this.logger.debug(
+            //   `updateOuterTrade bidAccountVersion`,
+            //   bidAccountVersion
+            // );
+            // this.logger.debug(
+            //   `updateOuterTrade orderFullFilledAccountVersions`,
+            //   orderFullFilledAccountVersion
+            // );
             throw Error("missing params");
           }
           await this.database.updateOuterTrade(
@@ -4562,9 +4309,6 @@ class ExchangeHub extends Bot {
     } catch (error) {
       throw error;
     }
-    this.logger.debug(
-      `------------- [${this.constructor.name}] _updateOuterTradeStatus  [END]-------------`
-    );
   }
 
   async updater({
@@ -4600,20 +4344,20 @@ class ExchangeHub extends Bot {
       dbVoucher,
       dbAccountVersions,
       dbReferrerCommission;
-    this.logger.debug(`updater`);
+    // this.logger.debug(`updater`);
     try {
       if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
         await this.database.updateOrder(updatedOrder, { dbTransaction });
-        this.logger.debug(`updater updateOrder success`, updatedOrder);
+        // this.logger.debug(`updater updateOrder success`, updatedOrder);
       } else {
-        this.logger.error("order is marked as done or canceled");
-        this.logger.error(`dbOrder`, dbOrder);
-        this.logger.error(`trade`, trade);
+        // this.logger.error("order is marked as done or canceled");
+        // this.logger.error(`dbOrder`, dbOrder);
+        // this.logger.error(`trade`, trade);
       }
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
-        this.logger.error("trade exist trade", trade);
-        this.logger.error("trade exist dbTrade", dbTrade);
+        // this.logger.error("trade exist trade", trade);
+        // this.logger.error("trade exist dbTrade", dbTrade);
         tradeId = dbTrade.id;
         dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
           dbOrder.id,
@@ -4644,12 +4388,12 @@ class ExchangeHub extends Bot {
           market: market.id,
           trade: newTrade,
         });
-        this.logger.debug(`updater insertTrades success tradeId`, tradeId);
+        // this.logger.debug(`updater insertTrades success tradeId`, tradeId);
       }
       if (dbVoucher) {
         voucherId = dbVoucher.id;
-        this.logger.error("voucher exist voucher", voucher);
-        this.logger.error("voucher exist dbVoucher", dbVoucher);
+        // this.logger.error("voucher exist voucher", voucher);
+        // this.logger.error("voucher exist dbVoucher", dbVoucher);
       } else {
         voucherId = await this.database.insertVouchers(
           {
@@ -4658,10 +4402,10 @@ class ExchangeHub extends Bot {
           },
           { dbTransaction }
         );
-        this.logger.debug(
-          `updater insertVouchers success voucherId`,
-          voucherId
-        );
+        // this.logger.debug(
+        //   `updater insertVouchers success voucherId`,
+        //   voucherId
+        // );
       }
       let dbAskAccountVersion =
         dbAccountVersions?.length > 0
@@ -4672,12 +4416,12 @@ class ExchangeHub extends Bot {
             )
           : null;
       if (dbAskAccountVersion) {
-        this.logger.error(`askAccountVersion exist`);
+        // this.logger.error(`askAccountVersion exist`);
         if (this.accountVersionVerifier(askAccountVersion, dbAskAccountVersion))
           newAskAccountVersion = dbAskAccountVersion;
         else {
-          this.logger.error(`askAccountVersion`, askAccountVersion);
-          this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
+          // this.logger.error(`askAccountVersion`, askAccountVersion);
+          // this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
           throw Error(`db update amount is different from outer data`);
         }
       } else {
@@ -4685,10 +4429,10 @@ class ExchangeHub extends Bot {
           { ...askAccountVersion, modifiable_id: tradeId },
           dbTransaction
         );
-        this.logger.debug(
-          `updater _updateAccount success askAccountVersion id`,
-          newAskAccountVersion.id
-        );
+        // this.logger.debug(
+        //   `updater _updateAccount success askAccountVersion id`,
+        //   newAskAccountVersion.id
+        // );
       }
       let dbBidAccountVersion =
         dbAccountVersions?.length > 0
@@ -4700,12 +4444,12 @@ class ExchangeHub extends Bot {
             )
           : null;
       if (dbBidAccountVersion) {
-        this.logger.error(`bidAccountVersion exist`);
+        // this.logger.error(`bidAccountVersion exist`);
         if (this.accountVersionVerifier(bidAccountVersion, dbBidAccountVersion))
           newBidAccountVersion = dbBidAccountVersion;
         else {
-          this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
-          this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
+          // this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
+          // this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
           throw Error(`db update amount is different from outer data`);
         }
       } else {
@@ -4713,10 +4457,10 @@ class ExchangeHub extends Bot {
           { ...bidAccountVersion, modifiable_id: tradeId },
           dbTransaction
         );
-        this.logger.debug(
-          `updater _updateAccount success bidAccountVersion id`,
-          newBidAccountVersion.id
-        );
+        // this.logger.debug(
+        //   `updater _updateAccount success bidAccountVersion id`,
+        //   newBidAccountVersion.id
+        // );
       }
       if (orderFullFilledAccountVersion) {
         let dbOrderFullFilledAccountVersion =
@@ -4729,7 +4473,7 @@ class ExchangeHub extends Bot {
               )
             : null;
         if (dbOrderFullFilledAccountVersion) {
-          this.logger.error(`orderFullFilledAccountVersion exist`);
+          // this.logger.error(`orderFullFilledAccountVersion exist`);
           if (
             this.accountVersionVerifier(
               orderFullFilledAccountVersion,
@@ -4738,14 +4482,14 @@ class ExchangeHub extends Bot {
           )
             newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
           else {
-            this.logger.error(
-              `newOrderFullFilledAccountVersion`,
-              newOrderFullFilledAccountVersion
-            );
-            this.logger.error(
-              `dbOrderFullFilledAccountVersion`,
-              dbOrderFullFilledAccountVersion
-            );
+            // this.logger.error(
+            //   `newOrderFullFilledAccountVersion`,
+            //   newOrderFullFilledAccountVersion
+            // );
+            // this.logger.error(
+            //   `dbOrderFullFilledAccountVersion`,
+            //   dbOrderFullFilledAccountVersion
+            // );
             throw Error(`db update amount is different from outer data`);
           }
         } else {
@@ -4753,10 +4497,10 @@ class ExchangeHub extends Bot {
             { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
             dbTransaction
           );
-          this.logger.debug(
-            `updater _updateAccount success orderFullFilledAccountVersion id`,
-            newOrderFullFilledAccountVersion.id
-          );
+          // this.logger.debug(
+          //   `updater _updateAccount success orderFullFilledAccountVersion id`,
+          //   newOrderFullFilledAccountVersion.id
+          // );
         }
       }
       if (referralCommission) {
@@ -4767,11 +4511,11 @@ class ExchangeHub extends Bot {
             tradeMemberId: member.id,
           },
         });
-        this.logger.log(`updater rcs`, rcs);
+        // this.logger.log(`updater rcs`, rcs);
         dbReferrerCommission = rcs[0];
-        this.logger.log(`updater dbReferrerCommission`, dbReferrerCommission);
+        // this.logger.log(`updater dbReferrerCommission`, dbReferrerCommission);
         if (dbReferrerCommission) {
-          this.logger.error(`referralCommission exist`);
+          // this.logger.error(`referralCommission exist`);
           if (
             !SafeMath.eq(
               dbReferrerCommission.referred_by_member_id,
@@ -4782,8 +4526,8 @@ class ExchangeHub extends Bot {
               referralCommission.refNetFee
             )
           ) {
-            this.logger.error(`referralCommission`, referralCommission);
-            this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
+            // this.logger.error(`referralCommission`, referralCommission);
+            // this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
             throw Error(
               `db update referralCommission is different from outer data`
             );
@@ -4922,10 +4666,10 @@ class ExchangeHub extends Bot {
             await dbTransaction.commit();
           } else await dbTransaction.rollback();
           stop = true;
-          this.logger.error(
-            `!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`,
-            order
-          );
+          // this.logger.error(
+          //   `!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`,
+          //   order
+          // );
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
         if (!stop) {
@@ -4944,7 +4688,7 @@ class ExchangeHub extends Bot {
           }
           if (apiResonse.success) {
             orderDetail = apiResonse.payload;
-            this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
+            // this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
               if (data.tradeId) {
                 await this.updateOuterTrade({
@@ -4975,7 +4719,7 @@ class ExchangeHub extends Bot {
             let tmp = await this.getMemberReferral(member);
             referredByMember = tmp.referredByMember;
             memberReferral = tmp.memberReferral;
-            this.logger.log(`updater tmp`, tmp);
+            // this.logger.debug(`updater tmp`, tmp);
           }
           result = await this.calculator({
             market,
@@ -5058,10 +4802,10 @@ class ExchangeHub extends Bot {
   }
 
   async _updateOrderDetail(formatOrder) {
-    this.logger.debug(
-      ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
-    );
-    this.logger.debug(`formatOrder`, formatOrder);
+    // this.logger.debug(
+    //   ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
+    // );
+    // this.logger.debug(`formatOrder`, formatOrder);
     let member,
       memberTag,
       askFeeRate,
@@ -5088,12 +4832,12 @@ class ExchangeHub extends Bot {
       ),
       updateBaseAccount = updateAccounts ? updateAccounts[0] : null,
       updateQuoteAccount = updateAccounts ? updateAccounts[1] : null;
-    this.logger.debug(`memberId: ${memberId}, orderId: ${orderId}`);
-    this.logger.debug(`volume`, volume);
-    this.logger.debug(`filled`, filled);
-    this.logger.debug(`tickerSetting`, tickerSetting);
-    this.logger.debug(`updateBaseAccount`, updateBaseAccount);
-    this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
+    // this.logger.debug(`memberId: ${memberId}, orderId: ${orderId}`);
+    // this.logger.debug(`volume`, volume);
+    // this.logger.debug(`filled`, filled);
+    // this.logger.debug(`tickerSetting`, tickerSetting);
+    // this.logger.debug(`updateBaseAccount`, updateBaseAccount);
+    // this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
     if (orderId && tickerSetting && memberId) {
       updateOrder = {
         instId: formatOrder.instId,
@@ -5128,7 +4872,7 @@ class ExchangeHub extends Bot {
           ? Database.ORDER_STATE_CODE.CANCEL
           : Database.ORDER_STATE_CODE.WAIT,
       };
-      this.logger.debug(`updateOrder`, updateOrder);
+      // this.logger.debug(`updateOrder`, updateOrder);
       this._emitUpdateOrder({
         memberId,
         instId: tickerSetting.instId,
@@ -5140,7 +4884,7 @@ class ExchangeHub extends Bot {
       member = await this.database.getMemberByCondition({ id: memberId });
       if (member) {
         memberTag = member.member_tag;
-        this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+        // this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
         if (memberTag) {
           if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
             askFeeRate = tickerSetting.ask.vip_fee;
@@ -5162,9 +4906,9 @@ class ExchangeHub extends Bot {
             formatOrder.fillSz,
             SafeMath.mult(formatOrder.fillSz, bidFeeRate)
           );
-          this.logger.debug(`baseAccBalDiff`, baseAccBalDiff);
+          // this.logger.debug(`baseAccBalDiff`, baseAccBalDiff);
           baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
-          this.logger.debug(`baseAccBal`, baseAccBal);
+          // this.logger.debug(`baseAccBal`, baseAccBal);
           baseLocDiff = 0;
           baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
           updateBaseAccount = {
@@ -5182,7 +4926,7 @@ class ExchangeHub extends Bot {
             SafeMath.mult(formatOrder.px, formatOrder.fillSz),
             "-1"
           );
-          this.logger.debug(`quoteLocDiff`, quoteLocDiff);
+          // this.logger.debug(`quoteLocDiff`, quoteLocDiff);
           quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
           updateQuoteAccount = {
             balance: quoteAccBal,
@@ -5194,7 +4938,7 @@ class ExchangeHub extends Bot {
           baseAccBalDiff = 0;
           baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
           baseLocDiff = SafeMath.mult(formatOrder.fillSz, "-1");
-          this.logger.debug(`baseLocDiff`, baseLocDiff);
+          // this.logger.debug(`baseLocDiff`, baseLocDiff);
           baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
           updateBaseAccount = {
             balance: baseAccBal,
@@ -5209,12 +4953,12 @@ class ExchangeHub extends Bot {
               askFeeRate
             )
           );
-          this.logger.debug(`quoteAccBalDiff`, quoteAccBalDiff);
+          // this.logger.debug(`quoteAccBalDiff`, quoteAccBalDiff);
           quoteAccBal = SafeMath.plus(
             updateQuoteAccount.balance,
             quoteAccBalDiff
           );
-          this.logger.debug(`quoteAccBal`, quoteAccBal);
+          // this.logger.debug(`quoteAccBal`, quoteAccBal);
           quoteLocDiff = 0;
           quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
           updateQuoteAccount = {
@@ -5234,9 +4978,9 @@ class ExchangeHub extends Bot {
         });
       }
     }
-    this.logger.debug(
-      ` ------------- [${this.constructor.name}] _updateOrderDetail [END]---------------`
-    );
+    // this.logger.debug(
+    //   ` ------------- [${this.constructor.name}] _updateOrderDetail [END]---------------`
+    // );
   }
 
   async _getPlaceOrderData(memberId, body, tickerSetting) {
@@ -5403,18 +5147,18 @@ class ExchangeHub extends Bot {
    * @param {Object} order
    */
   _emitUpdateOrder({ memberId, instId, market, order }) {
-    this.logger.debug(`_emitUpdateOrder difference`, order);
-    this.orderBook.updateByDifference(memberId, instId, {
-      add: [order],
-    });
+    // this.logger.debug(`_emitUpdateOrder difference`, order);
+    // this.orderBook.updateByDifference(memberId, instId, {
+    //   add: [order],
+    // });
     EventBus.emit(Events.order, memberId, market, {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    this.logger.debug(
-      `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] _emitUpdateOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
-      this.orderBook.getDifference(memberId, instId)
-    );
+    // this.logger.debug(
+    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] _emitUpdateOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
+    //   this.orderBook.getDifference(memberId, instId)
+    // );
   }
   /**
    *
@@ -5431,11 +5175,11 @@ class ExchangeHub extends Bot {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    this.logger.debug(`difference`, order);
-    this.logger.debug(
-      `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.marketOrder}] _emitUpdateMarketOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
-      this.orderBook.getDifference(memberId, instId)
-    );
+    // this.logger.debug(`difference`, order);
+    // this.logger.debug(
+    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.marketOrder}] _emitUpdateMarketOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
+    //   this.orderBook.getDifference(memberId, instId)
+    // );
   }
 
   _emitNewTrade({ memberId, instId, market, trade }) {
@@ -5449,11 +5193,11 @@ class ExchangeHub extends Bot {
       market,
       difference: this.tradeBook.getDifference(instId),
     });
-    this.logger.debug(`difference`, trade);
-    this.logger.debug(
-      `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.trade}] _emitNewTrade[market:${market}][memberId:${memberId}][instId:${instId}]`,
-      this.tradeBook.getDifference(instId)
-    );
+    // this.logger.debug(`difference`, trade);
+    // this.logger.debug(
+    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.trade}] _emitNewTrade[market:${market}][memberId:${memberId}][instId:${instId}]`,
+    //   this.tradeBook.getDifference(instId)
+    // );
   }
 
   _emitUpdateAccount({ memberId, account }) {
@@ -5463,20 +5207,20 @@ class ExchangeHub extends Bot {
       memberId,
       this.accountBook.getDifference(memberId)
     );
-    this.logger.debug(`difference`, account);
-    this.logger.debug(
-      `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _emitUpdateAccount[memberId:${memberId}]`,
-      this.accountBook.getDifference(memberId)
-    );
+    // this.logger.debug(`difference`, account);
+    // this.logger.debug(
+    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _emitUpdateAccount[memberId:${memberId}]`,
+    //   this.accountBook.getDifference(memberId)
+    // );
   }
 
   async _eventListener() {
     EventBus.on(Events.account, (memberId, account) => {
-      this.logger.debug(
-        `[${this.constructor.name}] EventBus.on(Events.account)`,
-        memberId,
-        account
-      );
+      // this.logger.debug(
+      //   `[${this.constructor.name}] EventBus.on(Events.account)`,
+      //   memberId,
+      //   account
+      // );
       this.broadcastAllPrivateClient(memberId, {
         type: Events.account,
         data: account,
@@ -5484,12 +5228,12 @@ class ExchangeHub extends Bot {
     });
 
     EventBus.on(Events.order, (memberId, market, order) => {
-      this.logger.debug(
-        `[${this.constructor.name}] EventBus.on(Events.order)`,
-        memberId,
-        market,
-        order
-      );
+      // this.logger.debug(
+      //   `[${this.constructor.name}] EventBus.on(Events.order)`,
+      //   memberId,
+      //   market,
+      //   order
+      // );
       this.broadcastPrivateClient(memberId, {
         market,
         type: Events.order,
@@ -5498,11 +5242,11 @@ class ExchangeHub extends Bot {
     });
 
     EventBus.on(Events.userStatusUpdate, (memberId, userStatus) => {
-      this.logger.debug(
-        `[${this.constructor.name}] EventBus.on(Events.userStatusUpdate)`,
-        memberId,
-        userStatus
-      );
+      // this.logger.debug(
+      //   `[${this.constructor.name}] EventBus.on(Events.userStatusUpdate)`,
+      //   memberId,
+      //   userStatus
+      // );
       this.broadcastAllPrivateClient(memberId, {
         type: Events.userStatusUpdate,
         data: userStatus,
@@ -5511,12 +5255,12 @@ class ExchangeHub extends Bot {
 
     EventBus.on(Events.trade, (memberId, market, tradeData) => {
       if (this._isIncludeTideBitMarket(market)) {
-        this.logger.debug(
-          `[${this.constructor.name}] EventBus.on(Events.trade)`,
-          memberId,
-          market,
-          tradeData
-        );
+        // this.logger.debug(
+        //   `[${this.constructor.name}] EventBus.on(Events.trade)`,
+        //   memberId,
+        //   market,
+        //   tradeData
+        // );
         this.broadcastPrivateClient(memberId, {
           market,
           type: Events.trade,
@@ -5555,9 +5299,9 @@ class ExchangeHub extends Bot {
 
     EventBus.on(Events.orderDetailUpdate, async (instType, formatOrders) => {
       if (instType === Database.INST_TYPE.SPOT) {
-        this.logger.debug(
-          ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [START]---------------`
-        );
+        // this.logger.debug(
+        //   ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [START]---------------`
+        // );
         // TODO: using message queue
         for (const formatOrder of formatOrders) {
           if (
@@ -5612,9 +5356,9 @@ class ExchangeHub extends Bot {
             }
           }
         }
-        this.logger.debug(
-          ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [END]---------------`
-        );
+        // this.logger.debug(
+        //   ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [END]---------------`
+        // );
       }
     });
   }

@@ -118,7 +118,6 @@ class DepthBook extends BookBase {
       if (this.endPriceResult && this.endPriceResult !== result) {
         if (result.includes("*"))
           this.logger.error(`cross Price error`, result);
-        // else this.logger.debug(result);
       }
       this.endPriceResult = result;
     }
