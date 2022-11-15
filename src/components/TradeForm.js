@@ -364,8 +364,12 @@ const TradeForm = (props) => {
         props.ordType === "limit"
           ? price
           : props.kind === "bid"
-          ? SafeMath.mult(storeCtx.selectedTicker?.last, 1.05)
-          : SafeMath.mult(storeCtx.selectedTicker?.last, 0.95),
+          ? formateDecimal(SafeMath.mult(storeCtx.selectedTicker?.last, 1.05), {
+              decimalLength: storeCtx.tickSz,
+            })
+          : formateDecimal(SafeMath.mult(storeCtx.selectedTicker?.last, 0.95), {
+              decimalLength: storeCtx.tickSz,
+            }),
       volume,
       market: storeCtx.selectedTicker.market,
     };
