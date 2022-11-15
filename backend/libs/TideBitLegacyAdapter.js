@@ -64,84 +64,35 @@ class TideBitLegacyAdapter {
   }
 
   // ++ middleware
-  static async getMemberId(ctx, next, redisDomain, database, config) {
-    // let userId = ctx.header.userid;
-    // if (!adminUsers) TideBitLegacyAdapter.getAdminUsers(config);
+  static async getMemberId(ctx, next, redisDomain, database) {
     let peatioSession = Utils.peatioSession(ctx.header);
-    // console.log(`getMemberId ctx.url`, ctx.url);
-    // if (
-    //   ctx.session.member?.id !== ctx?.id ||
-    //   ctx.session.member?.email !== ctx?.email
-    // ) {
-    //   if (ctx.session.member) {
-    //     ctx.email = ctx.session.member.id;
-    //     ctx.id = ctx.session.member.email;
-    //   } else {
-    //     delete ctx.email;
-    //     delete ctx.id;
-    //   }
-    // }
-    // console.log(`getMemberId ctx`, ctx);
-    // if (
-    //   ctx.url === "/auth/identity/callback" ||
-    //   ctx.url === "/auth/identity/register"
-    // ) {
+
     if (
       (ctx.url === "/accounts" || ctx.url === "/settings") &&
       peatioSession !== ctx.session.token
     ) {
-      // console.log(
-      //   `-----*----- [TideBitLegacyAdapter] get memberId -----*-----`
-      // );
       const parsedResult = await TideBitLegacyAdapter.parseMemberId(
         ctx.header,
         redisDomain
       );
-      // console.log(
-      //   `-----*----- [TideBitLegacyAdapter] peatioSession:[${parsedResult.peatioSession}] member:[${parsedResult.memberId}]-----*-----`
-      // );
       if (parsedResult.memberId !== -1) {
         let member;
-        // , email;
-        try {
-          member = await database.getMemberByCondition({
-            id: parsedResult.memberId,
-          });
-          // console.log(
-          //   `!!! [TideBitLegacyAdapter getMemberId] getMemberFromDB`,
-          //   redisDomain
-          // );
-          // email = member?.email;
-        } catch (error) {
-          console.error(`database.getMemberByCondition error`, error);
-        }
+        member = await database.getMemberByCondition({
+          id: parsedResult.memberId,
+        });
         ctx.session.token = parsedResult.peatioSession;
-        // let roles = adminUsers.find(
-        //   (user) => user.email === member?.email
-        // )?.roles;
         ctx.session.member = {
           ...member,
-          // , roles: roles
         };
-
-        // ctx.email = email;
-        // ctx.id = parsedResult.memberId;
       }
     }
     if (
       ctx.url === "/signout" ||
       (ctx.url === "/signin" && peatioSession !== ctx.session.token) // -- redirect
     ) {
-      // console.log(
-      //   `-----*----- [TideBitLegacyAdapter] delete memberId -----*-----`
-      // );
       delete ctx.session.token;
       delete ctx.session.member;
-      // delete ctx.email;
-      // delete ctx.id;
     }
-    // rediret
-    // console.log(`getMemberId ctx.session`, ctx.session);
     return next();
   }
 

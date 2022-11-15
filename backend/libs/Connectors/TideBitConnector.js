@@ -1235,7 +1235,7 @@ class TibeBitConnector extends ConnectorBase {
 
   /**
    * ++TODO
-   * 出錯後連續被呼叫，連續出錯，流程有問題，需要調整
+   * 連續被呼叫兩次，會連續兩次出錯，流程有問題，需要調整
    * */
   async _startPusherWithLoginToken(headers, sn) {
     let auth;
