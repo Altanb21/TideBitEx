@@ -828,8 +828,8 @@ class mysql {
     FROM
       outer_trades
     WHERE
-      outer_trades.exchange_code = 10
-      AND outer_trades.kind is NULL
+      outer_trades.exchange_code = ?
+      AND outer_trades.kind = ?
    ;`;
     try {
       // this.logger.debug(
@@ -839,7 +839,7 @@ class mysql {
       // );
       const [outerTrades] = await this.db.query({
         query,
-        // values: [exchangeCode, status],
+        values: [exchangeCode, status],
       });
       return outerTrades;
     } catch (error) {

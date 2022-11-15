@@ -102,7 +102,7 @@ class ExchangeHubService {
       !this._isStarted
     ) {
       this._lastSyncTime = Date.now();
-      // await this.syncAPIOuterTrades(exchange, data, interval);
+      await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
 
       // 5. 休息
