@@ -273,10 +273,16 @@ class WSChannel extends Bot {
 
   broadcastAllPrivateClient(memberId, { type, data }) {
     const msg = JSON.stringify({ type, data });
-    const clients = Object.values(this._privateClient[memberId]);
-    clients.forEach((client) => {
-      client.ws.send(msg);
-    });
+    if (this._privateClient[memberId]) {
+      const clients = Object.values(this._privateClient[memberId]);
+      clients.forEach((client) => {
+        client.ws.send(msg);
+      });
+    } else
+      this.logger.debug(
+        `this memberId[${memberId}] is not online`,
+        this._privateClient[memberId]
+      );
   }
 }
 
