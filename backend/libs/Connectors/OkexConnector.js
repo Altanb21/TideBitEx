@@ -322,17 +322,6 @@ class OkexConnector extends ConnectorBase {
             data: JSON.stringify(trade),
           }))
           .sort((a, b) => a.ts - b.ts);
-        // this.logger.debug(
-        //   `data[data.length(${data.length})-1].ts[${
-        //     data[data.length - 1]?.createdAt
-        //   }] `,
-        //   data[data.length - 1]
-        // );
-        // let arr = onlyInLeft(
-        //   data,
-        //   results,
-        //   (objA, objB) => objA.tradeId === objB.tradeId
-        // );
         results = results.concat(data);
         if (data.length === this.maxDataLength) {
           newBefore = data[data.length - 1]?.billId; // 请求此 ID 之后（更新的数据）的分页内容，传的值为对应接口的billId

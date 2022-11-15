@@ -235,6 +235,10 @@ class WSChannel extends Bot {
     }
   }
 
+  async getPrivateClients() {
+    return this._privateClient;
+  }
+
   broadcast(market, { type, data }) {
     const msg = JSON.stringify({ type, data });
     // this.WebSocket.send(msg);

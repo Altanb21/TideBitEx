@@ -1309,7 +1309,10 @@ class TibeBitConnector extends ConnectorBase {
         }
       }
     } catch (error) {
-      this.logger.error(`_subscribeUser error`, error);
+      this.logger.error(
+        `_subscribeUser error`,
+        error?.response ? error?.response : error
+      );
       throw error;
     }
   }
