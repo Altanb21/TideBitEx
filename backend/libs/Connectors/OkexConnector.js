@@ -1634,11 +1634,12 @@ class OkexConnector extends ConnectorBase {
     const formatOrders = [];
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
+        this.logger.debug(`_updateOrderDetails data.cTime[${data.cTime}] data.uTime[${data.uTime}] data.fillTime[${data.fillTime}] `)
         const formatOrder = {
           ...data,
           exchangeCode: Database.EXCHANGE.OKEX,
           status: Database.OUTERTRADE_STATUS.UNPROCESS,
-          createdAt: new Date(parseInt(data.fillTime)).toISOString(),
+          createdAt: new Date(parseInt(data.uTime)).toISOString(),
           data: JSON.stringify(data),
         };
         formatOrders.push(formatOrder);
