@@ -320,7 +320,7 @@ class OkexConnector extends ConnectorBase {
         );
         this.logger.debug(
           `data[data.length(${data.length})-1].ts[${
-            data[data.length].createdAt
+            data[data.length-1]?.createdAt
           }] `
         );
         let arr = onlyInLeft(
