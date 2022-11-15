@@ -986,15 +986,15 @@ class mysql {
     ${limit ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}` : ``}
     ;`;
     try {
-      this.logger.debug(
-        "getOuterTrades",
-        query,
-        `${
-          type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode} ${days}]`
-            : `[${exchangeCode}, ${start}, ${end}]`
-        }`
-      );
+      // this.logger.debug(
+      //   "getOuterTrades",
+      //   query,
+      //   `${
+      //     type === Database.TIME_RANGE_TYPE.DAY_AFTER
+      //       ? `[${exchangeCode} ${days}]`
+      //       : `[${exchangeCode}, ${start}, ${end}]`
+      //   }`
+      // );
       const [outerTrades] = await this.db.query({
         query,
         values:

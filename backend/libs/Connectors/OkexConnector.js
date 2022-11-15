@@ -15,7 +15,7 @@ const {
   getBar,
   parseClOrdId,
   wait,
-  onlyInLeft,
+  // onlyInLeft,
 } = require("../Utils");
 const Database = require("../../constants/Database");
 const HEART_BEAT_TIME = 25000;
@@ -193,16 +193,18 @@ class OkexConnector extends ConnectorBase {
         const message = JSON.stringify(res.data);
         this.logger.trace(message);
       }
-      const data = res.data.data.map((trade) => ({
-        ...trade,
-        status: Database.OUTERTRADE_STATUS.UNPROCESS,
-        exchangeCode: Database.EXCHANGE.OKEX,
-        createdAt: new Date(parseInt(trade.ts)).toISOString(),
-        data: JSON.stringify(trade),
-      }));
+      const data = res.data.data
+        .map((trade) => ({
+          ...trade,
+          status: Database.OUTERTRADE_STATUS.UNPROCESS,
+          exchangeCode: Database.EXCHANGE.OKEX,
+          createdAt: new Date(parseInt(trade.ts)).toISOString(),
+          data: JSON.stringify(trade),
+        }))
+        .sort((a, b) => a.ts - b.ts);
       results = data.concat(results);
       if (data.length === this.maxDataLength) {
-        newBefore = data[0]?.billId;
+        newBefore = data[data.length - 1]?.billId;
         newRequest = requests - 1;
         if (newBefore) {
           if (requests > 0)
@@ -229,7 +231,7 @@ class OkexConnector extends ConnectorBase {
           }
         }
       } else if (tryOnce > 0) {
-        newBefore = data[0]?.billId;
+        newBefore = data[data.length - 1]?.billId;
         newRequest = requests - 1;
         if (newBefore) {
           if (requests > 0)
@@ -297,7 +299,7 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
-    this.logger.debug(`fetchTradeFillsHistoryRecords path:[${path}${qs}]`);
+    // this.logger.debug(`fetchTradeFillsHistoryRecords path:[${path}${qs}]`);
     try {
       const res = await axios({
         method: method.toLocaleLowerCase(),
@@ -320,12 +322,12 @@ class OkexConnector extends ConnectorBase {
             data: JSON.stringify(trade),
           }))
           .sort((a, b) => a.ts - b.ts);
-        this.logger.debug(
-          `data[data.length(${data.length})-1].ts[${
-            data[data.length - 1]?.createdAt
-          }] `,
-          data[data.length - 1]
-        );
+        // this.logger.debug(
+        //   `data[data.length(${data.length})-1].ts[${
+        //     data[data.length - 1]?.createdAt
+        //   }] `,
+        //   data[data.length - 1]
+        // );
         // let arr = onlyInLeft(
         //   data,
         //   results,
@@ -1636,7 +1638,7 @@ class OkexConnector extends ConnectorBase {
           ...data,
           exchangeCode: Database.EXCHANGE.OKEX,
           status: Database.OUTERTRADE_STATUS.UNPROCESS,
-          createdAt: new Date(parseInt(data.cTime)).toISOString(),
+          createdAt: new Date(parseInt(data.fillTime)).toISOString(),
           data: JSON.stringify(data),
         };
         formatOrders.push(formatOrder);
