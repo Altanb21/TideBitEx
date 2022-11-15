@@ -370,7 +370,7 @@ class TibeBitConnector extends ConnectorBase {
         payload: books,
       });
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] getDepthBooks`,error);
+      this.logger.error(`[${this.constructor.name}] getDepthBooks`, error);
       const message = error.message;
       return new ResponseFormat({
         message,
@@ -413,7 +413,7 @@ class TibeBitConnector extends ConnectorBase {
         payload: res.data,
       });
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] logout`,error);
+      this.logger.error(`[${this.constructor.name}] logout`, error);
       const message = error.message;
       return new ResponseFormat({
         message,
@@ -1233,6 +1233,10 @@ class TibeBitConnector extends ConnectorBase {
     this._registerGlobalChannel();
   }
 
+  /**
+   * ++TODO
+   * 出錯後連續被呼叫，連續出錯，流程有問題，需要調整
+   * */
   async _startPusherWithLoginToken(headers, sn) {
     let auth;
     if (this.socketId) {

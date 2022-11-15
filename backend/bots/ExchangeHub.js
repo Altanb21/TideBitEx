@@ -226,7 +226,7 @@ class ExchangeHub extends Bot {
     if (!this.adminUsers) {
       this.adminUsers = this._getAdminUsers();
     }
-   return Promise.resolve(
+    return Promise.resolve(
       new ResponseFormat({
         message: "getAdminUsers",
         payload: {
@@ -449,7 +449,7 @@ class ExchangeHub extends Bot {
       coinsSettings,
       sources = {},
       hasError = false; //,
-     const _accounts = await this.database.getTotalAccountsAssets();
+    const _accounts = await this.database.getTotalAccountsAssets();
     coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
       if (!prev[coinSetting.id.toString()])
         prev[coinSetting.id.toString()] = { ...coinSetting };
@@ -514,7 +514,7 @@ class ExchangeHub extends Bot {
                 minimun: coinSetting.minimun,
                 sources: {},
               };
-               for (let exchange of Object.keys(SupportedExchange)) {
+              for (let exchange of Object.keys(SupportedExchange)) {
                 let alertLevel;
                 switch (SupportedExchange[exchange]) {
                   case SupportedExchange.OKEX:
@@ -666,9 +666,9 @@ class ExchangeHub extends Bot {
     );
     let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
-     try {
+    try {
       const { type, data } = body;
-       if (currentUser.roles?.includes("root")) {
+      if (currentUser.roles?.includes("root")) {
         if (this.tickersSettings[params.id]) {
           let updatedTickersSettings = Object.values(
             this.tickersSettings
@@ -927,7 +927,7 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/coins.yml"
     );
-   let result = null,
+    let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email);
     try {
       const { visible } = body;
@@ -982,7 +982,7 @@ class ExchangeHub extends Bot {
       updatedDepositCoin;
     try {
       const { type, data } = body;
-     if (currentUser.roles?.includes("root")) {
+      if (currentUser.roles?.includes("root")) {
         updatedDepositCoin = this.depositsSettings[params.id];
         if (updatedDepositCoin) {
           let updatedDepositsSettings = Object.values(
@@ -1055,7 +1055,7 @@ class ExchangeHub extends Bot {
       this.config.base.TideBitLegacyPath,
       "config/markets/withdraws.yml"
     );
-   let result = null,
+    let result = null,
       currentUser = this.adminUsers.find((user) => user.email === email),
       updatedWithdrawCoin;
     try {
@@ -1133,10 +1133,17 @@ class ExchangeHub extends Bot {
     referredByMember = await this.database.getMemberByCondition({
       refer_code: member.refer,
     });
-    memberReferral = await this.database.getMemberReferral({
-      referrerId: referredByMember.id,
-      refereeId: member.id,
-    });
+    if (referredByMember) {
+      memberReferral = await this.database.getMemberReferral({
+        referrerId: referredByMember.id,
+        refereeId: member.id,
+      });
+    } else {
+      this.logger.debug(
+        `getMemberReferral did not get referredByMember with refer_code[${member.refer}]`,
+        member
+      );
+    }
     return { referredByMember, memberReferral };
   }
 
@@ -1188,7 +1195,7 @@ class ExchangeHub extends Bot {
         policy = commissionPolicies.find((policy) =>
           SafeMath.eq(policy.referred_months, index)
         );
-       }
+      }
     }
     return policy;
   }
@@ -1284,7 +1291,7 @@ class ExchangeHub extends Bot {
       currentUser = this.adminUsers.find((user) => user.email === email);
     try {
       const { updateAdminUser } = body;
-       if (currentUser.roles?.includes("root")) {
+      if (currentUser.roles?.includes("root")) {
         if (updateAdminUser.email) {
           let index = this.adminUsers.findIndex(
             (user) => user.email === updateAdminUser.email
@@ -1709,7 +1716,7 @@ class ExchangeHub extends Bot {
   }
 
   async logout({ header }) {
-     return this.tideBitConnector.router("logout", { header });
+    return this.tideBitConnector.router("logout", { header });
   }
 
   async getTicker({ params, query }) {
@@ -1881,7 +1888,7 @@ class ExchangeHub extends Bot {
   }
 
   async getTradingViewSymbol({ query }) {
-     const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
+    const id = decodeURIComponent(query.symbol).replace("/", "").toLowerCase();
     const tickerSetting = this.tickersSettings[id];
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
@@ -2224,7 +2231,7 @@ class ExchangeHub extends Bot {
         startTime >= this.dbOuterTradesData[instId].startTime &&
         endTime <= this.dbOuterTradesData[instId].endTime
       ) {
-       dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
+        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
           (dbOuterTrades) => {
             let ts = new Date(
               `${dbOuterTrades.create_at
@@ -2380,7 +2387,7 @@ class ExchangeHub extends Bot {
   }
 
   async getOuterTradeFills({ query }) {
-   let { exchange, start, end, limit, offset, instId } = query;
+    let { exchange, start, end, limit, offset, instId } = query;
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
     let trades = [],
@@ -2842,7 +2849,7 @@ class ExchangeHub extends Bot {
    * 6.2.5 commit transaction
    */
   async postPlaceOrder({ header, params, query, body, memberId }) {
-   if (!memberId || memberId === -1) {
+    if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "member_id not found",
         code: Codes.USER_IS_LOGOUT,
