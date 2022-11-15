@@ -10,7 +10,13 @@ const EventBus = require("../EventBus");
 const Events = require("../../constants/Events");
 const SafeMath = require("../SafeMath");
 const SupportedExchange = require("../../constants/SupportedExchange");
-const { waterfallPromise, getBar, parseClOrdId, wait, onlyInLeft } = require("../Utils");
+const {
+  waterfallPromise,
+  getBar,
+  parseClOrdId,
+  wait,
+  onlyInLeft,
+} = require("../Utils");
 const Database = require("../../constants/Database");
 const HEART_BEAT_TIME = 25000;
 
@@ -320,18 +326,12 @@ class OkexConnector extends ConnectorBase {
         );
         this.logger.debug(
           `data[data.length(${data.length})-1].ts[${
-            data[data.length-1]?.createdAt
+            data[data.length - 1]?.createdAt
           }] `
         );
-        let arr = onlyInLeft(
-          data,
-          results,
-          (objA, objB) => objA.tradeId === objB.tradeId
-        );
-        this.logger.debug(`arr`, arr)
-        results = results.concat(arr);
+        results = results.concat(data);
         if (data.length === this.maxDataLength) {
-          newBefore = data[0]?.billId; // 请求此 ID 之后（更新的数据）的分页内容，传的值为对应接口的billId
+          newBefore = data[data.length - 1]?.billId; // 请求此 ID 之后（更新的数据）的分页内容，传的值为对应接口的billId
           newRequest = requests - 1;
           if (newBefore) {
             if (requests > 0)
