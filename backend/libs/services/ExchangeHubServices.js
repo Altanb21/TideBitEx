@@ -1214,30 +1214,28 @@ class ExchangeHubService {
   async _syncOuterTrades(exchange, interval, clOrdId) {
     let days = Math.ceil(interval / (60 * 60 * 24 * 1000));
     let exchangeCode = Database.EXCHANGE[exchange.toUpperCase()];
-    const dbOuterTrades = await this.database.getOuterTrades({
+    let dbOuterTrades = await this.database.getOuterTrades({
       type: Database.TIME_RANGE_TYPE.DAY_AFTER,
       exchangeCode,
       days: days,
       asc: true,
       limit: null,
     });
-    this.logger.debug(
-      `_syncOuterTrades dbOuterTrades[${dbOuterTrades.length}]`
-    );
+    dbOuterTrades = dbOuterTrades.reduce((prev, curr) => {
+      if (!prev[curr.id.toString()]) prev[curr.id.toString()] = curr;
+      return prev;
+    }, {});
     let apiOuterTrades = await this._getTransactionsDetail(
       exchange,
       interval,
       clOrdId
     );
-    this.logger.debug(
-      `_syncOuterTrades apiOuterTrades[${apiOuterTrades.length}]`
-    );
+    this.logger.debug(`_syncOuterTrades dbOuterTrades`, dbOuterTrades);
     let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
-      let index = dbOuterTrades.findIndex((dbTrade) =>
-        SafeMath.eq(dbTrade.id, trade.tradeId)
-      );
-      if (index === -1) needProcessTrades = [...needProcessTrades, trade];
+      this.logger.debug(`_syncOuterTrades trade[${trade.tradeId}]`);
+      if (!dbOuterTrades[trade.tradeId])
+        needProcessTrades = [...needProcessTrades, trade];
     }
     this.logger.debug(
       `_syncOuterTrades needProcessTrades[${needProcessTrades.length}]`
