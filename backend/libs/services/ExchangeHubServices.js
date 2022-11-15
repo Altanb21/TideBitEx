@@ -65,9 +65,7 @@ class ExchangeHubService {
       exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
       status: Database.OUTERTRADE_STATUS.UNPROCESS,
     });
-    this.logger.debug(
-      `syncUnProcessedOuterTrades [${outerTrades.length}]`
-    );
+    this.logger.debug(`syncUnProcessedOuterTrades [${outerTrades.length}]`);
     // 2. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
     await this._processOuterTrades(outerTrades, { needParse: true });
   }
@@ -1229,8 +1227,8 @@ class ExchangeHubService {
     );
     let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
-      let index = dbOuterTrades.findIndex(
-        (dbTrade) => dbTrade.id.toString() === trade.tradeId
+      let index = dbOuterTrades.findIndex((dbTrade) =>
+        SafeMath.eq(dbTrade.id, trade.tradeId)
       );
       if (index === -1) needProcessTrades = [...needProcessTrades, trade];
     }

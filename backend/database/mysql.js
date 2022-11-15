@@ -832,11 +832,11 @@ class mysql {
       AND outer_trades.kind = ?
    ;`;
     try {
-      // this.logger.debug(
-      //   "getOuterTradesByStatus",
-      //   query,
-      //   `[${exchangeCode}, ${status}]`
-      // );
+      this.logger.debug(
+        "getOuterTradesByStatus",
+        query,
+        `[${exchangeCode}, ${status}]`
+      );
       const [outerTrades] = await this.db.query({
         query,
         values: [exchangeCode, status],
@@ -1577,7 +1577,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      // this.logger.debug(`insertOuterTrades`, result);
+      this.logger.debug(`insertOuterTrades`, result);
     } catch (error) {
       this.logger.error(error);
       if (dbTransaction) throw error;
