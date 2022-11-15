@@ -1239,6 +1239,9 @@ class ExchangeHubService {
       );
       if (index === -1) needProcessTrades = [...needProcessTrades, trade];
     }
+    this.logger.debug(
+      `_syncOuterTrades needProcessTrades[${needProcessTrades.length}]`
+    );
     return needProcessTrades;
   }
 
