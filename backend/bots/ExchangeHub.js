@@ -4083,7 +4083,7 @@ class ExchangeHub extends Bot {
             break;
           case Database.ORDER_STATE.FILLED:
             orderState = Database.ORDER_STATE_CODE.DONE;
-            doneAt = `${new Date(orderDetail.uTime)
+            doneAt = `${new Date(parseInt(orderDetail.fillTime))
               .toISOString()
               .slice(0, 19)
               .replace("T", " ")}`;
