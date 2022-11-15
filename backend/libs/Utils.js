@@ -969,6 +969,12 @@ class Utils {
     // console.log(`date`, date);
     return date.getTime();
   };
+
+  static onlyInLeft = (left, right, compareFunction) =>
+    left.filter(
+      (leftValue) =>
+        !right.some((rightValue) => compareFunction(leftValue, rightValue))
+    );
 }
 
 module.exports = Utils;
