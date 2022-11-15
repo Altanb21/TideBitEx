@@ -401,7 +401,6 @@ class mysql {
     LIMIT 1;
     `;
     try {
-      this.logger.debug("getMemberByCondition", query, condition);
       const [[member]] = await this.db.query({
         query,
         values: [Object.values(condition)[0]],
@@ -409,6 +408,7 @@ class mysql {
       return member;
     } catch (error) {
       this.logger.error(error);
+      this.logger.trace("getMemberByCondition", query, condition);
       return [];
     }
   }
