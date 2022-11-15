@@ -1219,14 +1219,19 @@ class ExchangeHubService {
       exchangeCode,
       days: days,
       asc: true,
+      limit: null,
     });
-    this.logger.debug(`_syncOuterTrades dbOuterTrades[${dbOuterTrades.length}]`)
+    this.logger.debug(
+      `_syncOuterTrades dbOuterTrades[${dbOuterTrades.length}]`
+    );
     let apiOuterTrades = await this._getTransactionsDetail(
       exchange,
       interval,
       clOrdId
     );
-    this.logger.debug(`_syncOuterTrades apiOuterTrades[${apiOuterTrades.length}]`)
+    this.logger.debug(
+      `_syncOuterTrades apiOuterTrades[${apiOuterTrades.length}]`
+    );
     let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
       let index = dbOuterTrades.findIndex((dbTrade) =>
