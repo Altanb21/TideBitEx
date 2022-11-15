@@ -933,7 +933,7 @@ class TibeBitConnector extends ConnectorBase {
         payload: tbCancelOrderRes.data,
       });
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(error?.response ? error?.response : error);
       // debug for postman so return error
       return new ResponseFormat({
         message: "postCancelOrder error",
