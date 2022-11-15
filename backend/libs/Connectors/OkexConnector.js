@@ -310,7 +310,7 @@ class OkexConnector extends ConnectorBase {
           exchangeCode: Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
           createdAt: new Date(parseInt(trade.ts)).toISOString(),
           data: JSON.stringify(trade),
-        }));
+        })).sort((a,b)=> a.ts-b.ts);
         this.logger.debug(
           `data[0].ts[${data[0].createdAt}] - data[1].ts[${data[1].createdAt}] > 0 desc`,
           data[0].ts - data[1].ts

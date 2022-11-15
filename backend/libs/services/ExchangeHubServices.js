@@ -1230,6 +1230,7 @@ class ExchangeHubService {
       interval,
       clOrdId
     );
+    this.logger.debug(`apiOuterTrades[${apiOuterTrades.length}]`)
     let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
       if (!dbOuterTrades[trade.tradeId])
