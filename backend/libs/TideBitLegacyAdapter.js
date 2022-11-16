@@ -75,7 +75,7 @@ class TideBitLegacyAdapter {
         ctx.header,
         redisDomain
       );
-      if (parsedResult.memberId !== -1) {
+      if (parsedResult.memberId  && parsedResult.memberId !== -1) {
         let member;
         member = await database.getMemberByCondition({
           id: parsedResult.memberId,
