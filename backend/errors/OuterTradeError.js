@@ -7,4 +7,4 @@ class OuterTradeError extends Error {
   
 }
 
-export default OuterTradeError;
+module.exports = OuterTradeError;
