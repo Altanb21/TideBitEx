@@ -4073,10 +4073,8 @@ class ExchangeHub extends Bot {
         // 不為 0 即等待中
         orderState = Database.ORDER_STATE_CODE.WAIT;
       } else {
-        this.logger.error(
-          `update orderVolume less than 0, orderDetail`,
-          orderDetail
-        );
+        this.logger.error(`update orderVolume less than 0, dbOrder`, dbOrder);
+        this.logger.debug(`orderDetail`, orderDetail);
         switch (orderDetail.state) {
           case Database.ORDER_STATE.CANCEL:
             orderState = Database.ORDER_STATE_CODE.CANCEL;
