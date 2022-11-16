@@ -25,6 +25,7 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+const { default: OuterTradeError } = require("../errors/OuterTradeError");
 
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
@@ -3843,6 +3844,63 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
+    this.logger.debug(`dbOrder`, dbOrder);
+    this.logger.debug(`apiOrder`, apiOrder);
+    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
+      updatedOrder,
+      orderState,
+      orderLocked,
+      orderFundsReceived,
+      orderVolume,
+      orderTradesCount,
+      doneAt = null;
+    switch (apiOrder.state) {
+      case Database.ORDER_STATE.CANCEL:
+        orderState = Database.ORDER_STATE_CODE.CANCEL;
+        break;
+      case Database.ORDER_STATE.FILLED:
+        orderState = Database.ORDER_STATE_CODE.DONE;
+        doneAt = `${new Date(parseInt(apiOrder.fillTime))
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ")}`;
+        break;
+      default:
+        orderState = Database.ORDER_STATE_CODE.WAIT;
+        break;
+    }
+    orderVolume = SafeMath.minus(dbOrder.origin_volume, apiOrder.accFillSz);
+    orderLocked =
+      apiOrder.side === Database.ORDER_SIDE.BUY
+        ? SafeMath.minus(
+            dbOrder.origin_locked,
+            SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz)
+          )
+        : SafeMath.minus(dbOrder.origin_locked, apiOrder.accFillSz);
+    orderFundsReceived =
+      apiOrder.side === Database.ORDER_SIDE.BUY
+        ? apiOrder.accFillSz
+        : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
+    let count = await this.database.countOuterTrades({
+      exchangeCode: Database.EXCHANGE.OKEX,
+      orderId: dbOrder.id,
+    });
+    orderTradesCount = count["counts"];
+    updatedOrder = {
+      id: dbOrder.id,
+      volume: orderVolume,
+      state: orderState,
+      locked: orderLocked,
+      funds_received: orderFundsReceived,
+      trades_count: orderTradesCount,
+      updated_at: `"${now}"`,
+      done_at: `"${doneAt}"`,
+    };
+    this.logger.debug(`calculator updatedOrder`, updatedOrder);
+    await this.database.updateOrder(updatedOrder, { dbTransaction });
+  }
+
   /**
    * @typedef {Object} Voucher
    * @property {int} id
@@ -3927,17 +3985,32 @@ class ExchangeHub extends Bot {
       result;
     try {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
-      // orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
-      let innerSysVol = SafeMath.minus(dbOrder.volume, data.fillSz);
-      // let innerSysAccVol = SafeMath.minus(dbOrder.origin_volume, innerSysVol);
-      // if (!SafeMath.eq(innerSysAccVol, orderDetail.accFillSz)) {
-      //   this.logger.error(`data`, data);
-      //   this.logger.error(`orderDetail`, orderDetail);
-      //   throw Error("innerSysVol is not equal to outerSysVol");
-      // }
-      if (SafeMath.lt(orderVolume, 0))
-        throw Error("Order unFilled sz is not enough!");
-      orderVolume = innerSysVol;
+      orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      if (
+        SafeMath.lt(orderVolume, 0) ||
+        SafeMath.lt(
+          orderVolume,
+          SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
+        )
+      ) {
+        /**
+         * ALERT: handle abnormal order
+         */
+        throw OuterTradeError({
+          message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+            orderVolume,
+            0
+          )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
+            orderVolume,
+            SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
+          )})`,
+          code: Codes.ABNORMAL_ORDER,
+          data: {
+            dbOrder,
+            orderDetail,
+          },
+        });
+      }
       // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
       // 3. 根據 data side （BUY，SELL）需要分別計算
@@ -4044,7 +4117,6 @@ class ExchangeHub extends Bot {
       // 4.1 更新 order doneAt
       // 4.2 更新 order state
       // this.logger.debug(`calculator orderVolume`, orderVolume);
-
       if (SafeMath.eq(orderVolume, "0")) {
         orderState = Database.ORDER_STATE_CODE.DONE;
         doneAt = now;
@@ -4070,56 +4142,7 @@ class ExchangeHub extends Bot {
           // );
         }
       } else if (SafeMath.gt(orderVolume, "0")) {
-        // 不為 0 即等待中
         orderState = Database.ORDER_STATE_CODE.WAIT;
-      } else {
-        this.logger.error(`update orderVolume less than 0, dbOrder`, dbOrder);
-        this.logger.debug(`orderDetail`, orderDetail);
-        switch (orderDetail.state) {
-          case Database.ORDER_STATE.CANCEL:
-            orderState = Database.ORDER_STATE_CODE.CANCEL;
-            break;
-          case Database.ORDER_STATE.FILLED:
-            orderState = Database.ORDER_STATE_CODE.DONE;
-            doneAt = `${new Date(parseInt(orderDetail.fillTime))
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`;
-            break;
-          default:
-            orderState = Database.ORDER_STATE_CODE.WAIT;
-            break;
-        }
-        orderVolume = SafeMath.minus(
-          dbOrder.origin_volume,
-          orderDetail.accFillSz
-        );
-        orderLocked =
-          orderDetail.side === Database.ORDER_SIDE.BUY
-            ? SafeMath.minus(
-                dbOrder.origin_locked,
-                SafeMath.mult(orderDetail.avgPx, orderDetail.accFillSz)
-              )
-            : SafeMath.minus(dbOrder.origin_locked, orderDetail.accFillSz);
-        orderFundsReceived =
-          orderDetail.side === Database.ORDER_SIDE.BUY
-            ? orderDetail.accFillSz
-            : SafeMath.mult(orderDetail.avgPx, orderDetail.accFillSz);
-        let count = await this.database.countOuterTrades({
-          exchangeCode: Database.EXCHANGE.OKEX,
-          orderId: dbOrder.id,
-        });
-        orderTradesCount = count["counts"];
-        this.logger.debug(`calculator updatedOrder`, {
-          id: dbOrder.id,
-          volume: orderVolume,
-          state: orderState,
-          locked: orderLocked,
-          funds_received: orderFundsReceived,
-          trades_count: orderTradesCount,
-          updated_at: `"${now}"`,
-          done_at: `"${doneAt}"`,
-        });
       }
       // 根據前 5 點 可以得到最終需要更新的 order
       updatedOrder = {
@@ -4176,10 +4199,6 @@ class ExchangeHub extends Bot {
         }
       }
     } catch (error) {
-      this.logger.error(
-        `[${this.constructor.name}] calculaotor went wrong`,
-        error
-      );
       throw error;
     }
     result = {
@@ -4229,6 +4248,16 @@ class ExchangeHub extends Bot {
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
     try {
       switch (status) {
+        case Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS:
+          await this.database.updateOuterTrade(
+            {
+              id,
+              status,
+              update_at: `"${now}"`,
+            },
+            { dbTransaction }
+          );
+          break;
         case Database.OUTERTRADE_STATUS.SYSTEM_ERROR:
         case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
         case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
@@ -4401,18 +4430,15 @@ class ExchangeHub extends Bot {
       dbReferrerCommission;
     // this.logger.debug(`updater`);
     try {
-      if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
-        await this.database.updateOrder(updatedOrder, { dbTransaction });
-        // this.logger.trace(`updater updateOrder`, updatedOrder);
-      } else {
-        // this.logger.error("order is marked as done or canceled");
-        // this.logger.error(`dbOrder`, dbOrder);
-        // this.logger.error(`trade`, trade);
-      }
+      if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT)
+        throw Error({
+          message: `orderState is not wait`,
+          code: Codes.ABNORMAL_ORDER,
+          data: { dbOrder },
+        });
+      await this.database.updateOrder(updatedOrder, { dbTransaction });
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
-        // this.logger.error("trade exist trade", trade);
-        // this.logger.error("trade exist dbTrade", dbTrade);
         tradeId = dbTrade.id;
         dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
           dbOrder.id,
@@ -4423,140 +4449,150 @@ class ExchangeHub extends Bot {
             tradeId,
             Database.MODIFIABLE_TYPE.TRADE
           );
-      } else {
-        tradeId = await this.database.insertTrades(
-          { ...trade, trade_fk: tradeFk },
-          { dbTransaction }
+        throw Error(
+          JSON.stringify({
+            message: `dbTrade is exist`,
+            dbTrade: dbTrade,
+            dbVoucher: dbVoucher,
+            dbAccountVersions: dbAccountVersions,
+            code: Codes.DUPLICATE_PROCESS_OUTER_TRADE,
+          })
         );
-        let time = trade.updated_at.replace(/['"]+/g, "");
-        let newTrade = {
-          id: tradeId, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
-          price: trade.price,
-          volume: trade.volume,
-          market: market.id,
-          at: parseInt(SafeMath.div(new Date(time), "1000")),
-          ts: new Date(time),
-        };
-        this._emitNewTrade({
-          memberId: member.id,
-          instId,
-          market: market.id,
-          trade: newTrade,
-        });
-        // this.logger.debug(`updater insertTrades success tradeId`, tradeId);
       }
-      if (dbVoucher) {
-        voucherId = dbVoucher.id;
-        // this.logger.error("voucher exist voucher", voucher);
-        // this.logger.error("voucher exist dbVoucher", dbVoucher);
-      } else {
-        voucherId = await this.database.insertVouchers(
-          {
-            ...voucher,
-            trade_id: tradeId,
-          },
-          { dbTransaction }
-        );
-        // this.logger.debug(
-        //   `updater insertVouchers success voucherId`,
-        //   voucherId
-        // );
-      }
-      let dbAskAccountVersion =
-        dbAccountVersions?.length > 0
-          ? dbAccountVersions.find(
-              (dbAccV) =>
-                dbAccV.currency.toString() ===
-                askAccountVersion.currency.toString()
-            )
-          : null;
-      if (dbAskAccountVersion) {
-        // this.logger.error(`askAccountVersion exist`);
-        if (this.accountVersionVerifier(askAccountVersion, dbAskAccountVersion))
-          newAskAccountVersion = dbAskAccountVersion;
-        else {
-          // this.logger.error(`askAccountVersion`, askAccountVersion);
-          // this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
-          throw Error(`db update amount is different from outer data`);
-        }
-      } else {
-        newAskAccountVersion = await this._updateAccount(
-          { ...askAccountVersion, modifiable_id: tradeId },
-          dbTransaction
-        );
-        // this.logger.debug(
-        //   `updater _updateAccount success askAccountVersion id`,
-        //   newAskAccountVersion.id
-        // );
-      }
-      let dbBidAccountVersion =
-        dbAccountVersions?.length > 0
-          ? dbAccountVersions.find(
-              (dbAccV) =>
-                dbAccV.currency.toString() ===
-                  bidAccountVersion.currency.toString() &&
-                dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
-            )
-          : null;
-      if (dbBidAccountVersion) {
-        // this.logger.error(`bidAccountVersion exist`);
-        if (this.accountVersionVerifier(bidAccountVersion, dbBidAccountVersion))
-          newBidAccountVersion = dbBidAccountVersion;
-        else {
-          // this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
-          // this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
-          throw Error(`db update amount is different from outer data`);
-        }
-      } else {
-        newBidAccountVersion = await this._updateAccount(
-          { ...bidAccountVersion, modifiable_id: tradeId },
-          dbTransaction
-        );
-        // this.logger.debug(
-        //   `updater _updateAccount success bidAccountVersion id`,
-        //   newBidAccountVersion.id
-        // );
-      }
+      //  else {
+      tradeId = await this.database.insertTrades(
+        { ...trade, trade_fk: tradeFk },
+        { dbTransaction }
+      );
+      let time = trade.updated_at.replace(/['"]+/g, "");
+      let newTrade = {
+        id: tradeId, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
+        price: trade.price,
+        volume: trade.volume,
+        market: market.id,
+        at: parseInt(SafeMath.div(new Date(time), "1000")),
+        ts: new Date(time),
+      };
+      this._emitNewTrade({
+        memberId: member.id,
+        instId,
+        market: market.id,
+        trade: newTrade,
+      });
+      // this.logger.debug(`updater insertTrades success tradeId`, tradeId);
+      // }
+      // if (dbVoucher) {
+      //   voucherId = dbVoucher.id;
+      //   // this.logger.error("voucher exist voucher", voucher);
+      //   // this.logger.error("voucher exist dbVoucher", dbVoucher);
+      // } else {
+      voucherId = await this.database.insertVouchers(
+        {
+          ...voucher,
+          trade_id: tradeId,
+        },
+        { dbTransaction }
+      );
+      // this.logger.debug(
+      //   `updater insertVouchers success voucherId`,
+      //   voucherId
+      // );
+      // }
+      // let dbAskAccountVersion =
+      //   dbAccountVersions?.length > 0
+      //     ? dbAccountVersions.find(
+      //         (dbAccV) =>
+      //           dbAccV.currency.toString() ===
+      //           askAccountVersion.currency.toString()
+      //       )
+      //     : null;
+      // if (dbAskAccountVersion) {
+      // this.logger.error(`askAccountVersion exist`);
+      // if (this.accountVersionVerifier(askAccountVersion, dbAskAccountVersion))
+      //   newAskAccountVersion = dbAskAccountVersion;
+      // else {
+      //   // this.logger.error(`askAccountVersion`, askAccountVersion);
+      //   // this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
+      //   throw Error(`db update amount is different from outer data`);
+      // }
+      // } else {
+      newAskAccountVersion = await this._updateAccount(
+        { ...askAccountVersion, modifiable_id: tradeId },
+        dbTransaction
+      );
+      // this.logger.debug(
+      //   `updater _updateAccount success askAccountVersion id`,
+      //   newAskAccountVersion.id
+      // );
+      // }
+      // let dbBidAccountVersion =
+      //   dbAccountVersions?.length > 0
+      //     ? dbAccountVersions.find(
+      //         (dbAccV) =>
+      //           dbAccV.currency.toString() ===
+      //             bidAccountVersion.currency.toString() &&
+      //           dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
+      //       )
+      //     : null;
+      // if (dbBidAccountVersion) {
+      //   // this.logger.error(`bidAccountVersion exist`);
+      //   if (this.accountVersionVerifier(bidAccountVersion, dbBidAccountVersion))
+      //     newBidAccountVersion = dbBidAccountVersion;
+      //   else {
+      //     // this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
+      //     // this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
+      //     throw Error(`db update amount is different from outer data`);
+      //   }
+      // } else {
+      newBidAccountVersion = await this._updateAccount(
+        { ...bidAccountVersion, modifiable_id: tradeId },
+        dbTransaction
+      );
+      // this.logger.debug(
+      //   `updater _updateAccount success bidAccountVersion id`,
+      //   newBidAccountVersion.id
+      // );
+      // }
       if (orderFullFilledAccountVersion) {
-        let dbOrderFullFilledAccountVersion =
-          dbAccountVersions?.length > 0
-            ? dbAccountVersions.find(
-                (dbAccV) =>
-                  dbAccV.currency.toString() ===
-                    orderFullFilledAccountVersion.currency.toString() &&
-                  dbAccV.reason === Database.REASON.ORDER_FULLFILLED
-              )
-            : null;
-        if (dbOrderFullFilledAccountVersion) {
-          // this.logger.error(`orderFullFilledAccountVersion exist`);
-          if (
-            this.accountVersionVerifier(
-              orderFullFilledAccountVersion,
-              dbOrderFullFilledAccountVersion
-            )
-          )
-            newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
-          else {
-            // this.logger.error(
-            //   `newOrderFullFilledAccountVersion`,
-            //   newOrderFullFilledAccountVersion
-            // );
-            // this.logger.error(
-            //   `dbOrderFullFilledAccountVersion`,
-            //   dbOrderFullFilledAccountVersion
-            // );
-            throw Error(`db update amount is different from outer data`);
-          }
-        } else {
-          newOrderFullFilledAccountVersion = await this._updateAccount(
-            { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
-            dbTransaction
-          );
-          // this.logger.debug(
-          //   `updater _updateAccount success orderFullFilledAccountVersion id`,
-          //   newOrderFullFilledAccountVersion.id
-          // );
-        }
+        // let dbOrderFullFilledAccountVersion =
+        //   dbAccountVersions?.length > 0
+        //     ? dbAccountVersions.find(
+        //         (dbAccV) =>
+        //           dbAccV.currency.toString() ===
+        //             orderFullFilledAccountVersion.currency.toString() &&
+        //           dbAccV.reason === Database.REASON.ORDER_FULLFILLED
+        //       )
+        //     : null;
+        // if (dbOrderFullFilledAccountVersion) {
+        //   // this.logger.error(`orderFullFilledAccountVersion exist`);
+        //   if (
+        //     this.accountVersionVerifier(
+        //       orderFullFilledAccountVersion,
+        //       dbOrderFullFilledAccountVersion
+        //     )
+        //   )
+        //     newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
+        //   else {
+        //     // this.logger.error(
+        //     //   `newOrderFullFilledAccountVersion`,
+        //     //   newOrderFullFilledAccountVersion
+        //     // );
+        //     // this.logger.error(
+        //     //   `dbOrderFullFilledAccountVersion`,
+        //     //   dbOrderFullFilledAccountVersion
+        //     // );
+        //     throw Error(`db update amount is different from outer data`);
+        //   }
+        // } else {
+        newOrderFullFilledAccountVersion = await this._updateAccount(
+          { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        // this.logger.debug(
+        //   `updater _updateAccount success orderFullFilledAccountVersion id`,
+        //   newOrderFullFilledAccountVersion.id
+        // );
+        // }
       }
       if (referralCommission) {
         let rcs = await this.database.getReferralCommissionsByConditions({
@@ -4776,15 +4812,28 @@ class ExchangeHub extends Bot {
             memberReferral = tmp.memberReferral;
             // this.logger.debug(`updater tmp`, tmp);
           }
-          result = await this.calculator({
-            market,
-            member,
-            dbOrder: order,
-            orderDetail,
-            data,
-            referredByMember: referredByMember,
-            memberReferral: memberReferral,
-          });
+          try {
+            result = await this.calculator({
+              market,
+              member,
+              dbOrder: order,
+              orderDetail,
+              data,
+              referredByMember: referredByMember,
+              memberReferral: memberReferral,
+            });
+          } catch (error) {
+            this.logger.error(`calculator error`, error);
+            if (error.code === Codes.ABNORMAL_ORDER) {
+              stop = true;
+              await this.abnormalOrderHandler({
+                dbOrder: order,
+                apiOrder: orderDetail,
+                dbTransaction,
+              });
+              await dbTransaction.commit();
+            } else throw error;
+          }
         }
         if (!stop && result) {
           // 3.1 計算完後會直接通知前端更新 order
@@ -4836,16 +4885,29 @@ class ExchangeHub extends Bot {
           // trade 新增進 DB 後才可以得到我們的 trade id
           // db 更新的資料為 calculator 得到的 result
           if (data.tradeId) {
-            await this.updater({
-              ...result,
-              member,
-              dbOrder: order,
-              tradeFk: data.tradeId,
-              market,
-              instId: data.instId,
-              dbTransaction,
-            });
-            await dbTransaction.commit();
+            try {
+              await this.updater({
+                ...result,
+                member,
+                dbOrder: order,
+                tradeFk: data.tradeId,
+                market,
+                instId: data.instId,
+                dbTransaction,
+              });
+              await dbTransaction.commit();
+            } catch (error) {
+              this.logger.error(`updater error`, error);
+              if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
+                stop = true;
+                await this.updateOuterTrade({
+                  id: data.tradeId,
+                  status: Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS,
+                  dbTransaction,
+                });
+                await dbTransaction.commit();
+              } else throw error;
+            }
             // this.logger.debug(`processor complete dbTransaction commit`);
           } else await dbTransaction.rollback();
         }

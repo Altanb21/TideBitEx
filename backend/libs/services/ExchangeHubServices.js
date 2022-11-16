@@ -31,7 +31,6 @@ class ExchangeHubService {
     this.processor = processor;
     return this;
   }
-
   /**
    * ++TODO gc，#674
    * 每筆 outerTrade 只保留180天
@@ -40,6 +39,56 @@ class ExchangeHubService {
    * 做 GC的時候要先有地方記錄外部交易所收取的手續費 !!!
    * */
   async garbageCollection(outerTrades) {
+    let order = {
+      accFillSz: "0.8",
+      amendResult: "",
+      avgPx: "1222",
+      cTime: "1668408620024",
+      cancelSource: "",
+      category: "normal",
+      ccy: "",
+      clOrdId: "377bd372412fSCDE61498m398929621o",
+      code: "0",
+      execType: "M",
+      fee: "-0.78208",
+      feeCcy: "USDT",
+      fillFee: "-0.450898448",
+      fillFeeCcy: "USDT",
+      fillNotionalUsd: "976.250912",
+      fillPx: "1222",
+      fillSz: "0.46123",
+      fillTime: "1668408621050",
+      instId: "ETH-USDT",
+      instType: "SPOT",
+      lever: "0",
+      msg: "",
+      notionalUsd: "976.250912",
+      ordId: "512278113913557007",
+      ordType: "limit",
+      pnl: "0",
+      posSide: "",
+      px: "1222",
+      quickMgnType: "",
+      rebate: "0",
+      rebateCcy: "ETH",
+      reduceOnly: "false",
+      reqId: "",
+      side: "sell",
+      slOrdPx: "",
+      slTriggerPx: "",
+      slTriggerPxType: "last",
+      source: "",
+      state: "filled",
+      sz: "0.8",
+      tag: "",
+      tdMode: "cash",
+      tgtCcy: "",
+      tpOrdPx: "",
+      tpTriggerPx: "",
+      tpTriggerPxType: "last",
+      tradeId: "267229452",
+      uTime: "1668408621051",
+    };
     for (let trade of outerTrades) {
       const date = new Date(trade.update_at);
       const timestamp = date.getTime();
@@ -255,11 +304,11 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
-      await this.auditorAbnormalOuterTrades(
-        exchange,
-        "2022-11-14 00:00:00",
-        "2022-11-16 00:00:00"
-      );
+      // await this.auditorAbnormalOuterTrades(
+      //   exchange,
+      //   "2022-11-14 00:00:00",
+      //   "2022-11-16 00:00:00"
+      // );
 
       // 5. 休息
       clearTimeout(this.timer);

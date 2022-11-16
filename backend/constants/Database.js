@@ -79,6 +79,7 @@ module.exports = {
     ClORDId_ERROR: 7,
     API_ORDER_CANCEL: 6,
     DB_ORDER_CANCEL: 5,
+    DUPLICATE_PROCESS: 4,
     // DB_ORDER_DONE: 4,
   },
   STATE: {

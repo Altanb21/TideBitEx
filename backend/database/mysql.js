@@ -834,7 +834,7 @@ class mysql {
 	    AND status <> 7
 	    AND update_at BETWEEN ?
 	    AND ?
-	    GROUP BY order_id;`;
+    ;`;
     try {
       const [outerTrades] = await this.db.query({
         query,
