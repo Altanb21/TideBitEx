@@ -125,7 +125,7 @@ class ExchangeHub extends Bot {
           database,
           systemMemberId: this.config.peatio.systemMemberId,
           okexConnector: this.okexConnector,
-          tidebitMarkets: this.tidebitMarkets,
+          tickersSettings: this.tickersSettings,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
           processor: (data) => this.processor(data),
           logger,
@@ -4107,6 +4107,21 @@ class ExchangeHub extends Bot {
           orderDetail.side === Database.ORDER_SIDE.BUY
             ? orderDetail.accFillSz
             : SafeMath.mult(orderDetail.avgPx, orderDetail.accFillSz);
+        let count = await this.database.countOuterTrades({
+          exchangeCode: Database.EXCHANGE.OKEX,
+          orderId: dbOrder.id,
+        });
+        orderTradesCount = count["counts"];
+        this.logger.debug(`calculator updatedOrder`, {
+          id: dbOrder.id,
+          volume: orderVolume,
+          state: orderState,
+          locked: orderLocked,
+          funds_received: orderFundsReceived,
+          trades_count: orderTradesCount,
+          updated_at: `"${now}"`,
+          done_at: `"${doneAt}"`,
+        });
       }
       // 根據前 5 點 可以得到最終需要更新的 order
       updatedOrder = {
@@ -4119,7 +4134,6 @@ class ExchangeHub extends Bot {
         updated_at: `"${now}"`,
         done_at: `"${doneAt}"`,
       };
-      this.logger.debug(`calculator updatedOrder`, updatedOrder);
       if (referredByMember) {
         // this.logger.debug(`calculator referredByMember`, referredByMember);
         // this.logger.debug(`calculator memberReferral`, memberReferral);

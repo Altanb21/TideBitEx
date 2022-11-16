@@ -16,7 +16,7 @@ class ExchangeHubService {
     database,
     systemMemberId,
     okexConnector,
-    tidebitMarkets,
+    tickersSettings,
     emitUpdateData,
     processor,
     logger,
@@ -24,7 +24,7 @@ class ExchangeHubService {
     this.name = "ExchangeHubService";
     this.database = database;
     this.systemMemberId = systemMemberId;
-    this.tidebitMarkets = tidebitMarkets;
+    this.tickersSettings = tickersSettings;
     this.okexConnector = okexConnector;
     this.logger = logger;
     this.emitUpdateData = emitUpdateData;
@@ -118,6 +118,19 @@ class ExchangeHubService {
     await this._processOuterTrades(outerTrades, { needParse: true });
   }
 
+  /**
+   *  -- temporary 2022-11-16
+   */
+  async auditorAbnormalOuterTrades(exchange, start, end) {
+    const outerTrades = await this.database.getOuterTradesByStatus({
+      exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+      start,
+      end,
+    });
+    this.logger.debug(`auditorAbnormalOuterTrades [${outerTrades.length}]`);
+    await this._processOuterTrades(outerTrades, { needParse: true });
+  }
+
   async _getOuterTradesFromAPI(exchange, interval) {
     let outerTrades,
       endDate = new Date(),
@@ -197,7 +210,7 @@ class ExchangeHubService {
       interval,
       clOrdId
     );
-    this.logger.debug(`apiOuterTrades[${apiOuterTrades.length}]`)
+    this.logger.debug(`apiOuterTrades[${apiOuterTrades.length}]`);
     let needProcessTrades = [];
     for (let trade of apiOuterTrades) {
       if (!dbOuterTrades[trade.tradeId])
@@ -241,6 +254,11 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
+      await this.auditorAbnormalOuterTrades(
+        exchange,
+        "2022-11-14 00:00:00",
+        "2022-11-16 00:00:00"
+      );
 
       // 5. 休息
       clearTimeout(this.timer);

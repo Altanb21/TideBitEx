@@ -819,18 +819,47 @@ class mysql {
     }
   }
 
-  async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
+  /**
+   *  -- temporary 2022-11-16
+   */
+  async getAbnormalOuterTrade({ exchangeCode, start, end }) {
     const query = `
     SELECT
-      outer_trades.id,
-      outer_trades.data,
-      outer_trades.exchange_code
+	    *
     FROM
-      outer_trades
+	    outer_trades
     WHERE
-      outer_trades.exchange_code = ?
-      AND outer_trades.status = ?
-   ;`;
+	    exchange_code = ?
+	    AND status <> 8
+	    AND status <> 7
+	    AND update_at BETWEEN ?
+	    AND ?
+	    GROUP BY order_id;`;
+    try {
+      const [outerTrades] = await this.db.query({
+        query,
+        values: [exchangeCode, start, end],
+      });
+      return outerTrades;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
+    const query = `
+      SELECT
+        outer_trades.id,
+        outer_trades.data,
+        outer_trades.exchange_code
+      FROM
+        outer_trades
+      WHERE
+        outer_trades.exchange_code = ?
+        AND outer_trades.status = ?
+     ;`;
+
     try {
       // this.logger.debug(
       //   "getOuterTradesByStatus",
@@ -1013,6 +1042,7 @@ class mysql {
     currency,
     type,
     exchangeCode,
+    orderId,
     status,
     days,
     start,
@@ -1025,6 +1055,7 @@ class mysql {
         outer_trades
     WHERE 
         outer_trades.exchange_code = ?
+        ${orderId ? `AND outer_trades.order_id = ${orderId}` : ``}
         ${currency ? `AND outer_trades.currency = ${currency}` : ``}
         ${status ? `AND outer_trades.status = ${status}` : ``}
       ${
@@ -1564,10 +1595,7 @@ class mysql {
     }
     let result;
     try {
-      this.logger.debug(
-        "[mysql] insertOuterTrades"
-        , query, values
-      );
+      this.logger.debug("[mysql] insertOuterTrades", query, values);
       result = await this.db.query(
         {
           query,
