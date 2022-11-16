@@ -1058,16 +1058,21 @@ class mysql {
         ${orderId ? `AND outer_trades.order_id = ${orderId}` : ``}
         ${currency ? `AND outer_trades.currency = ${currency}` : ``}
         ${status ? `AND outer_trades.status = ${status}` : ``}
-      ${
-        type === Database.TIME_RANGE_TYPE.DAY_AFTER
-          ? `
+        ${
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? `
         AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
         `
-          : `
+            : ``
+        }
+        ${
+          type === Database.TIME_RANGE_TYPE.BETWEEN
+            ? `
         AND outer_trades.create_at BETWEEN ?
         AND ?
         `
-      };`;
+            : ``
+        };`;
     try {
       // this.logger.debug(
       //   "countOuterTrades",
@@ -1083,7 +1088,9 @@ class mysql {
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
             ? [exchangeCode, days]
-            : [exchangeCode, start, end],
+            : type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? [exchangeCode, start, end]
+            : [exchangeCode],
       });
       // this.logger.debug(`counts`, counts);
       return counts;
