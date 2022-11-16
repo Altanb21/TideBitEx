@@ -4403,7 +4403,7 @@ class ExchangeHub extends Bot {
     try {
       if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
         await this.database.updateOrder(updatedOrder, { dbTransaction });
-        this.logger.trace(`updater updateOrder`, updatedOrder);
+        // this.logger.trace(`updater updateOrder`, updatedOrder);
       } else {
         // this.logger.error("order is marked as done or canceled");
         // this.logger.error(`dbOrder`, dbOrder);
