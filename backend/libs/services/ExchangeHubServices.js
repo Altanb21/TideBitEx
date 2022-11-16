@@ -128,6 +128,7 @@ class ExchangeHubService {
       end,
     });
     this.logger.debug(`auditorAbnormalOuterTrades [${outerTrades.length}]`);
+    // !!! high risk
     await this._processOuterTrades(outerTrades, { needParse: true });
   }
 
