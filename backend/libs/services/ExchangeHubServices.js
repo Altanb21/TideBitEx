@@ -122,7 +122,7 @@ class ExchangeHubService {
    *  -- temporary 2022-11-16
    */
   async auditorAbnormalOuterTrades(exchange, start, end) {
-    const outerTrades = await this.database.getOuterTradesByStatus({
+    const outerTrades = await this.database.getAbnormalOuterTrade({
       exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
       start,
       end,
