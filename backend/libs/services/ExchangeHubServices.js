@@ -213,6 +213,8 @@ class ExchangeHubService {
       orders,
       trades,
       updateAccountVersionsJob = [],
+      abnormalOrderIds = [],
+      abnormalTradeIds = [],
       abnormalAccountIds = {};
     accountVersions = await this.database.getAbnormalAccountVersions(94); // 841997111, 94
     this.logger.debug(`accountVersions [${accountVersions.length}]`);
@@ -239,12 +241,12 @@ class ExchangeHubService {
       this.logger.debug(`orders [${orders.length}]`);
       for (let orderId of Object.keys(accVsmodifiableTypeOrder)) {
         let order = orders.find((o) => SafeMath.eq(orderId, o.id));
-        this.logger.debug(`order`, order);
         if (order) {
-          let dateTime =
+          let dateTime = (
             order.state === Database.ORDER_STATE_CODE.CANCEL
               ? order.updated_at
-              : order.created_at;
+              : order.created_at
+          ).toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
             this.accountVersionUpdateJob({
@@ -253,7 +255,10 @@ class ExchangeHubService {
               updated_at: dateTime,
             }),
           ];
+        } else {
+          abnormalOrderIds = [...abnormalOrderIds, orderId];
         }
+        this.logger.debug(`abnormalOrderIds`, abnormalOrderIds);
       }
     }
     if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
@@ -268,9 +273,8 @@ class ExchangeHubService {
       this.logger.debug(`trades [${trades.length}]`);
       for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
         let trade = trades.find((t) => SafeMath.eq(tradeId, t.id));
-        this.logger.debug(`trade`, trade);
         if (trade) {
-          let dateTime = trade.created_at;
+          let dateTime = trade.created_at.toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
             this.accountVersionUpdateJob({
@@ -279,8 +283,11 @@ class ExchangeHubService {
               updated_at: dateTime,
             }),
           ];
+        } else {
+          abnormalTradeIds = [...abnormalTradeIds, tradeId];
         }
       }
+      this.logger.debug(`abnormalTradeIds`, abnormalTradeIds);
     }
     waterfallPromise(updateAccountVersionsJob);
   }
