@@ -2602,12 +2602,13 @@ class ExchangeHub extends Bot {
                   trade.innerTrade.fillVolume
                 ) ||
                 (trade.outerTrade &&
-                  ((trade.outerTrade.state !==
+                  trade.outerTrade.state !==
                     Database.OKX_ORDER_STATE.partially_filled &&
-                    trade.outerTrade.state !== trade.innerTrade.state) ||
-                    (trade.outerTrade.state ===
-                      Database.OKX_ORDER_STATE.partially_filled &&
-                      trade.innerTrade.state === Database.ORDER_STATE.CANCEL)))
+                  trade.outerTrade.state !== trade.innerTrade.state) ||
+                (trade.outerTrade &&
+                  trade.outerTrade.state ===
+                    Database.OKX_ORDER_STATE.partially_filled &&
+                  trade.innerTrade.state === Database.ORDER_STATE.CANCEL)
               )
                 alert = true;
             }
