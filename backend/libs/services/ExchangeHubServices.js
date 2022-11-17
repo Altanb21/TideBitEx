@@ -180,7 +180,7 @@ class ExchangeHubService {
     });
     this.logger.debug(`auditorAbnormalOuterTrades [${outerTrades.length}]`);
     // !!! high risk
-    await this._processOuterTrades(outerTrades, { needParse: true });
+    this._processOuterTrades(outerTrades, { needParse: true });
   }
 
   /**
@@ -216,7 +216,7 @@ class ExchangeHubService {
       abnormalOrderIds = [],
       abnormalTradeIds = [],
       abnormalAccountIds = {};
-    accountVersions = await this.database.getAbnormalAccountVersions(94); // 841997111, 94
+    accountVersions = await this.database.getAbnormalAccountVersions(841997111); // 841997111, 94
     this.logger.debug(`accountVersions [${accountVersions.length}]`);
     for (let accountVersion of accountVersions) {
       if (!abnormalAccountIds[accountVersion.account_id])
@@ -243,18 +243,16 @@ class ExchangeHubService {
         let order = orders.find((o) => SafeMath.eq(orderId, o.id));
         if (order) {
           let dateTime = new Date(
-            parseInt(
-              order.state === Database.ORDER_STATE_CODE.CANCEL
-                ? order.updated_at
-                : order.created_at
-            ).getTime()
+            order.state === Database.ORDER_STATE_CODE.CANCEL
+              ? order.updated_at
+              : order.created_at
           ).toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
             this.accountVersionUpdateJob({
               id: accVsmodifiableTypeOrder[orderId].id,
-              created_at: dateTime,
-              updated_at: dateTime,
+              created_at: `"${dateTime}"`,
+              updated_at: `"${dateTime}"`,
             }),
           ];
         } else {
@@ -275,19 +273,21 @@ class ExchangeHubService {
       this.logger.debug(`trades [${trades.length}]`);
       for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
         let trade = trades.find((t) => SafeMath.eq(tradeId, t.id));
-        if (trade) {
-          let dateTime = new Date(
-            parseInt(trade.created_at).getTime()
-          ).toISOString();
-          updateAccountVersionsJob = [
-            ...updateAccountVersionsJob,
-            this.accountVersionUpdateJob({
-              id: accVsmodifiableTypeOrder[tradeId].id,
-              created_at: dateTime,
-              updated_at: dateTime,
-            }),
-          ];
-        } else {
+        try {
+          if (trade) {
+            let dateTime = new Date(trade.created_at).toISOString();
+            updateAccountVersionsJob = [
+              ...updateAccountVersionsJob,
+              this.accountVersionUpdateJob({
+                id: accVsmodifiableTypeOrder[tradeId].id,
+                created_at: `"${dateTime}"`,
+                updated_at: `"${dateTime}"`,
+              }),
+            ];
+          } else {
+            abnormalTradeIds = [...abnormalTradeIds, tradeId];
+          }
+        } catch (error) {
           abnormalTradeIds = [...abnormalTradeIds, tradeId];
         }
       }
