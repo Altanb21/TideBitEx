@@ -242,10 +242,12 @@ class ExchangeHubService {
       for (let orderId of Object.keys(accVsmodifiableTypeOrder)) {
         let order = orders.find((o) => SafeMath.eq(orderId, o.id));
         if (order) {
-          let dateTime = (
-            order.state === Database.ORDER_STATE_CODE.CANCEL
-              ? order.updated_at
-              : order.created_at
+          let dateTime = new Date(
+            parseInt(
+              order.state === Database.ORDER_STATE_CODE.CANCEL
+                ? order.updated_at
+                : order.created_at
+            ).getTime()
           ).toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
@@ -258,8 +260,8 @@ class ExchangeHubService {
         } else {
           abnormalOrderIds = [...abnormalOrderIds, orderId];
         }
-        this.logger.debug(`abnormalOrderIds`, abnormalOrderIds);
       }
+      this.logger.debug(`abnormalOrderIds`, abnormalOrderIds);
     }
     if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
       this.logger.debug(
@@ -274,7 +276,9 @@ class ExchangeHubService {
       for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
         let trade = trades.find((t) => SafeMath.eq(tradeId, t.id));
         if (trade) {
-          let dateTime = trade.created_at.toISOString();
+          let dateTime = new Date(
+            parseInt(trade.created_at).getTime()
+          ).toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
             this.accountVersionUpdateJob({
