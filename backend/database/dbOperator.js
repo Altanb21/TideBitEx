@@ -234,6 +234,10 @@ class DBOperator {
     return this.database.getTradeByTradeFk(tradeFk);
   }
 
+  async getAbnormalOuterTrade({ exchangeCode, start, end }) {
+    return this.database.getAbnormalOuterTrade({ exchangeCode, start, end });
+  }
+
   async getOuterTradesByStatus({
     exchangeCode,
     status,
@@ -352,6 +356,7 @@ class DBOperator {
     type,
     status,
     exchangeCode,
+    orderId,
     days,
     start,
     end,
@@ -361,6 +366,7 @@ class DBOperator {
       type,
       status,
       exchangeCode,
+      orderId,
       days,
       start,
       end,

@@ -251,7 +251,7 @@ class Middleman {
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }
-  
+
   async cancelOrder(order) {
     if (this.isLogin) {
       const result = await this.communicator.cancel(order.id);
@@ -322,6 +322,9 @@ class Middleman {
     }
   }
 
+  /**
+   * [deprecated] 2022/11/17
+   */
   async _getOrderHistory(market, options = {}) {
     try {
       const orders = await this.communicator.getOrderHistory({

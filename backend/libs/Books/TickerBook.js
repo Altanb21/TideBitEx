@@ -33,7 +33,6 @@ class TickerBook extends BookBase {
    */
   set instruments(data) {
     this._instruments = data;
-    // this.logger.debug(`[${this.constructor.name}] instruments`, this.instruments);
   }
 
   get instruments() {
@@ -52,12 +51,6 @@ class TickerBook extends BookBase {
   }
 
   getPrice(currency) {
-    // this.logger.debug(
-    //   `this._snapshot[${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}]`,
-    //   this._snapshot[
-    //     `${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}`
-    //   ]
-    // );
     let price = 0,
       ticker;
     if (this._ratio[currency.toLowerCase()])
@@ -259,7 +252,6 @@ class TickerBook extends BookBase {
   }
 
   updateAll(okexTickers, tidebitTickers) {
-    // this.logger.debug(`[${this.constructor.name}] updateAll tickers`, tickers);
     this._difference = {};
     try {
       Object.values(this._tickersSettings || {}).forEach((tickerSetting) => {
@@ -315,11 +307,6 @@ class TickerBook extends BookBase {
   }
 
   getSnapshot(instId) {
-    // this.logger.debug(
-    //   `[${this.constructor.name}] getSnapshot(${instId})`,
-    //   this._snapshot[instId],
-    //   this._snapshot
-    // );
     if (instId) return this._snapshot[instId];
     else return this._snapshot;
   }

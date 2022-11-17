@@ -68,10 +68,6 @@ class BookBase {
    * @returns {Array<Object>}
    */
   getSnapshot(instId) {
-    // this.logger.debug(
-    //   `[${this.constructor.name}] getSnapshot(${instId})`,
-    //   this._snapshot[instId]
-    // );
     if (instId) return this._snapshot[instId];
     else return this._snapshot;
   }

@@ -58,27 +58,20 @@ class WSChannel extends Bot {
             isPrivate: false,
             memberId: "",
           };
-          this.logger.debug("ws.id", ws.id);
-          // this.logger.debug(req.headers);
           let ip = req.headers["x-forwarded-for"]
             ? req.headers["x-forwarded-for"].split(/\s*,\s*/)[0]
             : req.headers["host"]
             ? req.headers["host"].split(/\s*,\s*/)[0]
             : "unknown";
-
-          this.logger.debug("HI", ip);
           ws.on("message", (message) => {
-            this.logger.debug("received: %s", message);
             let op, args;
-
             try {
               const parsed = JSON.parse(message);
               op = parsed?.op;
               args = parsed?.args;
             } catch (error) {
-              this.logger.error(error);
+              this.logger.error(`JSON.parse(message) error`, message, error);
             }
-
             if (!op || !args) {
               ws.send(
                 JSON.stringify(
@@ -95,10 +88,6 @@ class WSChannel extends Bot {
                 this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
               case Events.switchMarket:
-                this.logger.debug(
-                  `[${this.constructor.name} _onOpSwitchMarket]`,
-                  args
-                );
                 this._onOpSwitchMarket(ws, args);
                 break;
               default:
@@ -136,9 +125,6 @@ class WSChannel extends Bot {
                 Object.values(this._channelClients[findClient.channel])
                   .length === 0
               ) {
-                this.logger.debug(
-                  `[${this.constructor.name}] ws.on("close") emit Events.tickerOnUnsubscribe:channel[${findClient.channel}]`
-                );
                 EventBus.emit(
                   Events.tickerOnUnsubscribe,
                   findClient.channel,
@@ -147,7 +133,6 @@ class WSChannel extends Bot {
               }
             }
             if (findClient.isPrivate) {
-              this.logger.debug(`this._privateClient`, this._privateClient);
               EventBus.emit(Events.userOnUnsubscribe, ws.id);
               findClient.isPrivate = false;
               Object.values(this._privateClient).forEach((member) => {
@@ -172,14 +157,10 @@ class WSChannel extends Bot {
         ...header,
         memberId: args.memberId,
         XSRFToken: args.XSRFToken,
-        peatioSession: args.peatioSession
-        // userid: args.userId
+        peatioSession: args.peatioSession,
       },
       redis
     );
-    // console.log(
-    //   `-----&----- [${this.constructor.name}][FROM WS parseMemberId peatioSession:[${peatioSession}] memberId:[${memberId}] -----&-----`
-    // );
     if (memberId !== -1 && args.CSRFToken) {
       findClient.isPrivate = true;
       findClient.memberId = memberId;
@@ -205,13 +186,6 @@ class WSChannel extends Bot {
         memberId,
         wsId: ws.id,
       });
-      // } else {
-      //   this._privateClient[memberId][ws.id] = findClient;
-      // }
-      this.logger.debug(
-        `[${this.constructor.name} _onOpStatusUpdate] this._privateClient,`,
-        this._privateClient
-      );
     } else {
       findClient.isPrivate = false;
       EventBus.emit(Events.userOnUnsubscribe, {
@@ -238,9 +212,6 @@ class WSChannel extends Bot {
       const oldChannel = findClient.channel;
       delete this._channelClients[oldChannel][ws.id];
       if (Object.values(this._channelClients[oldChannel]).length === 0) {
-        this.logger.debug(
-          `[${this.constructor.name}]_onOpSwitchMarket emit Events.tickerOnUnsubscribe:oldchannel[${oldChannel}]`
-        );
         EventBus.emit(Events.tickerOnUnsubscribe, oldChannel, ws.id);
       }
       findClient.channel = args.market;
@@ -254,11 +225,11 @@ class WSChannel extends Bot {
     }
     if (findClient.isPrivate) {
       this._privateClient[findClient.memberId][ws.id] = findClient;
-      this.logger.debug(
-        `[${this.constructor.name} _onOpStatusUpdate] this._privateClient,`,
-        this._privateClient
-      );
     }
+  }
+
+  async getPrivateClients() {
+    return this._privateClient;
   }
 
   broadcast(market, { type, data }) {
@@ -282,29 +253,33 @@ class WSChannel extends Bot {
   }
 
   broadcastPrivateClient(memberId, { market, type, data }) {
-    this.logger.debug(
-      `[${this.constructor.name}] broadcastPrivateClient market[${market}] this._privateClient[${memberId}]`,
-      this._privateClient[memberId]
-    );
     const msg = JSON.stringify({ type, data });
-    const clients = Object.values(this._privateClient[memberId]).filter(
-      (client) => client.channel === market
-    );
-    clients.forEach((client) => {
-      client.ws.send(msg);
-    });
+    if (this._privateClient[memberId]) {
+      const clients = Object.values(this._privateClient[memberId]).filter(
+        (client) => client.channel === market
+      );
+      clients.forEach((client) => {
+        client.ws.send(msg);
+      });
+    } else
+      this.logger.debug(
+        `[${this.constructor.name}] this memberId[${memberId}] is not online`,
+        this._privateClient[memberId]
+      );
   }
 
   broadcastAllPrivateClient(memberId, { type, data }) {
-    this.logger.debug(
-      `[${this.constructor.name}] broadcastAllPrivateClient this._privateClient[${memberId}]`,
-      this._privateClient[memberId]
-    );
     const msg = JSON.stringify({ type, data });
-    const clients = Object.values(this._privateClient[memberId]);
-    clients.forEach((client) => {
-      client.ws.send(msg);
-    });
+    if (this._privateClient[memberId]) {
+      const clients = Object.values(this._privateClient[memberId]);
+      clients.forEach((client) => {
+        client.ws.send(msg);
+      });
+    } else
+      this.logger.debug(
+        `[${this.constructor.name}] this memberId[${memberId}] is not online`,
+        this._privateClient[memberId]
+      );
   }
 }
 
