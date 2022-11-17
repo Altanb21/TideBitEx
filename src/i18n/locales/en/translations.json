@@ -227,6 +227,7 @@
   "done": "Done",
   "canceled": "Cancel",
   "wait": "Waiting",
+  "partially_filled": "Partially Filled",
   "last-checked-time": "Last time checked",
   "check": "Check",
   "platform-assets": "Platform Assets",

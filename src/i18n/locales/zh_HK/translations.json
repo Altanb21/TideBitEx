@@ -226,6 +226,7 @@
   "done": "完成",
   "canceled": "取消",
   "wait": "等待中",
+  "partially_filled": "部份撮合",
   "last-checked-time": "上次檢查時間",
   "check": "Check",
   "platform-assets": "平台資產",
