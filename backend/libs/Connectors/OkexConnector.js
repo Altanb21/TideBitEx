@@ -139,6 +139,18 @@ class OkexConnector extends ConnectorBase {
     return headers;
   }
 
+  collectTrades(data) {
+    return data
+      .map((trade) => ({
+        ...trade,
+        status: Database.OUTERTRADE_STATUS.UNPROCESS,
+        exchangeCode: Database.EXCHANGE.OKEX,
+        createdAt: new Date(parseInt(trade.ts)).toISOString(),
+        data: JSON.stringify(trade),
+      }))
+      .sort((a, b) => a.ts - b.ts);
+  }
+
   /**
    * @typedef {Object} Trade
    * @property {string} side "sell"
@@ -166,7 +178,7 @@ class OkexConnector extends ConnectorBase {
     requests = this.tradeFillsMaxRequestTimes,
     tryOnce = 1,
   }) {
-    const { begin, end, before, sz } = query;
+    const { begin, before, sz } = query;
     let result,
       arr = [],
       newBefore,
@@ -189,70 +201,24 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
-        const data = res.data.data
-          .map((trade) => ({
-            ...trade,
-            status: Database.OUTERTRADE_STATUS.UNPROCESS,
-            exchangeCode: Database.EXCHANGE.OKEX,
-            createdAt: new Date(parseInt(trade.ts)).toISOString(),
-            data: JSON.stringify(trade),
-          }))
-          .sort((a, b) => a.ts - b.ts);
+      if (res.data && res.data.code == "0") {
+        const data = this.collectTrades(res.data.data);
         results = data.concat(results);
-        if (data.length === this.maxDataLength) {
+        if (data.length === this.maxDataLength || tryOnce > 0) {
           newBefore = data[data.length - 1]?.billId;
           newRequest = requests - 1;
           if (newBefore) {
-            if (requests > 0)
-              return this.fetchTradeFillsRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: newRequest,
-                tryOnce: 1,
-              });
-            else {
-              await wait(this.restTime);
-              return this.fetchTradeFillsRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: this.tradeFillsMaxRequestTimes,
-                tryOnce: 1,
-              });
-            }
-          }
-        } else if (tryOnce > 0) {
-          newBefore = data[data.length - 1]?.billId;
-          newRequest = requests - 1;
-          if (newBefore) {
-            if (requests > 0)
-              return this.fetchTradeFillsRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: newRequest,
-                tryOnce: 1,
-              });
-            else {
-              await wait(this.restTime);
-              return this.fetchTradeFillsRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: this.tradeFillsMaxRequestTimes,
-                tryOnce: 1,
-              });
-            }
+            if (!requests > 0) await wait(this.restTime);
+            return this.fetchTradeFillsRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests:
+                !requests > 0 ? this.tradeFillsMaxRequestTimes : newRequest,
+              tryOnce: 1,
+            });
           }
         }
         result = new ResponseFormat({
@@ -289,7 +255,7 @@ class OkexConnector extends ConnectorBase {
     requests = this.tradeFillsHistoryMaxRequestTimes,
     tryOnce = 1,
   }) {
-    const { instType, begin, end, before, sz } = query;
+    const { instType, begin, before, sz } = query;
     let result,
       arr = [],
       newBefore,
@@ -314,71 +280,26 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
-        const data = res.data.data
-          .map((trade) => ({
-            ...trade,
-            status: Database.OUTERTRADE_STATUS.UNPROCESS,
-            exchangeCode:
-              Database.EXCHANGE[SupportedExchange.OKEX.toUpperCase()],
-            createdAt: new Date(parseInt(trade.ts)).toISOString(),
-            data: JSON.stringify(trade),
-          }))
-          .sort((a, b) => a.ts - b.ts);
+      if (res.data && res.data.code == "0") {
+        const data = this.collectTrades(res.data.data);
         results = results.concat(data);
-        if (data.length === this.maxDataLength) {
-          newBefore = data[data.length - 1]?.billId; // 请求此 ID 之后（更新的数据）的分页内容，传的值为对应接口的billId
+        if (data.length === this.maxDataLength || tryOnce > 0) {
+          newBefore = data[data.length - 1]?.billId; // 請求此 ID 之後（更新的數據）的分頁內容，傳的值為對應的接口的billId
           newRequest = requests - 1;
           if (newBefore) {
-            if (requests > 0)
-              return this.fetchTradeFillsHistoryRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: newRequest,
-                tryOnce: 1,
-              });
-            else {
-              await wait(this.restTime);
-              return this.fetchTradeFillsHistoryRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: this.tradeFillsHistoryMaxRequestTimes,
-                tryOnce: 1,
-              });
-            }
-          }
-        } else if (tryOnce > 0) {
-          newBefore = data[data.length - 1]?.billId;
-          newRequest = requests - 1;
-          if (newBefore) {
-            if (requests > 0)
-              return this.fetchTradeFillsHistoryRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: newRequest,
-                tryOnce: 0,
-              });
-            else {
-              await wait(this.restTime);
-              return this.fetchTradeFillsHistoryRecords({
-                query: {
-                  ...query,
-                  before: newBefore,
-                },
-                results,
-                requests: this.tradeFillsHistoryMaxRequestTimes,
-                tryOnce: 0,
-              });
-            }
+            if (!requests > 0) await wait(this.restTime);
+            return this.fetchTradeFillsHistoryRecords({
+              query: {
+                ...query,
+                before: newBefore,
+              },
+              results,
+              requests:
+                !requests > 0
+                  ? this.tradeFillsHistoryMaxRequestTimes
+                  : newRequest,
+              tryOnce: 1,
+            });
           }
         }
         result = new ResponseFormat({
@@ -431,7 +352,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const [data] = res.data.data;
         result = new ResponseFormat({
           message: "orderDetails",
@@ -461,6 +382,9 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
+  /**
+   * [deprecated] 2022/11/17
+   */
   async getOrderHistory(options) {
     const { instType, instId, after, limit } = options;
     const method = "GET";
@@ -485,7 +409,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const formatOrders = {};
         const formatOrdersForLib = {};
         res.data.data.forEach((data) => {
@@ -553,7 +477,6 @@ class OkexConnector extends ConnectorBase {
     }
   }
 
-  // account api
   async getBalance({ query }) {
     const method = "GET";
     const path = "/api/v5/account/balance";
@@ -579,7 +502,7 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
 
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const subAccounts = res.data.data.map((v) => {
           return v.details.map((dtl) => {
             const ccyData = {
@@ -654,7 +577,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const [data] = res.data.data;
         const balances = data.details.reduce((prev, balance) => {
           prev[balance.ccy.toLowerCase()] = {
@@ -708,7 +631,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(false),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const [data] = res.data.data;
         const ticker = this.tickerBook.formatTicker(
           { id: data.instId.replace("-", "").toLowerCase(), ...data },
@@ -758,7 +681,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(false),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         let tickers = {};
         res.data.data.forEach((data) => {
           const formatedTicker = this.tickerBook.formatTicker(
@@ -844,7 +767,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(false),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const payload = res.data.data.map((data) => {
           const ts = data.shift();
           return [parseInt(ts), ...data];
@@ -895,44 +818,49 @@ class OkexConnector extends ConnectorBase {
     });
   }
 
-  async getTradingViewHistory({ query }) {
+  async getTradingViewHistory({ query, results = [] }) {
     const method = "GET";
     const path = "/api/v5/market/candles";
     let { instId, resolution, from, to } = query;
-
-    let arr = [];
+    let arr = [],
+      qs,
+      bars = [];
     if (instId) arr.push(`instId=${instId}`);
     if (resolution) arr.push(`bar=${getBar(resolution)}`);
-    // before	String	否	请求此时间戳之后（更新的数据）的分页内容，传的值为对应接口的ts
-    // if (from) arr.push(`before=${parseInt(from) * 1000}`); //5/23
-    //after	String	否	请求此时间戳之前（更旧的数据）的分页内容，传的值为对应接口的ts
     if (to) arr.push(`after=${parseInt(to) * 1000}`); //6/2
     arr.push(`limit=${300}`);
-    let qs = !!arr.length ? `?${arr.join("&")}` : "";
+    qs = !!arr.length ? `?${arr.join("&")}` : "";
     try {
       let res = await axios({
         method: method.toLocaleLowerCase(),
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(false),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         let resData = res.data.data;
+        results = results.concat(resData);
         if (resData[resData.length - 1][0] / 1000 > from) {
-          arr = [];
-          if (instId) arr.push(`instId=${instId}`);
-          if (resolution) arr.push(`bar=${getBar(resolution)}`);
-          if (to) arr.push(`after=${resData[resData.length - 1][0]}`); //6/2
-          arr.push(`limit=${300}`);
-          qs = !!arr.length ? `?${arr.join("&")}` : "";
-          res = await axios({
-            method: method.toLocaleLowerCase(),
-            url: `${this.domain}${path}${qs}`,
-            headers: this.getHeaders(false),
+          // arr = [];
+          // if (instId) arr.push(`instId=${instId}`);
+          // if (resolution) arr.push(`bar=${getBar(resolution)}`);
+          // if (to) arr.push(`after=${resData[resData.length - 1][0]}`); //6/2
+          // arr.push(`limit=${300}`);
+          // qs = !!arr.length ? `?${arr.join("&")}` : "";
+          // res = await axios({
+          //   method: method.toLocaleLowerCase(),
+          //   url: `${this.domain}${path}${qs}`,
+          //   headers: this.getHeaders(false),
+          // });
+          // resData = resData.concat(res.data.data);
+          return this.getTradingViewHistory({
+            query: {
+              ...query,
+              to: resData[resData.length - 1][0] / 1000,
+            },
+            results,
           });
-          resData = resData.concat(res.data.data);
         }
-        let bars = [];
-        resData
+        results
           .sort((a, b) => a[0] - b[0])
           .forEach((d) => {
             if (d[0] / 1000 >= from && d[0] / 1000 < to) {
@@ -997,7 +925,7 @@ class OkexConnector extends ConnectorBase {
           url: `${this.domain}${path}${qs}`,
           headers: this.getHeaders(false),
         });
-        if (res.data && res.data.code === "0") {
+        if (res.data && res.data.code == "0") {
           const market = instId.replace("-", "").toLowerCase();
           const trades = this._formateTrades(market, res.data.data);
           this.tradeBook.updateAll(instId, lotSz, trades);
@@ -1130,7 +1058,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const payload = res.data.data;
         return new ResponseFormat({
           message: "getSubAccounts",
@@ -1182,7 +1110,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const [data] = res.data.data;
         const balances = data.details.map((detail) => ({
           subAcct,
@@ -1236,7 +1164,7 @@ class OkexConnector extends ConnectorBase {
         data: body,
       });
       const [payload] = res.data.data;
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         return new ResponseFormat({
           message: "postPlaceOrder",
           payload,
@@ -1291,7 +1219,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         return new ResponseFormat({
           message: "getAllOrders",
           payload: res.data.data,
@@ -1353,7 +1281,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         let orders = res.data.data
           .filter((data) => data.clOrdId.includes(`${memberId}m`)) // 可能發生與brokerId, randomId碰撞
           .map((data) => {
@@ -1419,22 +1347,18 @@ class OkexConnector extends ConnectorBase {
   async postCancelOrder({ body }) {
     const method = "POST";
     const path = "/api/v5/trade/cancel-order";
-
     const timeString = new Date().toISOString();
-
     const filterBody = {
       instId: body.instId,
       // ordId: body.ordId,
       clOrdId: body.clOrdId,
     };
-
     const okAccessSign = await this.okAccessSign({
       timeString,
       method,
       path: path,
       body: filterBody,
     });
-
     try {
       const res = await axios({
         method: method.toLocaleLowerCase(),
@@ -1442,7 +1366,7 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
         data: filterBody,
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         return new ResponseFormat({
           message: "postCancelOrder",
           payload: res.data.data,
@@ -1474,16 +1398,13 @@ class OkexConnector extends ConnectorBase {
   async cancelOrders({ body }) {
     const method = "POST";
     const path = "/api/v5/trade/cancel-batch-orders";
-
     const timeString = new Date().toISOString();
-
     const okAccessSign = await this.okAccessSign({
       timeString,
       method,
       path,
       body,
     });
-
     try {
       const res = await axios({
         method: method.toLocaleLowerCase(),
@@ -1491,7 +1412,7 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
         data: body,
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         return new ResponseFormat({
           message: "cancelOrders",
           payload: res.data.data,
@@ -1536,7 +1457,7 @@ class OkexConnector extends ConnectorBase {
         url: `${this.domain}${path}${qs}`,
         headers: this.getHeaders(false),
       });
-      if (res.data && res.data.code === "0") {
+      if (res.data && res.data.code == "0") {
         const payload = res.data.data.map((data) => {
           return {
             ...data,

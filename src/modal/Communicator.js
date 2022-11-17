@@ -287,6 +287,9 @@ class Communicator {
   }
 
   // Trade
+  /**
+   * [deprecated] 2022/11/17
+   */
   async getOrderHistory(options) {
     try {
       const url = `/trade/orders-history?${

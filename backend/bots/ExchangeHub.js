@@ -3190,6 +3190,9 @@ class ExchangeHub extends Bot {
     });
   }
 
+  /**
+   * [deprecated] 2022/11/17
+   */
   async getOrderHistory({ query, memberId }) {
     const tickerSetting = this.tickersSettings[query.id];
     if (!memberId || memberId === -1) {
