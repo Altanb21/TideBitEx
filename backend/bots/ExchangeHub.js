@@ -38,6 +38,8 @@ class ExchangeHub extends Bot {
   coinsSettings;
   depositsSettings;
   withdrawsSettings;
+  jobQueue = [];
+  jobTimer = [];
   constructor() {
     super();
     this.name = "ExchangeHub";
@@ -128,7 +130,7 @@ class ExchangeHub extends Bot {
           okexConnector: this.okexConnector,
           tickersSettings: this.tickersSettings,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
-          processor: (data) => this.processor(data),
+          processor: (data) => this.processorHandler(data),
           logger,
         });
         return this;
@@ -143,6 +145,7 @@ class ExchangeHub extends Bot {
       exchange: SupportedExchange.OKEX,
       force: true,
     });
+    this.worker()
     return this;
   }
 
@@ -4933,6 +4936,31 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async worker() {
+    const job = this.jobQueue.shift();
+    if (job) {
+      await job();
+      await this.worker();
+    } else {
+      clearTimeout(this.jobTimer);
+      this.jobTimer = setTimeout(() => this.worker(), 1000);
+    }
+  }
+
+  processorHandler(data) {
+    const job = () => {
+      return new Promise(async (resolve, reject) => {
+        try {
+          await this.processor(data);
+          resolve();
+        } catch {
+          reject();
+        }
+      });
+    };
+    this.jobQueue = [...this.jobQueue, job];
+  }
+
   async _updateOrderDetail(formatOrder) {
     // this.logger.debug(
     //   ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
@@ -5243,6 +5271,93 @@ class ExchangeHub extends Bot {
         total: amount,
       },
     });
+    let tr = {
+      code: "0",
+      data: [
+        {
+          side: "sell",
+          fillSz: "0.188337",
+          fillPx: "1262",
+          fee: "-0.1901450352",
+          ordId: "512693735776473095",
+          instType: "SPOT",
+          instId: "ETH-USDT",
+          clOrdId: "377bd372412fSCDE50315m399337471o",
+          posSide: "net",
+          billId: "512697576651640856",
+          tag: "",
+          execType: "M",
+          tradeId: "267671441",
+          feeCcy: "USDT",
+          ts: "1668508627734",
+        },
+        {
+          side: "sell",
+          fillSz: "0.045163",
+          fillPx: "1262",
+          fee: "-0.0455965648",
+          ordId: "512693735776473095",
+          instType: "SPOT",
+          instId: "ETH-USDT",
+          clOrdId: "377bd372412fSCDE50315m399337471o",
+          posSide: "net",
+          billId: "512697576639057936",
+          tag: "",
+          execType: "M",
+          tradeId: "267671440",
+          feeCcy: "USDT",
+          ts: "1668508627731",
+        },
+      ],
+      msg: "",
+    };
+
+    let or = {
+      code: "0",
+      data: [
+        {
+          accFillSz: "0.2335",
+          avgPx: "1262",
+          cTime: "1668507711998",
+          category: "normal",
+          ccy: "",
+          clOrdId: "377bd372412fSCDE50315m399337471o",
+          fee: "-0.2357416",
+          feeCcy: "USDT",
+          fillPx: "1262",
+          fillSz: "0.188337",
+          fillTime: "1668508627733",
+          instId: "ETH-USDT",
+          instType: "SPOT",
+          lever: "",
+          ordId: "512693735776473095",
+          ordType: "limit",
+          pnl: "0",
+          posSide: "net",
+          px: "1262",
+          quickMgnType: "",
+          rebate: "0",
+          rebateCcy: "ETH",
+          reduceOnly: "false",
+          side: "sell",
+          slOrdPx: "",
+          slTriggerPx: "",
+          slTriggerPxType: "",
+          source: "",
+          state: "filled",
+          sz: "0.2335",
+          tag: "",
+          tdMode: "cash",
+          tgtCcy: "",
+          tpOrdPx: "",
+          tpTriggerPx: "",
+          tpTriggerPxType: "",
+          tradeId: "267671441",
+          uTime: "1668508627742",
+        },
+      ],
+      msg: "",
+    };
     return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }
@@ -5445,7 +5560,7 @@ class ExchangeHub extends Bot {
             // ++TODO id should be replaced by exchangeCode + tradeId, current is tradeId (需要避免與其他交易所碰撞)
             await this.exchangeHubService.insertOuterTrades([formatOrder]);
             // 2. 呼叫承辦員處理該筆 outerTrade
-            await this.processor(formatOrder);
+            this.processorHandler(formatOrder);
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,

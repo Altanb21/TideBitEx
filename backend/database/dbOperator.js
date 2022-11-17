@@ -384,6 +384,10 @@ class DBOperator {
     return this.database.getOrdersByIds(ids);
   }
 
+  async getTradesByIds(ids) {
+    return this.database.getTradesByIds(ids);
+  }
+
   async getVouchersByIds(ids) {
     return this.database.getVouchersByIds(ids);
   }
@@ -395,6 +399,14 @@ class DBOperator {
       end,
       asc,
     });
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   */
+
+  async getAbnormalAccountVersions() {
+    return this.database.getAbnormalAccountVersions();
   }
 
   /* !!! HIGH RISK (start) !!! */
@@ -527,6 +539,10 @@ class DBOperator {
 
   async updateAccount(datas, { dbTransaction }) {
     return this.database.updateAccount(datas, { dbTransaction });
+  }
+
+  async updateAccountVersion(datas, { dbTransaction }) {
+    return this.database.updateAccountVersion(datas, { dbTransaction });
   }
 
   async updateOrder(datas, { dbTransaction }) {

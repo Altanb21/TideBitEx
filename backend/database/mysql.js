@@ -1341,7 +1341,9 @@ class mysql {
       orders.origin_volume,
       orders.state,
       orders.ord_type,
-      orders.funds_received
+      orders.funds_received,
+      orders.created_at,
+      orders.updated_at
     FROM
       orders
     WHERE
@@ -1352,6 +1354,38 @@ class mysql {
       const [orders] = await this.db.query({
         query,
         values: ids,
+      });
+      return orders;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async getTradesByIds(ids) {
+    let placeholder = ids.join(`,`);
+    let query = `
+    SELECT
+	    trades.id,
+	    trades.ask_id,
+	    trades.bid_id,
+	    trades.ask_member_id,
+	    trades.bid_member_id,
+	    trades.price,
+      trades.volume,
+      trades.currency,
+      trades.funds,
+      trades.trade_fk,
+      trades.created_at,
+      trades.updated_at
+    FROM
+      trades
+    WHERE
+      trades.id in(${placeholder});
+    `;
+    try {
+      // this.logger.debug("[mysql] getTradesByIds", query, ids);
+      const [orders] = await this.db.query({
+        query,
       });
       return orders;
     } catch (error) {
@@ -1419,6 +1453,65 @@ class mysql {
         values: markets,
       });
       return referralCommissions;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   */
+  async getAbnormalAccountVersions(id) {
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      reason,
+      modifiable_type,
+      modifiable_id
+    FROM
+      account_versions
+    WHERE
+      id > ?
+      AND created_at = '0000-00-00 00:00:00'
+    ORDER BY
+      id;`;
+    try {
+      // this.logger.debug("getAbnormalAccountVersions", query, markets);
+      const [accountVersions] = await this.db.query({
+        query,
+        value: [id],
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   */
+  async auditorAccountBalance(id) {
+    const query = `
+      SELECT
+        account_id,
+        member_id,
+        currency,
+        sum(balance) as sum_balance,
+        sum(locked) as sum_locked
+      FROM
+        account_versions
+      WHERE
+        account_id = ?;`;
+    try {
+      // this.logger.debug("getAbnormalAccountVersions", query, markets);
+      const [accountVersions] = await this.db.query({
+        query,
+      });
+      return accountVersions;
     } catch (error) {
       this.logger.error(error);
       return [];
@@ -1851,6 +1944,33 @@ class mysql {
       let query =
         "UPDATE `accounts` SET " + set.join(", ") + " WHERE " + where + ";";
       this.logger.debug("updateAccount", query);
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+  }
+
+  async updateAccountVersion(datas, { dbTransaction }) {
+    try {
+      const id = datas.id;
+      const where = "`id` = " + id;
+      delete datas.id;
+      const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
+      let query =
+        "UPDATE `account_versions` SET " +
+        set.join(", ") +
+        " WHERE " +
+        where +
+        ";";
+      this.logger.debug("updateAccountVersion", query);
       await this.db.query(
         {
           query,

@@ -1,5 +1,7 @@
 const Database = require("../../constants/Database");
 const SupportedExchange = require("../../constants/SupportedExchange");
+const SafeMath = require("../SafeMath");
+const { waterfallPromise } = require("../Utils");
 const Utils = require("../Utils");
 
 class ExchangeHubService {
@@ -105,10 +107,10 @@ class ExchangeHubService {
     }
   }
 
-  async _processOuterTrades(outerTrades, options) {
+  _processOuterTrades(outerTrades, options) {
     // let tmp,
     //   updateData = [];
-    // -1. get all records from outer_trades table &  fillter records if record.status === 5-
+    // 1. get all records from outer_trades table &  fillter records if record.status === 5-
     // const outerTrades = await this.database.getOuterTradesByStatus(
     //   Database.EXCHANGE[exchange.toUpperCase()],
     //   0
@@ -119,11 +121,11 @@ class ExchangeHubService {
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
       if (options.needParse)
-        await this.processor({
+        this.processor({
           ...JSON.parse(trade.data),
           exchangeCode: trade.exchange_code,
         });
-      else await this.processor(trade);
+      else this.processor(trade);
       // tmp = await this._processOuterTrade({
       //   ...JSON.parse(trade.data),
       //   exchangeCode: trade.exchange_code,
@@ -164,7 +166,7 @@ class ExchangeHubService {
     });
     this.logger.debug(`syncUnProcessedOuterTrades [${outerTrades.length}]`);
     // 2. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    await this._processOuterTrades(outerTrades, { needParse: true });
+    this._processOuterTrades(outerTrades, { needParse: true });
   }
 
   /**
@@ -179,6 +181,93 @@ class ExchangeHubService {
     this.logger.debug(`auditorAbnormalOuterTrades [${outerTrades.length}]`);
     // !!! high risk
     await this._processOuterTrades(outerTrades, { needParse: true });
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   */
+  async auditorAbnormalAccounts(abnormalAccountIds) {}
+
+  accountVersionUpdateJob = (updateAccountVersion) => {
+    return async () => {
+      let dbTransaction = await this.database.transaction();
+      try {
+        await this.database.updateAccountVersion(
+          updateAccountVersion,
+          dbTransaction
+        );
+        await dbTransaction.commit();
+        this.logger.debug(`updateAccountVersion`, updateAccountVersion)
+      } catch (error) {
+        await dbTransaction.rollback();
+      }
+    };
+  };
+  /**
+   *  -- temporary 2022-11-17
+   */
+  async abnormalAccountVersionsHandler() {
+    let accountVersions,
+      accVsmodifiableTypeOrder = {},
+      accVsmodifiableTypeTrade = {},
+      orders,
+      trades,
+      updateAccountVersionsJob = [],
+      abnormalAccountIds = {};
+    accountVersions = await this.database.getAbnormalAccountVersions(94); // 841997111, 94 
+    for (let accountVersion of accountVersions) {
+      if (!abnormalAccountIds[accountVersion.account_id])
+        abnormalAccountIds[accountVersion.account_id] =
+          accountVersion.account_id;
+      if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.ORDER) {
+        accVsmodifiableTypeOrder[accountVersion.modifiable_id] = accountVersion;
+      }
+      if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.ORDER) {
+        accVsmodifiableTypeTrade[accountVersion.modifiable_id] = accountVersion;
+      }
+    }
+    if (Object.keys(accVsmodifiableTypeOrder).length > 0) {
+      orders = this.database.getOrdersByIds(
+        Object.keys(accVsmodifiableTypeOrder)
+      );
+      for (let orderId of Object.keys(accVsmodifiableTypeOrder)) {
+        let order = orders.find((o) => SafeMath.eq(orderId, o.id));
+        let dateTime =
+          order.state === Database.ORDER_STATE_CODE.CANCEL
+            ? order.updated_at
+            : order.created_at;
+        if (order) {
+          updateAccountVersionsJob = [
+            ...updateAccountVersionsJob,
+            this.accountVersionUpdateJob({
+              id: accVsmodifiableTypeOrder[orderId].id,
+              created_at: dateTime,
+              updated_at: dateTime,
+            }),
+          ];
+        }
+      }
+    }
+    if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
+      trades = this.database.getTradesByIds(
+        Object.keys(accVsmodifiableTypeTrade)
+      );
+      for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
+        let trade = trades.find((t) => SafeMath.eq(tradeId, t.id));
+        let dateTime = trade.created_at;
+        if (trade) {
+          updateAccountVersionsJob = [
+            ...updateAccountVersionsJob,
+            this.accountVersionUpdateJob({
+              id: accVsmodifiableTypeOrder[tradeId].id,
+              created_at: dateTime,
+              updated_at: dateTime,
+            }),
+          ];
+        }
+      }
+    }
+    waterfallPromise(updateAccountVersionsJob);
   }
 
   async _getOuterTradesFromAPI(exchange, interval) {
@@ -304,6 +393,7 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
+      await this.abnormalAccountVersionsHandler()
       // await this.auditorAbnormalOuterTrades(
       //   exchange,
       //   "2022-11-14 00:00:00",
