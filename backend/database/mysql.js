@@ -1039,9 +1039,9 @@ class mysql {
   }
 
   async countOuterTrades({
+    exchangeCode,
     currency,
     type,
-    exchangeCode,
     orderId,
     status,
     days,
@@ -1074,21 +1074,23 @@ class mysql {
             : ``
         };`;
     try {
-      // this.logger.debug(
-      //   "countOuterTrades",
-      //   query,
-      //   `${
-      //     type === Database.TIME_RANGE_TYPE.DAY_AFTER
-      //       ? `[${exchangeCode}, ${days}]`
-      //       : `[${exchangeCode}, ${start}, ${end}]`
-      //   }`
-      // );
+      this.logger.debug(
+        "countOuterTrades",
+        query,
+        `${
+          type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            ? `[${exchangeCode}, ${days}]`
+            : type === Database.TIME_RANGE_TYPE.BETWEEN
+            ? `[${exchangeCode}, ${start}, ${end}]`
+            : `[${exchangeCode}]`
+        }`
+      );
       const [[counts]] = await this.db.query({
         query,
         values:
           type === Database.TIME_RANGE_TYPE.DAY_AFTER
             ? [exchangeCode, days]
-            : type === Database.TIME_RANGE_TYPE.DAY_AFTER
+            : type === Database.TIME_RANGE_TYPE.BETWEEN
             ? [exchangeCode, start, end]
             : [exchangeCode],
       });
