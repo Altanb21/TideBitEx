@@ -197,7 +197,7 @@ class ExchangeHubService {
           dbTransaction
         );
         await dbTransaction.commit();
-        this.logger.debug(`updateAccountVersion`, updateAccountVersion)
+        this.logger.debug(`updateAccountVersion`, updateAccountVersion);
       } catch (error) {
         await dbTransaction.rollback();
       }
@@ -214,7 +214,7 @@ class ExchangeHubService {
       trades,
       updateAccountVersionsJob = [],
       abnormalAccountIds = {};
-    accountVersions = await this.database.getAbnormalAccountVersions(94); // 841997111, 94 
+    accountVersions = await this.database.getAbnormalAccountVersions(94); // 841997111, 94
     for (let accountVersion of accountVersions) {
       if (!abnormalAccountIds[accountVersion.account_id])
         abnormalAccountIds[accountVersion.account_id] =
@@ -227,7 +227,7 @@ class ExchangeHubService {
       }
     }
     if (Object.keys(accVsmodifiableTypeOrder).length > 0) {
-      orders = this.database.getOrdersByIds(
+      orders = await this.database.getOrdersByIds(
         Object.keys(accVsmodifiableTypeOrder)
       );
       for (let orderId of Object.keys(accVsmodifiableTypeOrder)) {
@@ -249,7 +249,7 @@ class ExchangeHubService {
       }
     }
     if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
-      trades = this.database.getTradesByIds(
+      trades = await this.database.getTradesByIds(
         Object.keys(accVsmodifiableTypeTrade)
       );
       for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
@@ -393,7 +393,7 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
-      await this.abnormalAccountVersionsHandler()
+      await this.abnormalAccountVersionsHandler();
       // await this.auditorAbnormalOuterTrades(
       //   exchange,
       //   "2022-11-14 00:00:00",
