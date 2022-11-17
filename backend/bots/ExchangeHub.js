@@ -2392,16 +2392,10 @@ class ExchangeHub extends Bot {
     let startDate = `${start} 00:00:00`;
     let endtDate = `${end} 23:59:59`;
     let trades = [],
-      // orderIds = [],
-      // voucherIds = [],
       id = instId.replace("-", "").toLowerCase(),
       tickerSetting = this.tickersSettings[id],
-      // markets = {},
-      // orders = [],
-      // vouchers = [],
       referralCommissions = [],
       processTrades = [],
-      // feeCurrency,
       counts;
     switch (exchange) {
       case SupportedExchange.OKEX:
@@ -2435,39 +2429,32 @@ class ExchangeHub extends Bot {
                 fee: outerTradeData.avgPx
                   ? outerTradeData.fillFee // data source is OKx order
                   : outerTradeData.fee, // data source is Okx trade
-                // feeCurrency: outerTradeData.feeCcy,
               },
               tickerSetting =
                 this.tickersSettings[
                   outerTradeData.instId.toLowerCase().replace("-", "")
                 ],
-              innerTrade = null;
-            // if (dbOuterTrade.order_id && dbOuterTrade.voucher_id) {
-            //   orderIds = [...orderIds, dbOuterTrade.order_id];
-            //   voucherIds = [...voucherIds, dbOuterTrade.voucher_id];
-            //   if (!markets[tickerSetting.id])
-            //     markets[tickerSetting.id] = tickerSetting.code;
-
-            // }
-            innerTrade = {
-              orderId: dbOuterTrade.order_id,
-              price: dbOuterTrade.order_price
-                ? Utils.removeZeroEnd(dbOuterTrade.order_price)
-                : null,
-              volume: dbOuterTrade.order_origin_volume
-                ? Utils.removeZeroEnd(dbOuterTrade.order_origin_volume)
-                : null,
-              exchange: SupportedExchange.TIDEBIT,
-              fillPrice: dbOuterTrade.voucher_price
-                ? Utils.removeZeroEnd(dbOuterTrade.voucher_price)
-                : null,
-              fillVolume: dbOuterTrade.voucher_volume
-                ? Utils.removeZeroEnd(dbOuterTrade.voucher_volume)
-                : null,
-              fee: dbOuterTrade.voucher_fee
-                ? Utils.removeZeroEnd(dbOuterTrade.voucher_fee)
-                : null,
-            };
+              innerTrade = dbOuterTrade.email
+                ? {
+                    orderId: dbOuterTrade.order_id,
+                    price: dbOuterTrade.order_price
+                      ? Utils.removeZeroEnd(dbOuterTrade.order_price)
+                      : null,
+                    volume: dbOuterTrade.order_origin_volume
+                      ? Utils.removeZeroEnd(dbOuterTrade.order_origin_volume)
+                      : null,
+                    exchange: SupportedExchange.TIDEBIT,
+                    fillPrice: dbOuterTrade.voucher_price
+                      ? Utils.removeZeroEnd(dbOuterTrade.voucher_price)
+                      : null,
+                    fillVolume: dbOuterTrade.voucher_volume
+                      ? Utils.removeZeroEnd(dbOuterTrade.voucher_volume)
+                      : null,
+                    fee: dbOuterTrade.voucher_fee
+                      ? Utils.removeZeroEnd(dbOuterTrade.voucher_fee)
+                      : null,
+                  }
+                : null;
             trades = [
               ...trades,
               {
@@ -2495,14 +2482,9 @@ class ExchangeHub extends Bot {
               },
             ];
           }
-          // getOrdersByIds
-          // orders = await this.database.getOrdersByIds(orderIds);
-          // getVouchersByIds
-          // vouchers = await this.database.getVouchersByIds(voucherIds);
           // getReferralCommissionsByMarkets
           referralCommissions =
             await this.database.getReferralCommissionsByMarkets({
-              // markets: Object.values(markets),
               markets: [tickerSetting.code],
               start,
               end,
@@ -2511,29 +2493,9 @@ class ExchangeHub extends Bot {
             let referral,
               profit,
               alert = false,
-              // innerTrade,
-              // fee,
-              // voucher,
-              // order,
-              // fillPrice,
-              // fillVolume,
               referralCommission;
             if (trade.innerTrade) {
-              // order = orders.find((o) =>
-              //   SafeMath.eq(o.id, trade.innerTrade.orderId)
-              // );
-              // voucher = vouchers.find((v) =>
-              //   SafeMath.eq(v.id, trade.voucherId)
-              // );
               if (trade.voucherId) {
-                // feeCurrency = (
-                //   voucher.trend === Database.ORDER_KIND.ASK
-                //     ? voucher.bid
-                //     : voucher.ask
-                // )?.toUpperCase();
-                // fee = voucher
-                //   ? Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`])
-                //   : null;
                 referralCommission = referralCommissions.find(
                   (rc) =>
                     SafeMath.eq(rc.market, trade.marketCode) &&
@@ -2557,15 +2519,6 @@ class ExchangeHub extends Bot {
                           Math.abs(trade.outerTrade.fee)
                         )
                     : null;
-                // fillPrice = Utils.removeZeroEnd(voucher.price);
-                // fillVolume = Utils.removeZeroEnd(voucher.volume);
-                // innerTrade = {
-                //   ...trade.innerTrade,
-                //   fillPrice,
-                //   fillVolume,
-                //   fee,
-                //   feeCurrency,
-                // };
                 if (
                   // (trade.outerTrade.price &&
                   //   !SafeMath.eq(
@@ -2595,12 +2548,6 @@ class ExchangeHub extends Bot {
               ...processTrades,
               {
                 ...trade,
-                // innerTrade,
-                // fillPrice: fillPrice || trade.outerOrder?.fillPrice,
-                // fillVolume: fillVolume || trade.outerOrder?.fillVolume,
-                // fee: fee ? SafeMath.plus(fee, trade.outerOrder?.fee) : fee,
-                // kind: order?.ord_type,
-                // feeCurrency: trade.feeCurrency || feeCurrency,
                 referral,
                 profit,
                 alert,
