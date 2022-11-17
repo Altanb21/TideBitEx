@@ -405,8 +405,8 @@ class DBOperator {
    *  -- temporary 2022-11-17
    */
 
-  async getAbnormalAccountVersions() {
-    return this.database.getAbnormalAccountVersions();
+  async getAbnormalAccountVersions(id) {
+    return this.database.getAbnormalAccountVersions(id);
   }
 
   /* !!! HIGH RISK (start) !!! */
