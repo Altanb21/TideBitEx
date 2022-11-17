@@ -1479,10 +1479,10 @@ class mysql {
     ORDER BY
       id;`;
     try {
-      // this.logger.debug("getAbnormalAccountVersions", query, markets);
+      this.logger.debug("getAbnormalAccountVersions", query, id);
       const [accountVersions] = await this.db.query({
         query,
-        value: [id],
+        values: [id],
       });
       return accountVersions;
     } catch (error) {
@@ -1507,7 +1507,7 @@ class mysql {
       WHERE
         account_id = ?;`;
     try {
-      // this.logger.debug("getAbnormalAccountVersions", query, markets);
+      // this.logger.debug("auditorAccountBalance", query, markets);
       const [accountVersions] = await this.db.query({
         query,
       });
