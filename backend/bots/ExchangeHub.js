@@ -2476,7 +2476,7 @@ class ExchangeHub extends Bot {
                 status: dbOuterTrade.status,
                 voucherId: dbOuterTrade.voucher_id,
                 marketCode: tickerSetting.code,
-                kind: dbOuterTrade?.kind,
+                // kind: dbOuterTrade?.kind,
                 outerTrade,
                 innerTrade,
                 fillPrice: dbOuterTrade.voucher_price || outerTradeData.fillPx,
@@ -2514,6 +2514,7 @@ class ExchangeHub extends Bot {
               fee,
               price,
               volume,
+              kind,
               state,
               fillPrice,
               fillVolume;
@@ -2525,6 +2526,7 @@ class ExchangeHub extends Bot {
                 SafeMath.eq(v.id, trade.voucherId)
               );
               if (order) {
+                kind = order.ord_type;
                 state = Database.DB_STATE_CODE[order.state];
                 price = order.price ? Utils.removeZeroEnd(order.price) : null;
                 volume = order.origin_volume
@@ -2598,7 +2600,9 @@ class ExchangeHub extends Bot {
                 !SafeMath.eq(
                   trade.outerTrade.fillVolume,
                   trade.innerTrade.fillVolume
-                )
+                ) ||
+                (trade.outerTrade.state &&
+                  trade.outerTrade.state === trade.innerTrade.state)
               )
                 alert = true;
             }
@@ -2606,6 +2610,7 @@ class ExchangeHub extends Bot {
               ...processTrades,
               {
                 ...trade,
+                kind,
                 feeCurrency: trade.feeCurrency || feeCurrency,
                 referral,
                 profit,
