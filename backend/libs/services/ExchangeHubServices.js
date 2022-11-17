@@ -215,6 +215,7 @@ class ExchangeHubService {
       updateAccountVersionsJob = [],
       abnormalAccountIds = {};
     accountVersions = await this.database.getAbnormalAccountVersions(94); // 841997111, 94
+    this.logger.debug(`accountVersions [${accountVersions.length}]`);
     for (let accountVersion of accountVersions) {
       if (!abnormalAccountIds[accountVersion.account_id])
         abnormalAccountIds[accountVersion.account_id] =
@@ -227,16 +228,23 @@ class ExchangeHubService {
       }
     }
     if (Object.keys(accVsmodifiableTypeOrder).length > 0) {
+      this.logger.debug(
+        `accVsmodifiableTypeOrder [${
+          Object.keys(accVsmodifiableTypeOrder).length
+        }]`
+      );
       orders = await this.database.getOrdersByIds(
         Object.keys(accVsmodifiableTypeOrder)
       );
+      this.logger.debug(`orders [${orders.length}]`);
       for (let orderId of Object.keys(accVsmodifiableTypeOrder)) {
         let order = orders.find((o) => SafeMath.eq(orderId, o.id));
-        let dateTime =
-          order.state === Database.ORDER_STATE_CODE.CANCEL
-            ? order.updated_at
-            : order.created_at;
+        this.logger.debug(`order`, order);
         if (order) {
+          let dateTime =
+            order.state === Database.ORDER_STATE_CODE.CANCEL
+              ? order.updated_at
+              : order.created_at;
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
             this.accountVersionUpdateJob({
@@ -249,13 +257,20 @@ class ExchangeHubService {
       }
     }
     if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
+      this.logger.debug(
+        `accVsmodifiableTypeTrade [${
+          Object.keys(accVsmodifiableTypeTrade).length
+        }]`
+      );
       trades = await this.database.getTradesByIds(
         Object.keys(accVsmodifiableTypeTrade)
       );
+      this.logger.debug(`trades [${trades.length}]`);
       for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
         let trade = trades.find((t) => SafeMath.eq(tradeId, t.id));
-        let dateTime = trade.created_at;
+        this.logger.debug(`trade`, trade);
         if (trade) {
+          let dateTime = trade.created_at;
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
             this.accountVersionUpdateJob({
