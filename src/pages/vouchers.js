@@ -14,21 +14,6 @@ const tickers = {
   "BTC-USDT": "BTC-USDT",
   "ETH-USDT": "ETH-USDT",
 };
-// const monthInterval = 30 * 24 * 60 * 60 * 1000;
-// const months = [
-//   "Jan",
-//   "Feb",
-//   "Mar",
-//   "Apr",
-//   "May",
-//   "Jun",
-//   "Jul",
-//   "Aug",
-//   "Sep",
-//   "Oct",
-//   "Nov",
-//   "Dec",
-// ];
 
 export const TableHeader = (props) => {
   const [ascending, setAscending] = useState(null);
@@ -92,7 +77,6 @@ const Vouchers = () => {
   const [filterOption, setFilterOption] = useState(30); // 30, 365
   const [filterKey, setFilterKey] = useState("");
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  // const [tickers, setTickers] = useState(null);
   const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
   const [isLoading, setIsLoading] = useState(false);
   const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
@@ -112,203 +96,6 @@ const Vouchers = () => {
       }-${currentDate.getDate()} 08:00:00`
     )
   );
-
-  // const getNextDailyBarTime = (barTime) => {
-  //   const date = new Date(barTime);
-  //   date.setDate(date.getDate() + 1);
-  //   return date.getTime();
-  // };
-
-  // const getNextMonthlyBarTime = (barTime) => {
-  //   const date = new Date(barTime);
-  //   // console.log(`date`, date);
-  //   const year = date.getFullYear();
-  //   const month = date.getMonth() + 1;
-  //   let dateLength = new Date(year, month + 1, 0).getDate();
-  //   // console.log(`dateLength`, dateLength);
-  //   date.setDate(date.getDate() + dateLength + 1);
-  //   // console.log(`date`, date);
-  //   return date.getTime();
-  // };
-
-  // const formateTrades = useCallback(
-  //   async (trades) => {
-  //     let chartData = { data: {}, xaxisType: "string" },
-  //       data = {};
-  //     let _trades = trades.map((t) => ({ ...t }));
-  //     _trades.sort((a, b) => a.ts - b.ts); //asce
-  //     if (_trades[_trades.length - 1].ts - _trades[0].ts < 3 * monthInterval) {
-  //       let lastDailyBar = new Date(
-  //           `${new Date(_trades[0].ts).toISOString().substring(0, 10)} 00:00:00`
-  //         ),
-  //         nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-  //       for (let trade of _trades) {
-  //         if (trade.profit) {
-  //           let key = `${lastDailyBar.getFullYear()}-${
-  //             lastDailyBar.getMonth() + 1
-  //           }-${lastDailyBar.getDate()}`;
-  //           // console.log(`formateTrades key`, key);
-  //           if (!data[key])
-  //             data[key] = {
-  //               y: "0",
-  //               x: key,
-  //               date: lastDailyBar,
-  //             };
-  //           // console.log(
-  //           //   `formateTrades lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-  //           //     trade.ts
-  //           //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`,
-  //           //   trade
-  //           // );
-  //           while (nextDailyBarTime <= trade.ts) {
-  //             // console.error(
-  //             //   `nextDailyBarTime <= trade.ts:${nextDailyBarTime <= trade.ts})`
-  //             // );
-  //             // console.log(
-  //             //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-  //             //     trade.ts
-  //             //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
-  //             // );
-  //             lastDailyBar = new Date(nextDailyBarTime);
-  //             nextDailyBarTime = getNextDailyBarTime(lastDailyBar.getTime());
-  //             // console.log(
-  //             //   `lastDailyBar(${lastDailyBar}) tradeTime(${new Date(
-  //             //     trade.ts
-  //             //   )}) nextDailyBar(${new Date(nextDailyBarTime)})`
-  //             // );
-  //             key = `${lastDailyBar.getFullYear()}-${
-  //               lastDailyBar.getMonth() + 1
-  //             }-${lastDailyBar.getDate()}`;
-  //             // console.log(`formateTrades key`, key);
-  //             if (!data[key])
-  //               data[key] = {
-  //                 y: "0",
-  //                 x: key,
-  //                 date: lastDailyBar,
-  //               };
-  //             // console.log(`data[${key}]`, data[key]);
-  //           }
-  //           //  else {
-  //           key = `${lastDailyBar.getFullYear()}-${
-  //             lastDailyBar.getMonth() + 1
-  //           }-${lastDailyBar.getDate()}`;
-  //           // console.log(`formateTrades key`, key);
-  //           let price = storeCtx.getPrice(trade.feeCurrency);
-  //           if (!data[key])
-  //             data[key] = {
-  //               y: SafeMath.mult(trade.profit, price),
-  //               x: key,
-  //               date: lastDailyBar,
-  //             };
-  //           else
-  //             data[key] = {
-  //               ...data[key],
-  //               y: SafeMath.plus(
-  //                 data[key].y,
-  //                 SafeMath.mult(trade.profit, price)
-  //               ),
-  //             };
-
-  //           // console.log(`formateTrades data[key]`, data[key]);
-  //           // }
-  //         }
-  //       }
-  //       chartData.data = data;
-  //       chartData.xaxisType = "datetime";
-  //     } else {
-  //       let lastMonthlyBar = new Date(
-  //           `${new Date(_trades[0].ts)
-  //             .toISOString()
-  //             .substring(0, 7)}-01 00:00:00`
-  //         ),
-  //         nextMonthlyBarTime = getNextMonthlyBarTime(lastMonthlyBar.getTime());
-  //       for (let trade of _trades) {
-  //         if (trade.profit) {
-  //           let key = `${lastMonthlyBar.getFullYear()}-${
-  //             lastMonthlyBar.getMonth() + 1
-  //           }`;
-  //           if (!data[key])
-  //             data[key] = {
-  //               y: "0",
-  //               x: `${
-  //                 months[lastMonthlyBar.getMonth()]
-  //               } ${lastMonthlyBar.getFullYear()}`,
-  //               date: lastMonthlyBar,
-  //             };
-  //           // console.log(
-  //           //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-  //           //     trade.ts
-  //           //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`,
-  //           //   trade
-  //           // );
-  //           while (nextMonthlyBarTime <= trade.ts) {
-  //             // console.error(
-  //             //   `nextMonthlyBarTime <= trade.ts:${
-  //             //     nextMonthlyBarTime <= trade.ts
-  //             //   })`
-  //             // );
-  //             // console.log(
-  //             //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-  //             //     trade.ts
-  //             //   )}) nextMonthlyBar(${new Date(nextMonthlyBarTime)})`
-  //             // );
-  //             lastMonthlyBar = new Date(nextMonthlyBarTime);
-  //             nextMonthlyBarTime = getNextMonthlyBarTime(
-  //               lastMonthlyBar.getTime()
-  //             );
-  //             // console.log(
-  //             //   `lastMonthlyBar(${lastMonthlyBar}) tradeTime(${new Date(
-  //             //     trade.ts
-  //             //   )}) nextDailyBar(${new Date(nextMonthlyBarTime)})`
-  //             // );
-  //             key = `${lastMonthlyBar.getFullYear()}-${
-  //               lastMonthlyBar.getMonth() + 1
-  //             }`;
-  //             if (!data[key])
-  //               data[key] = {
-  //                 y: "0",
-  //                 x: `${
-  //                   months[lastMonthlyBar.getMonth()]
-  //                 } ${lastMonthlyBar.getFullYear()}`,
-  //                 date: lastMonthlyBar,
-  //               };
-  //             // console.log(`data[${key}]`, data[key]);
-  //           }
-  //           //  else {
-  //           key = `${lastMonthlyBar.getFullYear()}-${
-  //             lastMonthlyBar.getMonth() + 1
-  //           }`;
-  //           // console.log(`formateTrades key`, key);
-  //           let price = storeCtx.getPrice(trade.feeCurrency);
-  //           if (!data[key])
-  //             data[key] = {
-  //               y: SafeMath.mult(trade.profit, price),
-  //               x: `${
-  //                 months[lastMonthlyBar.getMonth()]
-  //               } ${lastMonthlyBar.getFullYear()}`,
-  //               date: lastMonthlyBar,
-  //             };
-  //           else
-  //             data[key] = {
-  //               ...data[key],
-  //               y: SafeMath.plus(
-  //                 data[key].y,
-  //                 SafeMath.mult(trade.profit, price)
-  //               ),
-  //             };
-  //           // }
-  //           // console.log(`formateTrades data[${key}]`, data[key]);
-  //         }
-  //       }
-  //       chartData.data = data;
-  //       chartData.xaxisType = "string";
-  //     }
-  //     console.log(`formateTrades chartData`, chartData);
-  //     setChartData(chartData);
-  //     return chartData;
-  //   },
-  //   [storeCtx]
-  // );
 
   const getVouchers = useCallback(
     async ({ exchange, ticker, start, end, limit, offset }) => {
@@ -373,23 +160,6 @@ const Vouchers = () => {
       });
       console.log(`after filter _trades[:${_trades.length}]`);
       setFilterTrades(_trades);
-      // formateTrades(_trades);
-      // let profits = _trades.reduce((prev, trade) => {
-      //   if (trade.profit) {
-      //     if (!prev[trade.feeCurrency]) {
-      //       prev[trade.feeCurrency] = {
-      //         sum: 0,
-      //         currency: trade.feeCurrency,
-      //       };
-      //     }
-      //     prev[trade.feeCurrency].sum = SafeMath.plus(
-      //       prev[trade.feeCurrency].sum,
-      //       trade.profit
-      //     );
-      //   }
-      //   return prev;
-      // }, {});
-      // setProfits(profits);
     },
     [filterExchange, filterKey, filterTicker]
   );
@@ -800,6 +570,7 @@ const Vouchers = () => {
                 label={t("orderId")}
                 onClick={(ascending) => sorting("orderId", ascending)}
               />
+              <th className="screen__table-header">{t("state")}</th>
               <TableHeader
                 className="screen__expand"
                 label={t("transaction-price")}

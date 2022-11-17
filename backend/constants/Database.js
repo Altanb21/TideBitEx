@@ -29,6 +29,23 @@ module.exports = {
     DONE: "Done",
     UNKNOWN: "Unknown",
   },
+  DB_STATE_CODE: {
+    0: "canceled",
+    100: "wait",
+    200: "done",
+  },
+  OKX_ORDER_STATE: {
+    canceled: "canceled",
+    live: "wait",
+    partially_filled: "wait",
+    filled: "done",
+  },
+  OKX_ORDER_STATE_CODE: {
+    canceled: 0,
+    live: 100,
+    partially_filled: 100,
+    filled: 200,
+  },
   ORDER_STATE: {
     CANCEL: "canceled",
     WAIT: "wait",
