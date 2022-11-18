@@ -2036,27 +2036,16 @@ class mysql {
   async updateAccount(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      const where = "`id` = " + id;
+      const where = "id = " + id;
       delete datas.id;
-      const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
+      const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
       let query = `
-      BEGIN;
-      SELECT
-      	balance,
-      	locked,
-      	updated_at
-      FROM
-      	accounts
-      WHERE
-        ${where}
-      FOR UPDATE;
       UPDATE
       	accounts
       SET
         ${set.join(", ")}
       WHERE
         ${where};
-      COMMIT;
       `;
       this.logger.debug("updateAccount", query);
       await this.db.query(
@@ -2107,23 +2096,10 @@ class mysql {
   async updateOrder(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      const where = "`id` = " + id;
+      const where = "id = " + id;
       delete datas.id;
-      const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
+      const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
       let query = `
-      BEGIN;
-      SELECT
-        volume,
-        locked
-      	state,
-      	funds_received,
-        trades_count,
-        done_at,
-      	updated_at
-      FROM
-        orders
-      WHERE
-        ${where}
       FOR UPDATE;
       UPDATE
         orders
@@ -2131,7 +2107,6 @@ class mysql {
         ${set.join(", ")}
       WHERE
         ${where};
-      COMMIT;
       `;
       this.logger.debug("updateOrder", query);
       await this.db.query(
