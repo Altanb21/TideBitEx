@@ -323,7 +323,7 @@ class ExchangeHubService {
           let dateTime = new Date(parseInt(outerTradeData.ts)).toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
-            ...accVsmodifiableTypeTrade[outerTrade.tradeId].map(
+            ...accVsmodifiableTypeTrade[outerTrade.trade_id].map(
               (accountVersion) =>
                 this.accountVersionUpdateJob({
                   id: accountVersion.id,
@@ -461,7 +461,7 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
-      this.abnormalAccountVersionsHandler();
+      // this.abnormalAccountVersionsHandler();
       // await this.auditorAbnormalOuterTrades(
       //   exchange,
       //   "2022-11-14 00:00:00",
