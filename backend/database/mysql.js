@@ -77,7 +77,7 @@ class mysql {
       let values = Object.values(options);
       for (let index = 0; index < Object.keys(options).length; index++) {
         if (values[index])
-          placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
+          placeholder += ` AND ${keys[index]} = ${values[index]}`;
       }
     }
     const query = `
@@ -94,7 +94,7 @@ class mysql {
       GROUP BY account_id
       ;`;
     try {
-      // this.logger.debug("auditorAccountBalance", query, markets);
+      // this.logger.debug("auditAccountBalance", query, memberId);
       const [accountVersions] = await this.db.query({
         query,
         values: [memberId],
@@ -117,7 +117,7 @@ class mysql {
           placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }
-    // this.logger.debug(placeholder);
+    this.logger.debug(placeholder);
     const query = `
     SELECT
 	    accounts.id,
@@ -134,6 +134,7 @@ class mysql {
     LIMIT ${limit};
     `;
     const values = [memberId];
+    // this.logger.debug(query, values);
     try {
       let accounts;
       if (dbTransaction) {
@@ -153,7 +154,6 @@ class mysql {
           values,
         });
       }
-      // this.logger.debug(query, values);
       // this.logger.debug(`getAccountsByMemberId`, accounts);
       return accounts;
     } catch (error) {

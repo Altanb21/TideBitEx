@@ -4955,14 +4955,14 @@ class ExchangeHub extends Bot {
         accounts: {},
       };
     accounts = await this.database.getAccountsByMemberId(memberId, {
-      currency,
+      options: { currency: currency },
     });
     accounts = accounts.reduce((prev, curr) => {
       if (!prev[curr.id]) prev[curr.id] = curr;
       return prev;
     }, {});
     accountVersionsR = await this.database.auditAccountBalance(memberId, {
-      currency,
+      options: { currency: currency },
     });
     accountVersionsR = accountVersionsR.reduce((prev, curr) => {
       if (!prev[curr.account_id]) prev[curr.account_id] = curr;
