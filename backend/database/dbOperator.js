@@ -34,6 +34,10 @@ class DBOperator {
     return this.database.getTotalAccountsAssets();
   }
 
+  async auditAccountBalance(memberId, { options }) {
+    return this.database.auditAccountBalance(memberId, { options });
+  }
+
   async getAccountsByMemberId(
     memberId,
     { options = {}, limit = 100, dbTransaction }

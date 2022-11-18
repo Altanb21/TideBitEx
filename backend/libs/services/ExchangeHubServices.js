@@ -183,11 +183,6 @@ class ExchangeHubService {
     this._processOuterTrades(outerTrades, { needParse: true });
   }
 
-  /**
-   *  -- temporary 2022-11-17
-   */
-  async auditorAbnormalAccounts(abnormalAccountIds) {}
-
   accountVersionUpdateJob = (updateAccountVersion) => {
     return async () => {
       let dbTransaction = await this.database.transaction();

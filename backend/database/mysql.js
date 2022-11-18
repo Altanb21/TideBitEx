@@ -70,6 +70,42 @@ class mysql {
     }
   }
 
+  async auditAccountBalance(memberId, { options }) {
+    let placeholder = ``;
+    if (Object.keys(options)?.length > 0) {
+      let keys = Object.keys(options);
+      let values = Object.values(options);
+      for (let index = 0; index < Object.keys(options).length; index++) {
+        if (values[index])
+          placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
+      }
+    }
+    const query = `
+      SELECT
+        account_id,
+        member_id,
+        currency,
+        sum(balance) as sum_balance,
+        sum(locked) as sum_locked
+      FROM
+        account_versions
+      WHERE
+        member_id = ?${placeholder}
+      GROUP BY account_id
+      ;`;
+    try {
+      // this.logger.debug("auditorAccountBalance", query, markets);
+      const [accountVersions] = await this.db.query({
+        query,
+        values: [memberId],
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
     let placeholder = ``;
     // this.logger.debug(options);
@@ -77,7 +113,8 @@ class mysql {
       let keys = Object.keys(options);
       let values = Object.values(options);
       for (let index = 0; index < Object.keys(options).length; index++) {
-        placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
+        if (values[index])
+          placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }
     // this.logger.debug(placeholder);
@@ -1508,33 +1545,6 @@ class mysql {
       const [accountVersions] = await this.db.query({
         query,
         values: [id],
-      });
-      return accountVersions;
-    } catch (error) {
-      this.logger.error(error);
-      return [];
-    }
-  }
-
-  /**
-   *  -- temporary 2022-11-17
-   */
-  async auditorAccountBalance(id) {
-    const query = `
-      SELECT
-        account_id,
-        member_id,
-        currency,
-        sum(balance) as sum_balance,
-        sum(locked) as sum_locked
-      FROM
-        account_versions
-      WHERE
-        account_id = ?;`;
-    try {
-      // this.logger.debug("auditorAccountBalance", query, markets);
-      const [accountVersions] = await this.db.query({
-        query,
       });
       return accountVersions;
     } catch (error) {

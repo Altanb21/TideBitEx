@@ -145,7 +145,7 @@ class ExchangeHub extends Bot {
       exchange: SupportedExchange.OKEX,
       force: true,
     });
-    this.worker()
+    this.worker();
     return this;
   }
 
@@ -2941,11 +2941,6 @@ class ExchangeHub extends Bot {
             locked: orderData.locked,
             fee: 0,
           };
-          // account = await this.database.getAccountsByMemberId(memberId, {
-          //   options: { currency: currencyId },
-          //   limit: 1,
-          //   dbTransaction: t,
-          // });
           await this._updateAccount(accountVersion, t);
           //   * 5. commit transaction
           await t.commit();
@@ -3294,8 +3289,6 @@ class ExchangeHub extends Bot {
       fee,
       updatedOrder,
       currencyId,
-      // account,
-      // updateAccount,
       _tickerSetting,
       accountVersion,
       createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -3308,11 +3301,6 @@ class ExchangeHub extends Bot {
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
-        // account = await this.database.getAccountsByMemberId(memberId, {
-        //   options: { currency: currencyId },
-        //   limit: 1,
-        //   dbTransaction: transacion,
-        // });
         _tickerSetting = tickerSetting
           ? tickerSetting
           : Object.values(this.tickersSettings).find((ts) =>
@@ -3322,7 +3310,6 @@ class ExchangeHub extends Bot {
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
-        // if (account) {
         const newOrder = {
           id: orderId,
           state: Database.ORDER_STATE_CODE.CANCEL,
@@ -3357,19 +3344,7 @@ class ExchangeHub extends Bot {
           ts: Date.now(),
         };
         this.logger.debug(`回傳更新後的 order snapshot`, updatedOrder);
-        // updateAccount = {
-        //   balance: SafeMath.plus(account.balance, balance),
-        //   locked: SafeMath.plus(account.locked, locked),
-        //   currency: this.coinsSettings.find(
-        //     (curr) => curr.id === account.currency
-        //   )?.symbol,
-        //   total: SafeMath.plus(
-        //     SafeMath.plus(account.balance, balance),
-        //     SafeMath.plus(account.locked, locked)
-        //   ),
-        // };
         success = true;
-        // }
       }
     } catch (error) {
       success = false;
@@ -3378,7 +3353,6 @@ class ExchangeHub extends Bot {
         error
       );
     }
-    // return { success, updatedOrder, updateAccount };
     return { success, updatedOrder };
     /* !!! HIGH RISK (end) !!! */
   }
@@ -3759,6 +3733,14 @@ class ExchangeHub extends Bot {
     return { askFeeRate, bidFeeRate };
   }
 
+  /**
+   * [deprecated] 2022/11/18
+   * (
+   *   原本是想用在 processor 流程但後來沒有用，因為怕 DB 更新跟通知前端更新分開來數值會有錯誤，
+   *   所以此function _emitUpdateOrder 的部份寫在 processor 裡面 calculator 之後 updater 之前，
+   *   _emitUpdateAccount 寫在 updater 裡面的 _updateAccount
+   * )
+   */
   async emitter({
     memberId,
     market,
@@ -4961,6 +4943,61 @@ class ExchangeHub extends Bot {
     this.jobQueue = [...this.jobQueue, job];
   }
 
+  /**
+   *  -- temporary 2022-11-18
+   */
+  async accountAuditor({ query }) {
+    let { memberId, currency } = query;
+    let accounts,
+      accountVersionsR,
+      result = {
+        memberId,
+        accounts: {},
+      };
+    accounts = await this.database.getAccountsByMemberId(memberId, {
+      currency,
+    });
+    accounts = accounts.reduce((prev, curr) => {
+      if (!prev[curr.id]) prev[curr.id] = curr;
+      return prev;
+    }, {});
+    accountVersionsR = await this.database.auditAccountBalance(memberId, {
+      currency,
+    });
+    accountVersionsR = accountVersionsR.reduce((prev, curr) => {
+      if (!prev[curr.account_id]) prev[curr.account_id] = curr;
+      return prev;
+    }, {});
+    if (Object.keys(accounts).length > 0) {
+      for (let accountId of Object.keys(accounts)) {
+        let account = accounts[accountId],
+          accountVersionR = accountVersionsR[accountId],
+          correctBalance = 0,
+          correctLocked = 0;
+        if (accountVersionR) {
+          correctBalance = Utils.removeZeroEnd(accountVersionR.sum_balance);
+          correctLocked = Utils.removeZeroEnd(accountVersionR.sum_locked);
+        }
+        result.accounts[accountId] = {
+          currency: account.currency,
+          balance: {
+            current: account.balance,
+            shouldBe: correctBalance,
+            alert: !SafeMath.eq(account.balance, correctBalance),
+          },
+          locked: {
+            current: account.locked,
+            shouldBe: correctLocked,
+            alert: !SafeMath.eq(account.locked, correctLocked),
+          },
+          createdAt: new Date(account.created_at).toISOString(),
+          updatedAt: new Date(account.updated_at).toISOString(),
+        };
+      }
+    }
+    return result;
+  }
+
   async _updateOrderDetail(formatOrder) {
     // this.logger.debug(
     //   ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
@@ -5271,93 +5308,6 @@ class ExchangeHub extends Bot {
         total: amount,
       },
     });
-    let tr = {
-      code: "0",
-      data: [
-        {
-          side: "sell",
-          fillSz: "0.188337",
-          fillPx: "1262",
-          fee: "-0.1901450352",
-          ordId: "512693735776473095",
-          instType: "SPOT",
-          instId: "ETH-USDT",
-          clOrdId: "377bd372412fSCDE50315m399337471o",
-          posSide: "net",
-          billId: "512697576651640856",
-          tag: "",
-          execType: "M",
-          tradeId: "267671441",
-          feeCcy: "USDT",
-          ts: "1668508627734",
-        },
-        {
-          side: "sell",
-          fillSz: "0.045163",
-          fillPx: "1262",
-          fee: "-0.0455965648",
-          ordId: "512693735776473095",
-          instType: "SPOT",
-          instId: "ETH-USDT",
-          clOrdId: "377bd372412fSCDE50315m399337471o",
-          posSide: "net",
-          billId: "512697576639057936",
-          tag: "",
-          execType: "M",
-          tradeId: "267671440",
-          feeCcy: "USDT",
-          ts: "1668508627731",
-        },
-      ],
-      msg: "",
-    };
-
-    let or = {
-      code: "0",
-      data: [
-        {
-          accFillSz: "0.2335",
-          avgPx: "1262",
-          cTime: "1668507711998",
-          category: "normal",
-          ccy: "",
-          clOrdId: "377bd372412fSCDE50315m399337471o",
-          fee: "-0.2357416",
-          feeCcy: "USDT",
-          fillPx: "1262",
-          fillSz: "0.188337",
-          fillTime: "1668508627733",
-          instId: "ETH-USDT",
-          instType: "SPOT",
-          lever: "",
-          ordId: "512693735776473095",
-          ordType: "limit",
-          pnl: "0",
-          posSide: "net",
-          px: "1262",
-          quickMgnType: "",
-          rebate: "0",
-          rebateCcy: "ETH",
-          reduceOnly: "false",
-          side: "sell",
-          slOrdPx: "",
-          slTriggerPx: "",
-          slTriggerPxType: "",
-          source: "",
-          state: "filled",
-          sz: "0.2335",
-          tag: "",
-          tdMode: "cash",
-          tgtCcy: "",
-          tpOrdPx: "",
-          tpTriggerPx: "",
-          tpTriggerPxType: "",
-          tradeId: "267671441",
-          uTime: "1668508627742",
-        },
-      ],
-      msg: "",
-    };
     return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }
