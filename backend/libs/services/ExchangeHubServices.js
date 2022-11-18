@@ -270,9 +270,13 @@ class ExchangeHubService {
       trades = await this.database.getTradesByIds(
         Object.keys(accVsmodifiableTypeTrade)
       );
-      this.logger.debug(`trades [${trades.length}]`);
+      trades = trades.reduce((prev, curr) => {
+        if (!prev[curr.id]) prev[curr.id] = curr;
+        return prev;
+      }, {});
+      this.logger.debug(`trades [${Object.values(trades).length}]`);
       for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
-        let trade = trades.find((t) => SafeMath.eq(tradeId, t.id));
+        let trade = trades[tradeId];
         try {
           if (trade) {
             let dateTime = new Date(trade.created_at).toISOString();
@@ -285,9 +289,12 @@ class ExchangeHubService {
               }),
             ];
           } else {
+            this.logger.debug(`tradeId`, tradeId);
             abnormalTradeIds = [...abnormalTradeIds, tradeId];
           }
         } catch (error) {
+          this.logger.debug(`trade`, trade);
+          this.logger.error(error);
           abnormalTradeIds = [...abnormalTradeIds, tradeId];
         }
       }
@@ -419,7 +426,7 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
-      // this.abnormalAccountVersionsHandler();
+      this.abnormalAccountVersionsHandler();
       // await this.auditorAbnormalOuterTrades(
       //   exchange,
       //   "2022-11-14 00:00:00",
