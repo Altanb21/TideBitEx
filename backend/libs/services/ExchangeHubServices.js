@@ -283,7 +283,7 @@ class ExchangeHubService {
             updateAccountVersionsJob = [
               ...updateAccountVersionsJob,
               this.accountVersionUpdateJob({
-                id: accVsmodifiableTypeOrder[tradeId].id,
+                id: accVsmodifiableTypeTrade[tradeId].id,
                 created_at: `"${dateTime}"`,
                 updated_at: `"${dateTime}"`,
               }),
