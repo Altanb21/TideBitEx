@@ -1313,7 +1313,7 @@ class TibeBitConnector extends ConnectorBase {
         `_subscribeUser error`,
         error?.response ? error?.response : error
       );
-      throw error;
+      // throw error;s
     }
   }
   /**
