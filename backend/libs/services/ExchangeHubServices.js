@@ -229,12 +229,12 @@ class ExchangeHubService {
         accVsmodifiableTypeTrade[accountVersion.modifiable_id] = accountVersion;
       }
     }
+    this.logger.debug(
+      `accVsmodifiableTypeOrder [${
+        Object.keys(accVsmodifiableTypeOrder).length
+      }]`
+    );
     if (Object.keys(accVsmodifiableTypeOrder).length > 0) {
-      this.logger.debug(
-        `accVsmodifiableTypeOrder [${
-          Object.keys(accVsmodifiableTypeOrder).length
-        }]`
-      );
       orders = await this.database.getOrdersByIds(
         Object.keys(accVsmodifiableTypeOrder)
       );
@@ -261,12 +261,12 @@ class ExchangeHubService {
       }
       this.logger.debug(`abnormalOrderIds`, abnormalOrderIds);
     }
+    this.logger.debug(
+      `accVsmodifiableTypeTrade [${
+        Object.keys(accVsmodifiableTypeTrade).length
+      }]`
+    );
     if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
-      this.logger.debug(
-        `accVsmodifiableTypeTrade [${
-          Object.keys(accVsmodifiableTypeTrade).length
-        }]`
-      );
       trades = await this.database.getTradesByIds(
         Object.keys(accVsmodifiableTypeTrade)
       );
