@@ -1244,21 +1244,28 @@ class TibeBitConnector extends ConnectorBase {
         socket_id: this.socketId,
         channel_name: `private-${sn}`,
       });
-      const authRes = await axios({
-        url: `${this.peatio}/pusher/auth`,
-        method: "POST",
-        headers: {
-          ...headers,
-          "Content-Length": Buffer.from(data, "utf-8").length,
-        },
-        data,
-      });
-      auth = authRes.data.auth;
-      if (!auth)
+      try {
+        const authRes = await axios({
+          url: `${this.peatio}/pusher/auth`,
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Length": Buffer.from(data, "utf-8").length,
+          },
+          data,
+        });
+        auth = authRes.data.auth;
+        if (!auth)
+          this.logger.error(
+            `[${this.constructor.name}](ln:1260) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
+            headers
+          );
+      } catch (error) {
         this.logger.error(
-          `[${this.constructor.name}](ln:1511) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
-          headers
+          `request url:${this.peatio}/pusher/auth got error`,
+          error
         );
+      }
     } else {
       this.logger.error(`pusher:auth error without socketId`);
     }
@@ -1313,7 +1320,7 @@ class TibeBitConnector extends ConnectorBase {
         `_subscribeUser error`,
         error?.response ? error?.response : error
       );
-      // throw error;s
+      // throw error;
     }
   }
   /**
