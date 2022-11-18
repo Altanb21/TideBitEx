@@ -1263,7 +1263,7 @@ class TibeBitConnector extends ConnectorBase {
       } catch (error) {
         this.logger.error(
           `request url:${this.peatio}/pusher/auth got error`,
-          error
+          error?.response
         );
       }
     } else {
