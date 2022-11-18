@@ -215,18 +215,29 @@ class ExchangeHubService {
       updateAccountVersionsJob = [],
       abnormalOrderIds = [],
       abnormalTradeIds = [],
-      abnormalAccountIds = {};
-    accountVersions = await this.database.getAbnormalAccountVersions(841997111); // 841997111, 94
+      abnormalAccountIds = {},
+      outerTrades;
+    accountVersions = await this.database.getAbnormalAccountVersions(94); // tidebit.com: 841997111, test.tidebit.network: 94
     this.logger.debug(`accountVersions [${accountVersions.length}]`);
     for (let accountVersion of accountVersions) {
       if (!abnormalAccountIds[accountVersion.account_id])
         abnormalAccountIds[accountVersion.account_id] =
           accountVersion.account_id;
       if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.ORDER) {
-        accVsmodifiableTypeOrder[accountVersion.modifiable_id] = accountVersion;
+        if (!accVsmodifiableTypeOrder[accountVersion.modifiable_id])
+          accVsmodifiableTypeOrder[accountVersion.modifiable_id] = [];
+        accVsmodifiableTypeOrder[accountVersion.modifiable_id] = [
+          ...accVsmodifiableTypeOrder[accountVersion.modifiable_id],
+          accountVersion,
+        ];
       }
       if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.TRADE) {
-        accVsmodifiableTypeTrade[accountVersion.modifiable_id] = accountVersion;
+        if (!accVsmodifiableTypeTrade[accountVersion.modifiable_id])
+          accVsmodifiableTypeTrade[accountVersion.modifiable_id] = [];
+        accVsmodifiableTypeTrade[accountVersion.modifiable_id] = [
+          ...accVsmodifiableTypeTrade[accountVersion.modifiable_id],
+          accountVersion,
+        ];
       }
     }
     this.logger.debug(
@@ -249,11 +260,13 @@ class ExchangeHubService {
           ).toISOString();
           updateAccountVersionsJob = [
             ...updateAccountVersionsJob,
-            this.accountVersionUpdateJob({
-              id: accVsmodifiableTypeOrder[orderId].id,
-              created_at: `"${dateTime}"`,
-              updated_at: `"${dateTime}"`,
-            }),
+            ...accVsmodifiableTypeOrder[orderId].map((accountVersion) =>
+              this.accountVersionUpdateJob({
+                id: accountVersion.id,
+                created_at: `"${dateTime}"`,
+                updated_at: `"${dateTime}"`,
+              })
+            ),
           ];
         } else {
           abnormalOrderIds = [...abnormalOrderIds, orderId];
@@ -282,11 +295,13 @@ class ExchangeHubService {
             let dateTime = new Date(trade.created_at).toISOString();
             updateAccountVersionsJob = [
               ...updateAccountVersionsJob,
-              this.accountVersionUpdateJob({
-                id: accVsmodifiableTypeTrade[tradeId].id,
-                created_at: `"${dateTime}"`,
-                updated_at: `"${dateTime}"`,
-              }),
+              ...accVsmodifiableTypeTrade[tradeId].map((accountVersion) =>
+                this.accountVersionUpdateJob({
+                  id: accountVersion.id,
+                  created_at: `"${dateTime}"`,
+                  updated_at: `"${dateTime}"`,
+                })
+              ),
             ];
           } else {
             this.logger.debug(`tradeId`, tradeId);
@@ -298,7 +313,27 @@ class ExchangeHubService {
           abnormalTradeIds = [...abnormalTradeIds, tradeId];
         }
       }
-      this.logger.debug(`abnormalTradeIds`, abnormalTradeIds);
+      if (abnormalTradeIds.length > 0) {
+        this.logger.debug(`abnormalTradeIds`, abnormalTradeIds);
+        outerTrades = await this.database.getOuterTradesByTradeIds(
+          abnormalTradeIds
+        );
+        for (let outerTrade of outerTrades) {
+          let outerTradeData = JSON.parse(outerTrade.data);
+          let dateTime = new Date(parseInt(outerTradeData.ts)).toISOString();
+          updateAccountVersionsJob = [
+            ...updateAccountVersionsJob,
+            ...accVsmodifiableTypeTrade[outerTrade.tradeId].map(
+              (accountVersion) =>
+                this.accountVersionUpdateJob({
+                  id: accountVersion.id,
+                  created_at: `"${dateTime}"`,
+                  updated_at: `"${dateTime}"`,
+                })
+            ),
+          ];
+        }
+      }
     }
     waterfallPromise(updateAccountVersionsJob);
   }

@@ -1422,6 +1422,31 @@ class mysql {
     }
   }
 
+  /**
+   *  -- temporary 2022-11-18
+   */
+  async getOuterTradesByTradeIds(tradeIds) {
+    let placeholder = tradeIds.join(`,`);
+    let query = `
+    SELECT
+      outer_trades.trade_id,
+	    outer_trades.data
+    FROM
+      outer_trades
+    WHERE
+      outer_trades.trade_id in(${placeholder});
+    `;
+    try {
+      // this.logger.debug("[mysql] getVouchersByIds", query, ids);
+      const [vouchers] = await this.db.query({
+        query,
+      });
+      return vouchers;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
   async getReferralCommissionsByMarkets({ markets, start, end, asc }) {
     let placeholder = markets.join(`,`);
     const query = `

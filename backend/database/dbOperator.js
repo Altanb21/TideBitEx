@@ -388,6 +388,10 @@ class DBOperator {
     return this.database.getTradesByIds(ids);
   }
 
+  async getOuterTradesByTradeIds(tradeIds) {
+    return this.database.getOuterTradesByTradeIds(tradeIds);
+  }
+
   async getVouchersByIds(ids) {
     return this.database.getVouchersByIds(ids);
   }
