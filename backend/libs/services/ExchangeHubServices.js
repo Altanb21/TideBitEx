@@ -461,7 +461,7 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
-      // this.abnormalAccountVersionsHandler();
+      this.abnormalAccountVersionsHandler();
       // await this.auditorAbnormalOuterTrades(
       //   exchange,
       //   "2022-11-14 00:00:00",
