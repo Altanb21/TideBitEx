@@ -119,7 +119,6 @@ class mysql {
     }
     this.logger.debug(placeholder);
     const query = `
-    ${dbTransaction ? `BEGIN;` : ``}
     SELECT
 	    accounts.id,
 	    accounts.member_id,
@@ -132,7 +131,6 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    ${dbTransaction ? `FOR UPDATE` : ``}
     ${limit ? `LIMIT ${limit}` : ``}
     ;`;
     const values = [memberId];
@@ -2042,7 +2040,6 @@ class mysql {
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
       let query = `
         UPDATE accounts SET ${set.join(", ")} WHERE ${where};
-        COMMIT;
         `;
       this.logger.debug("updateAccount", query);
       await this.db.query(
