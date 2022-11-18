@@ -1262,9 +1262,13 @@ class TibeBitConnector extends ConnectorBase {
           );
       } catch (error) {
         this.logger.error(
-          `request url:${this.peatio}/pusher/auth got error`,
-          error?.response
+          `(ln:1265) request url:${this.peatio}/pusher/auth got error status: ${error?.status}``statusText: ${error?.status}`,
+          `headers`, error?.headers,
+          `config`, error?.config,
+          `data`, error?.data,
         );
+
+        // this.logger.error(error?.response)
       }
     } else {
       this.logger.error(`pusher:auth error without socketId`);

@@ -225,7 +225,7 @@ class ExchangeHubService {
       if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.ORDER) {
         accVsmodifiableTypeOrder[accountVersion.modifiable_id] = accountVersion;
       }
-      if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.ORDER) {
+      if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.TRADE) {
         accVsmodifiableTypeTrade[accountVersion.modifiable_id] = accountVersion;
       }
     }
