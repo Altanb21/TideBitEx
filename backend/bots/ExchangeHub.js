@@ -3023,7 +3023,7 @@ class ExchangeHub extends Bot {
             //    * 6.2.3 新增 account_versions 記錄
             //    * 6.2.4 更新 order 為 cancel 狀態
             result = await this.updateOrderStatus({
-              transacion: t,
+              transaction: t,
               orderId,
               memberId,
               orderData: updateOrder,
@@ -3260,7 +3260,7 @@ class ExchangeHub extends Bot {
   }
 
   async updateOrderStatus({
-    transacion,
+    transaction,
     orderId,
     memberId,
     orderData,
@@ -3296,7 +3296,7 @@ class ExchangeHub extends Bot {
       order = dbOrder
         ? dbOrder
         : await this.database.getOrder(orderId, {
-            dbTransaction: transacion,
+            dbTransaction: transaction,
           });
       if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
         currencyId =
@@ -3316,7 +3316,7 @@ class ExchangeHub extends Bot {
           updated_at: `"${createdAt}"`,
         };
         await this.database.updateOrder(newOrder, {
-          dbTransaction: transacion,
+          dbTransaction: transaction,
         });
         this.logger.debug(`被取消訂單的狀態更新了`);
         accountVersion = {
@@ -3332,7 +3332,7 @@ class ExchangeHub extends Bot {
           locked,
           fee,
         };
-        await this._updateAccount(accountVersion, transacion);
+        await this._updateAccount(accountVersion, transaction);
         this.logger.debug(`被取消訂單對應的用戶帳號更新了`);
         updatedOrder = {
           ...order,
@@ -3357,7 +3357,7 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
   async postCancelOrder({ header, params, query, body, memberId }) {
-    let transacion = await this.database.transaction(),
+    let transaction = await this.database.transaction(),
       dbOrder,
       tickerSetting,
       result,
@@ -3367,7 +3367,7 @@ class ExchangeHub extends Bot {
       clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
     try {
       dbOrder = await this.database.getOrder(orderId, {
-        dbTransaction: transacion,
+        dbTransaction: transaction,
       });
       this.logger.debug(
         `postCancelOrder dbOrder[memberId:${memberId}](SafeMath.eq(dbOrder.member_id, memberId):${SafeMath.eq(
@@ -3392,7 +3392,7 @@ class ExchangeHub extends Bot {
             `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號 orderId:[${orderId}] clOrdId:[${clOrdId}]`
           );
           dbUpdateR = await this.updateOrderStatus({
-            transacion,
+            transaction,
             orderId,
             memberId,
             dbOrder,
@@ -3404,7 +3404,7 @@ class ExchangeHub extends Bot {
           });
           /* !!! HIGH RISK (end) !!! */
           if (!dbUpdateR?.success) {
-            await transacion.rollback();
+            await transaction.rollback();
             result = new ResponseFormat({
               message: "DB ERROR",
               code: Codes.CANCEL_ORDER_FAIL,
@@ -3427,10 +3427,10 @@ class ExchangeHub extends Bot {
           }
           if (!result) {
             if (!apiR?.success) {
-              await transacion.rollback();
+              await transaction.rollback();
               this.logger.debug(`API 取消訂單失敗 rollback`);
             } else {
-              await transacion.commit();
+              await transaction.commit();
               this.logger.debug(`API 取消訂單成功了`);
               // 3. informFrontEnd
               this.logger.debug(`準備通知前端更新頁面`);
@@ -3453,7 +3453,7 @@ class ExchangeHub extends Bot {
           result = apiR;
           break;
         case SupportedExchange.TIDEBIT:
-          await transacion.commit();
+          await transaction.commit();
           result = this.tideBitConnector.router(`postCancelOrder`, {
             header,
             body: { ...body, orderId, market: tickerSetting },
@@ -4946,7 +4946,7 @@ class ExchangeHub extends Bot {
   /**
    *  -- temporary 2022-11-18
    */
-  async accountAuditor({ query }) {
+  async accountAuditor({ query }, { dbTransaction }) {
     let { memberId, currency } = query;
     let accounts,
       accountVersionsR,
@@ -4954,45 +4954,154 @@ class ExchangeHub extends Bot {
         memberId,
         accounts: {},
       };
-    accounts = await this.database.getAccountsByMemberId(memberId, {
-      options: { currency: currency },
-    });
-    accounts = accounts.reduce((prev, curr) => {
-      if (!prev[curr.id]) prev[curr.id] = curr;
-      return prev;
-    }, {});
-    accountVersionsR = await this.database.auditAccountBalance(memberId, {
-      options: { currency: currency },
-    });
-    accountVersionsR = accountVersionsR.reduce((prev, curr) => {
-      if (!prev[curr.account_id]) prev[curr.account_id] = curr;
-      return prev;
-    }, {});
-    if (Object.keys(accounts).length > 0) {
-      for (let accountId of Object.keys(accounts)) {
-        let account = accounts[accountId],
-          accountVersionR = accountVersionsR[accountId],
-          correctBalance = 0,
-          correctLocked = 0;
-        if (accountVersionR) {
-          correctBalance = Utils.removeZeroEnd(accountVersionR.sum_balance);
-          correctLocked = Utils.removeZeroEnd(accountVersionR.sum_locked);
+    try {
+      accounts = await this.database.getAccountsByMemberId(memberId, {
+        options: { currency: currency },
+        dbTransaction: dbTransaction,
+      });
+      accounts = accounts.reduce((prev, curr) => {
+        if (!prev[curr.id]) prev[curr.id] = curr;
+        return prev;
+      }, {});
+      accountVersionsR = await this.database.auditAccountBalance(memberId, {
+        options: { currency: currency },
+      });
+      accountVersionsR = accountVersionsR.reduce((prev, curr) => {
+        if (!prev[curr.account_id]) prev[curr.account_id] = curr;
+        return prev;
+      }, {});
+      if (Object.keys(accounts).length > 0) {
+        for (let accountId of Object.keys(accounts)) {
+          let account = accounts[accountId],
+            accountVersionR = accountVersionsR[accountId],
+            correctBalance = 0,
+            correctLocked = 0;
+          if (accountVersionR) {
+            correctBalance = Utils.removeZeroEnd(accountVersionR.sum_balance);
+            correctLocked = Utils.removeZeroEnd(accountVersionR.sum_locked);
+          }
+          result.accounts[accountId] = {
+            accountId,
+            currency: account.currency,
+            balance: {
+              current: account.balance,
+              shouldBe: correctBalance,
+              alert: !SafeMath.eq(account.balance, correctBalance),
+            },
+            locked: {
+              current: account.locked,
+              shouldBe: correctLocked,
+              alert: !SafeMath.eq(account.locked, correctLocked),
+            },
+            createdAt: new Date(account.created_at).toISOString(),
+            updatedAt: new Date(account.updated_at).toISOString(),
+            dbTransaction: dbTransaction,
+          };
         }
-        result.accounts[accountId] = {
-          currency: account.currency,
-          balance: {
-            current: account.balance,
-            shouldBe: correctBalance,
-            alert: !SafeMath.eq(account.balance, correctBalance),
+      }
+      return new ResponseFormat({
+        message: "auditorAccounts",
+        payload: result,
+      });
+    } catch (error) {
+      return new ResponseFormat({
+        message: `auditorAccounts ${JSON.stringify(error)}`,
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+  }
+
+  /**
+   * ++ TODO test is required
+   * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
+   */
+  async fixAbnormalAccount({ query, email }) {
+    this.logger.debug(`fixAbnormalAccount email`, email);
+    let { memberId, currency } = query;
+    let result,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      dbTransaction;
+    if (!currentUser.roles?.includes("root"))
+      result = new ResponseFormat({
+        message: `Has no privillge`,
+        code: Codes.INVALID_INPUT,
+      });
+    if (!memberId || !currency) {
+      result = new ResponseFormat({
+        message: `${!memberId && "memberId is required"}${
+          !memberId && !currency && " AND "
+        }${!currency && "currency is required"}`,
+        code: Codes.INVALID_INPUT,
+      });
+    }
+    if (!result) {
+      dbTransaction = await this.database.transaction;
+      try {
+        /******************************
+         * 1. select * from accounts for update
+         * 2. insert audit record
+         *   2.1  account_id
+         *   2.2  member_id
+         *   2.3  reason: 1 accounts amount is differernt account_versions sum
+         *   2.4  currency
+         *   2.5  balance_origin
+         *   2.6  balance_updated
+         *   2.7  locked_origin
+         *   2.8  locked_updated
+         *   2.9  created_at 稽核時間
+         *   2.10 issued_by 經手人
+         * 3. update account
+         *   3.1 balance
+         *   3.2 locked
+         *   3.3 updated_at
+         *******************************************/
+        /* !!! HIGH RISK (start) !!! */
+        //1. select * from accounts for update
+        result = this.accountAuditor(
+          {
+            query: { ...query },
           },
-          locked: {
-            current: account.locked,
-            shouldBe: correctLocked,
-            alert: !SafeMath.eq(account.locked, correctLocked),
-          },
-          createdAt: new Date(account.created_at).toISOString(),
-          updatedAt: new Date(account.updated_at).toISOString(),
-        };
+          { dbTransaction: dbTransaction }
+        );
+        if (result.success) {
+          let account = Object.values(result.payload?.accounts).shift();
+          let now = new Date().toISOString().slice(0, 19).replace("T", " ");
+          // 2. insert audit record
+          let auditRecord = {
+            account_id: account.accountId,
+            member_id: result.payload?.memberId,
+            reason: 1,
+            currency: account.currency,
+            balance_origin: account.balance?.current,
+            balance_updated: account.balance?.shouldBe,
+            locked_origin: account.locked?.current,
+            locked_updated: account.locked?.shouldBe,
+            created_at: `"${now}"`,
+            issued_by: currentUser.email,
+          };
+          //
+          await this.database.insertAuditRecord(auditRecord, {
+            dbTransaction,
+          });
+          // 3. update account
+          const newAccount = {
+            id: account.id,
+            balance: account.balance?.shouldBe,
+            locked: account.locked?.shouldBe,
+            updated_at: `"${now}"`,
+          };
+          await this.database.updateAccount(newAccount, { dbTransaction });
+          /* !!! HIGH RISK (end) !!! */
+          return new ResponseFormat({
+            message: "auditorAccounts",
+            payload: { auditRecord, newAccount },
+          });
+        }
+      } catch (error) {
+        result = new ResponseFormat({
+          message: `fixAbnormalAccount ${JSON.stringify(error)}`,
+          code: Codes.UNKNOWN_ERROR,
+        });
       }
     }
     return result;
@@ -5515,7 +5624,7 @@ class ExchangeHub extends Bot {
             let result,
               orderId,
               memberId,
-              transacion = await this.database.transaction();
+              transaction = await this.database.transaction();
             try {
               let parsedClOrdId = Utils.parseClOrdId(formatOrder.clOrdId);
               orderId = parsedClOrdId.orderId;
@@ -5525,7 +5634,7 @@ class ExchangeHub extends Bot {
             }
             if (orderId && memberId) {
               result = await this.updateOrderStatus({
-                transacion,
+                transaction,
                 orderId,
                 memberId,
                 orderData: {
@@ -5546,9 +5655,9 @@ class ExchangeHub extends Bot {
                 },
               });
               if (result) {
-                await transacion.commit();
+                await transaction.commit();
               } else {
-                await transacion.rollback();
+                await transaction.rollback();
               }
             }
           }

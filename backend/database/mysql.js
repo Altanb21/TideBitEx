@@ -119,6 +119,7 @@ class mysql {
     }
     this.logger.debug(placeholder);
     const query = `
+    ${dbTransaction ? `BEGIN;` : ``}
     SELECT
 	    accounts.id,
 	    accounts.member_id,
@@ -131,8 +132,9 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    LIMIT ${limit};
-    `;
+    ${dbTransaction ? `FOR UPDATE` : ``}
+    ${limit ? `LIMIT ${limit}` : ``}
+    ;`;
     const values = [memberId];
     // this.logger.debug(query, values);
     try {
@@ -1970,14 +1972,78 @@ class mysql {
     return referralCommissionId;
   }
 
+  async insertAuditRecord(
+    account_id,
+    member_id,
+    reason,
+    currency,
+    balance_origin,
+    balance_updated,
+    locked_origin,
+    locked_updated,
+    created_at,
+    issued_by,
+    { dbTransaction }
+  ) {
+    let result, accountVersionId;
+    const query =
+      "INSERT INTO `audit_records` (`account_id`, `member_id`, `reason`, `currency`, `balance_origin`, `balance_updated`, `locked_origin`, `locked_updated`, `created_at`, `issued_by`)" +
+      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    try {
+      this.logger.debug(
+        "insertAuditRecord",
+        query,
+        "DEFAULT",
+        account_id,
+        member_id,
+        reason,
+        currency,
+        balance_origin,
+        balance_updated,
+        locked_origin,
+        locked_updated,
+        created_at,
+        issued_by
+      );
+      result = await this.db.query(
+        {
+          query,
+          values: [
+            "DEFAULT",
+            account_id,
+            member_id,
+            reason,
+            currency,
+            balance_origin,
+            balance_updated,
+            locked_origin,
+            locked_updated,
+            created_at,
+            issued_by,
+          ],
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      accountVersionId = result[0];
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+    return accountVersionId;
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     try {
       const id = datas.id;
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
-      let query =
-        "UPDATE `accounts` SET " + set.join(", ") + " WHERE " + where + ";";
+      let query = `
+        UPDATE accounts SET ${set.join(", ")} WHERE ${where};
+        COMMIT;
+        `;
       this.logger.debug("updateAccount", query);
       await this.db.query(
         {

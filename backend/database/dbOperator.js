@@ -545,6 +545,22 @@ class DBOperator {
     );
   }
 
+  async insertAuditRecord(auditRecord, { dbTransaction }) {
+    return this.database.insertAuditRecord(
+      auditRecord.account_id,
+      auditRecord.member_id,
+      auditRecord.reason,
+      auditRecord.currency,
+      auditRecord.balance_origin,
+      auditRecord.balance_updated,
+      auditRecord.locked_origin,
+      auditRecord.locked_updated,
+      auditRecord.created_at,
+      auditRecord.issued_by,
+      { dbTransaction }
+    );
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     return this.database.updateAccount(datas, { dbTransaction });
   }
