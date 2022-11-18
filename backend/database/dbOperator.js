@@ -411,8 +411,8 @@ class DBOperator {
 
   /**
    *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
    */
-
   async getAbnormalAccountVersions(id) {
     return this.database.getAbnormalAccountVersions(id);
   }
@@ -565,6 +565,10 @@ class DBOperator {
     return this.database.updateAccount(datas, { dbTransaction });
   }
 
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
   async updateAccountVersion(datas, { dbTransaction }) {
     return this.database.updateAccountVersion(datas, { dbTransaction });
   }

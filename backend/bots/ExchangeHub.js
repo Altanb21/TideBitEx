@@ -5014,6 +5014,7 @@ class ExchangeHub extends Bot {
   /**
    * ++ TODO test is required
    * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
+   * audit_records table 還沒有建立
    */
   async fixAbnormalAccount({ query, email }) {
     this.logger.debug(`fixAbnormalAccount email`, email);
@@ -5039,6 +5040,7 @@ class ExchangeHub extends Bot {
       try {
         /******************************
          * 1. select * from accounts for update
+         *   1.1 ++TODO 檢查是否需要更新
          * 2. insert audit record
          *   2.1  account_id
          *   2.2  member_id

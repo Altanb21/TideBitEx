@@ -183,6 +183,10 @@ class ExchangeHubService {
     this._processOuterTrades(outerTrades, { needParse: true });
   }
 
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
   accountVersionUpdateJob = (updateAccountVersion) => {
     return async () => {
       let dbTransaction = await this.database.transaction();
@@ -200,6 +204,7 @@ class ExchangeHubService {
   };
   /**
    *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
    */
   async abnormalAccountVersionsHandler() {
     let accountVersions,

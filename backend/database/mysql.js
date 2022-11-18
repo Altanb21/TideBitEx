@@ -1523,6 +1523,7 @@ class mysql {
 
   /**
    *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
    */
   async getAbnormalAccountVersions(id) {
     const query = `
@@ -2039,8 +2040,24 @@ class mysql {
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
       let query = `
-        UPDATE accounts SET ${set.join(", ")} WHERE ${where};
-        `;
+      BEGIN;
+      SELECT
+      	balance,
+      	locked,
+      	updated_at
+      FROM
+      	accounts
+      WHERE
+        ${where}
+      FOR UPDATE;
+      UPDATE
+      	accounts
+      SET
+        ${set.join(", ")}
+      WHERE
+        ${where};
+      COMMIT;
+      `;
       this.logger.debug("updateAccount", query);
       await this.db.query(
         {
@@ -2056,6 +2073,10 @@ class mysql {
     }
   }
 
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
   async updateAccountVersion(datas, { dbTransaction }) {
     try {
       const id = datas.id;
@@ -2089,8 +2110,29 @@ class mysql {
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
-      let query =
-        "UPDATE `orders` SET " + set.join(", ") + " WHERE " + where + ";";
+      let query = `
+      BEGIN;
+      SELECT
+        volume,
+        locked
+      	state,
+      	funds_received,
+        trades_count,
+        done_at,
+      	updated_at
+      FROM
+        orders
+      WHERE
+        ${where}
+      FOR UPDATE;
+      UPDATE
+        orders
+      SET
+        ${set.join(", ")}
+      WHERE
+        ${where};
+      COMMIT;
+      `;
       this.logger.debug("updateOrder", query);
       await this.db.query(
         {
