@@ -1262,10 +1262,13 @@ class TibeBitConnector extends ConnectorBase {
           );
       } catch (error) {
         this.logger.error(
-          `(ln:1265) request url:${this.peatio}/pusher/auth got error status: ${error?.status}``statusText: ${error?.status}`,
-          `headers`, error?.headers,
-          `config`, error?.config,
-          `data`, error?.data,
+          `(ln:1265) request url:${this.peatio}/pusher/auth got error status: ${error?.status} statusText: ${error?.status}`,
+          `headers`,
+          error?.headers,
+          `config`,
+          error?.config,
+          `data`,
+          error?.data
         );
 
         // this.logger.error(error?.response)
