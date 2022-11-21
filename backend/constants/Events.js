@@ -23,6 +23,7 @@ module.exports = {
   tickers: "tickers",
   update: "update",
   trades: "trades",
+  publicTrades: "publicTrades",
   account: "account",
   order: "order",
   marketOrder: "marketOrder",

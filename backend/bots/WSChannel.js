@@ -205,11 +205,9 @@ class WSChannel extends Bot {
     }
   }
 
-  _onOpRegisterMarket(ws, arg) {
-    this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarkets[${arg}]`);
-    EventBus.emit(Events.registerMarket, {
-      arg,
-    });
+  _onOpRegisterMarket(ws, args) {
+    this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarket`, args);
+    EventBus.emit(Events.registerMarket, args.market);
   }
 
   _onOpSwitchMarket(ws, args) {

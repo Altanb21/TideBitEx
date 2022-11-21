@@ -1382,15 +1382,10 @@ class TibeBitConnector extends ConnectorBase {
 
   _registerMarket(market) {
     let tickerSetting = this.tickersSettings[market];
-    this.logger.debug(
-      `[${this.constructor.name}]_registerMarkets tickerSetting`,
-      tickerSetting
-    );
     if (
       tickerSetting?.source === SupportedExchange.TIDEBIT &&
       !this.registerMarkets.includes(market)
     ) {
-      this.logger.debug(`source is Tidebit`);
       this._registerMarketChannel(market);
       this.registerMarkets = [...this.registerMarkets, market];
     }

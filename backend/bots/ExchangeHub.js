@@ -5708,6 +5708,13 @@ class ExchangeHub extends Bot {
       });
     });
 
+    EventBus.on(Events.publicTrades, (data) => {
+      this.broadcastAllClient({
+        type: Events.publicTrades,
+        data: data,
+      });
+    });
+
     EventBus.on(Events.orderDetailUpdate, async (instType, formatOrders) => {
       if (instType === Database.INST_TYPE.SPOT) {
         // this.logger.debug(

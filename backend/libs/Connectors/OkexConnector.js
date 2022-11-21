@@ -1662,9 +1662,9 @@ class OkexConnector extends ConnectorBase {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
-
-      if (this.instIds(instId)) {
-        EventBus.emit(Events.trades, {
+      this.logger.debug(`_updateTrades[${market}] ${this.registerMarkets.includes(market)}`, this.registerMarkets);
+      if (this.registerMarkets.includes(market)) {
+        EventBus.emit(Events.publicTrades, {
           market,
           trades: this.tradeBook.getSnapshot(instId),
         });
@@ -1793,6 +1793,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
+    this.logger.debug(`_subscribeTrades instId[${instId}]`, args);
     this.websocket.ws.send(
       JSON.stringify({
         op: Events.subscribe,
@@ -1973,15 +1974,10 @@ class OkexConnector extends ConnectorBase {
 
   _registerMarket(market) {
     let tickerSetting = this.tickersSettings[market];
-    this.logger.debug(
-      `[${this.constructor.name}]_registerMarkets tickerSetting`,
-      tickerSetting
-    );
     if (
       tickerSetting?.source === SupportedExchange.OKEX &&
       !this.registerMarkets.includes(market)
     ) {
-      this.logger.debug(`source is OKx`);
       this._subscribeTrades(tickerSetting?.instId);
       this.registerMarkets = [...this.registerMarkets, market];
     }

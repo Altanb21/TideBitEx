@@ -49,8 +49,8 @@ class ConnectorBase {
     EventBus.on(Events.userOnUnsubscribe, (data) => {
       this._unsubscribeUser(data);
     });
-    EventBus.on(Events.registerMarket, (data) => {
-      this._registerMarket(data.markets);
+    EventBus.on(Events.registerMarket, (market) => {
+      this._registerMarket(market);
     });
   }
 
