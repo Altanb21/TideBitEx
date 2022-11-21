@@ -2100,7 +2100,6 @@ class mysql {
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
       let query = `
-      FOR UPDATE;
       UPDATE
         orders
       SET
