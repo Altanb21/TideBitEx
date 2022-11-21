@@ -46,11 +46,12 @@ class TradeBook extends BookBase {
   //   return data.slice(0, 30);
   // }
 
-  getSnapshot(market, length) {
+  getSnapshot(market, length, asc) {
     try {
       let trades;
       if (this._snapshot[market]) {
-        trades = this._snapshot[market].slice(0, length);
+        trades = this._snapshot[market].slice(0, length).map((t) => ({ ...t }));
+        if (asc) trades.sort((a, b) => a.ts - b.ts);
       } else trades = [];
       return trades;
     } catch (error) {

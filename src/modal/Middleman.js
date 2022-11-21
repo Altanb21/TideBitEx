@@ -387,9 +387,9 @@ class Middleman {
     }
   }
 
-  getTradesSnapshot(market, length = 50) {
+  getTradesSnapshot(market, length = 50, asc= false) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
-    return this.tradeBook.getSnapshot(market, length);
+    return this.tradeBook.getSnapshot(market, length, asc);
   }
 
   async _getTrades({ market, limit, lotSz }) {

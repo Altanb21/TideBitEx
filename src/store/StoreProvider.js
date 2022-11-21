@@ -616,8 +616,8 @@ const StoreProvider = (props) => {
     return await middleman.registerMarket(market);
   };
 
-  const getTradesSnapshot = (market, length) => {
-    return middleman.getTradesSnapshot(market, length);
+  const getTradesSnapshot = (market, length, asc) => {
+    return middleman.getTradesSnapshot(market, length, asc);
   };
 
   return (

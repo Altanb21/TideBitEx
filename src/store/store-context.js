@@ -286,7 +286,7 @@ const StoreContext = React.createContext({
   getTicker: (market) => {},
   changeLanguage: (key) => {},
   registerMarket: async (market) => {},
-  getTradesSnapshot: async (market, length) => {},
+  getTradesSnapshot: async (market, length, asc) => {},
 });
 
 export default StoreContext;
