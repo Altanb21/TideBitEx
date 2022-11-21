@@ -12,6 +12,12 @@ const tickers = {
   "BTC-USDT": "BTC-USDT",
   "ETH-USDT": "ETH-USDT",
 };
+const defaultOrders = {
+  OKEx: {
+    "BTC-USDT": {},
+    "ETH-USDT": {},
+  },
+};
 const compareFunction = (leftValue, rightValue) => {
   return leftValue?.id !== rightValue?.id;
 };
@@ -25,7 +31,7 @@ const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [limit, setLimit] = useState(10);
-  const [totalCounts, setTotalCounts] = useState(0);
+  // const [totalCounts, setTotalCounts] = useState(0);
   const [newestOrderId, setNewestOrderId] = useState(null); // ordId
   const [oldestOrderId, setOldestOrderId] = useState(null); // ordId
   const [isInit, setIsInit] = useState(null);
@@ -33,17 +39,18 @@ const CurrentOrders = () => {
   const [filterOrders, setFilterOrders] = useState(null);
   const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
   const [filterKey, setFilterKey] = useState("");
-  const [filterExchange, setFilterExchange] = useState(exchanges[0]);
   const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
-  const [orders, setOrders] = useState(null);
+  const [filterExchange, setFilterExchange] = useState(exchanges[0]);
+  const [orders, setOrders] = useState(defaultOrders);
   const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
 
   const getCurrentOrders = useCallback(
     async ({ exchange, ticker, limit, before, after }) => {
       let newOrders = [],
         newestOrder,
         oldestOrder,
-        totalCounts,
+        // totalCounts,
         pendingOrders;
       if (exchange && ticker) {
         let result = await storeCtx.getOuterPendingOrders({
@@ -87,7 +94,12 @@ const CurrentOrders = () => {
             updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
             if (newestOrder) setNewestOrderId(newestOrder.id);
             if (oldestOrder) setOldestOrderId(oldestOrder.id);
-            setTotalCounts(updatedOrders[exchange][ticker].length);
+            // setTotalCounts(updatedOrders[exchange][ticker].length);
+            setPages(
+              Math.ceil(updatedOrders[exchange][ticker].length.length / limit)
+            );
+          } else {
+            setPages(1);
           }
           return updatedOrders;
         });
@@ -266,7 +278,12 @@ const CurrentOrders = () => {
                 className={`screen__display-option${
                   filterOption === "all" ? " active" : ""
                 }`}
-                onClick={() => filter({ orders: filterOrders, side: "all" })}
+                onClick={() =>
+                  filter({
+                    orders: orders[filterExchange][filterTicker],
+                    side: "all",
+                  })
+                }
               >
                 {t("all")}
               </li>
@@ -274,7 +291,12 @@ const CurrentOrders = () => {
                 className={`screen__display-option${
                   filterOption === "buy" ? " active" : ""
                 }`}
-                onClick={() => filter({ orders: filterOrders, side: "buy" })}
+                onClick={() =>
+                  filter({
+                    orders: orders[filterExchange][filterTicker],
+                    side: "buy",
+                  })
+                }
               >
                 {t("bid")}
               </li>
@@ -282,7 +304,12 @@ const CurrentOrders = () => {
                 className={`screen__display-option${
                   filterOption === "sell" ? " active" : ""
                 }`}
-                onClick={() => filter({ side: "sell" })}
+                onClick={() =>
+                  filter({
+                    orders: orders[filterExchange][filterTicker],
+                    side: "sell",
+                  })
+                }
               >
                 {t("ask")}
               </li>
@@ -519,17 +546,18 @@ const CurrentOrders = () => {
               {showMore ? t("show-less") : t("show-more")}
             </tfoot> */}
             <tfoot className="screen__table-tools">
-              <div className={`screen__table-tool`} onClick={prevPageHandler}>
-                <div className="screen__table-tool--left"></div>
-              </div>
-              <div className="screen__page">{`${page}/${Math.ceil(
-                totalCounts / limit
-              )}`}</div>
               <div
                 className={`screen__table-tool${
-                  SafeMath.gte(page, Math.ceil(totalCounts / limit))
-                    ? " disable"
-                    : ""
+                  SafeMath.gt(page, 1) ? "" : " disable"
+                }`}
+                onClick={prevPageHandler}
+              >
+                <div className="screen__table-tool--left"></div>
+              </div>
+              <div className="screen__page">{`${page}/${pages}`}</div>
+              <div
+                className={`screen__table-tool${
+                  SafeMath.gte(page, Math.ceil(pages)) ? " disable" : ""
                 }`}
                 onClick={nextPageHandler}
               >
