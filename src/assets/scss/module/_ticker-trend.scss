@@ -1,0 +1,95 @@
+.ticker-trend {
+  height: 200px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
+  font-family: PingFangHK-Regular;
+  background-color: rgba(0, 0, 0, 0.7);
+  margin-bottom: 0;
+  color: #fff;
+  padding: 10px 20px;
+  column-gap: 20px;
+
+  &__leading,
+  &__content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  &__container {
+    padding-left: 0;
+    padding-right: 0;
+    max-width: 1440px;
+  }
+  &__icon {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+    & > img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  &__text,
+  &__price {
+    display: inline-block;
+    font-size: 24px;
+  }
+  &__change-pct {
+    &.decrease {
+      color: #cf304a;
+    }
+    &.increase {
+      color: #03a66d;
+    }
+  }
+}
+
+@media only screen and (max-width: $screen-lg) {
+  .ticker-trend {
+    &__text {
+      display: inline-block;
+      font-size: 16px;
+    }
+  }
+}
+@media only screen and (max-width: $screen-md) {
+  .ticker-trend {
+    // height: 100px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    &__leading,
+    &__content {
+      flex-direction: column;
+    }
+    &__leading > div:nth-child(1),
+    &__content > div:nth-child(1) {
+      align-self: flex-start;
+    }
+    &__leading > div:nth-child(2),
+    &__content > div:nth-child(2) {
+      align-self: flex-end;
+    }
+  }
+}
+
+@media only screen and (max-width: $screen-sm) {
+  .ticker-trend {
+    // height: 100px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    &__leading,
+    &__content {
+      flex-direction: row;
+    }
+    &__leading > div:nth-child(1),
+    &__content > div:nth-child(1) {
+      align-self: flex-start;
+    }
+    &__leading > div:nth-child(2),
+    &__content > div:nth-child(2) {
+      align-self: flex-end;
+    }
+  }
+}

@@ -492,8 +492,12 @@ class Middleman {
     }
   }
 
-  getTickerSnapshot() {
+  getCurrentTicker() {
     return this.tickerBook.getCurrentTicker();
+  }
+
+  getTickerSnapshot(market) {
+    return this.tickerBook.getTickerSnapshot(market);
   }
 
   async _getTicker(market) {
@@ -678,7 +682,7 @@ class Middleman {
     }
   }
 
-  async initWs() {
+  async initWs(registerTickers) {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${
@@ -686,6 +690,7 @@ class Middleman {
       }/ws`,
       memberId: options.memberId,
     });
+    this.tbWebSocket.registerMarkets(registerTickers);
     if (options.memberId && options.peatioSession) {
       this.isLogin = true;
       this.memberId = options.memberId;

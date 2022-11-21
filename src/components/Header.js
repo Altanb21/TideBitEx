@@ -3,6 +3,7 @@ import { Navbar, Nav } from "react-bootstrap";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import DropDown from "./DropDown";
+import Languages from "../constant/Languages";
 
 const Header = (props) => {
   const storeCtx = useContext(StoreContext);
@@ -51,12 +52,12 @@ const Header = (props) => {
           </React.Fragment>
         )}
         <DropDown
-          options={Object.keys(props.languages)}
-          selected={props.languageKey}
-          onSelect={props.changeLanguage}
+          options={Object.keys(Languages)}
+          selected={storeCtx.languageKey}
+          onSelect={storeCtx.changeLanguage}
           placeholder="Language"
         >
-          {(key) => <div>{props.languages[key]}</div>}
+          {(key) => <div>{Languages[key]}</div>}
         </DropDown>
       </Navbar.Collapse>
     </Navbar>

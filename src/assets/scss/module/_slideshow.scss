@@ -1,0 +1,47 @@
+.slideshow {
+  width: 100%;
+  // height: 200px;
+  padding: 20px;
+  &__container {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
+  &__link {
+    display: block;
+    flex: 1;
+    min-height: 160px;
+  }
+  &__image {
+    height: 100%;
+    width: 100%;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+}
+
+@media only screen and (max-width: $screen-md) {
+  .slideshow {
+    padding: 0px;
+    overflow: hidden;
+    &__container {
+      display: block;
+      gap: 0;
+      width: 100vw;
+    }
+    &__link {
+      transform: translate(-100vw);
+      transition: translate 0.5s;
+      display: none;
+    }
+    &__link.active {
+      transform: translate(0);
+      display: block;
+    }
+    &__link.active{
+      z-index: 1000;
+    }
+  }
+}

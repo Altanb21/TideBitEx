@@ -88,6 +88,10 @@ class WSChannel extends Bot {
                 this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
               case Events.switchMarket:
+                this.logger.debug(
+                  `[${this.constructor.name} _onOpSwitchMarket]`,
+                  args
+                );
                 this._onOpSwitchMarket(ws, args);
                 break;
               default:
@@ -192,6 +196,13 @@ class WSChannel extends Bot {
         wsId: ws.id,
       });
     }
+  }
+
+  _onOpRegisterMarkets(ws, arg) {
+    this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarkets[${arg}]`);
+    EventBus.emit(Events.registerMarkets, {
+      arg,
+    });
   }
 
   _onOpSwitchMarket(ws, args) {
