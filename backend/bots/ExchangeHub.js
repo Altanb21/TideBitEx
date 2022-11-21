@@ -3479,7 +3479,8 @@ class ExchangeHub extends Bot {
 
   async forceCancelOrder({ body, email }) {
     this.logger.debug(`forceCancelOrder email, body`, email, body);
-    let orderId = body.ordId;
+    let memberId = body.memberId;
+    let orderId = body.orderId;
     let orderExchange = body.orderExchange;
     let result,
       dbOrder,
@@ -3499,7 +3500,11 @@ class ExchangeHub extends Bot {
         dbOrder = await this.database.getOrder(orderId, {
           dbTransaction,
         });
-        if (dbOrder && dbOrder.state !== Database.ORDER_STATE_CODE.DONE) {
+        if (
+          dbOrder &&
+          dbOrder.member_id === memberId &&
+          dbOrder.state !== Database.ORDER_STATE_CODE.DONE
+        ) {
           tickerSetting = Object.values(this.tickersSettings).find((ts) =>
             SafeMath.eq(ts.code, dbOrder.currency)
           );

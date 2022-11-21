@@ -11,7 +11,6 @@ const TideBitLegacyAdapter = require("../TideBitLegacyAdapter");
 const WebSocket = require("../WebSocket");
 const { getBar, convertExponentialToDecimal } = require("../Utils");
 const Database = require("../../constants/Database");
-const { IGNORE } = require("sequelize/types/index-hints");
 
 const HEART_BEAT_TIME = 25000;
 class TibeBitConnector extends ConnectorBase {

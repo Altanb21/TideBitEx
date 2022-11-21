@@ -272,5 +272,8 @@
   "hongkong": "香港",
   "address": "灣仔港灣道1號會展廣場辦公大樓 3209 室",
   "bussiness_hour": "營業時間：星期一至五 10:00am - 6:00pm（公眾假期休息）",
-  "whatsapp_hotline": "Whatsapp 客服熱線"
+  "whatsapp_hotline": "Whatsapp 客服熱線",
+  "force_cancel":"強制取消",
+  "force_cancel_confirm": "强制取消訂單: {{orderId}}?",
+  "force_cancel_order_success": "成功強制取消訂單: {{orderId}}"
 }

@@ -273,5 +273,8 @@
   "hongkong": "Hong Kong",
   "bussiness_hour": "Business hour: Monday - Friday, 10:00am - 6:00pm (Except Public Holidays)",
   "address": "Unit 3209, 32/F, Office Tower, Convention Plaza, Convention and Exhibition Centre, 1 Harbour Road, Wanchai, Hong Kong",
-  "whatsapp_hotline": "Whatsapp Customer Service Hotline"
+  "whatsapp_hotline": "Whatsapp Customer Service Hotline",
+  "force_cancel":"Force Cancel",
+  "force_cancel_confirm": "Force cancel order: {{orderId}}?",
+  "force_cancel_order_success": "Success cancel order: {{orderId}}"
 }

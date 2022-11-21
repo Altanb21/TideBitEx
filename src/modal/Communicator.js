@@ -477,6 +477,7 @@ class Communicator {
         method: "POST",
         url: `/trade/force-cancel-order`,
         data: {
+          memberId: order.memberId,
           orderId: order.innerOrder?.orderId,
           orderExchange: order.outerOrder.exchange,
         },

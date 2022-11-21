@@ -8,7 +8,11 @@ import ApexCharts from "react-apexcharts";
 const TickerTrendContainer = (props) => {
   const { t } = useTranslation();
   return (
-    <div className="ticker-trend__container" key={props.key}>
+    <a
+      className="ticker-trend__container"
+      key={props.key}
+      href={`/markets/${props.ticker?.market}`}
+    >
       <div className="ticker-trend__leading">
         <div className="ticker-trend__ticker">
           <span className="ticker-trend__icon">
@@ -69,7 +73,7 @@ const TickerTrendContainer = (props) => {
         </div>
       </div>
       <div className="ticker-trend__chart"></div>
-    </div>
+    </a>
   );
 };
 

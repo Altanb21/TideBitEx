@@ -387,11 +387,16 @@
       border-radius: 5px;
       padding: 2px 5px;
       cursor: pointer;
+      justify-content: center
     }
     &--button:hover{
       background-color: #2699fb;
       border: 1px solid #2699fb;
       color: white;
+    }
+    &--button:disabled{
+      cursor: default;
+      pointer-events: none;
     }
   }
   .currency-dropdown__label-item--fixed &__table-header-btn--lock {

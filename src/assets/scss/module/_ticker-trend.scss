@@ -9,7 +9,8 @@
   color: #fff;
   padding: 10px 20px;
   column-gap: 20px;
-
+  cursor: pointer;
+  
   &__leading,
   &__content {
     display: flex;

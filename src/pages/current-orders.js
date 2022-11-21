@@ -14,8 +14,8 @@ const tickers = {
 };
 const defaultOrders = {
   OKEx: {
-    "BTC-USDT": {},
-    "ETH-USDT": {},
+    "BTC-USDT": [],
+    "ETH-USDT": [],
   },
 };
 const compareFunction = (leftValue, rightValue) => {
@@ -95,9 +95,7 @@ const CurrentOrders = () => {
             if (newestOrder) setNewestOrderId(newestOrder.id);
             if (oldestOrder) setOldestOrderId(oldestOrder.id);
             // setTotalCounts(updatedOrders[exchange][ticker].length);
-            setPages(
-              Math.ceil(updatedOrders[exchange][ticker].length.length / limit)
-            );
+            setPages(Math.ceil(updatedOrders[exchange][ticker].length / limit));
           } else {
             setPages(1);
           }
@@ -533,7 +531,7 @@ const CurrentOrders = () => {
                         </div>
                         {order.outerOrder && (
                           <div
-                            className={`"current-orders__text${
+                            className={`"current-orders__text screen__expand${
                               order.side === "buy" ? " positive" : " negative"
                             }`}
                           >
@@ -555,7 +553,19 @@ const CurrentOrders = () => {
                       </td>
                       <td
                         className="screen__table-item screen__table-item--button"
-                        onClick={() => storeCtx.forceCancelOrder(order)}
+                        onClick={() => {
+                          if (order.email) {
+                            const confirm = window.confirm(
+                              t("force_cancel_confirm", {
+                                orderId: order.innerOrder?.orderId,
+                              })
+                            );
+                            if (confirm) {
+                              storeCtx.forceCancelOrder(order);
+                            }
+                          }
+                        }}
+                        disabled={!order.email}
                       >
                         {t("force_cancel")}
                       </td>
