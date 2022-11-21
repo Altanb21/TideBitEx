@@ -94,7 +94,7 @@ const TickerTrendContainer = (props) => {
       </div>
       <div className="ticker-trend__chart">
         <ApexCharts
-          height="100%"
+          height="100px"
           width="100%"
           type="line"
           series={[
@@ -124,7 +124,7 @@ const TickerTrendContainer = (props) => {
             stroke: {
               curve: "straight",
               colors: "#fff",
-              width: 1,
+              width: 1.2,
             },
             xaxis: {
               axisBorder: { show: false },

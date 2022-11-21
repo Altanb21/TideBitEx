@@ -6,8 +6,6 @@
   background-color: rgba(0, 0, 0, 0.7);
   margin-bottom: 0;
   color: #fff;
-  padding: 10px 20px;
-  column-gap: 20px;
   cursor: pointer;
   
   &__leading,
@@ -17,10 +15,12 @@
     justify-content: space-between;
   }
   &__container {
-    max-height: 200px;
-    padding-left: 0;
-    padding-right: 0;
+    // max-height: 200px;
+    padding: 10px 20px;
     max-width: 1440px;
+  }
+  &__container:hover{
+    background-image: linear-gradient(61deg,#5c9ac0,#8ddc97);
   }
   &__icon {
     display: inline-block;

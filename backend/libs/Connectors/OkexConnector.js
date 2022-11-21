@@ -1662,7 +1662,7 @@ class OkexConnector extends ConnectorBase {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
-      this.logger.debug(`_updateTrades[${market}] ${this.registerMarkets.includes(market)}`, this.registerMarkets);
+      // this.loggers.debug(`_updateTrades[${market}] ${this.registerMarkets.includes(market)}`, this.registerMarkets);
       if (this.registerMarkets.includes(market)) {
         EventBus.emit(Events.publicTrades, {
           market,
