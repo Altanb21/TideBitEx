@@ -459,6 +459,17 @@ const StoreProvider = (props) => {
           tradesLastTimeSync = time;
           // }
           break;
+        case Events.publicTrades:
+          console.log(`metaData`, metaData);
+          middleman.tradeBook.updateAll(
+            metaData.data.market,
+            metaData.data.trades
+          );
+          // if (time - tradesLastTimeSync > tradesSyncInterval) {
+          setTrades(middleman.getTradesSnapshot());
+          tradesLastTimeSync = time;
+          // }
+          break;
         case Events.trade:
           middleman.tradeBook.updateByDifference(
             metaData.data.market,

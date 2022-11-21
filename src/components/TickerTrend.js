@@ -102,7 +102,7 @@ const TickerTrendContainer = (props) => {
               data: props.ticker?.market
                 ? storeCtx
                     .getTradesSnapshot(props.ticker.market, 100)
-                    .map((d) => ({ x: d.ts, y: parseFloat(d.last) }))
+                    .map((d) => ({ x: d.ts, y: parseFloat(d.price) }))
                 : [],
               type: "line",
             },

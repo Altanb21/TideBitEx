@@ -400,7 +400,6 @@ class Middleman {
         lotSz,
       });
       this.tradeBook.updateAll(market, trades);
-      console.log(`getTradesSnapshot`, this.getTradesSnapshot(market))
     } catch (error) {
       console.error(`_getTrades error`, error);
       // throw error;
