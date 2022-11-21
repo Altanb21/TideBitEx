@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,20 @@ import { formateDecimal } from "../utils/Utils";
 import ApexCharts from "react-apexcharts";
 
 const TickerTrendContainer = (props) => {
+  const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
+  const [isInit, setIsInit] = useState(false);
+
+  const init = useCallback(async () => {
+    await storeCtx.registerMarket(props.ticker?.market);
+  }, [props.ticker?.market, storeCtx]);
+
+  useEffect(() => {
+    if (!isInit && props.ticker?.market) {
+      init().then((_) => setIsInit(true));
+    }
+  }, [init, isInit, props.ticker?.market]);
+
   return (
     <a
       className="ticker-trend__container"
@@ -72,7 +85,64 @@ const TickerTrendContainer = (props) => {
           }`}
         </div>
       </div>
-      <div className="ticker-trend__chart"></div>
+      <div className="ticker-trend__chart">
+        <ApexCharts
+          height="100%"
+          width="100%"
+          type="line"
+          series={[
+            {
+              data: props.ticker?.market
+                ? storeCtx
+                    .getTradesSnapshot(props.ticker.market, 100)
+                    .map((d) => ({ x: d.ts, y: parseFloat(d.last) }))
+                : [],
+              type: "line",
+            },
+          ]}
+          options={{
+            chart: {
+              type: "line",
+              zoom: {
+                enabled: false,
+              },
+            },
+            toolbar: {
+              show: false,
+              enabled: false,
+            },
+            dataLabels: {
+              enabled: false,
+            },
+            stroke: {
+              curve: "straight",
+              colors: "#fff",
+              width: 1,
+            },
+            xaxis: {
+              axisBorder: { show: false },
+              axisTicks: { show: false },
+              labels: {
+                show: false,
+              },
+              type: "numeric",
+            },
+            yaxis: {
+              axisBorder: { show: false },
+              axisTicks: { show: false },
+              labels: {
+                show: false,
+              },
+            },
+            grid: {
+              show: false,
+            },
+            tooltip: {
+              enabled: false,
+            },
+          }}
+        />
+      </div>
     </a>
   );
 };

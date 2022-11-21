@@ -34,17 +34,16 @@ class TideBitWS {
     );
   }
 
-  registerMarkets(markets) {
+  registerMarket(market) {
     this.send(
       JSON.stringify({
-        op: "registerMarkets",
+        op: "registerMarket",
         args: {
-          markets,
+          market,
         },
       })
     );
   }
-
   clear(msg) {
     console.log(
       "Socket is closed. Reconnect will be attempted in 1 second.",

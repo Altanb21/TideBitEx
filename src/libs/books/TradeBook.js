@@ -46,23 +46,11 @@ class TradeBook extends BookBase {
   //   return data.slice(0, 30);
   // }
 
-  getSnapshot(market, lotSz) {
+  getSnapshot(market, length) {
     try {
       let trades;
       if (this._snapshot[market]) {
-        trades = this._snapshot[market];
-        // .map((trade) => {
-        // ++ WORKAROUND TODO: enhance performance
-        // if (
-        //   !this._prevSnapshot[market].some((_trade) =>
-        //     this._compareFunction(trade, _trade)
-        //   )
-        // ) {
-        //   return { ...trade, update: true };
-        // } else
-        //   return trade;
-        // });
-        // this._prevSnapshot[market] = this._snapshot[market];
+        trades = this._snapshot[market].slice(0, length);
       } else trades = [];
       return trades;
     } catch (error) {

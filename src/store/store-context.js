@@ -285,6 +285,8 @@ const StoreContext = React.createContext({
   forceCancelOrder: async (order) => {},
   getTicker: (market) => {},
   changeLanguage: (key) => {},
+  registerMarket: async (market) => {},
+  getTradesSnapshot: async (market, length) => {},
 });
 
 export default StoreContext;

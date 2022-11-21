@@ -94,6 +94,13 @@ class WSChannel extends Bot {
                 );
                 this._onOpSwitchMarket(ws, args);
                 break;
+                case Events.registerMarket:
+                this.logger.debug(
+                  `[${this.constructor.name} _onOpRegisterMarket]`,
+                  args
+                );
+                this._onOpRegisterMarket(ws, args);
+                break;
               default:
                 ws.send(
                   JSON.stringify(
@@ -198,9 +205,9 @@ class WSChannel extends Bot {
     }
   }
 
-  _onOpRegisterMarkets(ws, arg) {
+  _onOpRegisterMarket(ws, arg) {
     this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarkets[${arg}]`);
-    EventBus.emit(Events.registerMarkets, {
+    EventBus.emit(Events.registerMarket, {
       arg,
     });
   }

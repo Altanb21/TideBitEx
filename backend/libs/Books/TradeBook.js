@@ -42,7 +42,7 @@ class TradeBook extends BookBase {
     const trimed = data
       .filter((trade) => trade.volume >= lotSz)
       // .sort((a, b) => +b.at - +a.at)
-      .slice(0, 50)
+      .slice(0, 100)
       .map((trade, i) =>
         !trade.side
           ? {

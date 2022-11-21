@@ -391,7 +391,7 @@ const StoreProvider = (props) => {
 
   const forceCancelOrder = useCallback(
     async (order) => {
-     return await middleman.forceCancelOrder(order);
+      return await middleman.forceCancelOrder(order);
     },
     [middleman]
   );
@@ -601,6 +601,14 @@ const StoreProvider = (props) => {
     return middleman.getTickerSnapshot(market);
   };
 
+  const registerMarket = async (market) => {
+    return await middleman.registerMarket(market);
+  };
+
+  const getTradesSnapshot = (market, length) => {
+    return middleman.getTradesSnapshot(market, length);
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -670,6 +678,8 @@ const StoreProvider = (props) => {
         forceCancelOrder,
         getTicker,
         changeLanguage,
+        registerMarket,
+        getTradesSnapshot,
       }}
     >
       {props.children}

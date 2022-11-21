@@ -269,7 +269,7 @@ class Middleman {
     }
   }
 
-  async forceCancelOrder(order){
+  async forceCancelOrder(order) {
     return await this.communicator.forceCancelOrder(order);
   }
 
@@ -387,10 +387,9 @@ class Middleman {
     }
   }
 
-  getTradesSnapshot(market) {
+  getTradesSnapshot(market, length = 50) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
-    let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
-    return this.tradeBook.getSnapshot(market, lotSz);
+    return this.tradeBook.getSnapshot(market, length);
   }
 
   async _getTrades({ market, limit, lotSz }) {
@@ -578,6 +577,11 @@ class Middleman {
     };
   }
 
+  async registerMarket(market) {
+    this.tbWebSocket.registerMarket(market);
+    await this._getTrades({ market });
+  }
+
   async selectMarket(market) {
     let lotSz;
     this.tickerBook.setCurrentMarket(market);
@@ -690,7 +694,6 @@ class Middleman {
       }/ws`,
       memberId: options.memberId,
     });
-    this.tbWebSocket.registerMarkets(registerTickers);
     if (options.memberId && options.peatioSession) {
       this.isLogin = true;
       this.memberId = options.memberId;
