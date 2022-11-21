@@ -160,21 +160,37 @@ const CurrentOrders = () => {
 
   const prevPageHandler = useCallback(async () => {
     let newOrders,
-      newPage = page - 1 > 0 ? page - 1 : 1;
+      newPage = page - 1 > 0 ? page - 1 : 1,
+      arr = [];
     setPage(newPage);
     setIsLoading(true);
-    if (newestOrderId) {
-      newOrders = await getCurrentOrders({
-        ticker: filterTicker,
-        exchange: exchanges[0],
-        before: newestOrderId,
-        limit: limit,
-      });
-      // setOffset((prev) => (prev + 1) * limit);
+    // if (newestOrderId) {
+    //   newOrders = await getCurrentOrders({
+    //     ticker: filterTicker,
+    //     exchange: exchanges[0],
+    //     before: newestOrderId,
+    //     limit: limit,
+    //   });
+    //   // setOffset((prev) => (prev + 1) * limit);
+    // }
+    if (
+      orders &&
+      orders[filterExchange] &&
+      orders[filterExchange][filterTicker]
+    ) {
+      newOrders = orders[filterExchange][filterTicker]
+        .map((o) => ({ ...o }))
+        .sort((a, b) => b.ts - a.ts);
+      arr = newOrders.slice((page - 1) * limit, page * limit);
+      console.log(
+        `arr[:${arr.length}] (page - 1) * limit[${
+          (page - 1) * limit
+        }] page * limit[${page * limit}] page[${page}] limit[:limit]`
+      );
     }
     filter({ orders: newOrders });
     setIsLoading(false);
-  }, [page, newestOrderId, filter, getCurrentOrders, filterTicker, limit]);
+  }, [page, orders, filterExchange, filterTicker, filter, limit]);
 
   const nextPageHandler = useCallback(async () => {
     setIsLoading(true);
