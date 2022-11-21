@@ -394,9 +394,11 @@
       border: 1px solid #2699fb;
       color: white;
     }
-    &--button:disabled{
-      cursor: default;
-      pointer-events: none;
+    &--button.disabled{
+      cursor: default !important;
+      pointer-events: none !important;
+      background-color: transparent !important;
+      border: 1px solid #707070 !important;
     }
   }
   .currency-dropdown__label-item--fixed &__table-header-btn--lock {

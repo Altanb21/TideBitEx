@@ -6,6 +6,7 @@ import LoadingDialog from "../components/LoadingDialog";
 import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import { TableHeader } from "./vouchers";
 import SafeMath from "../utils/SafeMath";
+import { useSnackbar } from "notistack";
 
 const exchanges = ["OKEx"];
 const tickers = {
@@ -44,6 +45,7 @@ const CurrentOrders = () => {
   const [orders, setOrders] = useState(defaultOrders);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   const getCurrentOrders = useCallback(
     async ({ exchange, ticker, limit, before, after }) => {
@@ -232,6 +234,52 @@ const CurrentOrders = () => {
     filter,
     getCurrentOrders,
   ]);
+
+  const forceCancelOrder = useCallback(
+    async (order) => {
+      if (order.email) {
+        setIsLoading(true);
+        const confirm = window.confirm(
+          t("force_cancel_confirm", {
+            orderId: order.innerOrder?.orderId,
+          })
+        );
+        if (confirm) {
+          try {
+            await storeCtx.forceCancelOrder(order);
+            enqueueSnackbar(
+              `${t("force_cancel_order_success", {
+                orderId: order.innerOrder?.orderId,
+              })}`,
+              {
+                variant: "success",
+                anchorOrigin: {
+                  vertical: "top",
+                  horizontal: "center",
+                },
+              }
+            );
+            const orders = await getCurrentOrders({
+              exchange: exchanges[0],
+              ticker: filterTicker,
+              limit,
+            });
+            filter({ orders: orders });
+          } catch (error) {
+            enqueueSnackbar(`${t("error-happen")}`, {
+              variant: "error",
+              anchorOrigin: {
+                vertical: "top",
+                horizontal: "center",
+              },
+            });
+          }
+          setIsLoading(false);
+        }
+      }
+    },
+    [enqueueSnackbar, storeCtx, t]
+  );
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -552,19 +600,10 @@ const CurrentOrders = () => {
                         )}
                       </td>
                       <td
-                        className="screen__table-item screen__table-item--button"
-                        onClick={() => {
-                          if (order.email) {
-                            const confirm = window.confirm(
-                              t("force_cancel_confirm", {
-                                orderId: order.innerOrder?.orderId,
-                              })
-                            );
-                            if (confirm) {
-                              storeCtx.forceCancelOrder(order);
-                            }
-                          }
-                        }}
+                        className={`screen__table-item screen__table-item--button${
+                          !order.email ? " disabled" : ""
+                        }`}
+                        onClick={() => forceCancelOrder(order)}
                         disabled={!order.email}
                       >
                         {t("force_cancel")}

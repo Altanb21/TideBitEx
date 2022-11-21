@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState, useEffect } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -391,31 +391,9 @@ const StoreProvider = (props) => {
 
   const forceCancelOrder = useCallback(
     async (order) => {
-      try {
-        await middleman.forceCancelOrder(order);
-        enqueueSnackbar(
-          `${t("force_cancel_order_success", {
-            orderId: order.innerOrder?.orderId,
-          })}`,
-          {
-            variant: "success",
-            anchorOrigin: {
-              vertical: "top",
-              horizontal: "center",
-            },
-          }
-        );
-      } catch (error) {
-        enqueueSnackbar(`${t("error-happen")}`, {
-          variant: "error",
-          anchorOrigin: {
-            vertical: "top",
-            horizontal: "center",
-          },
-        });
-      }
+     return await middleman.forceCancelOrder(order);
     },
-    [enqueueSnackbar, middleman, t]
+    [middleman]
   );
 
   const activePageHandler = (page) => {

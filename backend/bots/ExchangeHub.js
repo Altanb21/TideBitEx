@@ -3500,9 +3500,10 @@ class ExchangeHub extends Bot {
         dbOrder = await this.database.getOrder(orderId, {
           dbTransaction,
         });
+        this.logger.debug(`forceCancelOrder dbOrder`, dbOrder);
         if (
           dbOrder &&
-          dbOrder.member_id === memberId &&
+          SafeMath.eq(dbOrder.member_id, memberId) &&
           dbOrder.state !== Database.ORDER_STATE_CODE.DONE
         ) {
           tickerSetting = Object.values(this.tickersSettings).find((ts) =>
