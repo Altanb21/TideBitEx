@@ -415,6 +415,7 @@ const CurrentOrders = () => {
                 onClick={(ascending) => sorting("volume", ascending)}
               />
               <TableHeader
+                className="screen__expand"
                 label={t("funds-receive")}
                 onClick={(ascending) => sorting("fundsReceived", ascending)}
               />

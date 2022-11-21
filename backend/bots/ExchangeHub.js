@@ -3536,7 +3536,8 @@ class ExchangeHub extends Bot {
                   });
                   this.logger.debug(`DB 更新失敗 rollback`);
                 }
-              } else {
+              }
+              if (!result) {
                 // 2. performTask (Task: cancel)
                 this.logger.debug(`準備呼叫 API 執行取消訂單`);
                 this.logger.debug(`postCancelOrder`, body);
@@ -3547,8 +3548,6 @@ class ExchangeHub extends Bot {
                   },
                 });
                 this.logger.debug(`okexCancelOrderRes`, apiR);
-              }
-              if (!result) {
                 if (!apiR?.success) {
                   await dbTransaction.rollback();
                   this.logger.debug(`API 取消訂單失敗 rollback`);
