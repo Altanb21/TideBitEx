@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
@@ -19,6 +20,7 @@ let interval,
 
 const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
+  const { t } = useTranslation();
   const location = useLocation();
   const history = useHistory();
   const [isInit, setIsInit] = useState(null);
@@ -375,6 +377,35 @@ const StoreProvider = (props) => {
     [action, enqueueSnackbar, middleman]
   );
 
+  const forceCancelOrder = useCallback(
+    async (order) => {
+      try {
+        await middleman.forceCancelOrder(order);
+        enqueueSnackbar(
+          `${t("force_cancel_order_success", {
+            orderId: order.innerOrder?.orderId,
+          })}`,
+          {
+            variant: "success",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          }
+        );
+      } catch (error) {
+        enqueueSnackbar(`${t("error-happen")}`, {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        });
+      }
+    },
+    [enqueueSnackbar, middleman, t]
+  );
+
   const activePageHandler = (page) => {
     setActivePage(page);
   };
@@ -607,6 +638,7 @@ const StoreProvider = (props) => {
         getPlatformAssets,
         updatePlatformAsset,
         getDashboardData,
+        forceCancelOrder,
       }}
     >
       {props.children}

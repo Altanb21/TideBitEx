@@ -471,6 +471,25 @@ class Communicator {
     }
   }
 
+  async forceCancelOrder(order) {
+    try {
+      const res = await this._request({
+        method: "POST",
+        url: `/trade/force-cancel-order`,
+        data: {
+          orderId: order.innerOrder?.orderId,
+          orderExchange: order.outerOrder.exchange,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
   async cancelOrders(options) {
     try {
       // const res = await this._post(`/trade/cancel-orders`, options);

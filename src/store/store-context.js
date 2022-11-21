@@ -281,6 +281,7 @@ const StoreContext = React.createContext({
   getPlatformAssets: async () => {},
   updatePlatformAsset: async (id, data) => {},
   getDashboardData: async () => {},
+  forceCancelOrder: async (order) => {},
 });
 
 export default StoreContext;

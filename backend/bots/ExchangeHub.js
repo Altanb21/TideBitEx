@@ -3266,6 +3266,7 @@ class ExchangeHub extends Bot {
     orderData,
     dbOrder,
     tickerSetting,
+    force,
   }) {
     /* !!! HIGH RISK (start) !!! */
     // 1. -get orderId from body-
@@ -3298,7 +3299,7 @@ class ExchangeHub extends Bot {
         : await this.database.getOrder(orderId, {
             dbTransaction: transaction,
           });
-      if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
+      if (order && order.state === Database.ORDER_STATE_CODE.WAIT) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
         _tickerSetting = tickerSetting
@@ -3472,6 +3473,106 @@ class ExchangeHub extends Bot {
         message: error.message,
         code: Codes.CANCEL_ORDER_FAIL,
       });
+    }
+    return result;
+  }
+
+  async forceCancelOrder({ body, email }) {
+    this.logger.debug(`forceCancelOrder email, body`, email, body);
+    let orderId = body.ordId;
+    let orderExchange = body.orderExchange;
+    let result,
+      dbOrder,
+      dbUpdateR,
+      apiR,
+      tickerSetting,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      dbTransaction;
+    if (!currentUser.roles?.includes("root"))
+      result = new ResponseFormat({
+        message: `Permission denied`,
+        code: Codes.INVALID_INPUT,
+      });
+    if (!result) {
+      dbTransaction = await this.database.transaction();
+      try {
+        dbOrder = await this.database.getOrder(orderId, {
+          dbTransaction,
+        });
+        if (dbOrder && dbOrder.state !== Database.ORDER_STATE_CODE.DONE) {
+          tickerSetting = Object.values(this.tickersSettings).find((ts) =>
+            SafeMath.eq(ts.code, dbOrder.currency)
+          );
+          switch (orderExchange) {
+            case SupportedExchange.OKEX:
+              let clOrdId =
+                `${this.okexBrokerId}${dbOrder.member_id}m${orderId}o`.slice(
+                  0,
+                  32
+                );
+              if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
+                dbUpdateR = await this.updateOrderStatus({
+                  transaction: dbTransaction,
+                  orderId: orderId,
+                  memberId: dbOrder.member_id,
+                  dbOrder,
+                  tickerSetting,
+                  orderData: {
+                    id: orderId,
+                    clOrdId,
+                  },
+                });
+                if (!dbUpdateR?.success) {
+                  await dbTransaction.rollback();
+                  result = new ResponseFormat({
+                    message: "DB ERROR",
+                    code: Codes.CANCEL_ORDER_FAIL,
+                  });
+                  this.logger.debug(`DB 更新失敗 rollback`);
+                }
+              } else {
+                // 2. performTask (Task: cancel)
+                this.logger.debug(`準備呼叫 API 執行取消訂單`);
+                this.logger.debug(`postCancelOrder`, body);
+                apiR = await this.okexConnector.router("postCancelOrder", {
+                  body: {
+                    instId: tickerSetting.instId,
+                    clOrdId,
+                  },
+                });
+                this.logger.debug(`okexCancelOrderRes`, apiR);
+              }
+              if (!result) {
+                if (!apiR?.success) {
+                  await dbTransaction.rollback();
+                  this.logger.debug(`API 取消訂單失敗 rollback`);
+                } else {
+                  await dbTransaction.commit();
+                  this.logger.debug(`API 取消訂單成功了`);
+                }
+              }
+              result = apiR;
+              break;
+            default:
+              result = new ResponseFormat({
+                message: `訂單不存在`,
+                code: Codes.INVALID_INPUT,
+              });
+              break;
+          }
+        } else {
+          result = new ResponseFormat({
+            message: `訂單不存在`,
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } catch (error) {
+        this.logger.error(`取消訂單失敗了`, error);
+        result = new ResponseFormat({
+          message: error.message,
+          code: Codes.CANCEL_ORDER_FAIL,
+        });
+      }
     }
     return result;
   }
@@ -5024,7 +5125,7 @@ class ExchangeHub extends Bot {
       dbTransaction;
     if (!currentUser.roles?.includes("root"))
       result = new ResponseFormat({
-        message: `Has no privillge`,
+        message: `Permission denied`,
         code: Codes.INVALID_INPUT,
       });
     if (!memberId || !currency) {

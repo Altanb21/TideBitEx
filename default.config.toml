@@ -76,6 +76,7 @@ pathname = [
   "get | /api/v1/trade/orders-pending | Bot.ExchangeHub.getOrderList",
   "get | /api/v1/trade/orders-history | Bot.ExchangeHub.getOrderHistory",
   "post | /api/v1/trade/cancel-order | Bot.ExchangeHub.postCancelOrder",
+  "post | /api/v1/trade/force-cancel-order | Bot.ExchangeHub.forceCancelOrder",
   "post | /api/v1/trade/cancel-orders | Bot.ExchangeHub.cancelOrders",
   "get | /api/v1/trade/fill-history | Bot.ExchangeHub.getOuterTradeFills",
   "get | /api/v1/trade/profits | Bot.ExchangeHub.getOuterTradesProfits",

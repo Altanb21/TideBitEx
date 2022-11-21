@@ -356,6 +356,7 @@ const CurrentOrders = () => {
                 label={t("funds-receive")}
                 onClick={(ascending) => sorting("fundsReceived", ascending)}
               />
+              <th className="screen__table-header">{t("force_cancel")}</th>
             </tr>
             <tr className="screen__table-rows">
               {filterOrders &&
@@ -535,6 +536,12 @@ const CurrentOrders = () => {
                             }`}
                           </div>
                         )}
+                      </td>
+                      <td
+                        className="screen__table-item screen__table-item--button"
+                        onClick={() => storeCtx.forceCancelOrder(order)}
+                      >
+                        {t("force_cancel")}
                       </td>
                     </tr>
                   ))}

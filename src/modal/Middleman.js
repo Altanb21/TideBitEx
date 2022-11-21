@@ -269,6 +269,10 @@ class Middleman {
     }
   }
 
+  async forceCancelOrder(order){
+    return await this.communicator.forceCancelOrder(order);
+  }
+
   async cancelOrders(options) {
     if (this.isLogin) {
       return await this.communicator.cancelOrders(options);
