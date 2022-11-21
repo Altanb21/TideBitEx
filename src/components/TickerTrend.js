@@ -94,7 +94,7 @@ const TickerTrendContainer = (props) => {
       </div>
       <div className="ticker-trend__chart">
         <ApexCharts
-          height="100px"
+          height="100%"
           width="100%"
           type="line"
           series={[
