@@ -1971,7 +1971,7 @@ class mysql {
     return referralCommissionId;
   }
 
-  async insertAuditRecord(
+  async insertAuditAccountRecord(
     account_id,
     member_id,
     reason,
@@ -1986,11 +1986,11 @@ class mysql {
   ) {
     let result, accountVersionId;
     const query =
-      "INSERT INTO `audit_records` (`account_id`, `member_id`, `reason`, `currency`, `balance_origin`, `balance_updated`, `locked_origin`, `locked_updated`, `created_at`, `issued_by`)" +
+      "INSERT INTO `audit_account_records` (`account_id`, `member_id`, `reason`, `currency`, `balance_origin`, `balance_updated`, `locked_origin`, `locked_updated`, `created_at`, `issued_by`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
       this.logger.debug(
-        "insertAuditRecord",
+        "insertAuditAccountRecord",
         query,
         "DEFAULT",
         account_id,

@@ -5044,9 +5044,6 @@ class ExchangeHub extends Bot {
     this.jobQueue = [...this.jobQueue, job];
   }
 
-  /**
-   *  -- temporary 2022-11-18
-   */
   async accountAuditor({ query }, { dbTransaction }) {
     let { memberId, currency } = query;
     let accounts,
@@ -5142,7 +5139,7 @@ class ExchangeHub extends Bot {
         /******************************
          * 1. select * from accounts for update
          *   1.1 ++TODO 檢查是否需要更新
-         * 2. insert audit record
+         * 2. insert audit_account_records
          *   2.1  account_id
          *   2.2  member_id
          *   2.3  reason: 1 accounts amount is differernt account_versions sum
@@ -5183,7 +5180,7 @@ class ExchangeHub extends Bot {
             issued_by: currentUser.email,
           };
           //
-          await this.database.insertAuditRecord(auditRecord, {
+          await this.database.insertAuditAccountRecord(auditRecord, {
             dbTransaction,
           });
           // 3. update account
