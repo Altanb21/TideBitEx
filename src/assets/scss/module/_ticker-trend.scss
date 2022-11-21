@@ -58,8 +58,7 @@
 @media only screen and (max-width: $screen-md) {
   .ticker-trend {
     // height: 100px;
-    grid-template-columns: 1fr;
-    // grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr;
     &__leading,
     &__content {
@@ -79,9 +78,8 @@
 @media only screen and (max-width: $screen-sm) {
   .ticker-trend {
     // height: 100px;
-    grid-template-columns: 1fr;
-    // grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
     &__leading,
     &__content {
       flex-direction: row;
