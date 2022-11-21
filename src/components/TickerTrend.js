@@ -11,14 +11,21 @@ const TickerTrendContainer = (props) => {
   const [isInit, setIsInit] = useState(false);
 
   const init = useCallback(async () => {
-    await storeCtx.registerMarket(props.ticker?.market);
+    if (props.ticker?.market) {
+      setIsInit(async (prev) => {
+        if (!prev) {
+          await storeCtx.registerMarket(props.ticker?.market);
+          return !prev;
+        } else return prev;
+      });
+    }
   }, [props.ticker?.market, storeCtx]);
 
   useEffect(() => {
-    if (!isInit && props.ticker?.market) {
-      init().then((_) => setIsInit(true));
+    if (!isInit) {
+      init();
     }
-  }, [init, isInit, props.ticker?.market]);
+  }, [init, isInit]);
 
   return (
     <a

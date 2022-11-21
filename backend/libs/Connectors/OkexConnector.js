@@ -1977,7 +1977,10 @@ class OkexConnector extends ConnectorBase {
       `[${this.constructor.name}]_registerMarkets tickerSetting`,
       tickerSetting
     );
-    if (tickerSetting.source === SupportedExchange.OKEX) {
+    if (
+      tickerSetting?.source === SupportedExchange.OKEX &&
+      !this.registerMarkets.includes(market)
+    ) {
       this.logger.debug(`source is OKx`);
       this._subscribeTrades(tickerSetting?.instId);
       this.registerMarkets = [...this.registerMarkets, market];
