@@ -10,10 +10,14 @@ const MemberAssets = (props) => {
   const [assets, setAssets] = useState([]);
 
   const auditorMemberAccounts = useCallback(async () => {
-    let result = await storeCtx.auditorMemberAccounts({
-      memberId: props.member.id,
-    });
-    console.log(`result`, result);
+    try {
+      let result = await storeCtx.auditorMemberAccounts({
+        memberId: props.member.id,
+      });
+      setAssets(Object.values(result.accounts));
+    } catch (error) {
+      console.error(`error`, error);
+    }
   }, [props.member.id, storeCtx]);
   return (
     <tr className="members__tile" key={props.key}>
@@ -22,8 +26,7 @@ const MemberAssets = (props) => {
         type="checkbox"
         id={`member-${props.member.id}-dropdown-btn`}
         onChange={async (e) => {
-          console.log(e.target.checked);
-          auditorMemberAccounts();
+          if (e.target.checked) auditorMemberAccounts();
         }}
       />
       <label
@@ -57,11 +60,48 @@ const MemberAssets = (props) => {
       </label>
       <div className="members__assets">
         <div className="members__assets--headers">{/* TODO audit again */}</div>
-        <div className="members__assets--data">
+        <ul className="members__assets--data">
           {assets.map((asset) => (
-            <div>{asset.currency}</div>
+            <li className="members__asset">
+              <div className="members__item">
+                <div className="members__asset--icon">
+                  <img
+                    src={`/icons/${asset.currency}.png`}
+                    alt={asset.currency}
+                    loading="lazy"
+                  />
+                </div>
+                <div>{asset.currency.toUpperCase()}</div>
+              </div>
+              <div className="members__item">{asset.accountId}</div>
+              <div
+                className={`members__item${
+                  asset.balance.alert ? " members__item--alert" : ""
+                }`}
+              >
+                {`${asset.balance.current}/${asset.balance.shouldBe}`}
+              </div>
+              <div
+                className={`members__item${
+                  asset.locked.alert ? " members__item--alert" : ""
+                }`}
+              >
+                {`${asset.locked.current}/${asset.locked.shouldBe}`}
+              </div>
+              <div
+                className={`members__button${
+                  asset.balance.alert || asset.locked.alert ? " " : "disable"
+                }`}
+                onClick={() => {
+                  // ++ TODO
+                  // fixed abnormalAccount
+                }}
+              >
+                {t("fixed")}
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </tr>
   );
@@ -119,7 +159,7 @@ const Members = () => {
           newMembers[newPage] = result.members;
           return newMembers;
         });
-        console.log(newMembers)
+        console.log(newMembers);
       }
       // filter({ members: memberList });
       setIsLoading(false);

@@ -5053,6 +5053,7 @@ class ExchangeHub extends Bot {
     let { memberId, currency } = query;
     let accounts,
       accountVersionsR,
+      coinsSettings,
       result = {
         memberId,
         accounts: {},
@@ -5064,6 +5065,10 @@ class ExchangeHub extends Bot {
       });
       accounts = accounts.reduce((prev, curr) => {
         if (!prev[curr.id]) prev[curr.id] = curr;
+        return prev;
+      }, {});
+      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
         return prev;
       }, {});
       accountVersionsR = await this.database.auditAccountBalance(memberId, {
@@ -5085,14 +5090,14 @@ class ExchangeHub extends Bot {
           }
           result.accounts[accountId] = {
             accountId,
-            currency: account.currency,
+            currency: coinsSettings[account.currency]?.code,
             balance: {
-              current: account.balance,
+              current: Utils.removeZeroEnd(account.balance),
               shouldBe: correctBalance,
               alert: !SafeMath.eq(account.balance, correctBalance),
             },
             locked: {
-              current: account.locked,
+              current: Utils.removeZeroEnd(account.locked),
               shouldBe: correctLocked,
               alert: !SafeMath.eq(account.locked, correctLocked),
             },
