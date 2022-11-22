@@ -7,7 +7,7 @@
   margin-bottom: 0;
   color: #fff;
   cursor: pointer;
-  
+
   &__leading,
   &__content {
     display: flex;
@@ -19,8 +19,8 @@
     padding: 10px 20px;
     max-width: 1440px;
   }
-  &__container:hover{
-    background-image: linear-gradient(61deg,#5c9ac0,#8ddc97);
+  &__container:hover {
+    background-image: linear-gradient(61deg, #5c9ac0, #8ddc97);
   }
   &__icon {
     display: inline-block;
@@ -38,11 +38,19 @@
     font-size: 24px;
   }
   &__change-pct {
+    background-color: transparent;
+    transition: background-color 0.5s;
     &.decrease {
       color: #cf304a;
     }
     &.increase {
       color: #03a66d;
+    }
+    &.green-highlight {
+      background-color: green !important;
+    }
+    &.red-highlight {
+      background-color: red !important;
     }
   }
 }

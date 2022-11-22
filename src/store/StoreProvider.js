@@ -460,7 +460,7 @@ const StoreProvider = (props) => {
           // }
           break;
         case Events.publicTrades:
-          console.log(`metaData`, metaData);
+          // console.log(`metaData`, metaData);
           middleman.tradeBook.updateAll(
             metaData.data.market,
             metaData.data.trades

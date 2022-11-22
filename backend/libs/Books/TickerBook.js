@@ -1,7 +1,6 @@
 const SupportedExchange = require("../../constants/SupportedExchange");
 const BookBase = require("../BookBase");
 const SafeMath = require("../SafeMath");
-const Utils = require("../Utils");
 
 class TickerBook extends BookBase {
   _instruments;
@@ -199,14 +198,27 @@ class TickerBook extends BookBase {
   }
 
   updateByDifference(instId, ticker) {
-    let result = false;
+    let result = false,
+      increase;
     this._difference = {};
     try {
       if (this._compareFunction(this._snapshot[instId], ticker)) {
+        if (SafeMath.gt(ticker.last, this._snapshot[instId]?.last))
+          increase = true;
+        if (SafeMath.lt(ticker.last, this._snapshot[instId]?.last))
+          increase = false;
         const tickerSetting = this._tickersSettings[ticker.id];
         if (tickerSetting?.source === ticker.source) {
-          this._difference[instId] = { ...this._difference[instId], ...ticker };
-          this._snapshot[instId] = { ...this._snapshot[instId], ...ticker };
+          this._difference[instId] = {
+            ...this._difference[instId],
+            ...ticker,
+            increase,
+          };
+          this._snapshot[instId] = {
+            ...this._snapshot[instId],
+            ...ticker,
+            increase,
+          };
           result = true;
         }
       }

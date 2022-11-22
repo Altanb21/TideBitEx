@@ -47,16 +47,14 @@ const TickerTrendContainer = (props) => {
           </span>
         </div>
         <div
-          className={`ticker-trend__change-pct ${
+          className={`ticker-trend__change-pct${
             !props.ticker?.changePct
               ? ""
-              : formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
-                  decimalLength: 2,
-                  pad: true,
-                  withSign: true,
-                }).includes("-")
-              ? "decrease"
-              : "increase"
+              : props.ticker?.changePct.includes("-")
+              ? " decrease"
+              : " increase"
+          }${props.ticker?.increase === true ? " green-highlight" : ""}${
+            props.ticker?.increase === false ? " red-highlight" : ""
           }`}
         >
           {!props.ticker

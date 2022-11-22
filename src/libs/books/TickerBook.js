@@ -123,14 +123,6 @@ class TickerBook extends BookBase {
 
   updateByDifference(tickers) {
     Object.values(tickers).forEach((ticker) => {
-      // if (ticker.instId === "BTC-USDT")
-      //   console.log(
-      //     `TickerBook _updateTickers ticker.last`,
-      //     ticker.last,
-      //     new Date(ticker.ts).toISOString(),
-      //     this._compareFunction(this._snapshot[ticker.market], ticker)
-      //   );
-      // if (this._compareFunction(this._snapshot[ticker.market], ticker)) {
       try {
         const preTicker = { ...this._snapshot[ticker.market] };
         this._difference[ticker.market] = {
