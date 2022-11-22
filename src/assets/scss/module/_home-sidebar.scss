@@ -60,6 +60,7 @@
   &__label {
     margin-bottom: 0;
     line-height: 40px;
+    cursor: pointer;
   }
   &__item:hover > &__link,
   &__link:hover,
@@ -79,6 +80,7 @@
     border-bottom: solid 1px #96969636;
     width: 100px;
     line-height: 40px;
+    cursor: pointer;
   }
   &__input:checked ~ &__options {
     display: flex;

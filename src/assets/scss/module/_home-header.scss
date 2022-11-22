@@ -83,6 +83,7 @@
     &--border {
       border: 1px solid #4a4a4a;
       padding: 10px 28px;
+      cursor: pointer;
     }
   }
   &__label--text > span,
@@ -106,6 +107,7 @@
   }
   &__option {
     display: block;
+    cursor: pointer;
   }
   &__logo {
     width: 24px;
