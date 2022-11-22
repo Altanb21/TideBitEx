@@ -47,15 +47,33 @@
       color: #03a66d;
     }
     &.green-highlight {
-      background-color: green !important;
+      animation-name: green_highlight;
+      animation-duration: 0.5s;
     }
     &.red-highlight {
-      background-color: red !important;
+      animation-name: red_highlight;
+      animation-duration: 0.5s;
     }
   }
 }
 
+@keyframes green_highlight {
+  0% {
+    background-color: green;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
 
+@keyframes red_highlight {
+  0% {
+    background-color: red;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
 
 @media only screen and (max-width: $screen-lg) {
   .ticker-trend {
@@ -101,6 +119,9 @@
     &__leading > div:nth-child(2),
     &__content > div:nth-child(2) {
       align-self: flex-end;
+    }
+    &__icon {
+      margin-right: 5px;
     }
   }
 }
