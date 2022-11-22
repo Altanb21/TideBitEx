@@ -99,6 +99,7 @@
     &__leading > div:nth-child(2),
     &__content > div:nth-child(2) {
       align-self: flex-end;
+      text-align: right;
     }
   }
 }
