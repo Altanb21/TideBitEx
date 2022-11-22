@@ -620,6 +620,14 @@ const StoreProvider = (props) => {
     return middleman.getTradesSnapshot(market, length, asc);
   };
 
+  const getMembers = async ({ offset, limit }) => {
+    return await middleman.getMembers({ offset, limit });
+  };
+
+  const auditorMemberAccounts = async ({ memberId, currency }) => {
+    return await middleman.auditorMemberAccounts({ memberId, currency });
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -691,6 +699,8 @@ const StoreProvider = (props) => {
         changeLanguage,
         registerMarket,
         getTradesSnapshot,
+        getMembers,
+        auditorMemberAccounts
       }}
     >
       {props.children}

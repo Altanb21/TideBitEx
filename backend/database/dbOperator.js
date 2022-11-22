@@ -83,12 +83,12 @@ class DBOperator {
     return this.database.getCurrencyByKey(currencyKey);
   }
 
-  /**
-   * [deprecated] 2022/10/14
-   * 沒有地方呼叫
-   */
-  async getMembers() {
-    return this.database.getMembers();
+  async countMembers() {
+    return this.database.countMembers();
+  }
+
+  async getMembers({ limit = 100, offset = 0 }) {
+    return this.database.getMembers({ limit, offset });
   }
 
   /**

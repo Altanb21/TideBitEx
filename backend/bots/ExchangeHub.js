@@ -5049,7 +5049,7 @@ class ExchangeHub extends Bot {
     this.jobQueue = [...this.jobQueue, job];
   }
 
-  async accountAuditor({ query }, { dbTransaction }) {
+  async accountAuditor({ query }, dbTransaction) {
     let { memberId, currency } = query;
     let accounts,
       accountVersionsR,
@@ -5114,6 +5114,27 @@ class ExchangeHub extends Bot {
     }
   }
 
+  async getMembers({ query }) {
+    let { limit, offset } = query;
+    let result, counts;
+    try {
+      if (offset == 0) counts = await this.database.countMembers();
+      result = await this.database.getMembers({ limit, offset });
+      return new ResponseFormat({
+        message: "getMembers",
+        payload: {
+          counts,
+          members: result,
+        },
+      });
+    } catch (error) {
+      return new ResponseFormat({
+        message: `getMembers ${JSON.stringify(error)}`,
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+  }
+
   /**
    * ++ TODO test is required
    * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
@@ -5166,7 +5187,7 @@ class ExchangeHub extends Bot {
           {
             query: { ...query },
           },
-          { dbTransaction: dbTransaction }
+          dbTransaction
         );
         if (result.success) {
           let account = Object.values(result.payload?.accounts).shift();

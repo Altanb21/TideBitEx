@@ -278,7 +278,15 @@ const CurrentOrders = () => {
         }
       }
     },
-    [enqueueSnackbar, storeCtx, t]
+    [
+      enqueueSnackbar,
+      filter,
+      filterTicker,
+      getCurrentOrders,
+      limit,
+      storeCtx,
+      t,
+    ]
   );
 
   const init = useCallback(() => {
@@ -432,7 +440,7 @@ const CurrentOrders = () => {
                       }${order.alert ? " screen__table-row--alert" : ""}`}
                       key={order.id}
                     >
-                      <td className="vouchers__text screen__shrink">
+                      <td className="current-orders__text screen__shrink">
                         {index + 1}
                       </td>
                       <td className="current-orders__text screen__table-item">

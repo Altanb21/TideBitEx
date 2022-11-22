@@ -1,0 +1,33 @@
+.members {
+  &__tile {
+    border: 1px solid #707070;
+    border-radius: 15px;
+    padding: 15px 20px;
+    cursor: pointer;
+  }
+  &__controller {
+    display: none;
+  }
+  &__assets {
+    display: none;
+    flex-direction: column;
+  }
+  &__infos {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  &__icon {
+    background-image: url("../../images/plus@2x.png");
+    width: 20px;
+    height: 20px;
+    background-position: center;
+    background-size: contain;
+  }
+  &__controller:checked + &__label &__icon {
+    background-image: url("../../images/minus@2x.png");
+  }
+  &__controller:checked ~ &__assets {
+    display: block;
+  }
+}

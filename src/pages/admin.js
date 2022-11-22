@@ -11,13 +11,15 @@ import LoadingDialog from "../components/LoadingDialog";
 import Manager from "./manager";
 import Dashboard from "./dashboard";
 
+let defaultSection = "ticker-setting";
+
 const Admin = () => {
   const storeCtx = useContext(StoreContext);
   const [isInit, setIsInit] = useState(false);
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
-  const [activeSection, setActiveSection] = useState("ticker-setting");
+  const [activeSection, setActiveSection] = useState(null);
   const [openSidebar, setOpenSidebar] = useState(false);
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const { t } = useTranslation();
@@ -27,6 +29,10 @@ const Admin = () => {
     setOpenSidebar(false);
   };
   const onSelectedSection = (section) => {
+    history.push({
+      hash: `#${section}`,
+    });
+    console.log(`history`, history);
     setActiveSection(section);
     setOpenSidebar(false);
   };
@@ -89,6 +95,13 @@ const Admin = () => {
 
   useEffect(() => {
     if (!isInit) {
+      console.log(`history.location.hash`, history.location.hash);
+      if (!history.location.hash) {
+        history.push({
+          hash: `#${defaultSection}`,
+        });
+        setActiveSection(defaultSection);
+      } else setActiveSection(history.location.hash.replace(`#`, ``));
       storeCtx.getAdminUser().then((user) => {
         if (!user || !user?.roles) {
           enqueueSnackbar(`${t("no-access")}`, {
@@ -106,7 +119,6 @@ const Admin = () => {
           let _user = userAbility(user);
           setUser(_user);
         }
-
         setIsInit(true);
       });
     }

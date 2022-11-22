@@ -240,6 +240,28 @@ class Middleman {
     }
   }
 
+  async getMembers({ offset, limit }) {
+    try {
+      return await this.communicator.getMembers({
+        offset,
+        limit,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async auditorMemberAccounts({ memberId, currency }) {
+    try {
+      return await this.communicator.auditorMemberAccounts({
+        memberId,
+        currency,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async logout() {
     try {
       return await this.communicator.logout();
@@ -387,7 +409,7 @@ class Middleman {
     }
   }
 
-  getTradesSnapshot(market, length = 50, asc= false) {
+  getTradesSnapshot(market, length = 50, asc = false) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
     return this.tradeBook.getSnapshot(market, length, asc);
   }

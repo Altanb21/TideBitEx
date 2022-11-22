@@ -128,5 +128,6 @@ pathname = [
   "get | /api/v1/logout | Bot.ExchangeHub.logout",
 
   "get | /api/v1/private/audit-accounts | Bot.ExchangeHub.accountAuditor",
+  "get | /api/v1/private/members | Bot.ExchangeHub.getMembers",
   "get | /api/v1/private/clients | Bot.WSChannel.getPrivateClients"
 ]

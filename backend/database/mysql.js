@@ -321,12 +321,46 @@ class mysql {
     }
   }
 
-  /**
-   * [deprecated] 2022/10/14
-   * 沒有地方呼叫
-   */
-  async getMembers() {
-    const query = "SELECT * FROM `members`;";
+  async countMembers() {
+    const query = `
+    SELECT 
+        count(*) as counts
+    FROM
+        members
+    WHERE
+        activated = 1
+    ;`;
+    try {
+      // this.logger.debug("countMembers", query);
+      const [[result]] = await this.db.query({
+        query,
+      });
+      // this.logger.debug(`result`, result, result.counts);
+      return result.counts;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembers({ limit, offset }) {
+    const query = `
+    SELECT
+        id,
+        sn,
+        email,
+        refer,
+        member_tag,
+        refer_code,
+        activated
+    FROM
+        members
+    WHERE
+        activated = 1
+    ORDER BY
+        id
+    LIMIT ${limit} OFFSET ${offset}
+    ;`;
     try {
       // this.logger.debug("getMembers", query);
       const [members] = await this.db.query({

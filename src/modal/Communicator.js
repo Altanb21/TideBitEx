@@ -819,6 +819,50 @@ class Communicator {
     }
   }
 
+  async getMembers({ offset, limit }) {
+    try {
+      let arr = [],qs;
+      if (offset) arr = [...arr, `offset=${offset}`];
+      if (limit) arr = [...arr, `limit=${limit}`];
+       qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/members?${qs}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getMembers] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async auditorMemberAccounts({ memberId, currency }) {
+    try {
+      let arr = [],qs;
+      if (memberId) arr = [...arr, `memberId=${memberId}`];
+      if (currency) arr = [...arr, `currency=${currency}`];
+       qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/audit-accounts?${qs}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getMembers] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
   // use for need jwt request
   async _get(url) {
     try {
