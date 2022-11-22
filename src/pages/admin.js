@@ -32,7 +32,6 @@ const Admin = () => {
     history.push({
       hash: `#${section}`,
     });
-    console.log(`history`, history);
     setActiveSection(section);
     setOpenSidebar(false);
   };
@@ -95,7 +94,6 @@ const Admin = () => {
 
   useEffect(() => {
     if (!isInit) {
-      console.log(`history.location.hash`, history.location.hash);
       if (!history.location.hash) {
         history.push({
           hash: `#${defaultSection}`,

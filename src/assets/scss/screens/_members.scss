@@ -1,12 +1,37 @@
 .members {
+  & .screen__table,
+  & .screen__table-rows{
+    border: none;
+  }
   &__tile {
+    position: relative;
     border: 1px solid #707070;
     border-radius: 15px;
     padding: 15px 20px;
     cursor: pointer;
+    margin-bottom: 20px;
   }
   &__controller {
     display: none;
+  }
+  &__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  &__alert--icon {
+    opacity: 0;
+    width: 30px;
+    height: 30px;
+    & > img {
+      width: 100%;
+      height: 100%;
+    }
+  }
+  &__alert {
+    &--icon {
+      opacity: 1;
+    }
   }
   &__assets {
     display: none;

@@ -47,39 +47,15 @@
       color: #03a66d;
     }
     &.green-highlight {
-      animation-duration: 0.5s;
-      animation-name: highlight_green;
+      background-color: green !important;
     }
     &.red-highlight {
-      animation-duration: 0.5s;
-      animation-name: highlight_red;
+      background-color: red !important;
     }
   }
 }
 
-@keyframes highlight_green {
-  0% {
-    background-color: transparent;
-  }
-  50% {
-    background-color: green !important;
-  }
-  100% {
-    background-color: transparent;
-  }
-}
 
-@keyframes highlight_red {
-  0% {
-    background-color: transparent;
-  }
-  50% {
-    background-color: red !important;
-  }
-  100% {
-    background-color: transparent;
-  }
-}
 
 @media only screen and (max-width: $screen-lg) {
   .ticker-trend {

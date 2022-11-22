@@ -821,11 +821,12 @@ class Communicator {
 
   async getMembers({ offset, limit }) {
     try {
-      let arr = [],qs;
-      if (offset) arr = [...arr, `offset=${offset}`];
+      let arr = [],
+        qs;
+      if (offset !== undefined) arr = [...arr, `offset=${offset}`];
       if (limit) arr = [...arr, `limit=${limit}`];
-       qs = !!arr.length ? `?${arr.join("&")}` : "";
-      const url = `/private/members?${qs}`;
+      qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/members${qs}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",
@@ -843,11 +844,12 @@ class Communicator {
 
   async auditorMemberAccounts({ memberId, currency }) {
     try {
-      let arr = [],qs;
+      let arr = [],
+        qs;
       if (memberId) arr = [...arr, `memberId=${memberId}`];
       if (currency) arr = [...arr, `currency=${currency}`];
-       qs = !!arr.length ? `?${arr.join("&")}` : "";
-      const url = `/private/audit-accounts?${qs}`;
+      qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/audit-accounts${qs}`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",

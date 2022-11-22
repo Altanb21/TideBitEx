@@ -22,7 +22,7 @@ const MemberAssets = (props) => {
         type="checkbox"
         id={`member-${props.member.id}-dropdown-btn`}
         onChange={async (e) => {
-          console.log(e);
+          console.log(e.target.checked);
           auditorMemberAccounts();
         }}
       />
@@ -32,9 +32,6 @@ const MemberAssets = (props) => {
         }`}
         htmlFor={`member-${props.member.id}-dropdown-btn`}
       >
-        <div className="members__alert--icon">
-          <img src="/img/alert@2x.png" alt="alert"></img>
-        </div>
         <div className="members__infos">
           <div className="members__icon"></div>
           <div className="members__info">
@@ -54,11 +51,12 @@ const MemberAssets = (props) => {
             </div>
           </div> */}
         </div>
+        <div className="members__alert--icon">
+          <img src="/img/alert@2x.png" alt="alert"></img>
+        </div>
       </label>
       <div className="members__assets">
-        <div className="members__assets--headers">
-          {/* TODO audit again */}
-        </div>
+        <div className="members__assets--headers">{/* TODO audit again */}</div>
         <div className="members__assets--data">
           {assets.map((asset) => (
             <div>{asset.currency}</div>
@@ -77,9 +75,9 @@ const Members = () => {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [members, setMembers] = useState({});
-  const [filterKey, setFilterKey] = useState("");
-  const [filterOption, setFilterOption] = useState("all"); //'all','alert'
-  const [filteredMembers, setFilteredMembers] = useState([]);
+  // const [filterKey, setFilterKey] = useState("");
+  const [filterOption, setFilterOpstion] = useState("all"); //'all','alert'
+  // const [filteredMembers, setFilteredMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // const filter = useCallback(
@@ -112,18 +110,21 @@ const Members = () => {
   const switchPageHandler = useCallback(
     async (newPage) => {
       setIsLoading(true);
-      let memberList;
+      let newMembers;
       setPage(newPage);
-      memberList = members[newPage];
-      if (!memberList || memberList.length <= 0) {
+      if (!members[newPage] || !members[newPage]?.length > 0) {
         let result = await getMembers({ offset: (newPage - 1) * limit, limit });
-        let memberList = result.members;
-        setMembers((prev) => ({ ...prev, page: memberList }));
+        setMembers((prev) => {
+          newMembers = { ...prev };
+          newMembers[newPage] = result.members;
+          return newMembers;
+        });
+        console.log(newMembers)
       }
       // filter({ members: memberList });
       setIsLoading(false);
     },
-    [members, limit, getMembers]
+    [members, getMembers, limit]
   );
 
   const init = useCallback(() => {
@@ -134,7 +135,8 @@ const Members = () => {
         const result = await getMembers({ offset: (page - 1) * limit, limit });
         if (result.counts) setPages(Math.ceil(result.counts / limit));
         setMembers((prev) => {
-          members = { ...prev, page: result.members };
+          members = { ...prev };
+          members[page] = result.members;
           return members;
         });
         // filter({
@@ -204,7 +206,7 @@ const Members = () => {
         <div className="screen__container">
           <table className="screen__table">
             <tbody className="screen__table-rows members__list">
-              {filteredMembers.map((member) => (
+              {members[page]?.map((member) => (
                 <MemberAssets key={`member-${member.id}`} member={member} />
               ))}
             </tbody>
