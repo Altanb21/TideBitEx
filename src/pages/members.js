@@ -90,7 +90,7 @@ const MemberAssets = (props) => {
               </div>
               <div
                 className={`members__button${
-                  asset.balance.alert || asset.locked.alert ? " " : "disable"
+                  asset.balance.alert || asset.locked.alert ? " " : " disabled"
                 }`}
                 onClick={() => {
                   // ++ TODO

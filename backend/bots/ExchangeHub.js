@@ -25,7 +25,6 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
-const { default: OuterTradeError } = require("../errors/OuterTradeError");
 
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
@@ -4102,20 +4101,29 @@ class ExchangeHub extends Bot {
         /**
          * ALERT: handle abnormal order
          */
-        throw OuterTradeError({
-          message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+        throw Error(
+          `abnormal order:update orderVolume less than 0(${SafeMath.lt(
             orderVolume,
             0
           )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
             orderVolume,
             SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
-          )})`,
-          code: Codes.ABNORMAL_ORDER,
-          data: {
-            dbOrder,
-            orderDetail,
-          },
-        });
+          )})`
+        );
+        // throw OuterTradeError({
+        //   message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+        //     orderVolume,
+        //     0
+        //   )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
+        //     orderVolume,
+        //     SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
+        //   )})`,
+        //   code: Codes.ABNORMAL_ORDER,
+        //   data: {
+        //     dbOrder,
+        //     orderDetail,
+        //   },
+        // });
       }
       // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
@@ -4536,12 +4544,14 @@ class ExchangeHub extends Bot {
       dbReferrerCommission;
     // this.logger.debug(`updater`);
     try {
-      if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT)
-        throw Error({
-          message: `orderState is not wait`,
-          code: Codes.ABNORMAL_ORDER,
-          data: { dbOrder },
-        });
+      if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT) {
+        throw Error(`orderState is not wait`);
+        // throw Error({
+        //   message: `orderState is not wait`,
+        //   code: Codes.ABNORMAL_ORDER,
+        //   data: { dbOrder },
+        // });
+      }
       await this.database.updateOrder(updatedOrder, { dbTransaction });
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
@@ -4930,15 +4940,18 @@ class ExchangeHub extends Bot {
             });
           } catch (error) {
             this.logger.error(`calculator error`, error);
-            if (error.code === Codes.ABNORMAL_ORDER) {
-              stop = true;
+            // if (error.code === Codes.ABNORMAL_ORDER) {
+            stop = true;
+            try {
               await this.abnormalOrderHandler({
                 dbOrder: order,
                 apiOrder: orderDetail,
                 dbTransaction,
               });
               await dbTransaction.commit();
-            } else throw error;
+            } catch (error) {
+              throw error;
+            }
           }
         }
         if (!stop && result) {
