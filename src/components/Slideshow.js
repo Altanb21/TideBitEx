@@ -24,16 +24,16 @@ const Slideshow = () => {
   return (
     <div className="slideshow">
       <div className="slideshow__container">
-        <a
+        <div
           className={`slideshow__link${activeIndex === 1 ? " active" : ""}`}
-          href="/markets/galahkd"
+          // href="/markets/galahkd"
         >
           <img
             className="slideshow__image"
             src={`/advertisement_${storeCtx.languageKey}-1.png`}
             alt="advertisement_1"
           />
-        </a>
+        </div>
         <a
           className={`slideshow__link${activeIndex === 2 ? " active" : ""}`}
           href="/tbt"
