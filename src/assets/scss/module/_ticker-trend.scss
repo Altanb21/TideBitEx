@@ -39,7 +39,7 @@
   }
   &__change-pct {
     background-color: transparent;
-    transition: background-color 0.5s;
+    // transition: background-color 0.5s;
     &.decrease {
       color: #cf304a;
     }
@@ -47,11 +47,37 @@
       color: #03a66d;
     }
     &.green-highlight {
-      background-color: green !important;
+      animation-duration: 0.5s;
+      animation-name: highlight_green;
     }
     &.red-highlight {
-      background-color: red !important;
+      animation-duration: 0.5s;
+      animation-name: highlight_red;
     }
+  }
+}
+
+@keyframes highlight_green {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: green !important;
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+@keyframes highlight_red {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: red !important;
+  }
+  100% {
+    background-color: transparent;
   }
 }
 
