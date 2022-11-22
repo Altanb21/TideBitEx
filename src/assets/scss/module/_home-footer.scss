@@ -49,6 +49,10 @@
   &__link {
     color: #707070;
   }
+  &__link:hover,
+  &__link:active {
+    color: #707070;
+  }
   &__social-medias {
     gap: 50px;
   }
