@@ -6,25 +6,28 @@ import { FaCaretDown } from "react-icons/fa";
 
 const LanguageComponent = (props) => {
   const storeCtx = useContext(StoreContext);
-  const { key, sidebarHandler } = props;
+  const { languageKey, sidebarHandler } = props;
   const switchLanguageHandler = () => {
     sidebarHandler();
-    storeCtx.changeLanguage(key);
+    storeCtx.changeLanguage(languageKey);
   };
   return (
     <li
       className="home-sidebar__option home-sidebar__item"
-      key={key}
+      key={languageKey}
       onClick={switchLanguageHandler}
     >
-      <div>{Languages[key]}</div>
+      <div>{Languages[languageKey]}</div>
     </li>
   );
 };
 
 const LanguagesComponent = (props) => {
   const component = Object.keys(Languages).map((key) => (
-    <LanguageComponent key={key} sidebarHandler={props.sidebarHandler} />
+    <LanguageComponent
+      languageKey={key}
+      sidebarHandler={props.sidebarHandler}
+    />
   ));
   return component;
 };

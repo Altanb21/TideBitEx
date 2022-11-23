@@ -7,6 +7,11 @@ import ApexCharts from "react-apexcharts";
 
 const TickerTrendChart = (props) => {
   const storeCtx = useContext(StoreContext);
+  const data = props.ticker?.market
+    ? storeCtx
+        .getTradesSnapshot(props.ticker.market, 100, true)
+        .map((d) => ({ x: d.ts, y: parseFloat(d.price) }))
+    : [];
   return (
     <div className="ticker-trend__chart">
       <ApexCharts
@@ -15,11 +20,7 @@ const TickerTrendChart = (props) => {
         type="line"
         series={[
           {
-            data: props.ticker?.market
-              ? storeCtx
-                  .getTradesSnapshot(props.ticker.market, 100, true)
-                  .map((d) => ({ x: d.ts, y: parseFloat(d.price) }))
-              : [],
+            data: data,
             type: "line",
           },
         ]}
@@ -73,6 +74,40 @@ const TickerTrendContainer = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [isInit, setIsInit] = useState(false);
+  const imageAlt = props.ticker?.baseUnit || "--";
+  const name = props.ticker?.name || "--";
+  const changePctClassname = `ticker-trend__change-pct${
+    !props.ticker?.changePct
+      ? ""
+      : props.ticker?.changePct.includes("-")
+      ? " decrease"
+      : " increase"
+  }${props.ticker?.increase === true ? " green-highlight" : ""}${
+    props.ticker?.increase === false ? " red-highlight" : ""
+  }`;
+  const changePct = !props.ticker
+    ? "-- %"
+    : `${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
+        decimalLength: 2,
+        pad: true,
+        withSign: true,
+      })}%`;
+  const price = props.ticker
+    ? formateDecimal(props.ticker?.last, {
+        decimalLength: props.ticker
+          ? props.ticker.tickSz?.split(".").length > 1
+            ? props.ticker.tickSz?.split(".")[1].length
+            : 0
+          : "0",
+        pad: true,
+      })
+    : "--";
+  const volume = props.ticker
+    ? formateDecimal(props.ticker?.volume, {
+        decimalLength: 2,
+        pad: true,
+      })
+    : "--";
 
   const init = useCallback(async () => {
     if (props.ticker?.market) {
@@ -102,56 +137,18 @@ const TickerTrendContainer = (props) => {
           <span className="ticker-trend__icon">
             <img
               src={`/icons/${props.ticker?.baseUnit}.png`}
-              alt={props.ticker?.baseUnit || "--"}
+              alt={imageAlt}
               loading="lazy"
             />
           </span>
-          <span className="ticker-trend__text">
-            {props.ticker?.name || "--"}
-          </span>
+          <span className="ticker-trend__text">{name}</span>
         </div>
-        <div
-          className={`ticker-trend__change-pct${
-            !props.ticker?.changePct
-              ? ""
-              : props.ticker?.changePct.includes("-")
-              ? " decrease"
-              : " increase"
-          }${props.ticker?.increase === true ? " green-highlight" : ""}${
-            props.ticker?.increase === false ? " red-highlight" : ""
-          }`}
-        >
-          {!props.ticker
-            ? "-- %"
-            : `${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
-                decimalLength: 2,
-                pad: true,
-                withSign: true,
-              })}%`}
-        </div>
+        <div className={changePctClassname}>{changePct}</div>
       </div>
       <div className="ticker-trend__content">
-        <div className="ticker-trend__price">
-          {props.ticker
-            ? formateDecimal(props.ticker?.last, {
-                decimalLength: props.ticker
-                  ? props.ticker.tickSz?.split(".").length > 1
-                    ? props.ticker.tickSz?.split(".")[1].length
-                    : 0
-                  : "0",
-                pad: true,
-              })
-            : "--"}
-        </div>
+        <div className="ticker-trend__price">{price}</div>
         <div className="ticker-trend__volume">
-          {`${t("volume")}: ${
-            props.ticker
-              ? formateDecimal(props.ticker?.volume, {
-                  decimalLength: 2,
-                  pad: true,
-                })
-              : "--"
-          }`}
+          {`${t("volume")}: ${volume}`}
         </div>
       </div>
       <TickerTrendChart ticker={props.ticker} />

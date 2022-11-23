@@ -84,6 +84,7 @@
       border: 1px solid #4a4a4a;
       padding: 10px 28px;
       cursor: pointer;
+      min-width: 155px;
     }
   }
   &__label--text > span,
@@ -129,7 +130,7 @@
     &__collapse {
       display: none;
     }
-    &__container{
+    &__container {
       justify-content: flex-end;
       gap: 30px;
     }
