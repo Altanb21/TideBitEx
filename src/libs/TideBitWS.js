@@ -11,38 +11,32 @@ class TideBitWS {
   setCurrentUser(userInfo) {
     this.currentUser = userInfo;
     // console.log(`setCurrentUser userInfo`, userInfo)
-    this.send(
-      JSON.stringify({
-        op: "userStatusUpdate",
-        args: {
-          ...userInfo,
-        },
-      })
-    );
+    this.send({
+      op: "userStatusUpdate",
+      args: {
+        ...userInfo,
+      },
+    });
   }
 
   setCurrentMarket(market, lotSz) {
     this.currentMarket = market;
-    this.send(
-      JSON.stringify({
-        op: "switchMarket",
-        args: {
-          market,
-          lotSz,
-        },
-      })
-    );
+    this.send({
+      op: "switchMarket",
+      args: {
+        market,
+        lotSz,
+      },
+    });
   }
 
   registerMarket(market) {
-    this.send(
-      JSON.stringify({
-        op: "registerMarket",
-        args: {
-          market,
-        },
-      })
-    );
+    this.send({
+      op: "registerMarket",
+      args: {
+        market,
+      },
+    });
   }
   clear(msg) {
     console.log(
@@ -71,7 +65,18 @@ class TideBitWS {
   }
 
   send(data) {
-    this.connection_resolvers.push(data);
+    this.connection_resolvers
+      // ++ TODO avoid duplicate event
+      // .filter((d) => {
+      //   let result;
+      //   if (data.op === "registerMarket") {
+      //     result = d.args.market !== data.args.market;
+      //   } else {
+      //     result = d.op !== data.op;
+      //   }
+      //   return result;
+      // })
+      .push(data);
     this.sendDataFromQueue();
   }
 
@@ -80,7 +85,7 @@ class TideBitWS {
       if (this.ws.readyState === 1) {
         const data = this.connection_resolvers.shift();
         if (data) {
-          this.ws.send(data);
+          this.ws.send(JSON.stringify(data));
           this.sendDataFromQueue();
         }
       } else {

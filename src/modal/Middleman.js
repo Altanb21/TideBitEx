@@ -240,12 +240,9 @@ class Middleman {
     }
   }
 
-  async getMembers({ offset, limit }) {
+  async getMembers({ email, offset, limit }) {
     try {
-      return await this.communicator.getMembers({
-        offset,
-        limit,
-      });
+      return await this.communicator.getMembers({ email, offset, limit });
     } catch (error) {
       throw error;
     }

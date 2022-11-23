@@ -70,34 +70,36 @@ class mysql {
     }
   }
 
-  async auditAccountBalance(memberId, { options }) {
-    let placeholder = ``;
-    if (Object.keys(options)?.length > 0) {
-      let keys = Object.keys(options);
-      let values = Object.values(options);
-      for (let index = 0; index < Object.keys(options).length; index++) {
-        if (values[index])
-          placeholder += ` AND ${keys[index]} = ${values[index]}`;
-      }
-    }
+  async auditAccountBalance({ memberId, currency, startId }) {
+    let placeholder = [];
+    if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (startId) placeholder = [...placeholder, `startId > ${startId}`];
     const query = `
       SELECT
         account_id,
         member_id,
         currency,
         sum(balance) as sum_balance,
-        sum(locked) as sum_locked
+        sum(locked) as sum_locked,
+	      min(id) AS oldest_id,
+	      max(id) AS lastest_id
       FROM
         account_versions
       WHERE
-        member_id = ?${placeholder}
+        ${placeholder.join(` AND `)}
       GROUP BY account_id
       ;`;
     try {
-      // this.logger.debug("auditAccountBalance", query, memberId);
+      this.logger.debug(
+        "auditAccountBalance",
+        query,
+        memberId,
+        currency,
+        startId
+      );
       const [accountVersions] = await this.db.query({
         query,
-        values: [memberId],
       });
       return accountVersions;
     } catch (error) {
@@ -349,14 +351,12 @@ class mysql {
         id,
         sn,
         email,
-        refer,
         member_tag,
+        refer,
         refer_code,
         activated
     FROM
         members
-    WHERE
-        activated = 1
     ORDER BY
         id
     LIMIT ${limit} OFFSET ${offset}
@@ -367,6 +367,72 @@ class mysql {
         query,
       });
       return members;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersLatestAuditRecords(ids, groupByAccountId) {
+    const query = `
+    SELECT
+	    id,
+	    member_id,
+	    account_id,
+	    currency,
+	    account_version_id_start,
+	    account_version_id_end,
+      balance,
+      expect_balance,
+      locked,
+      expect_locked,
+	    max(updated_at) as updated_at,
+      fixed_at
+    FROM
+      audit_account_records
+    WHERE
+	    member_id in(${ids.join(`,`)})
+    GROUP BY
+	    member_id${groupByAccountId ? ", account_id" : ""}
+    ORDER BY
+      id
+    ;`;
+    try {
+      // this.logger.debug("getMembersLatestAuditRecords", query);
+      const [auditRecords] = await this.db.query({
+        query,
+      });
+      return auditRecords;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersLatestAccountVersions(ids, groupByAccountId) {
+    const query = `
+    SELECT
+	    id,
+	    member_id,
+	    account_id,
+      currency,
+	    reason,
+	    modifiable_type,
+	    modifiable_id,
+	    max(updated_at) as updated_at
+    FROM
+	    account_versions
+    WHERE
+	    member_id in(${ids.join(`,`)})
+    GROUP BY
+	    member_id${groupByAccountId ? ", account_id" : ""}
+    ;`;
+    try {
+      // this.logger.debug("getMembersLatestAccountVersions", query);
+      const [accountVersions] = await this.db.query({
+        query,
+      });
+      return accountVersions;
     } catch (error) {
       this.logger.error(error);
       return [];
@@ -457,29 +523,46 @@ class mysql {
     }
   }
 
-  async getMemberByCondition(condition) {
+  async getMemberByCondition(conditions) {
+    let placeholder = [];
+    if (Object.keys(conditions)?.length > 0) {
+      let keys = Object.keys(conditions);
+      let values = Object.values(conditions);
+      for (let index = 0; index < Object.keys(conditions).length; index++) {
+        if (values[index])
+          placeholder = [...placeholder, `${keys[index]} = ${values[index]}`];
+      }
+    }
     const query = `
     SELECT
-	    members.id,
-	    members.sn,
-	    members.email,
-	    members.member_tag,
-	    members.refer
+	    id,
+	    sn,
+	    email,
+	    member_tag,
+	    refer,
+      refer_code,
+      activated,
+      (
+        SELECT
+          count(*)
+        FROM
+          members
+        WHERE
+          ${placeholder.join(` AND `)}) + 1 AS number
     FROM
 	    members
     WHERE
-	    members.${Object.keys(condition)[0]} = ?
+      ${placeholder.join(` AND `)}
     LIMIT 1;
     `;
     try {
       const [[member]] = await this.db.query({
         query,
-        values: [Object.values(condition)[0]],
       });
       return member;
     } catch (error) {
       this.logger.error(error);
-      this.logger.trace("getMemberByCondition", query, condition);
+      this.logger.trace("getMemberByCondition", query, conditions);
       return [];
     }
   }
@@ -2008,20 +2091,23 @@ class mysql {
   async insertAuditAccountRecord(
     account_id,
     member_id,
-    reason,
     currency,
-    balance_origin,
-    balance_updated,
-    locked_origin,
-    locked_updated,
+    account_version_id_start,
+    account_version_id_end,
+    balance,
+    expect_balance,
+    locked,
+    expect_locked,
     created_at,
+    updated_at,
+    fixed_at,
     issued_by,
     { dbTransaction }
   ) {
     let result, accountVersionId;
     const query =
-      "INSERT INTO `audit_account_records` (`account_id`, `member_id`, `reason`, `currency`, `balance_origin`, `balance_updated`, `locked_origin`, `locked_updated`, `created_at`, `issued_by`)" +
-      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      "INSERT INTO `audit_account_records` (`account_id`, `member_id`, `currency`, `account_version_id_start`, `account_version_id_end`, `balance`, `expect_balance`, `locked`, `expect_locked`, `created_at`, `updated_at`, `fixed_at`, `issued_by`)" +
+      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
       this.logger.debug(
         "insertAuditAccountRecord",
@@ -2029,13 +2115,16 @@ class mysql {
         "DEFAULT",
         account_id,
         member_id,
-        reason,
         currency,
-        balance_origin,
-        balance_updated,
-        locked_origin,
-        locked_updated,
+        account_version_id_start,
+        account_version_id_end,
+        balance,
+        expect_balance,
+        locked,
+        expect_locked,
         created_at,
+        updated_at,
+        fixed_at,
         issued_by
       );
       result = await this.db.query(
@@ -2045,13 +2134,16 @@ class mysql {
             "DEFAULT",
             account_id,
             member_id,
-            reason,
             currency,
-            balance_origin,
-            balance_updated,
-            locked_origin,
-            locked_updated,
+            account_version_id_start,
+            account_version_id_end,
+            balance,
+            expect_balance,
+            locked,
+            expect_locked,
             created_at,
+            updated_at,
+            fixed_at,
             issued_by,
           ],
         },

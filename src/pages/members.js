@@ -1,13 +1,99 @@
-import React, { useState, useEffect, useCallback, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useContext,
+  useRef,
+} from "react";
 import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import LoadingDialog from "../components/LoadingDialog";
+import { IoRefresh } from "react-icons/io5";
 
+const MemberAsset = (props) => {
+  const { t } = useTranslation();
+  const { memberId, asset } = props;
+  const disabled = `${
+    asset.balance.alert || asset.locked.alert ? " " : " disabled"
+  }`;
+
+  const AssetBalance = asset.balance.alert ? (
+    <>
+      <div className="members__value members__value--wrong">
+        {asset.balance.current}
+      </div>
+      <div className="members__value members__value--expect">
+        {asset.balance.alert}
+      </div>
+    </>
+  ) : (
+    <div className="members__value">{asset.balance.current}</div>
+  );
+
+  const AssetLocked = asset.locked.alert ? (
+    <>
+      <div className="members__value members__value--wrong">
+        {asset.locked.current}
+      </div>
+      <div className="members__value members__value--expect">
+        {asset.locked.alert}
+      </div>
+    </>
+  ) : (
+    <div className="members__value">{asset.locked.current}</div>
+  );
+
+  const fixAccountHandler = () => {
+    props.fixAccountHandler(memberId, asset.accountId);
+  };
+
+  return (
+    <li className="members__asset">
+      <div className="members__item">
+        <div className="members__asset--icon">
+          <img
+            src={`/icons/${asset.currency}.png`}
+            alt={asset.currency}
+            loading="lazy"
+          />
+        </div>
+        <div>{asset.currency.toUpperCase()}</div>
+      </div>
+      <div className="members__item">{asset.accountId}</div>
+      <div className={`members__item members__item--expand`}>
+        {AssetBalance}
+      </div>
+      <div className={`members__item members__item--expand`}>{AssetLocked}</div>
+      <div className="members__item">
+        <div
+          className={`members__button${disabled}`}
+          onClick={fixAccountHandler}
+        >
+          {t("fixed")}
+        </div>
+      </div>
+    </li>
+  );
+};
 const MemberAssets = (props) => {
+  const { memberId, assets, fixAccountHandler } = props;
+  const _memberAssets = assets.map((asset) => (
+    <MemberAsset
+      memberId={memberId}
+      asset={asset}
+      fixAccountHandler={fixAccountHandler}
+    />
+  ));
+  return _memberAssets;
+};
+
+const Member = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
   const [assets, setAssets] = useState([]);
+  const activated = `${props.member.activated ? " member__activated" : ""}`;
+  const alert = `${props.member.alert ? " members__alert" : ""}`;
 
   const auditorMemberAccounts = useCallback(async () => {
     try {
@@ -19,20 +105,30 @@ const MemberAssets = (props) => {
       console.error(`error`, error);
     }
   }, [props.member.id, storeCtx]);
+
+  const openAssetsHandler = useCallback(
+    async (e) => {
+      if (!assets.length > 0 && e.target.checked) await auditorMemberAccounts();
+    },
+    [assets.length, auditorMemberAccounts]
+  );
+
+  const fixAccountHandler = useCallback((memberId, accountId) => {
+    // ++TODO #1069
+  }, []);
+
   return (
     <tr className="members__tile" key={props.key}>
-      <input
-        className="members__controller"
-        type="checkbox"
-        id={`member-${props.member.id}-dropdown-btn`}
-        onChange={async (e) => {
-          if (e.target.checked) auditorMemberAccounts();
-        }}
-      />
+      {props.member.activated && (
+        <input
+          className="members__controller"
+          type="checkbox"
+          id={`member-${props.member.id}-dropdown-btn`}
+          onChange={openAssetsHandler}
+        />
+      )}
       <label
-        className={`members__label${
-          props.member.alert ? " members__alert" : ""
-        }`}
+        className={`members__label${activated}${alert}`}
         htmlFor={`member-${props.member.id}-dropdown-btn`}
       >
         <div className="members__infos">
@@ -45,66 +141,58 @@ const MemberAssets = (props) => {
             <div className="members__title">{t("member_email")}</div>
             <div className="members__value">{props.member.email}</div>
           </div>
-          {/* <div className="members__info">
+          <div className="members__info">
             <div className="members__title">
-              {t("last_accounts_audit_record")}
+              {t("last_accounts_audit_time")}
             </div>
             <div className="members__value">
-              {props.member.lastAccountsAuditTime}
+              {props.member.lastestAccountAuditTime || "-"}
             </div>
-          </div> */}
+          </div>
+          <div className="members__info">
+            <div className="members__title">
+              {t("last_accounts_activity_time")}
+            </div>
+            <div className="members__value">
+              {props.member.lastestsActivityTime || "-"}
+            </div>
+          </div>
         </div>
         <div className="members__alert--icon">
           <img src="/img/alert@2x.png" alt="alert"></img>
         </div>
       </label>
       <div className="members__assets">
-        <div className="members__assets--headers">{/* TODO audit again */}</div>
-        <ul className="members__assets--data">
-          {assets.map((asset) => (
-            <li className="members__asset">
-              <div className="members__item">
-                <div className="members__asset--icon">
-                  <img
-                    src={`/icons/${asset.currency}.png`}
-                    alt={asset.currency}
-                    loading="lazy"
-                  />
-                </div>
-                <div>{asset.currency.toUpperCase()}</div>
-              </div>
-              <div className="members__item">{asset.accountId}</div>
-              <div
-                className={`members__item${
-                  asset.balance.alert ? " members__item--alert" : ""
-                }`}
-              >
-                {`${asset.balance.current}/${asset.balance.shouldBe}`}
-              </div>
-              <div
-                className={`members__item${
-                  asset.locked.alert ? " members__item--alert" : ""
-                }`}
-              >
-                {`${asset.locked.current}/${asset.locked.shouldBe}`}
-              </div>
-              <div
-                className={`members__button${
-                  asset.balance.alert || asset.locked.alert ? " " : " disabled"
-                }`}
-                onClick={() => {
-                  // ++ TODO
-                  // fixed abnormalAccount
-                }}
-              >
-                {t("fixed")}
-              </div>
-            </li>
-          ))}
+        <div className="members__headers">
+          <div className="members__header">{t("currency")}</div>
+          <div className="members__header">{t("account_id")}</div>
+          <div className="members__header">{t("balance")}</div>
+          <div className="members__header">{t("locked")}</div>
+          <div className="members__header">
+            <div onClick={auditorMemberAccounts}>
+              <IoRefresh />
+            </div>
+            {t("force_fixed")}
+          </div>
+        </div>
+        <ul className="members__values">
+          <MemberAssets
+            memberId={props.member.id}
+            assets={assets}
+            fixAccountHandler={fixAccountHandler}
+          />
         </ul>
       </div>
     </tr>
   );
+};
+
+const MemberList = (props) => {
+  const { members } = props;
+  const _memberList = members?.map((member) => (
+    <Member key={`member-${member.id}`} member={member} />
+  ));
+  return _memberList;
 };
 
 const Members = () => {
@@ -113,12 +201,22 @@ const Members = () => {
   const [isInit, setIsInit] = useState(null);
   const [limit, setLimit] = useState(10);
   const [page, setPage] = useState(1);
+  const [prevPageIsExit, setPrevPageIsExit] = useState(" disable");
+  const [nextPageIsExit, setNextPageIsExit] = useState(" disable");
   const [pages, setPages] = useState(1);
   const [members, setMembers] = useState({});
   // const [filterKey, setFilterKey] = useState("");
-  const [filterOption, setFilterOpstion] = useState("all"); //'all','alert'
+  const [filterOption, setFilterOption] = useState("all"); //'all','alert'
+  const [filterOptionAll, setFilterOptionAll] = useState(
+    `${filterOption === "all" ? " active" : ""}`
+  );
+  // const [filterOptionAlert, setFilterOptionAlert] = useState(
+  //   `${filterOption === "alert" ? " active" : ""}`
+  // );
   // const [filteredMembers, setFilteredMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [enableSearchButton, setEnableSearchButton] = useState("");
+  const inputRef = useRef();
 
   // const filter = useCallback(
   //   ({ members, keyword, option }) => {
@@ -139,9 +237,23 @@ const Members = () => {
   //   [filterKey, filterOption]
   // );
 
+  const validateEmail = useCallback((email) => {
+    return String(email)
+      .toLowerCase()
+      .match(
+        /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+      );
+  }, []);
+
+  const inputHandler = useCallback(() => {
+    setEnableSearchButton(
+      validateEmail(inputRef.current.value) ? " enabled" : ""
+    );
+  }, [validateEmail]);
+
   const getMembers = useCallback(
-    async ({ offset, limit }) => {
-      let members = await storeCtx.getMembers({ offset, limit });
+    async ({ email, offset, limit }) => {
+      let members = await storeCtx.getMembers({ email, offset, limit });
       return members;
     },
     [storeCtx]
@@ -167,13 +279,58 @@ const Members = () => {
     [members, getMembers, limit]
   );
 
+  const prevPageHandler = useCallback(() => {
+    let newpage = page - 1 > 0 ? page - 1 : 1;
+    if (SafeMath.gt(newpage, 1)) setPrevPageIsExit("");
+    else setPrevPageIsExit(" disabled");
+    switchPageHandler(newpage);
+  }, [page, switchPageHandler]);
+
+  const nextPageHandler = useCallback(() => {
+    let newpage = page + 1;
+    if (SafeMath.lt(page, Math.ceil(pages))) setNextPageIsExit("");
+    else setNextPageIsExit(" disabled");
+    switchPageHandler(newpage);
+  }, [page, pages, switchPageHandler]);
+
+  const searchMemberHandler = useCallback(async () => {
+    setIsLoading(true);
+    let newMembers,
+      newPage = 1,
+      member,
+      email = inputRef.current.value;
+    while (newPage <= pages && !member) {
+      member = members[newPage].find((m) => m.email === email);
+      if (!member) newPage = newPage + 1;
+    }
+    if (member) {
+      setPage(newPage);
+    } else {
+      let result = await getMembers({ email, limit });
+      newPage = result.page;
+      if (newPage) setPage(newPage);
+      setMembers((prev) => {
+        newMembers = { ...prev };
+        newMembers[newPage] = result.members;
+        return newMembers;
+      });
+      console.log(newMembers);
+    }
+    // filter({ members: memberList });
+    setIsLoading(false);
+  }, [pages, members, getMembers, limit]);
+
   const init = useCallback(() => {
     setIsInit(async (prev) => {
       if (!prev) {
         let members;
         setIsLoading(true);
         const result = await getMembers({ offset: (page - 1) * limit, limit });
-        if (result.counts) setPages(Math.ceil(result.counts / limit));
+        if (result.counts) {
+          let pages = Math.ceil(result.counts / limit);
+          setPages(pages);
+          if (pages > 1) setNextPageIsExit("");
+        }
         setMembers((prev) => {
           members = { ...prev };
           members[page] = result.members;
@@ -202,69 +359,60 @@ const Members = () => {
       <section className="screen__section members">
         <div className="screen__header">{t("members-assets")}</div>
         <ul className="screen__select-bar"></ul>
-        {/* <div className="screen__search-bar">
-        <div className="screen__search-box">
-          <input
-            type="text"
-            inputMode="search"
-            className="screen__search-input"
-            placeholder="輸入欲搜尋的關鍵字"
-            onInput={(e) => {
-              setFilterKey(e.target.value);
-              filter({ keyword: e.target.value });
-            }}
-          />
-          <div className="screen__search-icon">
-            <div className="screen__search-icon--circle"></div>
-            <div className="screen__search-icon--rectangle"></div>
+        <div className="screen__search-bar">
+          <div className="screen__search-box">
+            <input
+              ref={inputRef}
+              type="email"
+              inputMode="search"
+              className="screen__search-input"
+              placeholder={t("search_member_email")} //輸入欲搜尋的關鍵字
+              onInput={inputHandler}
+            />
+            <div
+              className={`screen__search-icon${enableSearchButton}`}
+              onClick={searchMemberHandler}
+            >
+              <div className="screen__search-icon--circle"></div>
+              <div className="screen__search-icon--rectangle"></div>
+            </div>
           </div>
         </div>
-      </div> */}
         <div className="screen__tool-bar">
           <div className="screen__display">
             <div className="screen__display-title">顯示：</div>
             <ul className="screen__display-options">
               <li
-                className={`screen__display-option${
-                  filterOption === "all" ? " active" : ""
-                }`}
-                // onClick={() => filter("all")}
+                className={`screen__display-option${filterOptionAll}`}
+                // onClick={filterOptionAllHandler}
               >
                 全部
               </li>
               {/* <li
-              className={`screen__display-option${
-                filterOption === "alert" ? " active" : ""
-              }`}
-              onClick={() => filter("alert")}
-            >
-              警示
-            </li> */}
+                className={`screen__display-option${filterOptionAlert}`}
+                onClick={filterOptionAlertHandler}
+              >
+                警示
+              </li> */}
             </ul>
           </div>
         </div>
         <div className="screen__container">
           <table className="screen__table">
             <tbody className="screen__table-rows members__list">
-              {members[page]?.map((member) => (
-                <MemberAssets key={`member-${member.id}`} member={member} />
-              ))}
+              <MemberList members={members[page]} />
             </tbody>
             <tfoot className="screen__table-tools">
               <div
-                className={`screen__table-tool${
-                  SafeMath.gt(page, 1) ? "" : " disable"
-                }`}
-                onClick={() => switchPageHandler(page - 1 > 0 ? page - 1 : 1)}
+                className={`screen__table-tool${prevPageIsExit}`}
+                onClick={prevPageHandler}
               >
                 <div className="screen__table-tool--left"></div>
               </div>
               <div className="screen__page">{`${page}/${pages}`}</div>
               <div
-                className={`screen__table-tool${
-                  SafeMath.gte(page, Math.ceil(pages)) ? " disable" : ""
-                }`}
-                onClick={() => switchPageHandler(page + 1)}
+                className={`screen__table-tool${nextPageIsExit}`}
+                onClick={nextPageHandler}
               >
                 <div className="screen__table-tool--right"></div>
               </div>
