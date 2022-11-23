@@ -5,6 +5,70 @@ import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 import ApexCharts from "react-apexcharts";
 
+const TickerTrendChart = (props) => {
+  const storeCtx = useContext(StoreContext);
+  return (
+    <div className="ticker-trend__chart">
+      <ApexCharts
+        height="100%"
+        width="100%"
+        type="line"
+        series={[
+          {
+            data: props.ticker?.market
+              ? storeCtx
+                  .getTradesSnapshot(props.ticker.market, 100, true)
+                  .map((d) => ({ x: d.ts, y: parseFloat(d.price) }))
+              : [],
+            type: "line",
+          },
+        ]}
+        options={{
+          chart: {
+            type: "line",
+            zoom: {
+              enabled: false,
+            },
+          },
+          toolbar: {
+            show: false,
+            enabled: false,
+          },
+          dataLabels: {
+            enabled: false,
+          },
+          stroke: {
+            curve: "straight",
+            colors: "#fff",
+            width: 1.2,
+          },
+          xaxis: {
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            labels: {
+              show: false,
+            },
+            type: "numeric",
+          },
+          yaxis: {
+            axisBorder: { show: false },
+            axisTicks: { show: false },
+            labels: {
+              show: false,
+            },
+          },
+          grid: {
+            show: false,
+          },
+          tooltip: {
+            enabled: false,
+          },
+        }}
+      />
+    </div>
+  );
+};
+
 const TickerTrendContainer = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
@@ -90,80 +154,17 @@ const TickerTrendContainer = (props) => {
           }`}
         </div>
       </div>
-      <div className="ticker-trend__chart">
-        <ApexCharts
-          height="100%"
-          width="100%"
-          type="line"
-          series={[
-            {
-              data: props.ticker?.market
-                ? storeCtx
-                    .getTradesSnapshot(props.ticker.market, 100, true)
-                    .map((d) => ({ x: d.ts, y: parseFloat(d.price) }))
-                : [],
-              type: "line",
-            },
-          ]}
-          options={{
-            chart: {
-              type: "line",
-              zoom: {
-                enabled: false,
-              },
-            },
-            toolbar: {
-              show: false,
-              enabled: false,
-            },
-            dataLabels: {
-              enabled: false,
-            },
-            stroke: {
-              curve: "straight",
-              colors: "#fff",
-              width: 1.2,
-            },
-            xaxis: {
-              axisBorder: { show: false },
-              axisTicks: { show: false },
-              labels: {
-                show: false,
-              },
-              type: "numeric",
-            },
-            yaxis: {
-              axisBorder: { show: false },
-              axisTicks: { show: false },
-              labels: {
-                show: false,
-              },
-            },
-            grid: {
-              show: false,
-            },
-            tooltip: {
-              enabled: false,
-            },
-          }}
-        />
-      </div>
+      <TickerTrendChart ticker={props.ticker} />
     </a>
   );
 };
 
 const TickerTrend = () => {
   const storeCtx = useContext(StoreContext);
-  return (
-    <div className="ticker-trend">
-      {storeCtx.registerTickers.map((ticker) => (
-        <TickerTrendContainer
-          ticker={storeCtx.getTicker(ticker)}
-          key={ticker}
-        />
-      ))}
-    </div>
-  );
+  const component = storeCtx.registerTickers.map((ticker) => (
+    <TickerTrendContainer ticker={storeCtx.getTicker(ticker)} key={ticker} />
+  ));
+  return <div className="ticker-trend">{component}</div>;
 };
 
 export default TickerTrend;

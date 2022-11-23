@@ -1,13 +1,33 @@
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useViewport } from "../store/ViewportProvider";
 import StoreContext from "../store/store-context";
 let interval,
   activeIndex = null;
 const Slideshow = () => {
   const storeCtx = useContext(StoreContext);
-  // const [activeIndex, setActiveIndex] = useState(null);
+  const [href3, setHref3] = useState(
+    `${storeCtx.isLogin ? "/circle/transfer_instructions/new" : "/signin"}`
+  );
+  const [href4, setHref4] = useState(
+    `${storeCtx.isLogin ? "/accounts" : "/signin"}`
+  );
   const { width } = useViewport();
   const breakpoint = 992;
+
+  useEffect(() => {
+    setHref3((prev) => {
+      let href3 = storeCtx.isLogin
+        ? "/circle/transfer_instructions/new"
+        : "/signin";
+      if (prev !== href3) return href3;
+      else return prev;
+    });
+    setHref4((prev) => {
+      let href4 = storeCtx.isLogin ? "/accounts" : "/signin";
+      if (prev !== href4) return href4;
+      else return prev;
+    });
+  }, [storeCtx.isLogin]);
 
   useEffect(() => {
     if (!activeIndex && width <= breakpoint) {
@@ -46,9 +66,7 @@ const Slideshow = () => {
         </a>
         <a
           className={`slideshow__link${activeIndex === 3 ? " active" : ""}`}
-          href={`${
-            storeCtx.isLogin ? "/circle/transfer_instructions/new" : "/signin"
-          }`}
+          href={`${href3}`}
         >
           <img
             className="slideshow__image"
@@ -58,7 +76,7 @@ const Slideshow = () => {
         </a>
         <a
           className={`slideshow__link${activeIndex === 4 ? " active" : ""}`}
-          href={`${storeCtx.isLogin ? "/accounts" : "/signin"}`}
+          href={`${href4}`}
         >
           <img
             className="slideshow__image"

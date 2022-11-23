@@ -4,9 +4,62 @@ import StoreContext from "../store/store-context";
 import Languages from "../constant/Languages";
 import { FaCaretDown } from "react-icons/fa";
 
+const LanguageComponent = (props) => {
+  const storeCtx = useContext(StoreContext);
+  const { key, sidebarHandler } = props;
+  const switchLanguageHandler = () => {
+    sidebarHandler();
+    storeCtx.changeLanguage(key);
+  };
+  return (
+    <li
+      className="home-sidebar__option home-sidebar__item"
+      key={key}
+      onClick={switchLanguageHandler}
+    >
+      <div>{Languages[key]}</div>
+    </li>
+  );
+};
+
+const LanguagesComponent = (props) => {
+  const component = Object.keys(Languages).map((key) => (
+    <LanguageComponent key={key} sidebarHandler={props.sidebarHandler} />
+  ));
+  return component;
+};
+
 const HomeSidebar = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
+
+  const privateComponent = !storeCtx.isLogin ? (
+    <>
+      <li className="home-sidebar__item">
+        <a className="home-sidebar__link" href="/signin">
+          {t("login")}
+        </a>
+      </li>
+      <li className="home-sidebar__item">
+        <a className="home-sidebar__link" href="/register">
+          {t("register")}
+        </a>
+      </li>
+    </>
+  ) : (
+    <>
+      <li className="home-sidebar__item">
+        <a className="home-sidebar__link" href="/accounts">
+          {t("accounts")}
+        </a>
+      </li>
+      <li className="home-sidebar__item">
+        <a className="home-sidebar__link" href="/signout">
+          {t("logout")}
+        </a>
+      </li>
+    </>
+  );
   return (
     <div className={`home-sidebar${props.active ? " active" : ""}`}>
       <div
@@ -69,59 +122,24 @@ const HomeSidebar = (props) => {
               {t("announcement")}
             </a>
           </li>
-          {!storeCtx.isLogin && (
-            <>
-              <li className="home-sidebar__item">
-                <a className="home-sidebar__link" href="/signin">
-                  {t("login")}
-                </a>
-              </li>
-              <li className="home-sidebar__item">
-                <a className="home-sidebar__link" href="/register">
-                  {t("register")}
-                </a>
-              </li>
-            </>
-          )}
-          {storeCtx.isLogin && (
-            <>
-              <li className="home-sidebar__item">
-                <a className="home-sidebar__link" href="/accounts">
-                  {t("accounts")}
-                </a>
-              </li>
-              <li className="home-sidebar__item">
-                <a className="home-sidebar__link" href="/signout">
-                  {t("logout")}
-                </a>
-              </li>
-            </>
-          )}
+          {privateComponent}
           <li className="home-sidebar__dropdown">
             <input
               className="home-sidebar__input"
               type="checkbox"
               id="home-sidebar-dropdown"
             />
-            <label className="home-sidebar__item home-sidebar__label" htmlFor="home-sidebar-dropdown">
+            <label
+              className="home-sidebar__item home-sidebar__label"
+              htmlFor="home-sidebar-dropdown"
+            >
               <span>{Languages[storeCtx.languageKey]}</span>
               <span>
                 <FaCaretDown />
               </span>
             </label>
             <div className="home-sidebar__options">
-              {Object.keys(Languages).map((key) => (
-                <li
-                  className="home-sidebar__option home-sidebar__item"
-                  key={key}
-                  onClick={() => {
-                    props.sidebarHandler();
-                    storeCtx.changeLanguage(key);
-                  }}
-                >
-                  <div>{Languages[key]}</div>
-                </li>
-              ))}
+              <LanguagesComponent sidebarHandler={props.sidebarHandler} />
             </div>
           </li>
         </ul>

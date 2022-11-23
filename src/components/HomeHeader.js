@@ -4,9 +4,61 @@ import StoreContext from "../store/store-context";
 import Languages from "../constant/Languages";
 import { FaCaretDown } from "react-icons/fa";
 
+const LanguageComponent = (props) => {
+  const storeCtx = useContext(StoreContext);
+  const { key } = props;
+  const switchLanguageHandler = () => {
+    storeCtx.changeLanguage(key);
+  };
+  return (
+    <li
+      className="home-header__option home-header__item"
+      key={key}
+      onClick={switchLanguageHandler}
+    >
+      <div>{Languages[key]}</div>
+    </li>
+  );
+};
+
+const LanguagesComponent = (props) => {
+  const component = Object.keys(Languages).map((key) => (
+    <LanguageComponent key={key} />
+  ));
+  return component;
+};
+
 const HomeHeader = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
+
+  const privateComponent = !storeCtx.isLogin ? (
+    <>
+      <div className="home-header__item">
+        <a className="home-header__link" href="/signin">
+          {t("login")}
+        </a>
+      </div>
+      <div className="home-header__item">
+        <a className="home-header__link" href="/register">
+          {t("register")}
+        </a>
+      </div>
+    </>
+  ) : (
+    <>
+      <div className="home-header__item">
+        <a className="home-header__link" href="/accounts">
+          {t("accounts")}
+        </a>
+      </div>
+      <div className="home-header__item">
+        <a className="home-header__link" href="/signout">
+          {t("logout")}
+        </a>
+      </div>
+    </>
+  );
   return (
     <div className="home-header">
       <a className="home-header__brand" href="/">
@@ -112,36 +164,7 @@ const HomeHeader = (props) => {
           </div>
         </div>
         <div className="home-header__box">
-          <div className="home-header__items">
-            {!storeCtx.isLogin && (
-              <>
-                <div className="home-header__item">
-                  <a className="home-header__link" href="/signin">
-                    {t("login")}
-                  </a>
-                </div>
-                <div className="home-header__item">
-                  <a className="home-header__link" href="/register">
-                    {t("register")}
-                  </a>
-                </div>
-              </>
-            )}
-            {storeCtx.isLogin && (
-              <>
-                <div className="home-header__item">
-                  <a className="home-header__link" href="/accounts">
-                    {t("accounts")}
-                  </a>
-                </div>
-                <div className="home-header__item">
-                  <a className="home-header__link" href="/signout">
-                    {t("logout")}
-                  </a>
-                </div>
-              </>
-            )}
-          </div>
+          <div className="home-header__items">{privateComponent}</div>
           <div className="home-header__collapse">
             <div className="home-header__dropdown">
               <input
@@ -156,17 +179,7 @@ const HomeHeader = (props) => {
                 </span>
               </label>
               <div className="home-header__options">
-                {Object.keys(Languages).map((key) => (
-                  <li
-                    className="home-header__option home-header__item"
-                    key={key}
-                    onClick={() => {
-                      storeCtx.changeLanguage(key);
-                    }}
-                  >
-                    <div>{Languages[key]}</div>
-                  </li>
-                ))}
+                <LanguagesComponent />
               </div>
             </div>
           </div>

@@ -11,13 +11,11 @@ import HomeStores from "../components/HomeStores";
 const Home = () => {
   const { t } = useTranslation();
   const [active, setActive] = useState(false);
+  const sidebarHandler = () => setActive((prev) => !prev);
   return (
     <div className="home">
-      <HomeHeader sidebarHandler={() => setActive((prev) => !prev)} />
-      <HomeSidebar
-        active={active}
-        sidebarHandler={() => setActive((prev) => !prev)}
-      />
+      <HomeHeader sidebarHandler={sidebarHandler} />
+      <HomeSidebar active={active} sidebarHandler={sidebarHandler} />
       <div className="home__infos">
         <Slideshow />
         <div className="home__announcement">
