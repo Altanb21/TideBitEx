@@ -819,12 +819,13 @@ class Communicator {
     }
   }
 
-  async getMembers({ offset, limit }) {
+  async getMembers({ email, offset, limit }) {
     try {
       let arr = [],
         qs;
       if (offset !== undefined) arr = [...arr, `offset=${offset}`];
       if (limit) arr = [...arr, `limit=${limit}`];
+      if (email) arr = [...arr, `email=${email}`];
       qs = !!arr.length ? `?${arr.join("&")}` : "";
       const url = `/private/members${qs}`;
       // const res = await this._get(url);

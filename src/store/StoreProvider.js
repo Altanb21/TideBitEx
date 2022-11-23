@@ -620,8 +620,8 @@ const StoreProvider = (props) => {
     return middleman.getTradesSnapshot(market, length, asc);
   };
 
-  const getMembers = async ({ offset, limit }) => {
-    return await middleman.getMembers({ offset, limit });
+  const getMembers = async ({ email, offset, limit }) => {
+    return await middleman.getMembers({ email, offset, limit });
   };
 
   const auditorMemberAccounts = async ({ memberId, currency }) => {
@@ -700,7 +700,7 @@ const StoreProvider = (props) => {
         registerMarket,
         getTradesSnapshot,
         getMembers,
-        auditorMemberAccounts
+        auditorMemberAccounts,
       }}
     >
       {props.children}

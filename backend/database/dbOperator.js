@@ -34,8 +34,8 @@ class DBOperator {
     return this.database.getTotalAccountsAssets();
   }
 
-  async auditAccountBalance(memberId, { options }) {
-    return this.database.auditAccountBalance(memberId, { options });
+  async auditAccountBalance({ memberId, currency, startId }) {
+    return this.database.auditAccountBalance({ memberId, currency, startId });
   }
 
   async getAccountsByMemberId(
@@ -87,7 +87,7 @@ class DBOperator {
     return this.database.countMembers();
   }
 
-  async getMembers({ limit = 100, offset = 0 }) {
+  async getMembers({ limit, offset = 0 }) {
     return this.database.getMembers({ limit, offset });
   }
 
@@ -107,8 +107,8 @@ class DBOperator {
     return this.database.getMemberByEmail(memberEmail);
   }
 
-  async getMemberByCondition(condition) {
-    return this.database.getMemberByCondition(condition);
+  async getMemberByCondition(conditions) {
+    return this.database.getMemberByCondition(conditions);
   }
 
   async getCommissionPolicies(planId) {
@@ -545,17 +545,28 @@ class DBOperator {
     );
   }
 
+  async getMembersLatestAuditRecords(ids, groupByAccountId = false) {
+    return this.database.getMembersLatestAuditRecords(ids, groupByAccountId);
+  }
+
+  async getMembersLatestAccountVersions(ids, groupByAccountId = false) {
+    return this.database.getMembersLatestAccountVersions(ids, groupByAccountId);
+  }
+
   async insertAuditAccountRecord(auditAccountRecord, { dbTransaction }) {
     return this.database.insertAuditAccountRecord(
       auditAccountRecord.account_id,
       auditAccountRecord.member_id,
-      auditAccountRecord.reason,
       auditAccountRecord.currency,
-      auditAccountRecord.balance_origin,
-      auditAccountRecord.balance_updated,
-      auditAccountRecord.locked_origin,
-      auditAccountRecord.locked_updated,
+      auditAccountRecord.account_version_id_start,
+      auditAccountRecord.account_version_id_end,
+      auditAccountRecord.balance,
+      auditAccountRecord.expect_balance,
+      auditAccountRecord.locked,
+      auditAccountRecord.expect_locked,
       auditAccountRecord.created_at,
+      auditAccountRecord.updated_at,
+      auditAccountRecord.fixed_at,
       auditAccountRecord.issued_by,
       { dbTransaction }
     );

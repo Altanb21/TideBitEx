@@ -287,7 +287,7 @@ const StoreContext = React.createContext({
   changeLanguage: (key) => {},
   registerMarket: async (market) => {},
   getTradesSnapshot: async (market, length, asc) => {},
-  getMembers: async ({ offset, limit }) => {},
+  getMembers: async ({ email, offset, limit }) => {},
   auditorMemberAccounts: async ({ memberId, currency }) => {},
 });
 
