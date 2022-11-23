@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import LoadingDialog from "../components/LoadingDialog";
 import { IoRefresh } from "react-icons/io5";
+import { dateFormatter } from "../utils/Utils";
 
 const MemberAsset = (props) => {
   const { t } = useTranslation();
@@ -78,14 +79,14 @@ const MemberAsset = (props) => {
 };
 const MemberAssets = (props) => {
   const { memberId, assets, fixAccountHandler } = props;
-  const _memberAssets = assets.map((asset) => (
+  const component = assets.map((asset) => (
     <MemberAsset
       memberId={memberId}
       asset={asset}
       fixAccountHandler={fixAccountHandler}
     />
   ));
-  return _memberAssets;
+  return component;
 };
 
 const Member = (props) => {
@@ -94,7 +95,12 @@ const Member = (props) => {
   const [assets, setAssets] = useState([]);
   const activated = `${props.member.activated ? " member__activated" : ""}`;
   const alert = `${props.member.alert ? " members__alert" : ""}`;
-
+  const lastestAccountAuditTime = props.member.lastestAccountAuditTime
+    ? dateFormatter(parseInt(props.member.lastestAccountAuditTime))
+    : "-";
+  const lastestsActivityTime = props.member.lastestsActivityTime
+    ? dateFormatter(parseInt(props.member.lastestsActivityTime))
+    : "-";
   const auditorMemberAccounts = useCallback(async () => {
     try {
       let result = await storeCtx.auditorMemberAccounts({
@@ -106,6 +112,10 @@ const Member = (props) => {
     }
   }, [props.member.id, storeCtx]);
 
+  const fixAccountHandler = useCallback((memberId, accountId) => {
+    // ++TODO #1069
+  }, []);
+
   const openAssetsHandler = useCallback(
     async (e) => {
       if (!assets.length > 0 && e.target.checked) await auditorMemberAccounts();
@@ -113,20 +123,18 @@ const Member = (props) => {
     [assets.length, auditorMemberAccounts]
   );
 
-  const fixAccountHandler = useCallback((memberId, accountId) => {
-    // ++TODO #1069
-  }, []);
+  const controllerComponent = props.member.activated && (
+    <input
+      className="members__controller"
+      type="checkbox"
+      id={`member-${props.member.id}-dropdown-btn`}
+      onChange={openAssetsHandler}
+    />
+  );
 
   return (
     <tr className="members__tile" key={props.key}>
-      {props.member.activated && (
-        <input
-          className="members__controller"
-          type="checkbox"
-          id={`member-${props.member.id}-dropdown-btn`}
-          onChange={openAssetsHandler}
-        />
-      )}
+      {controllerComponent}
       <label
         className={`members__label${activated}${alert}`}
         htmlFor={`member-${props.member.id}-dropdown-btn`}
@@ -145,17 +153,13 @@ const Member = (props) => {
             <div className="members__title">
               {t("last_accounts_audit_time")}
             </div>
-            <div className="members__value">
-              {props.member.lastestAccountAuditTime || "-"}
-            </div>
+            <div className="members__value">{lastestAccountAuditTime}</div>
           </div>
           <div className="members__info">
             <div className="members__title">
               {t("last_accounts_activity_time")}
             </div>
-            <div className="members__value">
-              {props.member.lastestsActivityTime || "-"}
-            </div>
+            <div className="members__value">{lastestsActivityTime}</div>
           </div>
         </div>
         <div className="members__alert--icon">
@@ -189,10 +193,10 @@ const Member = (props) => {
 
 const MemberList = (props) => {
   const { members } = props;
-  const _memberList = members?.map((member) => (
+  const component = members?.map((member) => (
     <Member key={`member-${member.id}`} member={member} />
   ));
-  return _memberList;
+  return component;
 };
 
 const Members = () => {
