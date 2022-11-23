@@ -88,17 +88,17 @@ class WSChannel extends Bot {
                 this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
               case Events.switchMarket:
-                this.logger.debug(
-                  `[${this.constructor.name} _onOpSwitchMarket]`,
-                  args
-                );
+                // this.logger.debug(
+                //   `[${this.constructor.name} _onOpSwitchMarket]`,
+                //   args
+                // );
                 this._onOpSwitchMarket(ws, args);
                 break;
                 case Events.registerMarket:
-                this.logger.debug(
-                  `[${this.constructor.name} _onOpRegisterMarket]`,
-                  args
-                );
+                // this.logger.debug(
+                //   `[${this.constructor.name} _onOpRegisterMarket]`,
+                //   args
+                // );
                 this._onOpRegisterMarket(ws, args);
                 break;
               default:

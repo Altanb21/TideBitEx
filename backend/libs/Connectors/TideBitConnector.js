@@ -1260,12 +1260,12 @@ class TibeBitConnector extends ConnectorBase {
         auth = authRes.data.auth;
         if (!auth)
           this.logger.error(
-            `[${this.constructor.name}](ln:1260) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
+            `[${this.constructor.name}](ln:1263) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
             headers
           );
       } catch (error) {
         this.logger.error(
-          `(ln:1265) request url:${this.peatio}/pusher/auth got error status: ${error?.status} statusText: ${error?.status}`,
+          `(ln:1268) request url:${this.peatio}/pusher/auth got error status: ${error?.status} statusText: ${error?.status}`,
           `headers`,
           error?.headers,
           `config`,
