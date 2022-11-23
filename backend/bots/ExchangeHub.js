@@ -5109,7 +5109,7 @@ class ExchangeHub extends Bot {
         if (!prev[curr.account_id]) prev[curr.account_id] = curr;
         return prev;
       }, {});
-
+      this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
@@ -5118,6 +5118,7 @@ class ExchangeHub extends Bot {
             correctLocked = 0;
           if (lastestAuditRecords[accountId]) {
             lastestAuditRecord = lastestAuditRecords[accountId];
+            this.logger.debug(`lastestAuditRecord`, lastestAuditRecord);
             if (auditRecords && Object.values(auditRecords).length > 0) {
               correctBalance = SafeMath.plus(
                 lastestAuditRecord.sum_balance,
@@ -5136,6 +5137,11 @@ class ExchangeHub extends Bot {
               );
             }
           } else if (auditRecords[accountId]) {
+            this.logger.debug(
+              `auditRecords[accountId]`,
+              auditRecords[accountId]
+            );
+
             correctBalance = Utils.removeZeroEnd(
               auditRecords[accountId].expect_balance
             );
@@ -5160,29 +5166,43 @@ class ExchangeHub extends Bot {
             updatedAt: new Date(account.updated_at).toISOString(),
             dbTransaction: dbTransaction,
           };
+          this.logger.debug(
+            `result.accounts[${accountId}]`,
+            result.accounts[accountId]
+          );
           /* !!! HIGH RISK (start) !!! */
           // ++TODO get account_version_id_start
           // ++TODO get account_version_id_end
           if (lastestAuditRecord) {
             let now = `${new Date()
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`;
-            await this.database.insertAuditAccountRecord({
-              account_id: accountId,
-              member_id: memberId,
-              currency: account.currency,
-              account_version_id_start: lastestAuditRecords.oldest_id,
-              account_version_id_end: lastestAuditRecords.lastest_id,
-              balance: account.balance,
-              expect_balance: correctBalance,
-              locked: account.locked,
-              expect_locked: correctLocked,
-              created_at: `"${now}"`,
-              updated_at: `"${now}"`,
-              issued_by: null,
-              fixed_at: null,
-            });
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}`,
+              dbTransaction = await this.database.transaction();
+            try {
+              await this.database.insertAuditAccountRecord(
+                {
+                  account_id: accountId,
+                  member_id: memberId,
+                  currency: account.currency,
+                  account_version_id_start: lastestAuditRecord.oldest_id,
+                  account_version_id_end: lastestAuditRecord.lastest_id,
+                  balance: account.balance,
+                  expect_balance: correctBalance,
+                  locked: account.locked,
+                  expect_locked: correctLocked,
+                  created_at: now,
+                  updated_at: now,
+                  issued_by: null,
+                  fixed_at: null,
+                },
+                { dbTransaction }
+              );
+              await dbTransaction.commit();
+            } catch (error) {
+              this.logger.error(error);
+              await dbTransaction.rollback();
+            }
           }
           /* !!! HIGH RISK (end) !!! */
         }

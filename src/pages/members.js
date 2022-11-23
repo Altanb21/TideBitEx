@@ -25,7 +25,7 @@ const MemberAsset = (props) => {
         {asset.balance.current}
       </div>
       <div className="members__value members__value--expect">
-        {asset.balance.alert}
+        {asset.balance.shouldBe}
       </div>
     </>
   ) : (
@@ -38,7 +38,7 @@ const MemberAsset = (props) => {
         {asset.locked.current}
       </div>
       <div className="members__value members__value--expect">
-        {asset.locked.alert}
+        {asset.locked.shouldBe}
       </div>
     </>
   ) : (
@@ -79,27 +79,27 @@ const MemberAsset = (props) => {
 };
 const MemberAssets = (props) => {
   const { memberId, assets, fixAccountHandler } = props;
-  const component = assets.map((asset) => (
+  const component = assets?.map((asset) => (
     <MemberAsset
       memberId={memberId}
       asset={asset}
       fixAccountHandler={fixAccountHandler}
     />
   ));
-  return component;
+  return <ul className="members__values">{component}</ul>;
 };
 
 const Member = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
   const [assets, setAssets] = useState([]);
-  const activated = `${props.member.activated ? " member__activated" : ""}`;
-  const alert = `${props.member.alert ? " members__alert" : ""}`;
-  const lastestAccountAuditTime = props.member.lastestAccountAuditTime
-    ? dateFormatter(parseInt(props.member.lastestAccountAuditTime))
+  const activated = `${props.member?.activated ? " member__activated" : ""}`;
+  const alert = `${props.member?.alert ? " members__alert" : ""}`;
+  const lastestAccountAuditTime = props.member?.lastestAccountAuditTime
+    ? dateFormatter(parseInt(props.member.lastestAccountAuditTime)).text
     : "-";
-  const lastestsActivityTime = props.member.lastestsActivityTime
-    ? dateFormatter(parseInt(props.member.lastestsActivityTime))
+  const lastestActivityTime = props.member?.lastestActivityTime
+    ? dateFormatter(parseInt(props.member.lastestActivityTime)).text
     : "-";
   const auditorMemberAccounts = useCallback(async () => {
     try {
@@ -123,7 +123,7 @@ const Member = (props) => {
     [assets.length, auditorMemberAccounts]
   );
 
-  const controllerComponent = props.member.activated && (
+  const controllerComponent = props.member?.activated && (
     <input
       className="members__controller"
       type="checkbox"
@@ -159,7 +159,7 @@ const Member = (props) => {
             <div className="members__title">
               {t("last_accounts_activity_time")}
             </div>
-            <div className="members__value">{lastestsActivityTime}</div>
+            <div className="members__value">{lastestActivityTime}</div>
           </div>
         </div>
         <div className="members__alert--icon">
@@ -170,13 +170,17 @@ const Member = (props) => {
         <div className="members__headers">
           <div className="members__header">{t("currency")}</div>
           <div className="members__header">{t("account_id")}</div>
-          <div className="members__header">{t("balance")}</div>
-          <div className="members__header">{t("locked")}</div>
+          <div className="members__header members__header--expand">
+            {t("balance")}
+          </div>
+          <div className="members__header members__header--expand">
+            {t("locked")}
+          </div>
           <div className="members__header">
             <div onClick={auditorMemberAccounts}>
               <IoRefresh />
             </div>
-            {t("force_fixed")}
+            <div>{t("force_fixed")}</div>
           </div>
         </div>
         <ul className="members__values">
@@ -196,7 +200,9 @@ const MemberList = (props) => {
   const component = members?.map((member) => (
     <Member key={`member-${member.id}`} member={member} />
   ));
-  return component;
+  return (
+    <tbody className="screen__table-rows members__list">{component}</tbody>
+  );
 };
 
 const Members = () => {
@@ -340,6 +346,7 @@ const Members = () => {
           members[page] = result.members;
           return members;
         });
+        console.log(`members`, members);
         // filter({
         //   members: Object.values(members).reduce((prev, curr) => {
         //     prev = [...prev, ...curr];
@@ -403,9 +410,7 @@ const Members = () => {
         </div>
         <div className="screen__container">
           <table className="screen__table">
-            <tbody className="screen__table-rows members__list">
-              <MemberList members={members[page]} />
-            </tbody>
+            <MemberList members={members[page]} />
             <tfoot className="screen__table-tools">
               <div
                 className={`screen__table-tool${prevPageIsExit}`}

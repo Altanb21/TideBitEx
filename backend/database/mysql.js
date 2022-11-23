@@ -74,7 +74,7 @@ class mysql {
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
     if (currency) placeholder = [...placeholder, `currency = ${currency}`];
-    if (startId) placeholder = [...placeholder, `startId > ${startId}`];
+    if (startId) placeholder = [...placeholder, `id > ${startId}`];
     const query = `
       SELECT
         account_id,
@@ -2106,8 +2106,8 @@ class mysql {
   ) {
     let result, accountVersionId;
     const query =
-      "INSERT INTO `audit_account_records` (`account_id`, `member_id`, `currency`, `account_version_id_start`, `account_version_id_end`, `balance`, `expect_balance`, `locked`, `expect_locked`, `created_at`, `updated_at`, `fixed_at`, `issued_by`)" +
-      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+      "INSERT INTO `audit_account_records` (`id`, `account_id`, `member_id`, `currency`, `account_version_id_start`, `account_version_id_end`, `balance`, `expect_balance`, `locked`, `expect_locked`, `created_at`, `updated_at`, `fixed_at`, `issued_by`)" +
+      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
       this.logger.debug(
         "insertAuditAccountRecord",
