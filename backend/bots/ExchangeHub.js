@@ -5109,7 +5109,7 @@ class ExchangeHub extends Bot {
         if (!prev[curr.account_id]) prev[curr.account_id] = curr;
         return prev;
       }, {});
-      this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
+      // this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
@@ -5137,11 +5137,10 @@ class ExchangeHub extends Bot {
               );
             }
           } else if (auditRecords[accountId]) {
-            this.logger.debug(
-              `auditRecords[accountId]`,
-              auditRecords[accountId]
-            );
-
+            // this.logger.debug(
+            //   `auditRecords[accountId]`,
+            //   auditRecords[accountId]
+            // );
             correctBalance = Utils.removeZeroEnd(
               auditRecords[accountId].expect_balance
             );
@@ -5166,13 +5165,11 @@ class ExchangeHub extends Bot {
             updatedAt: new Date(account.updated_at).toISOString(),
             dbTransaction: dbTransaction,
           };
-          this.logger.debug(
-            `result.accounts[${accountId}]`,
-            result.accounts[accountId]
-          );
+          // this.logger.debug(
+          //   `result.accounts[${accountId}]`,
+          //   result.accounts[accountId]
+          // );
           /* !!! HIGH RISK (start) !!! */
-          // ++TODO get account_version_id_start
-          // ++TODO get account_version_id_end
           if (lastestAuditRecord) {
             let now = `${new Date()
                 .toISOString()
