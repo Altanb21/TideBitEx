@@ -2165,9 +2165,8 @@ class mysql {
     { dbTransaction }
   ) {
     let result, accountVersionId;
-    const query =
-      "INSERT INTO `audit_account_records` (`id`, `account_id`, `member_id`, `currency`, `account_version_id_start`, `account_version_id_end`, `balance`, `expect_balance`, `locked`, `expect_locked`, `created_at`, `updated_at`, `fixed_at`, `issued_by`)" +
-      " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    const query = `INSERT INTO audit_account_records (id, account_id, member_id, currency, account_version_id_start, account_version_id_end, balance, expect_balance, locked, expect_locked, created_at, updated_at, fixed_at, issued_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE balance = ${balance}, expect_balance = ${expect_balance}, locked = ${locked}, expect_locked = ${expect_locked}, updated_at = ${updated_at};`;
     try {
       this.logger.debug(
         "insertAuditAccountRecord",
