@@ -310,7 +310,7 @@ const Members = () => {
     let newMembers,
       newPage = 1,
       member,
-      email = inputRef.current.value;
+      email = encodeURIComponent(inputRef.current.value);
     while (newPage <= pages && !member) {
       member = members[newPage]?.find((m) => m.email === email);
       if (!member) newPage = newPage + 1;
