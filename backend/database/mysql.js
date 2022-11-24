@@ -2247,9 +2247,11 @@ class mysql {
       SET
         ${placeholder}
       WHERE
-        ${where};
+        ${where}
+      LIMIT 1;
       `;
       this.logger.debug("updateAccount", query);
+      if(!id) throw Error(`id is required`)
       await this.db.query(
         {
           query,
@@ -2267,6 +2269,7 @@ class mysql {
   async updateAuditAccountRecord(datas, { dbTransaction }) {
     try {
       const id = datas.id;
+      if(!id) throw Error(`id is required`)
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
@@ -2277,8 +2280,8 @@ class mysql {
       SET
         ${placeholder}
       WHERE
-        ${where};
-      `;
+        ${where}
+      LIMIT 1;`;
       this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
@@ -2301,6 +2304,7 @@ class mysql {
   async updateAccountVersion(datas, { dbTransaction }) {
     try {
       const id = datas.id;
+      if(!id) throw Error(`id is required`)
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
@@ -2309,7 +2313,7 @@ class mysql {
         set.join(", ") +
         " WHERE " +
         where +
-        ";";
+        " LIMIT 1;";
       this.logger.debug("updateAccountVersion", query);
       await this.db.query(
         {
@@ -2328,6 +2332,7 @@ class mysql {
   async updateOrder(datas, { dbTransaction }) {
     try {
       const id = datas.id;
+      if(!id) throw Error(`id is required`)
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
@@ -2338,8 +2343,8 @@ class mysql {
       SET
         ${placeholder}
       WHERE
-        ${where};
-      `;
+        ${where}
+      LIMIT 1;`;
       this.logger.debug("updateOrder", query);
       await this.db.query(
         {
@@ -2359,6 +2364,7 @@ class mysql {
   async updateOuterTrade(datas, { dbTransaction }) {
     try {
       const id = datas.id;
+      if(!id) throw Error(`id is required`)
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map(
@@ -2366,7 +2372,7 @@ class mysql {
           `\`${key}\` = ${key === "email" ? `"${datas[key]}"` : datas[key]}`
       );
       let query =
-        "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + ";";
+        "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + " LIMIT 1;";
       this.logger.debug("updateOuterTrade", query);
       await this.db.query(
         {
