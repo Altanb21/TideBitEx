@@ -5,6 +5,7 @@ import packageJson from "../../package.json";
 
 const HomeFooter = () => {
   const storeCtx = useContext(StoreContext);
+  const year = new Date().getFullYear();
   const { t } = useTranslation();
   return (
     <div className="home-footer">
@@ -124,9 +125,7 @@ const HomeFooter = () => {
           </a>
         </div>
         <div className="home-footer__copyright">
-          {`©${new Date().getFullYear()}, TideBit All Rights Reserved. v${
-            packageJson.version
-          }`}
+          {`©${year}, TideBit All Rights Reserved. v${packageJson.version}`}
         </div>
       </div>
     </div>

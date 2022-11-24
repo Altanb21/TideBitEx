@@ -87,7 +87,7 @@ class DBOperator {
     return this.database.countMembers(conditions);
   }
 
-  async getMembers({ limit, offset = 0 }) {
+  async getMembers({ limit = 10, offset = 0 }) {
     return this.database.getMembers({ limit, offset });
   }
 
@@ -585,6 +585,10 @@ class DBOperator {
 
   async updateAccount(datas, { dbTransaction }) {
     return this.database.updateAccount(datas, { dbTransaction });
+  }
+
+  async updateAuditAccountRecord(datas, { dbTransaction }) {
+    return this.database.updateAuditAccountRecord(datas, { dbTransaction });
   }
 
   /**

@@ -25,7 +25,6 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
-
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};
@@ -44,6 +43,7 @@ class ExchangeHub extends Bot {
     this.name = "ExchangeHub";
     this.fetchedTickers = false;
   }
+  oneDayinMillionSeconds = 24 * 60 * 60 * 1000;
 
   init({ config, database, logger, i18n }) {
     this.okexBrokerId = config.okex.brokerId;
@@ -1174,11 +1174,10 @@ class ExchangeHub extends Bot {
       let commissionPolicies = await this.database.getCommissionPolicies(
         commissionPlanId
       );
-      let dayTime = 24 * 60 * 60 * 1000;
       let days = Math.ceil(
         (new Date(`${voucher.created_at}`).getTime() -
           new Date(`${referral.created_at}`).getTime()) /
-          dayTime
+          this.oneDayinMillionSeconds
       );
       if (days <= 365) {
         let index = 1;
@@ -2192,7 +2191,7 @@ class ExchangeHub extends Bot {
     // const pad = (n) => {
     //   return n < 10 ? "0" + n : n;
     // };
-    const monthInterval = 30 * 24 * 60 * 60 * 1000;
+    // const monthInterval = 30 * this.oneDayinMillionSeconds;
 
     let { exchange, start, end, instId } = query;
     let id = instId.replace("-", "").toLowerCase(),
@@ -5062,12 +5061,70 @@ class ExchangeHub extends Bot {
     this.jobQueue = [...this.jobQueue, job];
   }
 
+  async getMembersLatestAccountVersions(memberIds) {
+    let accountVersionIds =
+      await this.database.getMembersLatestAccountVersionIds(memberIds);
+    let accountVersions = await this.database.getMembersAccountVersionByIds(
+      accountVersionIds
+    );
+    accountVersions =
+      accountVersionIds.length > 0
+        ? accountVersions.reduce((prev, curr) => {
+            prev[curr.member_id] = curr;
+            return prev;
+          }, {})
+        : [];
+    return accountVersions;
+  }
+
+  async getMembersLatestAuditRecords(memberIds, groupByAccountId = false) {
+    let auditRecordIds = await this.database.getMembersLatestAuditRecordIds(
+      memberIds,
+      groupByAccountId
+    );
+    let auditRecords =
+      auditRecordIds.length > 0
+        ? await this.database.getMembersAuditRecordByIds(auditRecordIds, true)
+        : [];
+    let auditRecord =
+      auditRecords?.length > 0
+        ? {
+            ...auditRecords.sort(
+              (a, b) => b.account_version_id_end - a.account_version_id_end
+            )[0],
+          }
+        : null;
+    let lastestAuditAccountVersionId = auditRecord?.account_version_id_end;
+    auditRecords = auditRecords.reduce((prev, curr) => {
+      if (!prev[groupByAccountId ? curr.account_id : curr.member_id])
+        prev[groupByAccountId ? curr.account_id : curr.member_id] = curr;
+      return prev;
+    }, {});
+    return {
+      auditRecords: auditRecords,
+      lastestAuditAccountVersionId: lastestAuditAccountVersionId,
+    };
+  }
+
+  async auditAccountBalance(memberId, currency, lastestAuditAccountVersionId) {
+    let auditAccountResult = await this.database.auditAccountBalance({
+      memberId,
+      currency,
+      startId: lastestAuditAccountVersionId,
+    });
+    auditAccountResult = auditAccountResult.reduce((prev, curr) => {
+      if (!prev[curr.account_id]) prev[curr.account_id] = curr;
+      return prev;
+    }, {});
+    return auditAccountResult;
+  }
+
   async auditorMemberAccounts({ query }, dbTransaction) {
     let { memberId, currency } = query;
-    let accounts,
+    let tmp,
+      accounts,
       auditRecords,
-      auditRecord,
-      // lastestAccountVersions,
+      lastestAuditAccountVersionId,
       lastestAuditRecords,
       coinsSettings,
       result = {
@@ -5075,26 +5132,15 @@ class ExchangeHub extends Bot {
         accounts: {},
       };
     try {
-      let auditRecordIds = await this.database.getMembersLatestAuditRecordIds(
-        [memberId],
-        true
+      if (!memberId) throw Error(`memberId is required`);
+      tmp = await this.getMembersLatestAuditRecords([memberId], true);
+      auditRecords = tmp.auditRecords;
+      lastestAuditAccountVersionId = tmp.lastestAuditAccountVersionId;
+      lastestAuditRecords = await this.auditAccountBalance(
+        memberId,
+        currency,
+        lastestAuditAccountVersionId
       );
-      auditRecords =
-        auditRecordIds.length > 0
-          ? await this.database.getMembersAuditRecordByIds(auditRecordIds, true)
-          : [];
-      auditRecord =
-        auditRecords?.length > 0
-          ? {
-              ...auditRecords.sort(
-                (a, b) => b.account_version_id_end - a.account_version_id_end
-              )[0],
-            }
-          : null;
-      auditRecords = auditRecords.reduce((prev, curr) => {
-        if (!prev[curr.account_id]) prev[curr.account_id] = curr;
-        return prev;
-      }, {});
       accounts = await this.database.getAccountsByMemberId(memberId, {
         options: { currency: currency },
         dbTransaction: dbTransaction,
@@ -5107,64 +5153,17 @@ class ExchangeHub extends Bot {
         if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
         return prev;
       }, {});
-      lastestAuditRecords = await this.database.auditAccountBalance({
-        memberId,
-        currency,
-        startId: auditRecord?.account_version_id_end,
-      });
-      lastestAuditRecords = lastestAuditRecords.reduce((prev, curr) => {
-        if (!prev[curr.account_id]) prev[curr.account_id] = curr;
-        return prev;
-      }, {});
-      // this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
-      // let lastestAccountVersionIds =
-      //   await this.database.getMembersLatestAccountVersionIds([memberId], true);
-      // lastestAccountVersions =
-      //   lastestAccountVersionIds.length > 0
-      //     ? await this.database.getMembersAccountVersionByIds(
-      //         lastestAccountVersionIds,
-      //         true
-      //       )
-      //     : [];
-      // lastestAccountVersions = lastestAccountVersions.reduce((prev, curr) => {
-      //   if (!prev[curr.account_id]) prev[curr.account_id] = curr;
-      //   return prev;
-      // }, {});
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
-            lastestAuditRecord,
-            // lastestAccountVersion = lastestAccountVersions[accountId],
-            correctBalance = 0,
-            correctLocked = 0;
-          if (lastestAuditRecords[accountId]) {
-            lastestAuditRecord = lastestAuditRecords[accountId];
-            // this.logger.debug(`lastestAuditRecord`, lastestAuditRecord);
-            if (auditRecords && Object.values(auditRecords).length > 0) {
-              correctBalance = SafeMath.plus(
-                lastestAuditRecord.sum_balance,
-                auditRecords[accountId].expect_balance
-              );
-              correctLocked = SafeMath.plus(
-                lastestAuditRecord.sum_locked,
-                auditRecords[accountId].expect_locked
-              );
-            } else {
-              correctBalance = Utils.removeZeroEnd(
-                lastestAuditRecord.sum_balance
-              );
-              correctLocked = Utils.removeZeroEnd(
-                lastestAuditRecord.sum_locked
-              );
-            }
-          } else if (auditRecords[accountId]) {
-            correctBalance = Utils.removeZeroEnd(
-              auditRecords[accountId].expect_balance
+            correctBalance = SafeMath.plus(
+              lastestAuditRecords[accountId]?.sum_balance || "0",
+              auditRecords[accountId]?.expect_balance || "0"
+            ),
+            correctLocked = SafeMath.plus(
+              lastestAuditRecords[accountId]?.sum_locked || "0",
+              auditRecords[accountId]?.expect_locked || "0"
             );
-            correctLocked = Utils.removeZeroEnd(
-              auditRecords[accountId].expect_locked
-            );
-          }
           result.accounts[accountId] = {
             accountId,
             currency: coinsSettings[account.currency]?.code,
@@ -5184,7 +5183,7 @@ class ExchangeHub extends Bot {
           };
           /* !!! HIGH RISK (start) !!! */
           if (
-            lastestAuditRecord
+            lastestAuditRecords[accountId]
             // && lastestAccountVersion.id > auditRecord.account_version_id_end
           ) {
             let now = `${new Date()
@@ -5198,8 +5197,10 @@ class ExchangeHub extends Bot {
                   account_id: accountId,
                   member_id: memberId,
                   currency: account.currency,
-                  account_version_id_start: lastestAuditRecord.oldest_id,
-                  account_version_id_end: lastestAuditRecord.lastest_id,
+                  account_version_id_start:
+                    lastestAuditRecords[accountId].oldest_id,
+                  account_version_id_end:
+                    lastestAuditRecords[accountId].lastest_id,
                   balance: account.balance,
                   expect_balance: correctBalance,
                   locked: account.locked,
@@ -5270,31 +5271,10 @@ class ExchangeHub extends Bot {
           };
           return member;
         });
-        // get last audior records
-        let auditRecordIds = await this.database.getMembersLatestAuditRecordIds(
-          memberIds
-        );
-        auditRecords =
-          auditRecordIds.length > 0
-            ? await this.database.getMembersAuditRecordByIds(auditRecordIds)
-            : [];
-        auditRecords = auditRecords.reduce((prev, curr) => {
-          prev[curr.member_id] = curr;
-          return prev;
-        }, {});
-        // get last active time
-        let accountVersionIds =
-          await this.database.getMembersLatestAccountVersionIds(memberIds);
-        accountVersions = await this.database.getMembersAccountVersionByIds(
-          accountVersionIds
-        );
-        accountVersions =
-          accountVersionIds.length > 0
-            ? accountVersions.reduce((prev, curr) => {
-                prev[curr.member_id] = curr;
-                return prev;
-              }, {})
-            : [];
+        let tmp = await this.getMembersLatestAuditRecords(memberIds);
+        // this.logger.debug(`tmp`, tmp);
+        auditRecords = tmp.auditRecords;
+        accountVersions = await this.getMembersLatestAccountVersions(memberIds);
         members = members.map((m) => {
           let lastestAccountAuditTime = auditRecords[m.id]
               ? new Date(auditRecords[m.id].updated_at).getTime()
@@ -5307,7 +5287,7 @@ class ExchangeHub extends Bot {
               (!lastestAccountAuditTime ||
                 SafeMath.gt(
                   SafeMath.minus(lastestActivityTime, lastestAccountAuditTime),
-                  24 * 60 * 60 * 1000 // 1天
+                  this.oneDayinMillionSeconds
                 )),
             member = {
               ...m,
@@ -5327,6 +5307,7 @@ class ExchangeHub extends Bot {
         },
       });
     } catch (error) {
+      this.logger.error(error);
       return new ResponseFormat({
         message: `getMembers ${JSON.stringify(error)}`,
         code: Codes.UNKNOWN_ERROR,
@@ -5341,7 +5322,7 @@ class ExchangeHub extends Bot {
    */
   async fixAbnormalAccount({ query, email }) {
     this.logger.debug(`fixAbnormalAccount email`, email);
-    let { memberId, currency } = query;
+    let { memberId, currency, id } = query;
     let result,
       currentUser = this.adminUsers.find((user) => user.email === email),
       dbTransaction;
@@ -5391,21 +5372,13 @@ class ExchangeHub extends Bot {
         if (result.success) {
           let account = Object.values(result.payload?.accounts).shift();
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
-          // 2. insert audit record
+          // 2. update audit record
           let auditRecord = {
-            account_id: account.accountId,
-            member_id: result.payload?.memberId,
-            reason: 1,
-            currency: account.currency,
-            balance_origin: account.balance?.current,
-            balance_updated: account.balance?.shouldBe,
-            locked_origin: account.locked?.current,
-            locked_updated: account.locked?.shouldBe,
-            created_at: `"${now}"`,
+            fixed_at: `"${now}"`,
             issued_by: currentUser.email,
           };
           //
-          await this.database.insertAuditAccountRecord(auditRecord, {
+          await this.database.updateAuditAccountRecord(auditRecord, {
             dbTransaction,
           });
           // 3. update account
