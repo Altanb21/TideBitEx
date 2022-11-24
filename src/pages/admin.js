@@ -124,7 +124,7 @@ const Admin = () => {
 
   return (
     <>
-      {!isInit && <LoadingDialog />}
+      <LoadingDialog isLoading={!isInit}/>
       <div className="admin">
         <AdminHeader
           activePage={activePage}

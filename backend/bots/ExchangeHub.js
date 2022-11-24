@@ -5067,6 +5067,7 @@ class ExchangeHub extends Bot {
     let accounts,
       auditRecords,
       auditRecord,
+      lastestAccountVersions,
       lastestAuditRecords,
       coinsSettings,
       result = {
@@ -5074,15 +5075,21 @@ class ExchangeHub extends Bot {
         accounts: {},
       };
     try {
-      auditRecords = await this.database.getMembersLatestAuditRecords(
+      let auditRecordIds = await this.database.getMembersLatestAuditRecordIds(
         [memberId],
         true
       );
+      auditRecords =
+        auditRecordIds.length > 0
+          ? await this.database.getMembersAuditRecordByIds(auditRecordIds, true)
+          : [];
       auditRecord =
         auditRecords?.length > 0
-          ? auditRecords.sort(
-              (a, b) => b.account_version_id_end - a.account_version_id_end
-            )[0]
+          ? {
+              ...auditRecords.sort(
+                (a, b) => b.account_version_id_end - a.account_version_id_end
+              )[0],
+            }
           : null;
       auditRecords = auditRecords.reduce((prev, curr) => {
         if (!prev[curr.account_id]) prev[curr.account_id] = curr;
@@ -5109,16 +5116,29 @@ class ExchangeHub extends Bot {
         if (!prev[curr.account_id]) prev[curr.account_id] = curr;
         return prev;
       }, {});
-      // this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
+      let lastestAccountVersionIds =
+        await this.database.getMembersLatestAccountVersionIds([memberId], true);
+      lastestAccountVersions =
+        lastestAccountVersionIds.length > 0
+          ? await this.database.getMembersAccountVersionByIds(
+              lastestAccountVersionIds,
+              true
+            )
+          : [];
+      lastestAccountVersions = lastestAccountVersions.reduce((prev, curr) => {
+        if (!prev[curr.account_id]) prev[curr.account_id] = curr;
+        return prev;
+      }, {});
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
             lastestAuditRecord,
+            lastestAccountVersion = lastestAccountVersions[accountId],
             correctBalance = 0,
             correctLocked = 0;
           if (lastestAuditRecords[accountId]) {
             lastestAuditRecord = lastestAuditRecords[accountId];
-            this.logger.debug(`lastestAuditRecord`, lastestAuditRecord);
+            // this.logger.debug(`lastestAuditRecord`, lastestAuditRecord);
             if (auditRecords && Object.values(auditRecords).length > 0) {
               correctBalance = SafeMath.plus(
                 lastestAuditRecord.sum_balance,
@@ -5137,10 +5157,6 @@ class ExchangeHub extends Bot {
               );
             }
           } else if (auditRecords[accountId]) {
-            // this.logger.debug(
-            //   `auditRecords[accountId]`,
-            //   auditRecords[accountId]
-            // );
             correctBalance = Utils.removeZeroEnd(
               auditRecords[accountId].expect_balance
             );
@@ -5165,12 +5181,11 @@ class ExchangeHub extends Bot {
             updatedAt: new Date(account.updated_at).toISOString(),
             dbTransaction: dbTransaction,
           };
-          // this.logger.debug(
-          //   `result.accounts[${accountId}]`,
-          //   result.accounts[accountId]
-          // );
           /* !!! HIGH RISK (start) !!! */
-          if (lastestAuditRecord) {
+          if (
+            lastestAuditRecord &&
+            lastestAccountVersion.id > auditRecord.account_version_id_end
+          ) {
             let now = `${new Date()
                 .toISOString()
                 .slice(0, 19)
@@ -5229,15 +5244,21 @@ class ExchangeHub extends Bot {
     try {
       if (offset == 0 || email) counts = await this.database.countMembers();
       if (email) {
+        this.logger.debug("email", email);
         const member = await this.database.getMemberByCondition({
           email: email,
         });
+        this.logger.debug("member", member);
         if (member) {
           number = await this.database.countMembers({ before: member.id });
-          page = Math.floor(number / counts) + 1;
+          page = Math.floor(number / limit) + 1;
           offset = (page - 1) * limit;
+          this.logger.debug("number", number);
+          this.logger.debug("page", page);
+          this.logger.debug("offset", offset);
         }
       }
+      this.logger.debug("offset == 0 || !!offset", offset == 0 || !!offset);
       if (offset == 0 || !!offset) {
         result = await this.database.getMembers({ limit, offset });
         members = result.map((r) => {
@@ -5249,39 +5270,48 @@ class ExchangeHub extends Bot {
           return member;
         });
         // get last audior records
-        auditRecords = await this.database.getMembersLatestAuditRecords(
+        let auditRecordIds = await this.database.getMembersLatestAuditRecordIds(
           memberIds
         );
+        auditRecords =
+          auditRecordIds.length > 0
+            ? await this.database.getMembersAuditRecordByIds(auditRecordIds)
+            : [];
         auditRecords = auditRecords.reduce((prev, curr) => {
           prev[curr.member_id] = curr;
           return prev;
         }, {});
         // get last active time
-        accountVersions = await this.database.getMembersLatestAccountVersions(
-          memberIds
+        let accountVersionIds =
+          await this.database.getMembersLatestAccountVersionIds(memberIds);
+        accountVersions = await this.database.getMembersAccountVersionByIds(
+          accountVersionIds
         );
-        accountVersions = accountVersions.reduce((prev, curr) => {
-          prev[curr.member_id] = curr;
-          return prev;
-        }, {});
+        accountVersions =
+          accountVersionIds.length > 0
+            ? accountVersions.reduce((prev, curr) => {
+                prev[curr.member_id] = curr;
+                return prev;
+              }, {})
+            : [];
         members = members.map((m) => {
           let lastestAccountAuditTime = auditRecords[m.id]
               ? new Date(auditRecords[m.id].updated_at).getTime()
               : null,
-            lastestsActivityTime = accountVersions[m.id]
+            lastestActivityTime = accountVersions[m.id]
               ? new Date(accountVersions[m.id].updated_at).getTime()
               : null,
             alert =
-              lastestsActivityTime &&
+              lastestActivityTime &&
               (!lastestAccountAuditTime ||
                 SafeMath.gt(
-                  SafeMath.minus(lastestsActivityTime, lastestAccountAuditTime),
+                  SafeMath.minus(lastestActivityTime, lastestAccountAuditTime),
                   24 * 60 * 60 * 1000 // 1天
                 )),
             member = {
               ...m,
               lastestAccountAuditTime,
-              lastestsActivityTime,
+              lastestActivityTime,
               alert,
             };
           return member;

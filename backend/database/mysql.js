@@ -326,9 +326,9 @@ class mysql {
   async countMembers(conditions) {
     let placeholder = [];
     if (conditions?.before)
-      placeholder = [...placeholder, `id < ${conditions.before}}`];
+      placeholder = [...placeholder, `id < ${conditions.before}`];
     if (conditions?.activated)
-      placeholder = [...placeholder, `activated = ${conditions.activated}}`];
+      placeholder = [...placeholder, `activated = ${conditions.activated}`];
     const query = `
     SELECT 
         count(*) as counts
@@ -379,21 +379,11 @@ class mysql {
     }
   }
 
-  async getMembersLatestAuditRecords(ids, groupByAccountId) {
+  async getMembersLatestAuditRecordIds(ids, groupByAccountId) {
     const query = `
     SELECT
-	    id,
-	    member_id,
-	    account_id,
-	    currency,
-	    account_version_id_start,
-	    account_version_id_end,
-      balance,
-      expect_balance,
-      locked,
-      expect_locked,
-	    max(updated_at) as updated_at,
-      fixed_at
+	    max(id) as id,
+	    max(updated_at) as updated_at
     FROM
       audit_account_records
     WHERE
@@ -404,7 +394,41 @@ class mysql {
       id
     ;`;
     try {
-      // this.logger.debug("getMembersLatestAuditRecords", query);
+      // this.logger.debug("getMembersLatestAuditRecordIds", query);
+      const [auditRecordIds] = await this.db.query({
+        query,
+      });
+      return auditRecordIds.map((o) => o.id);
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersAuditRecordByIds(ids) {
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      currency,
+      account_version_id_start,
+      account_version_id_end,
+      balance,
+      expect_balance,
+      locked,
+      expect_locked,
+      updated_at,
+      fixed_at
+    FROM
+      audit_account_records
+    WHERE
+	    id in(${ids.join(`,`)})
+    ORDER BY
+      id
+    ;`;
+    try {
+      // this.logger.debug("getMembersLatestAuditRecordIds", query);
       const [auditRecords] = await this.db.query({
         query,
       });
@@ -415,16 +439,10 @@ class mysql {
     }
   }
 
-  async getMembersLatestAccountVersions(ids, groupByAccountId) {
+  async getMembersLatestAccountVersionIds(ids, groupByAccountId) {
     const query = `
     SELECT
-	    id,
-	    member_id,
-	    account_id,
-      currency,
-	    reason,
-	    modifiable_type,
-	    modifiable_id,
+	    max(id) as id,
 	    max(updated_at) as updated_at
     FROM
 	    account_versions
@@ -434,14 +452,52 @@ class mysql {
 	    member_id${groupByAccountId ? ", account_id" : ""}
     ;`;
     try {
-      // this.logger.debug("getMembersLatestAccountVersions", query);
+      // this.logger.debug("getMembersLatestAccountVersionIds", query);
+      const [accountVersionIds] = await this.db.query({
+        query,
+      });
+      return accountVersionIds.map((o) => o.id);
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersAccountVersionByIds(ids) {
+    const query = `
+    SELECT
+      account_versions.id,
+      account_versions.member_id,
+      account_versions.account_id,
+      account_versions.reason,
+      account_versions.balance,
+      account_versions.locked,
+      account_versions.fee,
+      account_versions.amount,
+      account_versions.modifiable_id,
+      account_versions.modifiable_type,
+      account_versions.created_at,
+      account_versions.currency,
+      account_versions.fun
+    FROM
+	    account_versions
+    WHERE
+	    account_versions.id in (${ids.join(` , `)})
+    ORDER BY
+      id
+    ;`;
+    try {
+      // this.logger.debug(
+      //   "getMembersAccountVersionByIds",
+      //   query,
+      // );
       const [accountVersions] = await this.db.query({
         query,
       });
       return accountVersions;
     } catch (error) {
       this.logger.error(error);
-      return [];
+      return null;
     }
   }
 

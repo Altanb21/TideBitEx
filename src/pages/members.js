@@ -177,11 +177,11 @@ const Member = (props) => {
           <div className="members__header members__header--expand">
             {t("locked")}
           </div>
-          <div className="members__header">
+          <div className="members__header members__header--button">
+            <div className="members__button-icon">{t("force_fixed")}</div>
             <div onClick={auditorMemberAccounts}>
               <IoRefresh />
             </div>
-            <div>{t("force_fixed")}</div>
           </div>
         </div>
         <ul className="members__values">
@@ -273,6 +273,10 @@ const Members = () => {
 
   const switchPageHandler = useCallback(
     async (newPage) => {
+      if (SafeMath.gt(newPage, 1)) setPrevPageIsExit("");
+      else setPrevPageIsExit(" disable");
+      if (SafeMath.lt(newPage, pages)) setNextPageIsExit("");
+      else setNextPageIsExit(" disable");
       setIsLoading(true);
       let newMembers;
       setPage(newPage);
@@ -288,22 +292,18 @@ const Members = () => {
       // filter({ members: memberList });
       setIsLoading(false);
     },
-    [members, getMembers, limit]
+    [pages, members, getMembers, limit]
   );
 
   const prevPageHandler = useCallback(() => {
     let newpage = page - 1 > 0 ? page - 1 : 1;
-    if (SafeMath.gt(newpage, 1)) setPrevPageIsExit("");
-    else setPrevPageIsExit(" disabled");
     switchPageHandler(newpage);
   }, [page, switchPageHandler]);
 
   const nextPageHandler = useCallback(() => {
     let newpage = page + 1;
-    if (SafeMath.lt(page, Math.ceil(pages))) setNextPageIsExit("");
-    else setNextPageIsExit(" disabled");
     switchPageHandler(newpage);
-  }, [page, pages, switchPageHandler]);
+  }, [page, switchPageHandler]);
 
   const searchMemberHandler = useCallback(async () => {
     setIsLoading(true);
@@ -316,35 +316,32 @@ const Members = () => {
       if (!member) newPage = newPage + 1;
     }
     if (member) {
-      setPage(newPage);
+      switchPageHandler(newPage);
     } else {
       let result = await getMembers({ email, limit });
       if (result.page) {
         newPage = result.page;
-        if (newPage) setPage(newPage);
         setMembers((prev) => {
           newMembers = { ...prev };
           newMembers[newPage] = result.members;
           return newMembers;
         });
         console.log(newMembers);
-      }else{
-      // ++TODO show member not found
-      enqueueSnackbar(
-        `${t("did_not_find_member")}`,
-        {
+        switchPageHandler(newPage);
+      } else {
+        // ++TODO show member not found
+        enqueueSnackbar(`${t("did_not_find_member")}`, {
           variant: "error",
           anchorOrigin: {
             vertical: "top",
             horizontal: "center",
           },
-        }
-      );
+        });
       }
     }
     // filter({ members: memberList });
     setIsLoading(false);
-  }, [pages, members, getMembers, limit]);
+  }, [pages, members, getMembers, limit, enqueueSnackbar, t]);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -382,10 +379,10 @@ const Members = () => {
   }, [init, isInit]);
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       <section className="screen__section members">
         <div className="screen__header">{t("members-assets")}</div>
-        <ul className="screen__select-bar"></ul>
+        {/* <ul className="screen__select-bar"></ul> */}
         <div className="screen__search-bar">
           <div className="screen__search-box">
             <input

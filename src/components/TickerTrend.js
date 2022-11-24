@@ -1,4 +1,10 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+} from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
@@ -74,6 +80,7 @@ const TickerTrendContainer = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [isInit, setIsInit] = useState(false);
+  const changePctRef = useRef();
   const imageAlt = props.ticker?.baseUnit || "--";
   const name = props.ticker?.name || "--";
   const changePctClassname = `ticker-trend__change-pct${
@@ -143,7 +150,7 @@ const TickerTrendContainer = (props) => {
           </span>
           <span className="ticker-trend__text">{name}</span>
         </div>
-        <div className={changePctClassname}>{changePct}</div>
+        <div ref={changePctRef} className={changePctClassname}>{changePct}</div>
       </div>
       <div className="ticker-trend__content">
         <div className="ticker-trend__price">{price}</div>

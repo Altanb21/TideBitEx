@@ -545,12 +545,23 @@ class DBOperator {
     );
   }
 
-  async getMembersLatestAuditRecords(ids, groupByAccountId = false) {
-    return this.database.getMembersLatestAuditRecords(ids, groupByAccountId);
+  async getMembersLatestAuditRecordIds(ids, groupByAccountId = false) {
+    return this.database.getMembersLatestAuditRecordIds(ids, groupByAccountId);
   }
 
-  async getMembersLatestAccountVersions(ids, groupByAccountId = false) {
-    return this.database.getMembersLatestAccountVersions(ids, groupByAccountId);
+  async getMembersLatestAccountVersionIds(ids, groupByAccountId = false) {
+    return this.database.getMembersLatestAccountVersionIds(
+      ids,
+      groupByAccountId
+    );
+  }
+
+  async getMembersAuditRecordByIds(ids) {
+    return this.database.getMembersAuditRecordByIds(ids);
+  }
+
+  async getMembersAccountVersionByIds(ids) {
+    return this.database.getMembersAccountVersionByIds(ids);
   }
 
   async insertAuditAccountRecord(auditAccountRecord, { dbTransaction }) {

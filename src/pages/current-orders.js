@@ -313,7 +313,7 @@ const CurrentOrders = () => {
 
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       <section className="screen__section current-orders">
         <div className="screen__header">{t("current-orders")}</div>
         <div className="screen__search-bar">

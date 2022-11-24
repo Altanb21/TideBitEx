@@ -448,7 +448,7 @@ const UserSetting = (props) => {
 
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       {openAddUserDialog && (
         <AddUserDialog
           onClose={() => setOpenAddUserDialog(false)}
