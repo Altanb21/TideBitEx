@@ -5,6 +5,7 @@ const http = require("http");
 const spdy = require("spdy");
 const koa = require("koa");
 const session = require("koa-session");
+const accesslog = require("koa-accesslog");
 const Router = require("koa-router");
 const bodyParser = require("koa-body");
 const staticServe = require("koa-static");
@@ -68,6 +69,7 @@ class Receptor extends Bot {
             .use((ctx, next) =>
               getMemberId(ctx, next, this.redis, this.database, this.config)
             )
+            .use(accesslog())
             .use(this.router.routes())
             .use(this.router.allowedMethods())
             .use(proxy(peatio));

@@ -3,6 +3,7 @@ module.exports = {
   tickers: "tickers",
   update: "update",
   trades: "trades",
+  publicTrades: "publicTrades",
   account: "account",
   order: "order",
   trade: "trade",

@@ -471,6 +471,26 @@ class Communicator {
     }
   }
 
+  async forceCancelOrder(order) {
+    try {
+      const res = await this._request({
+        method: "POST",
+        url: `/trade/force-cancel-order`,
+        data: {
+          memberId: order.memberId,
+          orderId: order.innerOrder?.orderId,
+          orderExchange: order.outerOrder.exchange,
+        },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      return Promise.reject({ ...error });
+    }
+  }
+
   async cancelOrders(options) {
     try {
       // const res = await this._post(`/trade/cancel-orders`, options);
@@ -795,6 +815,53 @@ class Communicator {
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
       console.error(`[getDashboardData] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async getMembers({ email, offset, limit }) {
+    try {
+      let arr = [],
+        qs;
+      if (offset !== undefined) arr = [...arr, `offset=${offset}`];
+      if (limit) arr = [...arr, `limit=${limit}`];
+      if (email) arr = [...arr, `email=${email}`];
+      qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/members${qs}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getMembers] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async auditorMemberAccounts({ memberId, currency }) {
+    try {
+      let arr = [],
+        qs;
+      if (memberId) arr = [...arr, `memberId=${memberId}`];
+      if (currency) arr = [...arr, `currency=${currency}`];
+      qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/audit-accounts${qs}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[getMembers] error`, error);
       return Promise.reject({ ...error });
     }
   }

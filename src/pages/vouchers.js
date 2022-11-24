@@ -431,7 +431,7 @@ const Vouchers = () => {
 
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       <section className="screen__section vouchers">
         <div className="screen__header">{t("match-orders")}</div>
         <ProfitTrendingChart

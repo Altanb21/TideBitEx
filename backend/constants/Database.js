@@ -37,7 +37,7 @@ module.exports = {
   OKX_ORDER_STATE: {
     canceled: "canceled",
     live: "wait",
-    partially_filled: "wait",
+    partially_filled: "partially_filled",
     filled: "done",
   },
   OKX_ORDER_STATE_CODE: {

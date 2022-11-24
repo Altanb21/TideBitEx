@@ -1,0 +1,82 @@
+.home-info {
+  background-position: center;
+  background-size: cover;
+  background-image: url("../../images/career_heading.png");
+  filter: brightness(107%);
+  padding: 48px 30px;
+  &__container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    row-gap: 20px;
+  }
+  &__item {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+  }
+  &__icon {
+    width: 55px;
+    height: 55px;
+    min-width: 55px;
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    &--bank {
+      background-image: url("../../images/bank_icon.svg");
+    }
+    &--shield {
+      background-image: url("../../images/shield_icon.svg");
+    }
+    &--currency {
+      background-image: url("../../images/currency_rotate_icon.svg");
+    }
+    &--chat {
+      background-image: url("../../images/person_chat_icon.svg");
+    }
+  }
+  &__content {
+    font-family: PingFangHK-Regular;
+    color: #555;
+  }
+  &__heading {
+    font-size: 20px;
+  }
+  &__description {
+    font-size: 14px;
+  }
+  &__action {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin: 20px 0;
+  }
+  &__button {
+    color: #e6e6e6;
+    background: linear-gradient(72deg, #5c9ac0, #8ddc97);
+    height: 40px;
+    max-width: 305px;
+    padding: 6px 12px;
+    font-size: 16px;
+    font-weight: 400;
+    text-align: center;
+    cursor: pointer;
+  }
+}
+@media only screen and (max-width: $screen-sm) {
+  .home-info {
+    &__container {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr 1fr 1fr 1fr;
+    }
+    &__action {
+      flex-direction: column;
+      gap: 10px;
+    }
+    &__action > &__content > &__heading {
+      margin-bottom: 20px;
+    }
+  }
+}

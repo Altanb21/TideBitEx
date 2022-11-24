@@ -1,5 +1,7 @@
 const Database = require("../../constants/Database");
 const SupportedExchange = require("../../constants/SupportedExchange");
+const SafeMath = require("../SafeMath");
+const { waterfallPromise } = require("../Utils");
 const Utils = require("../Utils");
 
 class ExchangeHubService {
@@ -105,10 +107,10 @@ class ExchangeHubService {
     }
   }
 
-  async _processOuterTrades(outerTrades, options) {
+  _processOuterTrades(outerTrades, options) {
     // let tmp,
     //   updateData = [];
-    // -1. get all records from outer_trades table &  fillter records if record.status === 5-
+    // 1. get all records from outer_trades table &  fillter records if record.status === 5-
     // const outerTrades = await this.database.getOuterTradesByStatus(
     //   Database.EXCHANGE[exchange.toUpperCase()],
     //   0
@@ -119,11 +121,11 @@ class ExchangeHubService {
     // 2. _processOuterTrade
     for (let trade of outerTrades) {
       if (options.needParse)
-        await this.processor({
+        this.processor({
           ...JSON.parse(trade.data),
           exchangeCode: trade.exchange_code,
         });
-      else await this.processor(trade);
+      else this.processor(trade);
       // tmp = await this._processOuterTrade({
       //   ...JSON.parse(trade.data),
       //   exchangeCode: trade.exchange_code,
@@ -164,7 +166,7 @@ class ExchangeHubService {
     });
     this.logger.debug(`syncUnProcessedOuterTrades [${outerTrades.length}]`);
     // 2. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    await this._processOuterTrades(outerTrades, { needParse: true });
+    this._processOuterTrades(outerTrades, { needParse: true });
   }
 
   /**
@@ -178,7 +180,162 @@ class ExchangeHubService {
     });
     this.logger.debug(`auditorAbnormalOuterTrades [${outerTrades.length}]`);
     // !!! high risk
-    await this._processOuterTrades(outerTrades, { needParse: true });
+    this._processOuterTrades(outerTrades, { needParse: true });
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
+  accountVersionUpdateJob = (updateAccountVersion) => {
+    return async () => {
+      let dbTransaction = await this.database.transaction();
+      try {
+        await this.database.updateAccountVersion(
+          updateAccountVersion,
+          dbTransaction
+        );
+        await dbTransaction.commit();
+        this.logger.debug(`updateAccountVersion`, updateAccountVersion);
+      } catch (error) {
+        await dbTransaction.rollback();
+      }
+    };
+  };
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
+  async abnormalAccountVersionsHandler() {
+    let accountVersions,
+      accVsmodifiableTypeOrder = {},
+      accVsmodifiableTypeTrade = {},
+      orders,
+      trades,
+      updateAccountVersionsJob = [],
+      abnormalOrderIds = [],
+      abnormalTradeIds = [],
+      abnormalAccountIds = {},
+      outerTrades;
+    accountVersions = await this.database.getAbnormalAccountVersions(94); // tidebit.com: 841997111, test.tidebit.network: 94
+    this.logger.debug(`accountVersions [${accountVersions.length}]`);
+    for (let accountVersion of accountVersions) {
+      if (!abnormalAccountIds[accountVersion.account_id])
+        abnormalAccountIds[accountVersion.account_id] =
+          accountVersion.account_id;
+      if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.ORDER) {
+        if (!accVsmodifiableTypeOrder[accountVersion.modifiable_id])
+          accVsmodifiableTypeOrder[accountVersion.modifiable_id] = [];
+        accVsmodifiableTypeOrder[accountVersion.modifiable_id] = [
+          ...accVsmodifiableTypeOrder[accountVersion.modifiable_id],
+          accountVersion,
+        ];
+      }
+      if (accountVersion.modifiable_type === Database.MODIFIABLE_TYPE.TRADE) {
+        if (!accVsmodifiableTypeTrade[accountVersion.modifiable_id])
+          accVsmodifiableTypeTrade[accountVersion.modifiable_id] = [];
+        accVsmodifiableTypeTrade[accountVersion.modifiable_id] = [
+          ...accVsmodifiableTypeTrade[accountVersion.modifiable_id],
+          accountVersion,
+        ];
+      }
+    }
+    this.logger.debug(
+      `accVsmodifiableTypeOrder [${
+        Object.keys(accVsmodifiableTypeOrder).length
+      }]`
+    );
+    if (Object.keys(accVsmodifiableTypeOrder).length > 0) {
+      orders = await this.database.getOrdersByIds(
+        Object.keys(accVsmodifiableTypeOrder)
+      );
+      this.logger.debug(`orders [${orders.length}]`);
+      for (let orderId of Object.keys(accVsmodifiableTypeOrder)) {
+        let order = orders.find((o) => SafeMath.eq(orderId, o.id));
+        if (order) {
+          let dateTime = new Date(
+            order.state === Database.ORDER_STATE_CODE.CANCEL
+              ? order.updated_at
+              : order.created_at
+          ).toISOString();
+          updateAccountVersionsJob = [
+            ...updateAccountVersionsJob,
+            ...accVsmodifiableTypeOrder[orderId].map((accountVersion) =>
+              this.accountVersionUpdateJob({
+                id: accountVersion.id,
+                created_at: `"${dateTime}"`,
+                updated_at: `"${dateTime}"`,
+              })
+            ),
+          ];
+        } else {
+          abnormalOrderIds = [...abnormalOrderIds, orderId];
+        }
+      }
+      this.logger.debug(`abnormalOrderIds`, abnormalOrderIds);
+    }
+    this.logger.debug(
+      `accVsmodifiableTypeTrade [${
+        Object.keys(accVsmodifiableTypeTrade).length
+      }]`
+    );
+    if (Object.keys(accVsmodifiableTypeTrade).length > 0) {
+      trades = await this.database.getTradesByIds(
+        Object.keys(accVsmodifiableTypeTrade)
+      );
+      trades = trades.reduce((prev, curr) => {
+        if (!prev[curr.id]) prev[curr.id] = curr;
+        return prev;
+      }, {});
+      this.logger.debug(`trades [${Object.values(trades).length}]`);
+      for (let tradeId of Object.keys(accVsmodifiableTypeTrade)) {
+        let trade = trades[tradeId];
+        try {
+          if (trade) {
+            let dateTime = new Date(trade.created_at).toISOString();
+            updateAccountVersionsJob = [
+              ...updateAccountVersionsJob,
+              ...accVsmodifiableTypeTrade[tradeId].map((accountVersion) =>
+                this.accountVersionUpdateJob({
+                  id: accountVersion.id,
+                  created_at: `"${dateTime}"`,
+                  updated_at: `"${dateTime}"`,
+                })
+              ),
+            ];
+          } else {
+            this.logger.debug(`tradeId`, tradeId);
+            abnormalTradeIds = [...abnormalTradeIds, tradeId];
+          }
+        } catch (error) {
+          this.logger.debug(`trade`, trade);
+          this.logger.error(error);
+          abnormalTradeIds = [...abnormalTradeIds, tradeId];
+        }
+      }
+      if (abnormalTradeIds.length > 0) {
+        this.logger.debug(`abnormalTradeIds`, abnormalTradeIds);
+        outerTrades = await this.database.getOuterTradesByTradeIds(
+          abnormalTradeIds
+        );
+        for (let outerTrade of outerTrades) {
+          let outerTradeData = JSON.parse(outerTrade.data);
+          let dateTime = new Date(parseInt(outerTradeData.ts)).toISOString();
+          updateAccountVersionsJob = [
+            ...updateAccountVersionsJob,
+            ...accVsmodifiableTypeTrade[outerTrade.trade_id].map(
+              (accountVersion) =>
+                this.accountVersionUpdateJob({
+                  id: accountVersion.id,
+                  created_at: `"${dateTime}"`,
+                  updated_at: `"${dateTime}"`,
+                })
+            ),
+          ];
+        }
+      }
+    }
+    waterfallPromise(updateAccountVersionsJob);
   }
 
   async _getOuterTradesFromAPI(exchange, interval) {
@@ -304,6 +461,7 @@ class ExchangeHubService {
       this._lastSyncTime = Date.now();
       await this.syncAPIOuterTrades(exchange, data, interval);
       await this.syncUnProcessedOuterTrades(exchange);
+      // this.abnormalAccountVersionsHandler();
       // await this.auditorAbnormalOuterTrades(
       //   exchange,
       //   "2022-11-14 00:00:00",

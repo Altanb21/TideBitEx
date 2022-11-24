@@ -70,14 +70,56 @@ class mysql {
     }
   }
 
+  async auditAccountBalance({ memberId, currency, startId }) {
+    if (!memberId) throw Error(`memberId is required`);
+    let placeholder = [];
+    if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (startId) placeholder = [...placeholder, `id > ${startId}`];
+    let condition = placeholder.join(` AND `);
+    const query = `
+      SELECT
+        account_id,
+        member_id,
+        currency,
+        sum(balance) as sum_balance,
+        sum(locked) as sum_locked,
+	      min(id) AS oldest_id,
+	      max(id) AS lastest_id
+      FROM
+        account_versions
+      WHERE
+        ${condition}
+      GROUP BY account_id
+      ;`;
+    try {
+      // this.logger.debug(
+      //   "auditAccountBalance",
+      //   query,
+      //   memberId,
+      //   currency,
+      //   startId
+      // );
+      const [accountVersions] = await this.db.query({
+        query,
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
-    let placeholder = ``;
+    let placeholder = ``,
+      limitCondition = limit ? `LIMIT ${limit}` : ``;
     // this.logger.debug(options);
     if (Object.keys(options)?.length > 0) {
       let keys = Object.keys(options);
       let values = Object.values(options);
       for (let index = 0; index < Object.keys(options).length; index++) {
-        placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
+        if (values[index])
+          placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }
     // this.logger.debug(placeholder);
@@ -94,9 +136,10 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    LIMIT ${limit};
-    `;
+    ${limitCondition}
+    ;`;
     const values = [memberId];
+    // this.logger.debug(query, values);
     try {
       let accounts;
       if (dbTransaction) {
@@ -116,7 +159,6 @@ class mysql {
           values,
         });
       }
-      // this.logger.debug(query, values);
       // this.logger.debug(`getAccountsByMemberId`, accounts);
       return accounts;
     } catch (error) {
@@ -284,12 +326,51 @@ class mysql {
     }
   }
 
-  /**
-   * [deprecated] 2022/10/14
-   * 沒有地方呼叫
-   */
-  async getMembers() {
-    const query = "SELECT * FROM `members`;";
+  async countMembers(conditions) {
+    let placeholder = [];
+    if (conditions?.before)
+      placeholder = [...placeholder, `id < ${conditions.before}`];
+    if (conditions?.activated)
+      placeholder = [...placeholder, `activated = ${conditions.activated}`];
+    let condition =
+      placeholder.length > 0 ? `WHERE ${placeholder.join(` AND `)}` : ``;
+    const query = `
+    SELECT 
+        count(*) as counts
+    FROM
+        members
+    ${condition}
+    ;`;
+
+    try {
+      // this.logger.debug("countMembers", query);
+      const [[result]] = await this.db.query({
+        query,
+      });
+      // this.logger.debug(`result`, result, result.counts);
+      return result.counts;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembers({ limit, offset }) {
+    const query = `
+    SELECT
+        id,
+        sn,
+        email,
+        member_tag,
+        refer,
+        refer_code,
+        activated
+    FROM
+        members
+    ORDER BY
+        id
+    LIMIT ${limit} OFFSET ${offset}
+    ;`;
     try {
       // this.logger.debug("getMembers", query);
       const [members] = await this.db.query({
@@ -299,6 +380,134 @@ class mysql {
     } catch (error) {
       this.logger.error(error);
       return [];
+    }
+  }
+
+  async getMembersLatestAuditRecordIds(ids, groupByAccountId) {
+    let placeholder = ids.join(`,`);
+    let groupBy = `member_id${groupByAccountId ? ", account_id" : ""}`;
+    const query = `
+    SELECT
+	    max(id) as id,
+	    max(updated_at) as updated_at
+    FROM
+      audit_account_records
+    WHERE
+	    member_id in(${placeholder})
+    GROUP BY
+	    ${groupBy}
+    ORDER BY
+      id
+    ;`;
+    try {
+      // this.logger.debug("getMembersLatestAuditRecordIds", query);
+      const [auditRecordIds] = await this.db.query({
+        query,
+      });
+      return auditRecordIds.map((o) => o.id);
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersAuditRecordByIds(ids) {
+    let placeholder = ids.join(`,`);
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      currency,
+      account_version_id_start,
+      account_version_id_end,
+      balance,
+      expect_balance,
+      locked,
+      expect_locked,
+      updated_at,
+      fixed_at
+    FROM
+      audit_account_records
+    WHERE
+	    id in(${placeholder})
+    ORDER BY
+      id
+    ;`;
+    try {
+      // this.logger.debug("getMembersLatestAuditRecordIds", query);
+      const [auditRecords] = await this.db.query({
+        query,
+      });
+      return auditRecords;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersLatestAccountVersionIds(ids, groupByAccountId) {
+    let placeholder = ids.join(`,`);
+    let groupBy = `member_id${groupByAccountId ? ", account_id" : ""}`;
+    const query = `
+    SELECT
+	    max(id) as id,
+	    max(updated_at) as updated_at
+    FROM
+	    account_versions
+    WHERE
+	    member_id in(${placeholder})
+    GROUP BY
+	    ${groupBy}
+    ;`;
+    try {
+      // this.logger.debug("getMembersLatestAccountVersionIds", query);
+      const [accountVersionIds] = await this.db.query({
+        query,
+      });
+      return accountVersionIds.map((o) => o.id);
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getMembersAccountVersionByIds(ids) {
+    let placeholder = ids.join(`,`);
+    const query = `
+    SELECT
+      account_versions.id,
+      account_versions.member_id,
+      account_versions.account_id,
+      account_versions.reason,
+      account_versions.balance,
+      account_versions.locked,
+      account_versions.fee,
+      account_versions.amount,
+      account_versions.modifiable_id,
+      account_versions.modifiable_type,
+      account_versions.created_at,
+      account_versions.currency,
+      account_versions.fun
+    FROM
+	    account_versions
+    WHERE
+	    account_versions.id in (${placeholder})
+    ORDER BY
+      id
+    ;`;
+    try {
+      // this.logger.debug(
+      //   "getMembersAccountVersionByIds",
+      //   query,
+      // );
+      const [accountVersions] = await this.db.query({
+        query,
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.error(error);
+      return null;
     }
   }
 
@@ -386,29 +595,45 @@ class mysql {
     }
   }
 
-  async getMemberByCondition(condition) {
+  async getMemberByCondition(conditions) {
+    let placeholder = [];
+    if (Object.keys(conditions)?.length > 0) {
+      let keys = Object.keys(conditions);
+      let values = Object.values(conditions);
+      for (let index = 0; index < Object.keys(conditions).length; index++) {
+        if (values[index])
+          placeholder = [
+            ...placeholder,
+            keys[index] === "email"
+              ? `${keys[index]} = "${values[index]}"`
+              : `${keys[index]} = ${values[index]}`,
+          ];
+      }
+    }
+    let condition = placeholder.join(` AND `);
     const query = `
-    SELECT
-	    members.id,
-	    members.sn,
-	    members.email,
-	    members.member_tag,
-	    members.refer
-    FROM
-	    members
-    WHERE
-	    members.${Object.keys(condition)[0]} = ?
-    LIMIT 1;
+      SELECT
+	      id,
+	      sn,
+	      email,
+	      member_tag,
+	      refer,
+        refer_code,
+        activated
+      FROM
+	      members
+      WHERE
+        ${condition}
+      LIMIT 1;
     `;
     try {
       const [[member]] = await this.db.query({
         query,
-        values: [Object.values(condition)[0]],
       });
       return member;
     } catch (error) {
       this.logger.error(error);
-      this.logger.trace("getMemberByCondition", query, condition);
+      this.logger.trace("getMemberByCondition", query, conditions);
       return [];
     }
   }
@@ -1074,17 +1299,17 @@ class mysql {
             : ``
         };`;
     try {
-      this.logger.debug(
-        "countOuterTrades",
-        query,
-        `${
-          type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${days}]`
-            : type === Database.TIME_RANGE_TYPE.BETWEEN
-            ? `[${exchangeCode}, ${start}, ${end}]`
-            : `[${exchangeCode}]`
-        }`
-      );
+      // this.logger.debug(
+      //   "countOuterTrades",
+      //   query,
+      //   `${
+      //     type === Database.TIME_RANGE_TYPE.DAY_AFTER
+      //       ? `[${exchangeCode}, ${days}]`
+      //       : type === Database.TIME_RANGE_TYPE.BETWEEN
+      //       ? `[${exchangeCode}, ${start}, ${end}]`
+      //       : `[${exchangeCode}]`
+      //   }`
+      // );
       const [[counts]] = await this.db.query({
         query,
         values:
@@ -1341,7 +1566,9 @@ class mysql {
       orders.origin_volume,
       orders.state,
       orders.ord_type,
-      orders.funds_received
+      orders.funds_received,
+      orders.created_at,
+      orders.updated_at
     FROM
       orders
     WHERE
@@ -1352,6 +1579,38 @@ class mysql {
       const [orders] = await this.db.query({
         query,
         values: ids,
+      });
+      return orders;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  async getTradesByIds(ids) {
+    let placeholder = ids.join(`,`);
+    let query = `
+    SELECT
+	    trades.id,
+	    trades.ask_id,
+	    trades.bid_id,
+	    trades.ask_member_id,
+	    trades.bid_member_id,
+	    trades.price,
+      trades.volume,
+      trades.currency,
+      trades.funds,
+      trades.trade_fk,
+      trades.created_at,
+      trades.updated_at
+    FROM
+      trades
+    WHERE
+      trades.id in(${placeholder});
+    `;
+    try {
+      // this.logger.debug("[mysql] getTradesByIds", query, ids);
+      const [orders] = await this.db.query({
+        query,
       });
       return orders;
     } catch (error) {
@@ -1381,6 +1640,31 @@ class mysql {
       const [vouchers] = await this.db.query({
         query,
         values: ids,
+      });
+      return vouchers;
+    } catch (error) {
+      this.logger.error(error);
+    }
+  }
+
+  /**
+   *  -- temporary 2022-11-18
+   */
+  async getOuterTradesByTradeIds(tradeIds) {
+    let placeholder = tradeIds.join(`,`);
+    let query = `
+    SELECT
+      outer_trades.trade_id,
+	    outer_trades.data
+    FROM
+      outer_trades
+    WHERE
+      outer_trades.trade_id in(${placeholder});
+    `;
+    try {
+      // this.logger.debug("[mysql] getVouchersByIds", query, ids);
+      const [vouchers] = await this.db.query({
+        query,
       });
       return vouchers;
     } catch (error) {
@@ -1425,6 +1709,39 @@ class mysql {
     }
   }
 
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
+  async getAbnormalAccountVersions(id) {
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      reason,
+      modifiable_type,
+      modifiable_id
+    FROM
+      account_versions
+    WHERE
+      id > ?
+      AND created_at = '0000-00-00 00:00:00'
+    ORDER BY
+      id;`;
+    try {
+      // this.logger.debug("getAbnormalAccountVersions", query, id);
+      const [accountVersions] = await this.db.query({
+        query,
+        values: [id],
+      });
+      return accountVersions;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   /* !!! HIGH RISK (start) !!! */
   async insertOrder(
     bid,
@@ -1456,30 +1773,30 @@ class mysql {
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     try {
-      this.logger.debug(
-        "insertOrder",
-        "DEFAULT",
-        query,
-        bid,
-        ask,
-        currency,
-        price,
-        volume,
-        origin_volume,
-        state,
-        done_at,
-        type,
-        member_id,
-        created_at,
-        updated_at,
-        sn,
-        source,
-        ord_type,
-        locked,
-        origin_locked,
-        funds_received,
-        trades_count
-      );
+      // this.logger.debug(
+      //   "insertOrder",
+      //   "DEFAULT",
+      //   query,
+      //   bid,
+      //   ask,
+      //   currency,
+      //   price,
+      //   volume,
+      //   origin_volume,
+      //   state,
+      //   done_at,
+      //   type,
+      //   member_id,
+      //   created_at,
+      //   updated_at,
+      //   sn,
+      //   source,
+      //   ord_type,
+      //   locked,
+      //   origin_locked,
+      //   funds_received,
+      //   trades_count
+      // );
       return this.db.query(
         {
           query,
@@ -1537,24 +1854,24 @@ class mysql {
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertAccountVersion",
-        query,
-        "DEFAULT",
-        member_id,
-        accountId,
-        reason,
-        balance,
-        locked,
-        fee,
-        amount,
-        modifiable_id,
-        modifiable_type,
-        created_at,
-        updated_at,
-        currency,
-        fun
-      );
+      // this.logger.debug(
+      //   "insertAccountVersion",
+      //   query,
+      //   "DEFAULT",
+      //   member_id,
+      //   accountId,
+      //   reason,
+      //   balance,
+      //   locked,
+      //   fee,
+      //   amount,
+      //   modifiable_id,
+      //   modifiable_type,
+      //   created_at,
+      //   updated_at,
+      //   currency,
+      //   fun
+      // );
       result = await this.db.query(
         {
           query,
@@ -1604,7 +1921,7 @@ class mysql {
     }
     let result;
     try {
-      this.logger.debug("[mysql] insertOuterTrades", query, values);
+      // this.logger.debug("[mysql] insertOuterTrades", query, values);
       result = await this.db.query(
         {
           query,
@@ -1642,23 +1959,23 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertTrades",
-        query,
-        "DEFAULT",
-        price,
-        volume,
-        ask_id,
-        bid_id,
-        trend,
-        currency,
-        created_at,
-        updated_at,
-        ask_member_id,
-        bid_member_id,
-        funds,
-        trade_fk
-      );
+      // this.logger.debug(
+      //   "insertTrades",
+      //   query,
+      //   "DEFAULT",
+      //   price,
+      //   volume,
+      //   ask_id,
+      //   bid_id,
+      //   trend,
+      //   currency,
+      //   created_at,
+      //   updated_at,
+      //   ask_member_id,
+      //   bid_member_id,
+      //   funds,
+      //   trade_fk
+      // );
       result = await this.db.query(
         {
           query,
@@ -1712,24 +2029,24 @@ class mysql {
       "INSERT INTO `vouchers` (`id`,`member_id`,`order_id`,`trade_id`,`designated_trading_fee_asset_history_id`,`ask`,`bid`,`price`,`volume`,`value`,`trend`,`ask_fee`,`bid_fee`,`created_at`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertVouchers",
-        query,
-        "DEFAULT",
-        member_id,
-        order_id,
-        trade_id,
-        designated_trading_fee_asset_history_id,
-        ask,
-        bid,
-        price,
-        volume,
-        value,
-        trend,
-        ask_fee,
-        bid_fee,
-        created_at
-      );
+      // this.logger.debug(
+      //   "insertVouchers",
+      //   query,
+      //   "DEFAULT",
+      //   member_id,
+      //   order_id,
+      //   trade_id,
+      //   designated_trading_fee_asset_history_id,
+      //   ask,
+      //   bid,
+      //   price,
+      //   volume,
+      //   value,
+      //   trend,
+      //   ask_fee,
+      //   bid_fee,
+      //   created_at
+      // );
       result = await this.db.query(
         {
           query,
@@ -1787,26 +2104,26 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertReferralCommission",
-        query,
-        "DEFAULT",
-        referredByMemberId,
-        tradeMemberId,
-        voucherId,
-        appliedPlanId,
-        appliedPolicyId,
-        trend,
-        market,
-        currency,
-        refGrossFee,
-        refNetFee,
-        amount,
-        state,
-        depositedAt,
-        createdAt,
-        updatedAt
-      );
+      // this.logger.debug(
+      //   "insertReferralCommission",
+      //   query,
+      //   "DEFAULT",
+      //   referredByMemberId,
+      //   tradeMemberId,
+      //   voucherId,
+      //   appliedPlanId,
+      //   appliedPolicyId,
+      //   trend,
+      //   market,
+      //   currency,
+      //   refGrossFee,
+      //   refNetFee,
+      //   amount,
+      //   state,
+      //   depositedAt,
+      //   createdAt,
+      //   updatedAt
+      // );
       result = await this.db.query(
         {
           query,
@@ -1842,15 +2159,162 @@ class mysql {
     return referralCommissionId;
   }
 
+  async insertAuditAccountRecord(
+    account_id,
+    member_id,
+    currency,
+    account_version_id_start,
+    account_version_id_end,
+    balance,
+    expect_balance,
+    locked,
+    expect_locked,
+    created_at,
+    updated_at,
+    fixed_at,
+    issued_by,
+    { dbTransaction }
+  ) {
+    let result, accountVersionId;
+    const query = `
+    INSERT INTO audit_account_records (id, account_id, member_id, currency, account_version_id_start, account_version_id_end, balance, expect_balance, locked, expect_locked, created_at, updated_at, fixed_at, issued_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE balance = ${balance}, 
+      expect_balance = ${expect_balance}, 
+      locked = ${locked}, 
+      expect_locked = ${expect_locked}, 
+      updated_at = "${updated_at}";`;
+    try {
+      // this.logger.debug(
+      //   "insertAuditAccountRecord",
+      //   query,
+      //   "DEFAULT",
+      //   account_id,
+      //   member_id,
+      //   currency,
+      //   account_version_id_start,
+      //   account_version_id_end,
+      //   balance,
+      //   expect_balance,
+      //   locked,
+      //   expect_locked,
+      //   created_at,
+      //   updated_at,
+      //   fixed_at,
+      //   issued_by
+      // );
+      result = await this.db.query(
+        {
+          query,
+          values: [
+            "DEFAULT",
+            account_id,
+            member_id,
+            currency,
+            account_version_id_start,
+            account_version_id_end,
+            balance,
+            expect_balance,
+            locked,
+            expect_locked,
+            created_at,
+            updated_at,
+            fixed_at,
+            issued_by,
+          ],
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      accountVersionId = result[0];
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+    return accountVersionId;
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     try {
       const id = datas.id;
+      const where = "id = " + id;
+      delete datas.id;
+      const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
+      const placeholder = set.join(", ");
+      let query = `
+      UPDATE
+      	accounts
+      SET
+        ${placeholder}
+      WHERE
+        ${where}
+      LIMIT 1;
+      `;
+      // this.logger.debug("updateAccount", query);
+      if(!id) throw Error(`id is required`)
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+  }
+
+  async updateAuditAccountRecord(datas, { dbTransaction }) {
+    try {
+      const id = datas.id;
+      if(!id) throw Error(`id is required`)
+      const where = "id = " + id;
+      delete datas.id;
+      const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
+      const placeholder = set.join(", ");
+      let query = `
+      UPDATE
+      	audit_account_records
+      SET
+        ${placeholder}
+      WHERE
+        ${where}
+      LIMIT 1;`;
+      // this.logger.debug("updateAuditAccountRecord", query);
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
+  async updateAccountVersion(datas, { dbTransaction }) {
+    try {
+      const id = datas.id;
+      if(!id) throw Error(`id is required`)
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
       let query =
-        "UPDATE `accounts` SET " + set.join(", ") + " WHERE " + where + ";";
-      this.logger.debug("updateAccount", query);
+        "UPDATE `account_versions` SET " +
+        set.join(", ") +
+        " WHERE " +
+        where +
+        " LIMIT 1;";
+      // this.logger.debug("updateAccountVersion", query);
       await this.db.query(
         {
           query,
@@ -1868,12 +2332,20 @@ class mysql {
   async updateOrder(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      const where = "`id` = " + id;
+      if(!id) throw Error(`id is required`)
+      const where = "id = " + id;
       delete datas.id;
-      const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
-      let query =
-        "UPDATE `orders` SET " + set.join(", ") + " WHERE " + where + ";";
-      this.logger.debug("updateOrder", query);
+      const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
+      const placeholder = set.join(", ");
+      let query = `
+      UPDATE
+        orders
+      SET
+        ${placeholder}
+      WHERE
+        ${where}
+      LIMIT 1;`;
+      // this.logger.debug("updateOrder", query);
       await this.db.query(
         {
           query,
@@ -1892,6 +2364,7 @@ class mysql {
   async updateOuterTrade(datas, { dbTransaction }) {
     try {
       const id = datas.id;
+      if(!id) throw Error(`id is required`)
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map(
@@ -1899,8 +2372,8 @@ class mysql {
           `\`${key}\` = ${key === "email" ? `"${datas[key]}"` : datas[key]}`
       );
       let query =
-        "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + ";";
-      this.logger.debug("updateOuterTrade", query);
+        "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + " LIMIT 1;";
+      // this.logger.debug("updateOuterTrade", query);
       await this.db.query(
         {
           query,
@@ -1931,7 +2404,7 @@ class mysql {
         //   lock: dbTransaction.LOCK., // ++ TODO verify
         // }
       );
-      this.logger.debug(query, values);
+      // this.logger.debug(query, values);
       return result;
     } catch (error) {
       this.logger.error(error);

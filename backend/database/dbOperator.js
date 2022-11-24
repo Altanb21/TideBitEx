@@ -34,6 +34,10 @@ class DBOperator {
     return this.database.getTotalAccountsAssets();
   }
 
+  async auditAccountBalance({ memberId, currency, startId }) {
+    return this.database.auditAccountBalance({ memberId, currency, startId });
+  }
+
   async getAccountsByMemberId(
     memberId,
     { options = {}, limit = 100, dbTransaction }
@@ -79,12 +83,12 @@ class DBOperator {
     return this.database.getCurrencyByKey(currencyKey);
   }
 
-  /**
-   * [deprecated] 2022/10/14
-   * 沒有地方呼叫
-   */
-  async getMembers() {
-    return this.database.getMembers();
+  async countMembers(conditions) {
+    return this.database.countMembers(conditions);
+  }
+
+  async getMembers({ limit = 10, offset = 0 }) {
+    return this.database.getMembers({ limit, offset });
   }
 
   /**
@@ -103,8 +107,8 @@ class DBOperator {
     return this.database.getMemberByEmail(memberEmail);
   }
 
-  async getMemberByCondition(condition) {
-    return this.database.getMemberByCondition(condition);
+  async getMemberByCondition(conditions) {
+    return this.database.getMemberByCondition(conditions);
   }
 
   async getCommissionPolicies(planId) {
@@ -384,6 +388,14 @@ class DBOperator {
     return this.database.getOrdersByIds(ids);
   }
 
+  async getTradesByIds(ids) {
+    return this.database.getTradesByIds(ids);
+  }
+
+  async getOuterTradesByTradeIds(tradeIds) {
+    return this.database.getOuterTradesByTradeIds(tradeIds);
+  }
+
   async getVouchersByIds(ids) {
     return this.database.getVouchersByIds(ids);
   }
@@ -395,6 +407,14 @@ class DBOperator {
       end,
       asc,
     });
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
+  async getAbnormalAccountVersions(id) {
+    return this.database.getAbnormalAccountVersions(id);
   }
 
   /* !!! HIGH RISK (start) !!! */
@@ -525,8 +545,58 @@ class DBOperator {
     );
   }
 
+  async getMembersLatestAuditRecordIds(ids, groupByAccountId = false) {
+    return this.database.getMembersLatestAuditRecordIds(ids, groupByAccountId);
+  }
+
+  async getMembersLatestAccountVersionIds(ids, groupByAccountId = false) {
+    return this.database.getMembersLatestAccountVersionIds(
+      ids,
+      groupByAccountId
+    );
+  }
+
+  async getMembersAuditRecordByIds(ids) {
+    return this.database.getMembersAuditRecordByIds(ids);
+  }
+
+  async getMembersAccountVersionByIds(ids) {
+    return this.database.getMembersAccountVersionByIds(ids);
+  }
+
+  async insertAuditAccountRecord(auditAccountRecord, { dbTransaction }) {
+    return this.database.insertAuditAccountRecord(
+      auditAccountRecord.account_id,
+      auditAccountRecord.member_id,
+      auditAccountRecord.currency,
+      auditAccountRecord.account_version_id_start,
+      auditAccountRecord.account_version_id_end,
+      auditAccountRecord.balance,
+      auditAccountRecord.expect_balance,
+      auditAccountRecord.locked,
+      auditAccountRecord.expect_locked,
+      auditAccountRecord.created_at,
+      auditAccountRecord.updated_at,
+      auditAccountRecord.fixed_at,
+      auditAccountRecord.issued_by,
+      { dbTransaction }
+    );
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     return this.database.updateAccount(datas, { dbTransaction });
+  }
+
+  async updateAuditAccountRecord(datas, { dbTransaction }) {
+    return this.database.updateAuditAccountRecord(datas, { dbTransaction });
+  }
+
+  /**
+   *  -- temporary 2022-11-17
+   * [deprecated] 2022-11-18
+   */
+  async updateAccountVersion(datas, { dbTransaction }) {
+    return this.database.updateAccountVersion(datas, { dbTransaction });
   }
 
   async updateOrder(datas, { dbTransaction }) {

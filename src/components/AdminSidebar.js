@@ -97,7 +97,7 @@ const Sidebar = (props) => {
             text: "平台資產總覽",
           },
           {
-            page: "user-assets",
+            page: "members",
             text: "用戶資產總覽",
           },
         ]}

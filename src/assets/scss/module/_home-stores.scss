@@ -1,0 +1,36 @@
+.home-stores {
+  background-color: #fff;
+  padding: 48px 30px;
+  &__container {
+    margin: 0 auto;
+  }
+  &__box {
+    margin: 0 auto;
+    display: flex;
+    flex-direction: row;
+    gap: 30px;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+  &__link {
+    display: inline-block;
+    width: 180px;
+    height: 60px;
+  }
+  &__image {
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    width: 100%;
+    height: 100%;
+  }
+  &__image--apple {
+    background-image: url("../../images/AppStore.svg");
+  }
+  &__image--google {
+    background-image: url("../../images/GooglePlay.svg");
+  }
+  &__description {
+    text-align: center;
+  }
+}

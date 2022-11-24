@@ -25,8 +25,6 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
-const { default: OuterTradeError } = require("../errors/OuterTradeError");
-
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};
@@ -38,11 +36,14 @@ class ExchangeHub extends Bot {
   coinsSettings;
   depositsSettings;
   withdrawsSettings;
+  jobQueue = [];
+  jobTimer = [];
   constructor() {
     super();
     this.name = "ExchangeHub";
     this.fetchedTickers = false;
   }
+  oneDayinMillionSeconds = 24 * 60 * 60 * 1000;
 
   init({ config, database, logger, i18n }) {
     this.okexBrokerId = config.okex.brokerId;
@@ -128,7 +129,7 @@ class ExchangeHub extends Bot {
           okexConnector: this.okexConnector,
           tickersSettings: this.tickersSettings,
           emitUpdateData: (updateData) => this.emitUpdateData(updateData),
-          processor: (data) => this.processor(data),
+          processor: (data) => this.processorHandler(data),
           logger,
         });
         return this;
@@ -143,6 +144,7 @@ class ExchangeHub extends Bot {
       exchange: SupportedExchange.OKEX,
       force: true,
     });
+    this.worker();
     return this;
   }
 
@@ -1172,11 +1174,10 @@ class ExchangeHub extends Bot {
       let commissionPolicies = await this.database.getCommissionPolicies(
         commissionPlanId
       );
-      let dayTime = 24 * 60 * 60 * 1000;
       let days = Math.ceil(
         (new Date(`${voucher.created_at}`).getTime() -
           new Date(`${referral.created_at}`).getTime()) /
-          dayTime
+          this.oneDayinMillionSeconds
       );
       if (days <= 365) {
         let index = 1;
@@ -2190,7 +2191,7 @@ class ExchangeHub extends Bot {
     // const pad = (n) => {
     //   return n < 10 ? "0" + n : n;
     // };
-    const monthInterval = 30 * 24 * 60 * 60 * 1000;
+    // const monthInterval = 30 * this.oneDayinMillionSeconds;
 
     let { exchange, start, end, instId } = query;
     let id = instId.replace("-", "").toLowerCase(),
@@ -2476,7 +2477,7 @@ class ExchangeHub extends Bot {
                 status: dbOuterTrade.status,
                 voucherId: dbOuterTrade.voucher_id,
                 marketCode: tickerSetting.code,
-                kind: dbOuterTrade?.kind,
+                // kind: dbOuterTrade?.kind,
                 outerTrade,
                 innerTrade,
                 fillPrice: dbOuterTrade.voucher_price || outerTradeData.fillPx,
@@ -2514,6 +2515,7 @@ class ExchangeHub extends Bot {
               fee,
               price,
               volume,
+              kind,
               state,
               fillPrice,
               fillVolume;
@@ -2525,6 +2527,7 @@ class ExchangeHub extends Bot {
                 SafeMath.eq(v.id, trade.voucherId)
               );
               if (order) {
+                kind = order.ord_type;
                 state = Database.DB_STATE_CODE[order.state];
                 price = order.price ? Utils.removeZeroEnd(order.price) : null;
                 volume = order.origin_volume
@@ -2598,7 +2601,15 @@ class ExchangeHub extends Bot {
                 !SafeMath.eq(
                   trade.outerTrade.fillVolume,
                   trade.innerTrade.fillVolume
-                )
+                ) ||
+                (trade.outerTrade.state &&
+                  trade.outerTrade.state !==
+                    Database.OKX_ORDER_STATE.partially_filled &&
+                  trade.outerTrade.state !== trade.innerTrade.state) ||
+                (trade.outerTrade.state &&
+                  trade.outerTrade.state ===
+                    Database.OKX_ORDER_STATE.partially_filled &&
+                  trade.innerTrade.state === Database.ORDER_STATE.CANCEL)
               )
                 alert = true;
             }
@@ -2606,6 +2617,7 @@ class ExchangeHub extends Bot {
               ...processTrades,
               {
                 ...trade,
+                kind,
                 feeCurrency: trade.feeCurrency || feeCurrency,
                 referral,
                 profit,
@@ -2927,11 +2939,6 @@ class ExchangeHub extends Bot {
             locked: orderData.locked,
             fee: 0,
           };
-          // account = await this.database.getAccountsByMemberId(memberId, {
-          //   options: { currency: currencyId },
-          //   limit: 1,
-          //   dbTransaction: t,
-          // });
           await this._updateAccount(accountVersion, t);
           //   * 5. commit transaction
           await t.commit();
@@ -3014,7 +3021,7 @@ class ExchangeHub extends Bot {
             //    * 6.2.3 新增 account_versions 記錄
             //    * 6.2.4 更新 order 為 cancel 狀態
             result = await this.updateOrderStatus({
-              transacion: t,
+              transaction: t,
               orderId,
               memberId,
               orderData: updateOrder,
@@ -3251,12 +3258,13 @@ class ExchangeHub extends Bot {
   }
 
   async updateOrderStatus({
-    transacion,
+    transaction,
     orderId,
     memberId,
     orderData,
     dbOrder,
     tickerSetting,
+    force,
   }) {
     /* !!! HIGH RISK (start) !!! */
     // 1. -get orderId from body-
@@ -3280,8 +3288,6 @@ class ExchangeHub extends Bot {
       fee,
       updatedOrder,
       currencyId,
-      // account,
-      // updateAccount,
       _tickerSetting,
       accountVersion,
       createdAt = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -3289,16 +3295,11 @@ class ExchangeHub extends Bot {
       order = dbOrder
         ? dbOrder
         : await this.database.getOrder(orderId, {
-            dbTransaction: transacion,
+            dbTransaction: transaction,
           });
-      if (order && order.state !== Database.ORDER_STATE_CODE.CANCEL) {
+      if (order && order.state === Database.ORDER_STATE_CODE.WAIT) {
         currencyId =
           order?.type === Database.TYPE.ORDER_ASK ? order?.ask : order?.bid;
-        // account = await this.database.getAccountsByMemberId(memberId, {
-        //   options: { currency: currencyId },
-        //   limit: 1,
-        //   dbTransaction: transacion,
-        // });
         _tickerSetting = tickerSetting
           ? tickerSetting
           : Object.values(this.tickersSettings).find((ts) =>
@@ -3308,14 +3309,13 @@ class ExchangeHub extends Bot {
         locked = SafeMath.mult(order.locked, "-1");
         balance = order.locked;
         fee = "0";
-        // if (account) {
         const newOrder = {
           id: orderId,
           state: Database.ORDER_STATE_CODE.CANCEL,
           updated_at: `"${createdAt}"`,
         };
         await this.database.updateOrder(newOrder, {
-          dbTransaction: transacion,
+          dbTransaction: transaction,
         });
         this.logger.debug(`被取消訂單的狀態更新了`);
         accountVersion = {
@@ -3331,7 +3331,7 @@ class ExchangeHub extends Bot {
           locked,
           fee,
         };
-        await this._updateAccount(accountVersion, transacion);
+        await this._updateAccount(accountVersion, transaction);
         this.logger.debug(`被取消訂單對應的用戶帳號更新了`);
         updatedOrder = {
           ...order,
@@ -3343,19 +3343,7 @@ class ExchangeHub extends Bot {
           ts: Date.now(),
         };
         this.logger.debug(`回傳更新後的 order snapshot`, updatedOrder);
-        // updateAccount = {
-        //   balance: SafeMath.plus(account.balance, balance),
-        //   locked: SafeMath.plus(account.locked, locked),
-        //   currency: this.coinsSettings.find(
-        //     (curr) => curr.id === account.currency
-        //   )?.symbol,
-        //   total: SafeMath.plus(
-        //     SafeMath.plus(account.balance, balance),
-        //     SafeMath.plus(account.locked, locked)
-        //   ),
-        // };
         success = true;
-        // }
       }
     } catch (error) {
       success = false;
@@ -3364,12 +3352,11 @@ class ExchangeHub extends Bot {
         error
       );
     }
-    // return { success, updatedOrder, updateAccount };
     return { success, updatedOrder };
     /* !!! HIGH RISK (end) !!! */
   }
   async postCancelOrder({ header, params, query, body, memberId }) {
-    let transacion = await this.database.transaction(),
+    let transaction = await this.database.transaction(),
       dbOrder,
       tickerSetting,
       result,
@@ -3379,7 +3366,7 @@ class ExchangeHub extends Bot {
       clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
     try {
       dbOrder = await this.database.getOrder(orderId, {
-        dbTransaction: transacion,
+        dbTransaction: transaction,
       });
       this.logger.debug(
         `postCancelOrder dbOrder[memberId:${memberId}](SafeMath.eq(dbOrder.member_id, memberId):${SafeMath.eq(
@@ -3404,7 +3391,7 @@ class ExchangeHub extends Bot {
             `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號 orderId:[${orderId}] clOrdId:[${clOrdId}]`
           );
           dbUpdateR = await this.updateOrderStatus({
-            transacion,
+            transaction,
             orderId,
             memberId,
             dbOrder,
@@ -3416,7 +3403,7 @@ class ExchangeHub extends Bot {
           });
           /* !!! HIGH RISK (end) !!! */
           if (!dbUpdateR?.success) {
-            await transacion.rollback();
+            await transaction.rollback();
             result = new ResponseFormat({
               message: "DB ERROR",
               code: Codes.CANCEL_ORDER_FAIL,
@@ -3439,10 +3426,10 @@ class ExchangeHub extends Bot {
           }
           if (!result) {
             if (!apiR?.success) {
-              await transacion.rollback();
+              await transaction.rollback();
               this.logger.debug(`API 取消訂單失敗 rollback`);
             } else {
-              await transacion.commit();
+              await transaction.commit();
               this.logger.debug(`API 取消訂單成功了`);
               // 3. informFrontEnd
               this.logger.debug(`準備通知前端更新頁面`);
@@ -3465,7 +3452,7 @@ class ExchangeHub extends Bot {
           result = apiR;
           break;
         case SupportedExchange.TIDEBIT:
-          await transacion.commit();
+          await transaction.commit();
           result = this.tideBitConnector.router(`postCancelOrder`, {
             header,
             body: { ...body, orderId, market: tickerSetting },
@@ -3484,6 +3471,111 @@ class ExchangeHub extends Bot {
         message: error.message,
         code: Codes.CANCEL_ORDER_FAIL,
       });
+    }
+    return result;
+  }
+
+  async forceCancelOrder({ body, email }) {
+    this.logger.debug(`forceCancelOrder email, body`, email, body);
+    let memberId = body.memberId;
+    let orderId = body.orderId;
+    let orderExchange = body.orderExchange;
+    let result,
+      dbOrder,
+      dbUpdateR,
+      apiR,
+      tickerSetting,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      dbTransaction;
+    if (!currentUser.roles?.includes("root"))
+      result = new ResponseFormat({
+        message: `Permission denied`,
+        code: Codes.INVALID_INPUT,
+      });
+    if (!result) {
+      dbTransaction = await this.database.transaction();
+      try {
+        dbOrder = await this.database.getOrder(orderId, {
+          dbTransaction,
+        });
+        this.logger.debug(`forceCancelOrder dbOrder`, dbOrder);
+        if (
+          dbOrder &&
+          SafeMath.eq(dbOrder.member_id, memberId) &&
+          dbOrder.state !== Database.ORDER_STATE_CODE.DONE
+        ) {
+          tickerSetting = Object.values(this.tickersSettings).find((ts) =>
+            SafeMath.eq(ts.code, dbOrder.currency)
+          );
+          switch (orderExchange) {
+            case SupportedExchange.OKEX:
+              let clOrdId =
+                `${this.okexBrokerId}${dbOrder.member_id}m${orderId}o`.slice(
+                  0,
+                  32
+                );
+              if (dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
+                dbUpdateR = await this.updateOrderStatus({
+                  transaction: dbTransaction,
+                  orderId: orderId,
+                  memberId: dbOrder.member_id,
+                  dbOrder,
+                  tickerSetting,
+                  orderData: {
+                    id: orderId,
+                    clOrdId,
+                  },
+                });
+                if (!dbUpdateR?.success) {
+                  await dbTransaction.rollback();
+                  result = new ResponseFormat({
+                    message: "DB ERROR",
+                    code: Codes.CANCEL_ORDER_FAIL,
+                  });
+                  this.logger.debug(`DB 更新失敗 rollback`);
+                }
+              }
+              if (!result) {
+                // 2. performTask (Task: cancel)
+                this.logger.debug(`準備呼叫 API 執行取消訂單`);
+                this.logger.debug(`postCancelOrder`, body);
+                apiR = await this.okexConnector.router("postCancelOrder", {
+                  body: {
+                    instId: tickerSetting.instId,
+                    clOrdId,
+                  },
+                });
+                this.logger.debug(`okexCancelOrderRes`, apiR);
+                if (!apiR?.success) {
+                  await dbTransaction.rollback();
+                  this.logger.debug(`API 取消訂單失敗 rollback`);
+                } else {
+                  await dbTransaction.commit();
+                  this.logger.debug(`API 取消訂單成功了`);
+                }
+              }
+              result = apiR;
+              break;
+            default:
+              result = new ResponseFormat({
+                message: `訂單不存在`,
+                code: Codes.INVALID_INPUT,
+              });
+              break;
+          }
+        } else {
+          result = new ResponseFormat({
+            message: `訂單不存在`,
+            code: Codes.INVALID_INPUT,
+          });
+        }
+      } catch (error) {
+        this.logger.error(`取消訂單失敗了`, error);
+        result = new ResponseFormat({
+          message: error.message,
+          code: Codes.CANCEL_ORDER_FAIL,
+        });
+      }
     }
     return result;
   }
@@ -3745,6 +3837,14 @@ class ExchangeHub extends Bot {
     return { askFeeRate, bidFeeRate };
   }
 
+  /**
+   * [deprecated] 2022/11/18
+   * (
+   *   原本是想用在 processor 流程但後來沒有用，因為怕 DB 更新跟通知前端更新分開來數值會有錯誤，
+   *   所以此function _emitUpdateOrder 的部份寫在 processor 裡面 calculator 之後 updater 之前，
+   *   _emitUpdateAccount 寫在 updater 裡面的 _updateAccount
+   * )
+   */
   async emitter({
     memberId,
     market,
@@ -4000,20 +4100,29 @@ class ExchangeHub extends Bot {
         /**
          * ALERT: handle abnormal order
          */
-        throw OuterTradeError({
-          message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+        throw Error(
+          `abnormal order:update orderVolume less than 0(${SafeMath.lt(
             orderVolume,
             0
           )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
             orderVolume,
             SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
-          )})`,
-          code: Codes.ABNORMAL_ORDER,
-          data: {
-            dbOrder,
-            orderDetail,
-          },
-        });
+          )})`
+        );
+        // throw OuterTradeError({
+        //   message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+        //     orderVolume,
+        //     0
+        //   )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
+        //     orderVolume,
+        //     SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
+        //   )})`,
+        //   code: Codes.ABNORMAL_ORDER,
+        //   data: {
+        //     dbOrder,
+        //     orderDetail,
+        //   },
+        // });
       }
       // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
       orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
@@ -4434,12 +4543,14 @@ class ExchangeHub extends Bot {
       dbReferrerCommission;
     // this.logger.debug(`updater`);
     try {
-      if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT)
-        throw Error({
-          message: `orderState is not wait`,
-          code: Codes.ABNORMAL_ORDER,
-          data: { dbOrder },
-        });
+      if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT) {
+        throw Error(`orderState is not wait`);
+        // throw Error({
+        //   message: `orderState is not wait`,
+        //   code: Codes.ABNORMAL_ORDER,
+        //   data: { dbOrder },
+        // });
+      }
       await this.database.updateOrder(updatedOrder, { dbTransaction });
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (dbTrade) {
@@ -4828,15 +4939,18 @@ class ExchangeHub extends Bot {
             });
           } catch (error) {
             this.logger.error(`calculator error`, error);
-            if (error.code === Codes.ABNORMAL_ORDER) {
-              stop = true;
+            // if (error.code === Codes.ABNORMAL_ORDER) {
+            stop = true;
+            try {
               await this.abnormalOrderHandler({
                 dbOrder: order,
                 apiOrder: orderDetail,
                 dbTransaction,
               });
               await dbTransaction.commit();
-            } else throw error;
+            } catch (error) {
+              throw error;
+            }
           }
         }
         if (!stop && result) {
@@ -4920,6 +5034,375 @@ class ExchangeHub extends Bot {
         this.logger.error(`processor dbTransaction rollback`, error);
       }
     }
+  }
+
+  async worker() {
+    const job = this.jobQueue.shift();
+    if (job) {
+      await job();
+      await this.worker();
+    } else {
+      clearTimeout(this.jobTimer);
+      this.jobTimer = setTimeout(() => this.worker(), 1000);
+    }
+  }
+
+  processorHandler(data) {
+    const job = () => {
+      return new Promise(async (resolve, reject) => {
+        try {
+          await this.processor(data);
+          resolve();
+        } catch {
+          reject();
+        }
+      });
+    };
+    this.jobQueue = [...this.jobQueue, job];
+  }
+
+  async getMembersLatestAccountVersions(memberIds) {
+    let accountVersionIds =
+      await this.database.getMembersLatestAccountVersionIds(memberIds);
+    let accountVersions = await this.database.getMembersAccountVersionByIds(
+      accountVersionIds
+    );
+    accountVersions =
+      accountVersionIds.length > 0
+        ? accountVersions.reduce((prev, curr) => {
+            prev[curr.member_id] = curr;
+            return prev;
+          }, {})
+        : [];
+    return accountVersions;
+  }
+
+  async getMembersLatestAuditRecords(memberIds, groupByAccountId = false) {
+    let auditRecordIds = await this.database.getMembersLatestAuditRecordIds(
+      memberIds,
+      groupByAccountId
+    );
+    let auditRecords =
+      auditRecordIds.length > 0
+        ? await this.database.getMembersAuditRecordByIds(auditRecordIds, true)
+        : [];
+    let auditRecord =
+      auditRecords?.length > 0
+        ? {
+            ...auditRecords.sort(
+              (a, b) => b.account_version_id_end - a.account_version_id_end
+            )[0],
+          }
+        : null;
+    let lastestAuditAccountVersionId = auditRecord?.account_version_id_end;
+    auditRecords = auditRecords.reduce((prev, curr) => {
+      if (!prev[groupByAccountId ? curr.account_id : curr.member_id])
+        prev[groupByAccountId ? curr.account_id : curr.member_id] = curr;
+      return prev;
+    }, {});
+    return {
+      auditRecords: auditRecords,
+      lastestAuditAccountVersionId: lastestAuditAccountVersionId,
+    };
+  }
+
+  async auditAccountBalance(memberId, currency, lastestAuditAccountVersionId) {
+    let auditAccountResult = await this.database.auditAccountBalance({
+      memberId,
+      currency,
+      startId: lastestAuditAccountVersionId,
+    });
+    auditAccountResult = auditAccountResult.reduce((prev, curr) => {
+      if (!prev[curr.account_id]) prev[curr.account_id] = curr;
+      return prev;
+    }, {});
+    return auditAccountResult;
+  }
+
+  async auditorMemberAccounts({ query }, dbTransaction) {
+    let { memberId, currency } = query;
+    let tmp,
+      accounts,
+      auditRecords,
+      lastestAuditAccountVersionId,
+      lastestAuditRecords,
+      coinsSettings,
+      result = {
+        memberId,
+        accounts: {},
+      };
+    try {
+      if (!memberId) throw Error(`memberId is required`);
+      tmp = await this.getMembersLatestAuditRecords([memberId], true);
+      auditRecords = tmp.auditRecords;
+      lastestAuditAccountVersionId = tmp.lastestAuditAccountVersionId;
+      lastestAuditRecords = await this.auditAccountBalance(
+        memberId,
+        currency,
+        lastestAuditAccountVersionId
+      );
+      accounts = await this.database.getAccountsByMemberId(memberId, {
+        options: { currency: currency },
+        dbTransaction: dbTransaction,
+      });
+      accounts = accounts.reduce((prev, curr) => {
+        if (!prev[curr.id]) prev[curr.id] = curr;
+        return prev;
+      }, {});
+      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
+        return prev;
+      }, {});
+      if (Object.keys(accounts).length > 0) {
+        for (let accountId of Object.keys(accounts)) {
+          let account = accounts[accountId],
+            correctBalance = SafeMath.plus(
+              lastestAuditRecords[accountId]?.sum_balance || "0",
+              auditRecords[accountId]?.expect_balance || "0"
+            ),
+            correctLocked = SafeMath.plus(
+              lastestAuditRecords[accountId]?.sum_locked || "0",
+              auditRecords[accountId]?.expect_locked || "0"
+            );
+          result.accounts[accountId] = {
+            accountId,
+            currency: coinsSettings[account.currency]?.code,
+            balance: {
+              current: Utils.removeZeroEnd(account.balance),
+              shouldBe: correctBalance,
+              alert: !SafeMath.eq(account.balance, correctBalance),
+            },
+            locked: {
+              current: Utils.removeZeroEnd(account.locked),
+              shouldBe: correctLocked,
+              alert: !SafeMath.eq(account.locked, correctLocked),
+            },
+            createdAt: new Date(account.created_at).toISOString(),
+            updatedAt: new Date(account.updated_at).toISOString(),
+            dbTransaction: dbTransaction,
+          };
+          /* !!! HIGH RISK (start) !!! */
+          if (
+            lastestAuditRecords[accountId]
+            // && lastestAccountVersion.id > auditRecord.account_version_id_end
+          ) {
+            let now = `${new Date()
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}`,
+              dbTransaction = await this.database.transaction();
+            try {
+              await this.database.insertAuditAccountRecord(
+                {
+                  account_id: accountId,
+                  member_id: memberId,
+                  currency: account.currency,
+                  account_version_id_start:
+                    lastestAuditRecords[accountId].oldest_id,
+                  account_version_id_end:
+                    lastestAuditRecords[accountId].lastest_id,
+                  balance: account.balance,
+                  expect_balance: correctBalance,
+                  locked: account.locked,
+                  expect_locked: correctLocked,
+                  created_at: now,
+                  updated_at: now,
+                  issued_by: null,
+                  fixed_at: null,
+                },
+                { dbTransaction }
+              );
+              await dbTransaction.commit();
+            } catch (error) {
+              this.logger.error(error);
+              await dbTransaction.rollback();
+            }
+          }
+          /* !!! HIGH RISK (end) !!! */
+        }
+      }
+      return new ResponseFormat({
+        message: "auditorAccounts",
+        payload: result,
+      });
+    } catch (error) {
+      return new ResponseFormat({
+        message: `auditorAccounts ${JSON.stringify(error)}`,
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+  }
+
+  async getMembers({ query }) {
+    let { email, limit = 10, offset } = query;
+    let result,
+      number,
+      counts,
+      members = [],
+      memberIds = [],
+      auditRecords,
+      accountVersions,
+      page;
+    try {
+      if (offset == 0 || email) counts = await this.database.countMembers();
+      if (email) {
+        // this.logger.debug("email", email);
+        const member = await this.database.getMemberByCondition({
+          email: email,
+        });
+        // this.logger.debug("member", member);
+        if (member) {
+          number = await this.database.countMembers({ before: member.id });
+          page = Math.floor(number / limit) + 1;
+          offset = (page - 1) * limit;
+          // this.logger.debug("number", number);
+          // this.logger.debug("page", page);
+          // this.logger.debug("offset", offset);
+        }
+      }
+      // this.logger.debug("offset == 0 || !!offset", offset == 0 || !!offset);
+      if (offset == 0 || !!offset) {
+        result = await this.database.getMembers({ limit, offset });
+        members = result.map((r) => {
+          memberIds = [...memberIds, r.id];
+          let member = {
+            ...r,
+            activated: SafeMath.eq(r.activated, 1),
+          };
+          return member;
+        });
+        let tmp = await this.getMembersLatestAuditRecords(memberIds);
+        // this.logger.debug(`tmp`, tmp);
+        auditRecords = tmp.auditRecords;
+        accountVersions = await this.getMembersLatestAccountVersions(memberIds);
+        members = members.map((m) => {
+          let lastestAccountAuditTime = auditRecords[m.id]
+              ? new Date(auditRecords[m.id].updated_at).getTime()
+              : null,
+            lastestActivityTime = accountVersions[m.id]
+              ? new Date(accountVersions[m.id].created_at).getTime()
+              : null,
+            alert =
+              lastestActivityTime &&
+              (!lastestAccountAuditTime ||
+                SafeMath.gt(
+                  SafeMath.minus(lastestActivityTime, lastestAccountAuditTime),
+                  this.oneDayinMillionSeconds
+                )),
+            member = {
+              ...m,
+              lastestAccountAuditTime,
+              lastestActivityTime,
+              alert,
+            };
+          return member;
+        });
+      }
+      return new ResponseFormat({
+        message: "getMembers",
+        payload: {
+          counts,
+          members,
+          page,
+        },
+      });
+    } catch (error) {
+      this.logger.error(error);
+      return new ResponseFormat({
+        message: `getMembers ${JSON.stringify(error)}`,
+        code: Codes.UNKNOWN_ERROR,
+      });
+    }
+  }
+
+  /**
+   * ++ TODO test is required
+   * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
+   * audit_records table 還沒有建立
+   */
+  async fixAbnormalAccount({ query, email }) {
+    this.logger.debug(`fixAbnormalAccount email`, email);
+    let { memberId, currency, id } = query;
+    let result,
+      currentUser = this.adminUsers.find((user) => user.email === email),
+      dbTransaction;
+    if (!currentUser.roles?.includes("root"))
+      result = new ResponseFormat({
+        message: `Permission denied`,
+        code: Codes.INVALID_INPUT,
+      });
+    if (!memberId || !currency) {
+      result = new ResponseFormat({
+        message: `${!memberId && "memberId is required"}${
+          !memberId && !currency && " AND "
+        }${!currency && "currency is required"}`,
+        code: Codes.INVALID_INPUT,
+      });
+    }
+    if (!result) {
+      dbTransaction = await this.database.transaction;
+      try {
+        /******************************
+         * 1. select * from accounts for update
+         *   1.1 ++TODO 檢查是否需要更新
+         * 2. insert audit_account_records
+         *   2.1  account_id
+         *   2.2  member_id
+         *   2.3  reason: 1 accounts amount is differernt account_versions sum
+         *   2.4  currency
+         *   2.5  balance_origin
+         *   2.6  balance_updated
+         *   2.7  locked_origin
+         *   2.8  locked_updated
+         *   2.9  created_at 稽核時間
+         *   2.10 issued_by 經手人
+         * 3. update account
+         *   3.1 balance
+         *   3.2 locked
+         *   3.3 updated_at
+         *******************************************/
+        /* !!! HIGH RISK (start) !!! */
+        //1. select * from accounts for update
+        result = this.auditorMemberAccounts(
+          {
+            query: { ...query },
+          },
+          dbTransaction
+        );
+        if (result.success) {
+          let account = Object.values(result.payload?.accounts).shift();
+          let now = new Date().toISOString().slice(0, 19).replace("T", " ");
+          // 2. update audit record
+          let auditRecord = {
+            fixed_at: `"${now}"`,
+            issued_by: currentUser.email,
+          };
+          //
+          await this.database.updateAuditAccountRecord(auditRecord, {
+            dbTransaction,
+          });
+          // 3. update account
+          const newAccount = {
+            id: account.id,
+            balance: account.balance?.shouldBe,
+            locked: account.locked?.shouldBe,
+            updated_at: `"${now}"`,
+          };
+          await this.database.updateAccount(newAccount, { dbTransaction });
+          /* !!! HIGH RISK (end) !!! */
+          return new ResponseFormat({
+            message: "auditorAccounts",
+            payload: { auditRecord, newAccount },
+          });
+        }
+      } catch (error) {
+        result = new ResponseFormat({
+          message: `fixAbnormalAccount ${JSON.stringify(error)}`,
+          code: Codes.UNKNOWN_ERROR,
+        });
+      }
+    }
+    return result;
   }
 
   async _updateOrderDetail(formatOrder) {
@@ -5418,6 +5901,13 @@ class ExchangeHub extends Bot {
       });
     });
 
+    EventBus.on(Events.publicTrades, (data) => {
+      this.broadcastAllClient({
+        type: Events.publicTrades,
+        data: data,
+      });
+    });
+
     EventBus.on(Events.orderDetailUpdate, async (instType, formatOrders) => {
       if (instType === Database.INST_TYPE.SPOT) {
         // this.logger.debug(
@@ -5434,12 +5924,12 @@ class ExchangeHub extends Bot {
             // ++TODO id should be replaced by exchangeCode + tradeId, current is tradeId (需要避免與其他交易所碰撞)
             await this.exchangeHubService.insertOuterTrades([formatOrder]);
             // 2. 呼叫承辦員處理該筆 outerTrade
-            await this.processor(formatOrder);
+            this.processorHandler(formatOrder);
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,
               memberId,
-              transacion = await this.database.transaction();
+              transaction = await this.database.transaction();
             try {
               let parsedClOrdId = Utils.parseClOrdId(formatOrder.clOrdId);
               orderId = parsedClOrdId.orderId;
@@ -5449,7 +5939,7 @@ class ExchangeHub extends Bot {
             }
             if (orderId && memberId) {
               result = await this.updateOrderStatus({
-                transacion,
+                transaction,
                 orderId,
                 memberId,
                 orderData: {
@@ -5470,9 +5960,9 @@ class ExchangeHub extends Bot {
                 },
               });
               if (result) {
-                await transacion.commit();
+                await transaction.commit();
               } else {
-                await transacion.rollback();
+                await transaction.rollback();
               }
             }
           }

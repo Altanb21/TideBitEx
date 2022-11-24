@@ -381,6 +381,25 @@
     .descending > &--btn-down {
       background-image: url("../../images/triangle_down_fill@2x.png");
     }
+    &--button {
+      font-size: 14px;
+      border: 1px solid #707070;
+      border-radius: 5px;
+      padding: 2px 5px;
+      cursor: pointer;
+      justify-content: center
+    }
+    &--button:hover{
+      background-color: #2699fb;
+      border: 1px solid #2699fb;
+      color: white;
+    }
+    &--button.disabled{
+      cursor: default !important;
+      pointer-events: none !important;
+      background-color: transparent !important;
+      border: 1px solid #707070 !important;
+    }
   }
   .currency-dropdown__label-item--fixed &__table-header-btn--lock {
     right: 270px;

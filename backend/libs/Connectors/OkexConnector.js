@@ -27,6 +27,7 @@ class OkexConnector extends ConnectorBase {
   okexWsChannels = {};
   instIds = [];
   slanger = {};
+  registerMarkets = [];
 
   fetchedTrades = {};
   fetchedBook = {};
@@ -1617,9 +1618,9 @@ class OkexConnector extends ConnectorBase {
     const formatOrders = [];
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
-        this.logger.debug(
-          `_updateOrderDetails data.cTime[${data.cTime}] data.uTime[${data.uTime}] data.fillTime[${data.fillTime}] `
-        );
+        // this.logger.debug(
+        //   `_updateOrderDetails data.cTime[${data.cTime}] data.uTime[${data.uTime}] data.fillTime[${data.fillTime}] `
+        // );
         const formatOrder = {
           ...data,
           exchangeCode: Database.EXCHANGE.OKEX,
@@ -1661,6 +1662,13 @@ class OkexConnector extends ConnectorBase {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
+      // this.loggers.debug(`_updateTrades[${market}] ${this.registerMarkets.includes(market)}`, this.registerMarkets);
+      if (this.registerMarkets.includes(market)) {
+        EventBus.emit(Events.publicTrades, {
+          market,
+          trades: this.tradeBook.getSnapshot(instId),
+        });
+      }
 
       // ++ workaround, to be optimized: broadcast to slanger
       trade_data[market] = trade_data[market] || [];
@@ -1785,6 +1793,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
+    this.logger.debug(`_subscribeTrades instId[${instId}]`, args);
     this.websocket.ws.send(
       JSON.stringify({
         op: Events.subscribe,
@@ -1963,6 +1972,16 @@ class OkexConnector extends ConnectorBase {
     }
   }
 
+  _registerMarket(market) {
+    let tickerSetting = this.tickersSettings[market];
+    if (
+      tickerSetting?.source === SupportedExchange.OKEX &&
+      !this.registerMarkets.includes(market)
+    ) {
+      this._subscribeTrades(tickerSetting?.instId);
+      this.registerMarkets = [...this.registerMarkets, market];
+    }
+  }
   _subscribeUser() {}
 
   _unsubscribeUser() {}

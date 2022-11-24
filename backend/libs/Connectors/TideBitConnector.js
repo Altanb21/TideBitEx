@@ -17,6 +17,7 @@ class TibeBitConnector extends ConnectorBase {
   isStart = false;
   socketId;
   public_pusher = null;
+  registerMarkets = [];
   // private_pusher = {};
   sn = {};
 
@@ -1147,8 +1148,10 @@ class TibeBitConnector extends ConnectorBase {
             },
           })
         );
-        this.market_channel[`market-${market}-global`]["listener"] = [wsId];
-        this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
+        if (wsId)
+          this.market_channel[`market-${market}-global`]["listener"] = [wsId];
+        if (lotSz)
+          this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
       } catch (error) {
         this.logger.error(`_registerMarketChannel error`, error);
         throw error;
@@ -1244,21 +1247,35 @@ class TibeBitConnector extends ConnectorBase {
         socket_id: this.socketId,
         channel_name: `private-${sn}`,
       });
-      const authRes = await axios({
-        url: `${this.peatio}/pusher/auth`,
-        method: "POST",
-        headers: {
-          ...headers,
-          "Content-Length": Buffer.from(data, "utf-8").length,
-        },
-        data,
-      });
-      auth = authRes.data.auth;
-      if (!auth)
+      try {
+        const authRes = await axios({
+          url: `${this.peatio}/pusher/auth`,
+          method: "POST",
+          headers: {
+            ...headers,
+            "Content-Length": Buffer.from(data, "utf-8").length,
+          },
+          data,
+        });
+        auth = authRes.data.auth;
+        if (!auth)
+          this.logger.error(
+            `[${this.constructor.name}](ln:1263) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
+            headers
+          );
+      } catch (error) {
         this.logger.error(
-          `[${this.constructor.name}](ln:1511) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
-          headers
+          `(ln:1268) request url:${this.peatio}/pusher/auth got error status: ${error?.status} statusText: ${error?.status}`,
+          `headers`,
+          error?.headers,
+          `config`,
+          error?.config,
+          `data`,
+          error?.data
         );
+
+        // this.logger.error(error?.response)
+      }
     } else {
       this.logger.error(`pusher:auth error without socketId`);
     }
@@ -1313,7 +1330,7 @@ class TibeBitConnector extends ConnectorBase {
         `_subscribeUser error`,
         error?.response ? error?.response : error
       );
-      throw error;
+      // throw error;
     }
   }
   /**
@@ -1360,6 +1377,17 @@ class TibeBitConnector extends ConnectorBase {
     const tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.TIDEBIT) {
       this._unregisterMarketChannel(market, wsId);
+    }
+  }
+
+  _registerMarket(market) {
+    let tickerSetting = this.tickersSettings[market];
+    if (
+      tickerSetting?.source === SupportedExchange.TIDEBIT &&
+      !this.registerMarkets.includes(market)
+    ) {
+      this._registerMarketChannel(market);
+      this.registerMarkets = [...this.registerMarkets, market];
     }
   }
 }

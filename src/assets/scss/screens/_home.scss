@@ -1,0 +1,19 @@
+.home {
+  &__announcement {
+    font-family: PingFangHK-Regular;
+    font-size: 14px;
+    color: #fff;
+    background-color: #09171a;
+  }
+  &__announcement-container {
+    text-align: center;
+    padding: 20px 0;
+  }
+  &__infos {
+    padding-top: 80px;
+    background-position: center;
+    background-size: cover;
+    background-image: url("../../images/bitcoin_background.png");
+    width: 100vw;
+  }
+}

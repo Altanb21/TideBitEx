@@ -27,6 +27,7 @@ const StoreContext = React.createContext({
   baseCurrency: "hkd",
   disableTrade: false,
   tokenExpired: null,
+  registerTickers: [],
   // orderTypeHandler: (orderType) => {},
   setIsLogin: () => {},
   sync: () => {},
@@ -281,6 +282,13 @@ const StoreContext = React.createContext({
   getPlatformAssets: async () => {},
   updatePlatformAsset: async (id, data) => {},
   getDashboardData: async () => {},
+  forceCancelOrder: async (order) => {},
+  getTicker: (market) => {},
+  changeLanguage: (key) => {},
+  registerMarket: async (market) => {},
+  getTradesSnapshot: async (market, length, asc) => {},
+  getMembers: async ({ email, offset, limit }) => {},
+  auditorMemberAccounts: async ({ memberId, currency }) => {},
 });
 
 export default StoreContext;

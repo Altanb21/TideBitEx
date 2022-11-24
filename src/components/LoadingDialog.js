@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 const LoadingDialog = (props) => {
   const { t } = useTranslation();
-  return (
+  const component = props.isLoading ? (
     <React.Fragment>
       <React.Fragment>
         {ReactDOM.createPortal(
@@ -30,12 +30,15 @@ const LoadingDialog = (props) => {
               <div></div>
             </div>
           </div>
-          <div className="modal__text">{t('loading')}</div>
+          <div className="modal__text">{t("loading")}</div>
         </div>,
         document.getElementById("overlay-root")
       )}
     </React.Fragment>
+  ) : (
+    <></>
   );
+  return component;
 };
 
 export default LoadingDialog;

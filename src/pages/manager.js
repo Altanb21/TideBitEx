@@ -3,7 +3,7 @@ import CurrencySetting from "./currency-setting";
 import Deposit from "./deposit";
 import InfoSetting from "./info-setting";
 import PlatformAssets from "./platform-assets";
-import UserAssets from "./user-assets";
+import Members from "./members";
 import SubAccounts from "./sub-accounts";
 import TickerSetting from "./ticker-setting";
 import Vouchers from "./vouchers";
@@ -25,7 +25,7 @@ const Manager = (props) => {
       )}
       {props.activeSection === "sub-account" && <SubAccounts />}
       {props.activeSection === "platform-assets" && <PlatformAssets />}
-      {props.activeSection === "user-assets" && <UserAssets />}
+      {props.activeSection === "members" && <Members />}
       {props.activeSection === "user-setting" && (
         <UserSetting currentUser={props.user} />
       )}

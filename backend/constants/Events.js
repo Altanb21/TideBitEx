@@ -17,11 +17,13 @@ module.exports = {
   tickerOnUnsubscribe: "tickerOnUnsubscribe",
   userOnSubscribe: "userOnSubscribe",
   userOnUnsubscribe: "userOnUnsubscribe",
+  registerMarket: "registerMarket",
 
   // update event
   tickers: "tickers",
   update: "update",
   trades: "trades",
+  publicTrades: "publicTrades",
   account: "account",
   order: "order",
   marketOrder: "marketOrder",

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom";
 import { useSnackbar } from "notistack";
+import { useTranslation } from "react-i18next";
 import Middleman from "../modal/Middleman";
 import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
@@ -19,8 +20,10 @@ let interval,
 
 const StoreProvider = (props) => {
   const middleman = useMemo(() => new Middleman(), []);
+  const { t } = useTranslation();
   const location = useLocation();
   const history = useHistory();
+  const { i18n } = useTranslation();
   const [isInit, setIsInit] = useState(null);
   const [defaultMarket, setDefaultMarket] = useState("btcusdt");
   const [disableTrade, setDisableTrade] = useState(false);
@@ -43,11 +46,22 @@ const StoreProvider = (props) => {
   const [languageKey, setLanguageKey] = useState(null);
   const [focusEl, setFocusEl] = useState(null);
   const [baseCurrency, setBaseCurrency] = useState("hkd");
+  const [registerTickers, setRgisterTickers] = useState(["btcusdt", "ethusdt"]);
   /**
    * [deprecated] 2022/10/28
    */
   const [exchangeRates, setExchangeRates] = useState(null);
   const [tokenExpired, setTokenExpired] = useState(null);
+
+  const changeLanguage = useCallback(
+    (key) => {
+      // await window.cookieStore.set("lang", key);
+      // document.cookie = `lang=${key}`;
+      setLanguageKey(key);
+      i18n.changeLanguage(key);
+    },
+    [i18n]
+  );
 
   const countDown = useCallback(() => {
     clearTimeout(timer);
@@ -98,7 +112,7 @@ const StoreProvider = (props) => {
         });
         setMarket(market);
         await middleman.selectMarket(market);
-        const ticker = middleman.getTickerSnapshot();
+        const ticker = middleman.getCurrentTicker();
         setSelectedTicker(ticker);
         setPrecision(ticker);
         setTrades(middleman.getTradesSnapshot(market));
@@ -375,6 +389,13 @@ const StoreProvider = (props) => {
     [action, enqueueSnackbar, middleman]
   );
 
+  const forceCancelOrder = useCallback(
+    async (order) => {
+      return await middleman.forceCancelOrder(order);
+    },
+    [middleman]
+  );
+
   const activePageHandler = (page) => {
     setActivePage(page);
   };
@@ -420,7 +441,7 @@ const StoreProvider = (props) => {
           break;
         case Events.tickers:
           middleman.tickerBook.updateByDifference(metaData.data);
-          let ticker = middleman.getTickerSnapshot();
+          let ticker = middleman.getCurrentTicker();
           if (ticker) setPrecision(ticker);
           // if (time - tickersLastTimeSync > tickersSyncInterval) {
           setSelectedTicker(ticker);
@@ -429,6 +450,17 @@ const StoreProvider = (props) => {
           // }
           break;
         case Events.trades:
+          middleman.tradeBook.updateAll(
+            metaData.data.market,
+            metaData.data.trades
+          );
+          // if (time - tradesLastTimeSync > tradesSyncInterval) {
+          setTrades(middleman.getTradesSnapshot());
+          tradesLastTimeSync = time;
+          // }
+          break;
+        case Events.publicTrades:
+          // console.log(`metaData`, metaData);
           middleman.tradeBook.updateAll(
             metaData.data.market,
             metaData.data.trades
@@ -471,9 +503,43 @@ const StoreProvider = (props) => {
     return _exchangeRates;
   }, [exchangeRates, middleman]);
 
+  const initLanguage = useCallback(() => {
+    const lang = (
+      document.cookie
+        .split(";")
+        .filter((v) => /lang/.test(v))
+        .pop()
+        ?.split("=")[1] || navigator.language
+    ).toLowerCase();
+    switch (lang.toLowerCase()) {
+      case "en":
+      case "en-us":
+      case "en_us":
+        setLanguageKey("en-US");
+        break;
+      case "zh-hk":
+      case "zh_hk":
+      case "zh_tw":
+      case "zh-tw":
+        setLanguageKey("zh-HK");
+        break;
+      case "zh_cn":
+      case "zh-cn":
+        setLanguageKey("zh-CN");
+        break;
+      // case "jp":
+      //   setLanguageKey("jp");
+      //   break;
+      default:
+        setLanguageKey("en-US");
+        break;
+    }
+  }, []);
+
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
-    await middleman.initWs();
+    initLanguage();
+    await middleman.initWs(registerTickers);
     eventListener();
     await middleman.getTickers();
     setTickers(middleman.getTickersSnapshot());
@@ -486,7 +552,7 @@ const StoreProvider = (props) => {
     }
     setIsInit(true);
     // console.log(`storeCtx init end`);
-  }, [countDown, eventListener, middleman]);
+  }, [initLanguage, middleman, registerTickers, eventListener, countDown]);
 
   const start = useCallback(async () => {
     let market =
@@ -503,8 +569,8 @@ const StoreProvider = (props) => {
       });
     middleman.tickerBook.setCurrentMarket(market);
     setMarket(market);
-    setSelectedTicker(middleman.getTickerSnapshot());
-    setPrecision(middleman.getTickerSnapshot());
+    setSelectedTicker(middleman.getCurrentTicker());
+    setPrecision(middleman.getCurrentTicker());
     if (!isLogin) {
       await middleman.getAccounts();
       setIsLogin(middleman.isLogin);
@@ -542,6 +608,26 @@ const StoreProvider = (props) => {
     clearInterval(interval);
   }, []);
 
+  const getTicker = (market) => {
+    return middleman.getTickerSnapshot(market);
+  };
+
+  const registerMarket = async (market) => {
+    return await middleman.registerMarket(market);
+  };
+
+  const getTradesSnapshot = (market, length, asc) => {
+    return middleman.getTradesSnapshot(market, length, asc);
+  };
+
+  const getMembers = async ({ email, offset, limit }) => {
+    return await middleman.getMembers({ email, offset, limit });
+  };
+
+  const auditorMemberAccounts = async ({ memberId, currency }) => {
+    return await middleman.auditorMemberAccounts({ memberId, currency });
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -564,6 +650,7 @@ const StoreProvider = (props) => {
         memberEmail,
         baseCurrency,
         depthChartData,
+        registerTickers,
         /**
          * [deprecated] 2022/10/28
          */
@@ -607,6 +694,13 @@ const StoreProvider = (props) => {
         getPlatformAssets,
         updatePlatformAsset,
         getDashboardData,
+        forceCancelOrder,
+        getTicker,
+        changeLanguage,
+        registerMarket,
+        getTradesSnapshot,
+        getMembers,
+        auditorMemberAccounts,
       }}
     >
       {props.children}
