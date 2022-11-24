@@ -146,7 +146,7 @@ const Member = (props) => {
             <div className="members__title">{t("member_id")}</div>
             <div className="members__value">{props.member.id}</div>
           </div>
-          <div className="members__info">
+          <div className="members__info members__info--expand">
             <div className="members__title">{t("member_email")}</div>
             <div className="members__value">{props.member.email}</div>
           </div>

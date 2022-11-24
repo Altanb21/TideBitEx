@@ -5067,7 +5067,7 @@ class ExchangeHub extends Bot {
     let accounts,
       auditRecords,
       auditRecord,
-      lastestAccountVersions,
+      // lastestAccountVersions,
       lastestAuditRecords,
       coinsSettings,
       result = {
@@ -5116,24 +5116,25 @@ class ExchangeHub extends Bot {
         if (!prev[curr.account_id]) prev[curr.account_id] = curr;
         return prev;
       }, {});
-      let lastestAccountVersionIds =
-        await this.database.getMembersLatestAccountVersionIds([memberId], true);
-      lastestAccountVersions =
-        lastestAccountVersionIds.length > 0
-          ? await this.database.getMembersAccountVersionByIds(
-              lastestAccountVersionIds,
-              true
-            )
-          : [];
-      lastestAccountVersions = lastestAccountVersions.reduce((prev, curr) => {
-        if (!prev[curr.account_id]) prev[curr.account_id] = curr;
-        return prev;
-      }, {});
+      this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
+      // let lastestAccountVersionIds =
+      //   await this.database.getMembersLatestAccountVersionIds([memberId], true);
+      // lastestAccountVersions =
+      //   lastestAccountVersionIds.length > 0
+      //     ? await this.database.getMembersAccountVersionByIds(
+      //         lastestAccountVersionIds,
+      //         true
+      //       )
+      //     : [];
+      // lastestAccountVersions = lastestAccountVersions.reduce((prev, curr) => {
+      //   if (!prev[curr.account_id]) prev[curr.account_id] = curr;
+      //   return prev;
+      // }, {});
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
             lastestAuditRecord,
-            lastestAccountVersion = lastestAccountVersions[accountId],
+            // lastestAccountVersion = lastestAccountVersions[accountId],
             correctBalance = 0,
             correctLocked = 0;
           if (lastestAuditRecords[accountId]) {
@@ -5183,8 +5184,8 @@ class ExchangeHub extends Bot {
           };
           /* !!! HIGH RISK (start) !!! */
           if (
-            lastestAuditRecord &&
-            lastestAccountVersion.id > auditRecord.account_version_id_end
+            lastestAuditRecord
+            // && lastestAccountVersion.id > auditRecord.account_version_id_end
           ) {
             let now = `${new Date()
                 .toISOString()
@@ -5299,7 +5300,7 @@ class ExchangeHub extends Bot {
               ? new Date(auditRecords[m.id].updated_at).getTime()
               : null,
             lastestActivityTime = accountVersions[m.id]
-              ? new Date(accountVersions[m.id].updated_at).getTime()
+              ? new Date(accountVersions[m.id].created_at).getTime()
               : null,
             alert =
               lastestActivityTime &&

@@ -86,19 +86,6 @@
       min-width: 180px;
       max-width: 180px;
     }
-    &--button{
-      display: flex;
-      flex-direction: row;
-      gap: 5px;
-      align-items: center;
-    }
-  }
-  &__button-icon{
-    width: 30px;
-    height: 30px;
-    text-align: center;
-    padding: 3px;
-    cursor: pointer;
   }
   &__item {
     &--expand {
@@ -117,6 +104,11 @@
       color: #dc484e;
     }
   }
+  &__title{
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+  }
   &__button {
     background-color: #2699fb;
     border: 1px solid #2699fb;
@@ -133,6 +125,12 @@
     display: flex;
     align-items: center;
     gap: 20px;
+  }
+  &__info{
+    &--expand{
+      min-width: 240px;
+      max-width: 240px;
+    }
   }
   &__controller {
     display: none;
