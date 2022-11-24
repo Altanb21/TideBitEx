@@ -287,7 +287,7 @@ const TickerSetting = () => {
 
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       {openFeeControlDialog && selectedTickerSetting && side && (
         <FeeControlDialog
           side={side}

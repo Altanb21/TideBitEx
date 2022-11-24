@@ -1,7 +1,6 @@
 const SupportedExchange = require("../../constants/SupportedExchange");
 const BookBase = require("../BookBase");
 const SafeMath = require("../SafeMath");
-const Utils = require("../Utils");
 
 class TickerBook extends BookBase {
   _instruments;
@@ -33,7 +32,6 @@ class TickerBook extends BookBase {
    */
   set instruments(data) {
     this._instruments = data;
-    // this.logger.debug(`[${this.constructor.name}] instruments`, this.instruments);
   }
 
   get instruments() {
@@ -52,12 +50,6 @@ class TickerBook extends BookBase {
   }
 
   getPrice(currency) {
-    // this.logger.debug(
-    //   `this._snapshot[${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}]`,
-    //   this._snapshot[
-    //     `${currency.toUpperCase()}-${this._baseCurrency.toUpperCase()}`
-    //   ]
-    // );
     let price = 0,
       ticker;
     if (this._ratio[currency.toLowerCase()])
@@ -206,14 +198,27 @@ class TickerBook extends BookBase {
   }
 
   updateByDifference(instId, ticker) {
-    let result = false;
+    let result = false,
+      increase;
     this._difference = {};
     try {
       if (this._compareFunction(this._snapshot[instId], ticker)) {
+        if (SafeMath.gt(ticker.last, this._snapshot[instId]?.last))
+          increase = true;
+        if (SafeMath.lt(ticker.last, this._snapshot[instId]?.last))
+          increase = false;
         const tickerSetting = this._tickersSettings[ticker.id];
         if (tickerSetting?.source === ticker.source) {
-          this._difference[instId] = { ...this._difference[instId], ...ticker };
-          this._snapshot[instId] = { ...this._snapshot[instId], ...ticker };
+          this._difference[instId] = {
+            ...this._difference[instId],
+            ...ticker,
+            increase,
+          };
+          this._snapshot[instId] = {
+            ...this._snapshot[instId],
+            ...ticker,
+            increase,
+          };
           result = true;
         }
       }
@@ -259,7 +264,6 @@ class TickerBook extends BookBase {
   }
 
   updateAll(okexTickers, tidebitTickers) {
-    // this.logger.debug(`[${this.constructor.name}] updateAll tickers`, tickers);
     this._difference = {};
     try {
       Object.values(this._tickersSettings || {}).forEach((tickerSetting) => {
@@ -315,11 +319,6 @@ class TickerBook extends BookBase {
   }
 
   getSnapshot(instId) {
-    // this.logger.debug(
-    //   `[${this.constructor.name}] getSnapshot(${instId})`,
-    //   this._snapshot[instId],
-    //   this._snapshot
-    // );
     if (instId) return this._snapshot[instId];
     else return this._snapshot;
   }

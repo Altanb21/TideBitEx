@@ -240,6 +240,25 @@ class Middleman {
     }
   }
 
+  async getMembers({ email, offset, limit }) {
+    try {
+      return await this.communicator.getMembers({ email, offset, limit });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async auditorMemberAccounts({ memberId, currency }) {
+    try {
+      return await this.communicator.auditorMemberAccounts({
+        memberId,
+        currency,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async logout() {
     try {
       return await this.communicator.logout();
@@ -251,7 +270,7 @@ class Middleman {
   async postOrder(order) {
     if (this.isLogin) return await this.communicator.order(order);
   }
-  
+
   async cancelOrder(order) {
     if (this.isLogin) {
       const result = await this.communicator.cancel(order.id);
@@ -267,6 +286,10 @@ class Middleman {
         );
       }
     }
+  }
+
+  async forceCancelOrder(order) {
+    return await this.communicator.forceCancelOrder(order);
   }
 
   async cancelOrders(options) {
@@ -322,6 +345,9 @@ class Middleman {
     }
   }
 
+  /**
+   * [deprecated] 2022/11/17
+   */
   async _getOrderHistory(market, options = {}) {
     try {
       const orders = await this.communicator.getOrderHistory({
@@ -380,10 +406,9 @@ class Middleman {
     }
   }
 
-  getTradesSnapshot(market) {
+  getTradesSnapshot(market, length = 50, asc = false) {
     if (!market) market = this.tickerBook.getCurrentTicker()?.market;
-    let lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
-    return this.tradeBook.getSnapshot(market, lotSz);
+    return this.tradeBook.getSnapshot(market, length, asc);
   }
 
   async _getTrades({ market, limit, lotSz }) {
@@ -485,8 +510,12 @@ class Middleman {
     }
   }
 
-  getTickerSnapshot() {
+  getCurrentTicker() {
     return this.tickerBook.getCurrentTicker();
+  }
+
+  getTickerSnapshot(market) {
+    return this.tickerBook.getTickerSnapshot(market);
   }
 
   async _getTicker(market) {
@@ -565,6 +594,11 @@ class Middleman {
       accounts,
       sum: sum.toFixed(2),
     };
+  }
+
+  async registerMarket(market) {
+    this.tbWebSocket.registerMarket(market);
+    await this._getTrades({ market });
   }
 
   async selectMarket(market) {
@@ -671,7 +705,7 @@ class Middleman {
     }
   }
 
-  async initWs() {
+  async initWs(registerTickers) {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${

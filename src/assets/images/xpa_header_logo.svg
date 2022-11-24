@@ -1,0 +1,270 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="27" height="18" viewBox="0 0 27 18">
+    <defs>
+        <path id="a" d="M.238 8.852V.033l8.819 8.819z"/>
+        <linearGradient id="b" x1="38%" x2="38%" y1="26%" y2="1626.003%">
+            <stop offset="0%" stop-color="#D360A4"/>
+            <stop offset="100%" stop-color="#9E1F60"/>
+        </linearGradient>
+        <path id="d" d="M.238 8.852h8.819L.238.033z"/>
+        <linearGradient id="e" x1="50.002%" x2="50.002%" y1="0%" y2="99.996%">
+            <stop offset="0%" stop-color="#D360A4"/>
+            <stop offset="100%" stop-color="#9E1F60"/>
+        </linearGradient>
+        <path id="g" d="M.128 4.429l4.41-4.41 4.409 4.41z"/>
+        <linearGradient id="h" x1="37.7%" x2="37.7%" y1="37.85%" y2="1637.853%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="j" d="M.128 4.429h8.819L4.537.019z"/>
+        <linearGradient id="k" x1="49.999%" x2="49.999%" y1="2.474%" y2="98.607%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="m" d="M.238.117h8.819L.238 8.935z"/>
+        <linearGradient id="n" x1="38%" x2="38%" y1="74%" y2="-1526.003%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="p" d="M.238.117v8.818L9.057.117z"/>
+        <linearGradient id="q" x1="50.002%" x2="50.002%" y1="1.391%" y2="97.523%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="s" d="M.363 4.567V.158l4.41 4.409z"/>
+        <linearGradient id="t" x1="74%" x2="74%" y1="62%" y2="1662.003%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="v" d="M.363 4.567h4.41L.362.158z"/>
+        <linearGradient id="w" x1="49.998%" x2="49.998%" y1="2.474%" y2="74.424%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="y" d="M.322 4.567L4.73.158v4.409z"/>
+        <linearGradient id="z" x1="74%" x2="74%" y1="62%" y2="1662.003%">
+            <stop offset="0%" stop-color="#D360A4"/>
+            <stop offset="100%" stop-color="#9E1F60"/>
+        </linearGradient>
+        <path id="B" d="M.322 4.567H4.73V.158z"/>
+        <linearGradient id="C" x1="49.997%" x2="49.997%" y1="-.003%" y2="100.002%">
+            <stop offset="0%" stop-color="#D360A4"/>
+            <stop offset="100%" stop-color="#9E1F60"/>
+        </linearGradient>
+        <path id="E" d="M.363.033h4.41l-4.41 4.41z"/>
+        <linearGradient id="F" x1="74%" x2="74%" y1="38%" y2="-1562.003%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="H" d="M.363.033v4.41l4.41-4.41z"/>
+        <linearGradient id="I" x1="49.998%" x2="49.998%" y1="97.527%" y2="20.381%">
+            <stop offset="0%" stop-color="#EF5297"/>
+            <stop offset="100%" stop-color="#9E1D4F"/>
+        </linearGradient>
+        <path id="K" d="M.322.033H4.73v4.41z"/>
+        <linearGradient id="L" x1="74%" x2="74%" y1="38%" y2="-1562.003%">
+            <stop offset="0%" stop-color="#D360A4"/>
+            <stop offset="100%" stop-color="#9E1F60"/>
+        </linearGradient>
+        <path id="N" d="M.322.033l4.409 4.41V.032z"/>
+        <linearGradient id="O" x1="49.997%" x2="49.997%" y1="100.004%" y2="-.001%">
+            <stop offset="0%" stop-color="#D360A4"/>
+            <stop offset="100%" stop-color="#9E1F60"/>
+        </linearGradient>
+        <path id="Q" d="M.238 8.852V.033l8.819 8.819z"/>
+        <path id="S" d="M.238 8.852h8.819L.238.033z"/>
+        <path id="U" d="M.128 4.429l4.41-4.41 4.409 4.41z"/>
+        <path id="W" d="M.128 4.429h8.819L4.537.019z"/>
+        <path id="Y" d="M.238.117h8.819L.238 8.935z"/>
+        <path id="aa" d="M.238.117v8.818L9.057.117z"/>
+        <path id="ac" d="M.363 4.567V.158l4.41 4.409z"/>
+        <path id="ae" d="M.363 4.567h4.41L.362.158z"/>
+        <path id="ag" d="M.322 4.567L4.73.158v4.409z"/>
+        <path id="ai" d="M.322 4.567H4.73V.158z"/>
+        <path id="ak" d="M.363.033h4.41l-4.41 4.41z"/>
+        <path id="am" d="M.363.033v4.41l4.41-4.41z"/>
+        <path id="ao" d="M.322.033H4.73v4.41z"/>
+        <path id="aq" d="M.322.033l4.409 4.41V.032z"/>
+    </defs>
+    <g fill="none" fill-rule="evenodd">
+        <g transform="translate(8.735 .276)">
+            <mask id="c" fill="#fff">
+                <use xlink:href="#a"/>
+            </mask>
+            <path fill="url(#b)" d="M-13.724 27.223H23.02V-9.52h-36.743z" mask="url(#c)"/>
+        </g>
+        <g transform="translate(8.735 .276)">
+            <mask id="f" fill="#fff">
+                <use xlink:href="#d"/>
+            </mask>
+            <path fill="url(#e)" d="M.238 8.852h8.819L.238.033z" mask="url(#f)"/>
+        </g>
+        <g transform="translate(8.735 4.644)">
+            <mask id="i" fill="#fff">
+                <use xlink:href="#g"/>
+            </mask>
+            <path fill="url(#h)" d="M-13.724 22.855H23.02v-36.743h-36.743z" mask="url(#i)"/>
+        </g>
+        <g transform="translate(8.735 4.644)">
+            <mask id="l" fill="#fff">
+                <use xlink:href="#j"/>
+            </mask>
+            <path fill="url(#k)" d="M.128 4.429h8.819L4.537.019z" mask="url(#l)"/>
+        </g>
+        <g transform="translate(8.735 9.011)">
+            <mask id="o" fill="#fff">
+                <use xlink:href="#m"/>
+            </mask>
+            <path fill="url(#n)" d="M-13.724 18.488H23.02v-36.743h-36.743z" mask="url(#o)"/>
+        </g>
+        <g transform="translate(8.735 9.011)">
+            <mask id="r" fill="#fff">
+                <use xlink:href="#p"/>
+            </mask>
+            <path fill="url(#q)" d="M.238.117v8.818L9.057.117z" mask="url(#r)"/>
+        </g>
+        <path fill="#6B0F3D" d="M8.864 9.183l4.409 4.409 4.409-4.41z"/>
+        <path fill="#ED3380" d="M.155.31l8.819 8.818V.309z"/>
+        <path fill="#C9258E" d="M.155 17.946h8.819V9.128z"/>
+        <g transform="translate(21.838 13.379)">
+            <mask id="u" fill="#fff">
+                <use xlink:href="#s"/>
+            </mask>
+            <path fill="url(#t)" d="M-26.827 14.12H9.916v-36.743h-36.743z" mask="url(#u)"/>
+        </g>
+        <g transform="translate(21.838 13.379)">
+            <mask id="x" fill="#fff">
+                <use xlink:href="#v"/>
+            </mask>
+            <path fill="url(#w)" d="M.363 4.567h4.41L.362.158z" mask="url(#x)"/>
+        </g>
+        <g transform="translate(17.47 13.379)">
+            <mask id="A" fill="#fff">
+                <use xlink:href="#y"/>
+            </mask>
+            <path fill="url(#z)" d="M-22.46 14.12h36.744v-36.743H-22.46z" mask="url(#A)"/>
+        </g>
+        <g transform="translate(17.47 13.379)">
+            <mask id="D" fill="#fff">
+                <use xlink:href="#B"/>
+            </mask>
+            <path fill="url(#C)" d="M.322 4.567H4.73V.158z" mask="url(#D)"/>
+        </g>
+        <path fill="#6B0F3D" d="M17.792 17.946h8.818l-4.409-1.47z"/>
+        <g transform="translate(21.838 .276)">
+            <mask id="G" fill="#fff">
+                <use xlink:href="#E"/>
+            </mask>
+            <path fill="url(#F)" d="M-26.827 27.223H9.916V-9.52h-36.743z" mask="url(#G)"/>
+        </g>
+        <g transform="translate(21.838 .276)">
+            <mask id="J" fill="#fff">
+                <use xlink:href="#H"/>
+            </mask>
+            <path fill="url(#I)" d="M.363.033v4.41l4.41-4.41z" mask="url(#J)"/>
+        </g>
+        <g transform="translate(17.47 .276)">
+            <mask id="M" fill="#fff">
+                <use xlink:href="#K"/>
+            </mask>
+            <path fill="url(#L)" d="M-22.46 27.223h36.744V-9.52H-22.46z" mask="url(#M)"/>
+        </g>
+        <g transform="translate(17.47 .276)">
+            <mask id="P" fill="#fff">
+                <use xlink:href="#N"/>
+            </mask>
+            <path fill="url(#O)" d="M.322.033l4.409 4.41V.032z" mask="url(#P)"/>
+        </g>
+        <path fill="#ED3380" d="M17.792.31l4.41 1.469L26.61.309z"/>
+        <g transform="translate(8.735 .276)">
+            <mask id="R" fill="#fff">
+                <use xlink:href="#Q"/>
+            </mask>
+            <path fill="url(#b)" d="M-13.724 27.223H23.02V-9.52h-36.743z" mask="url(#R)"/>
+        </g>
+        <g transform="translate(8.735 .276)">
+            <mask id="T" fill="#fff">
+                <use xlink:href="#S"/>
+            </mask>
+            <path fill="url(#e)" d="M.238 8.852h8.819L.238.033z" mask="url(#T)"/>
+        </g>
+        <g transform="translate(8.735 4.644)">
+            <mask id="V" fill="#fff">
+                <use xlink:href="#U"/>
+            </mask>
+            <path fill="url(#h)" d="M-13.724 22.855H23.02v-36.743h-36.743z" mask="url(#V)"/>
+        </g>
+        <g transform="translate(8.735 4.644)">
+            <mask id="X" fill="#fff">
+                <use xlink:href="#W"/>
+            </mask>
+            <path fill="url(#k)" d="M.128 4.429h8.819L4.537.019z" mask="url(#X)"/>
+        </g>
+        <g transform="translate(8.735 9.011)">
+            <mask id="Z" fill="#fff">
+                <use xlink:href="#Y"/>
+            </mask>
+            <path fill="url(#n)" d="M-13.724 18.488H23.02v-36.743h-36.743z" mask="url(#Z)"/>
+        </g>
+        <g transform="translate(8.735 9.011)">
+            <mask id="ab" fill="#fff">
+                <use xlink:href="#aa"/>
+            </mask>
+            <path fill="url(#q)" d="M.238.117v8.818L9.057.117z" mask="url(#ab)"/>
+        </g>
+        <path fill="#6B0F3D" d="M13.328 13.592l4.464-4.464H8.864z"/>
+        <path fill="#6B0F3D" d="M8.864 9.128l4.464 4.464 4.464-4.464z"/>
+        <path fill="#6B0F3D" d="M8.864 9.128l4.464 4.464 4.464-4.464z"/>
+        <path fill="#ED3380" d="M.155.31l8.819 8.818V.309z"/>
+        <path fill="#C9258E" d="M.155 17.946h8.819V9.128z"/>
+        <g transform="translate(21.838 13.379)">
+            <mask id="ad" fill="#fff">
+                <use xlink:href="#ac"/>
+            </mask>
+            <path fill="url(#t)" d="M-26.827 14.12H9.916v-36.743h-36.743z" mask="url(#ad)"/>
+        </g>
+        <g transform="translate(21.838 13.379)">
+            <mask id="af" fill="#fff">
+                <use xlink:href="#ae"/>
+            </mask>
+            <path fill="url(#w)" d="M.363 4.567h4.41L.362.158z" mask="url(#af)"/>
+        </g>
+        <g transform="translate(17.47 13.379)">
+            <mask id="ah" fill="#fff">
+                <use xlink:href="#ag"/>
+            </mask>
+            <path fill="url(#z)" d="M-22.46 14.12h36.744v-36.743H-22.46z" mask="url(#ah)"/>
+        </g>
+        <g transform="translate(17.47 13.379)">
+            <mask id="aj" fill="#fff">
+                <use xlink:href="#ai"/>
+            </mask>
+            <path fill="url(#C)" d="M.322 4.567H4.73V.158z" mask="url(#aj)"/>
+        </g>
+        <path fill="#6B0F3D" d="M17.792 17.946h8.818l-4.409-1.47z"/>
+        <g transform="translate(21.838 .276)">
+            <mask id="al" fill="#fff">
+                <use xlink:href="#ak"/>
+            </mask>
+            <path fill="url(#F)" d="M-26.827 27.223H9.916V-9.52h-36.743z" mask="url(#al)"/>
+        </g>
+        <g transform="translate(21.838 .276)">
+            <mask id="an" fill="#fff">
+                <use xlink:href="#am"/>
+            </mask>
+            <path fill="url(#I)" d="M.363.033v4.41l4.41-4.41z" mask="url(#an)"/>
+        </g>
+        <g transform="translate(17.47 .276)">
+            <mask id="ap" fill="#fff">
+                <use xlink:href="#ao"/>
+            </mask>
+            <path fill="url(#L)" d="M-22.46 27.223h36.744V-9.52H-22.46z" mask="url(#ap)"/>
+        </g>
+        <g transform="translate(17.47 .276)">
+            <mask id="ar" fill="#fff">
+                <use xlink:href="#aq"/>
+            </mask>
+            <path fill="url(#O)" d="M.322.033l4.409 4.41V.032z" mask="url(#ar)"/>
+        </g>
+        <path fill="#ED3380" d="M17.792.31l4.41 1.469L26.61.309z"/>
+    </g>
+</svg>

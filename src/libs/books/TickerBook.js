@@ -89,8 +89,11 @@ class TickerBook extends BookBase {
     return price;
   }
 
-  getTickerSnapshot() {
-    return this._snapshot[this._currentMarket];
+  getTickerSnapshot(market) {
+    let snapshot;
+    if (market) snapshot = this._snapshot[market];
+    else snapshot = this._snapshot[this._currentMarket];
+    return snapshot
   }
 
   getSnapshot() {
@@ -120,14 +123,6 @@ class TickerBook extends BookBase {
 
   updateByDifference(tickers) {
     Object.values(tickers).forEach((ticker) => {
-      // if (ticker.instId === "BTC-USDT")
-      //   console.log(
-      //     `TickerBook _updateTickers ticker.last`,
-      //     ticker.last,
-      //     new Date(ticker.ts).toISOString(),
-      //     this._compareFunction(this._snapshot[ticker.market], ticker)
-      //   );
-      // if (this._compareFunction(this._snapshot[ticker.market], ticker)) {
       try {
         const preTicker = { ...this._snapshot[ticker.market] };
         this._difference[ticker.market] = {

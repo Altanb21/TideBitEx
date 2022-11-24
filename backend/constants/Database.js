@@ -29,6 +29,23 @@ module.exports = {
     DONE: "Done",
     UNKNOWN: "Unknown",
   },
+  DB_STATE_CODE: {
+    0: "canceled",
+    100: "wait",
+    200: "done",
+  },
+  OKX_ORDER_STATE: {
+    canceled: "canceled",
+    live: "wait",
+    partially_filled: "partially_filled",
+    filled: "done",
+  },
+  OKX_ORDER_STATE_CODE: {
+    canceled: 0,
+    live: 100,
+    partially_filled: 100,
+    filled: 200,
+  },
   ORDER_STATE: {
     CANCEL: "canceled",
     WAIT: "wait",
@@ -79,6 +96,7 @@ module.exports = {
     ClORDId_ERROR: 7,
     API_ORDER_CANCEL: 6,
     DB_ORDER_CANCEL: 5,
+    DUPLICATE_PROCESS: 4,
     // DB_ORDER_DONE: 4,
   },
   STATE: {

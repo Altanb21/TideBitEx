@@ -355,7 +355,7 @@ const Deposit = () => {
 
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       {openDepositControlDialog && selectedCoinSetting && (
         <FeeControlDialog
           type={COIN_SETTING_TYPE.DEPOSIT}

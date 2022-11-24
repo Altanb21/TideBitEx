@@ -118,7 +118,7 @@ const Dashboard = (props) => {
   }, [init, isInit]);
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       <div className="dashboard">
         <div className="dashboard__header">Dashboard</div>
         <div className="dashboard__tool-bar">

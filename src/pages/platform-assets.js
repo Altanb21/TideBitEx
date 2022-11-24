@@ -423,7 +423,7 @@ const PlatformAssets = () => {
 
   return (
     <>
-      {isLoading && <LoadingDialog />}
+      <LoadingDialog isLoading={isLoading} />
       {openSettingDialog && selectedAsset && (
         <AssetSettingDialog
           asset={selectedAsset}

@@ -12,9 +12,7 @@ const VoucherTile = (props) => {
       }${trade.alert ? " screen__table-row--alert" : ""}`}
       key={`${trade.id}`}
     >
-      <td className="vouchers__text screen__shrink">
-        {props.number}
-      </td>
+      <td className="vouchers__text screen__shrink">{props.number}</td>
       <td className="vouchers__text screen__table-item">
         {dateFormatter(trade.ts).text}
       </td>
@@ -41,6 +39,14 @@ const VoucherTile = (props) => {
       </td>
       <td className="vouchers__text screen__table-item">
         {trade.innerTrade?.orderId || "-"}
+      </td>
+      <td className="screen__box screen__table-item">
+        <div className="vouchers__text">
+          {trade.innerTrade?.state ? t(trade.innerTrade?.state) : "-"}
+        </div>
+        <div className="vouchers__text">
+          {trade.outerTrade.state ? t(trade.outerTrade.state) : "-"}
+        </div>
       </td>
       <td className="screen__box screen__table-item screen__expand">
         <div
@@ -125,7 +131,7 @@ const VoucherTile = (props) => {
           trade.profit
             ? trade.profit > 0
               ? " "
-              : " negative negative--em"
+              : " negative" //" negative negative--em"
             : ""
         } screen__expand`}
       >

@@ -76,6 +76,7 @@ pathname = [
   "get | /api/v1/trade/orders-pending | Bot.ExchangeHub.getOrderList",
   "get | /api/v1/trade/orders-history | Bot.ExchangeHub.getOrderHistory",
   "post | /api/v1/trade/cancel-order | Bot.ExchangeHub.postCancelOrder",
+  "post | /api/v1/trade/force-cancel-order | Bot.ExchangeHub.forceCancelOrder",
   "post | /api/v1/trade/cancel-orders | Bot.ExchangeHub.cancelOrders",
   "get | /api/v1/trade/fill-history | Bot.ExchangeHub.getOuterTradeFills",
   "get | /api/v1/trade/profits | Bot.ExchangeHub.getOuterTradesProfits",
@@ -92,8 +93,7 @@ pathname = [
   "get | /api/v1/tradingview/history | Bot.ExchangeHub.getTradingViewHistory",
 
   # UI
-  "get | /markets, /markets/:market | Static.Utils.renderMarket",
-  "get | /analysis, /analysis | Static.Utils.renderMarket",
+  "get | /, /markets, /markets/:market, /analysis | Static.Utils.renderMarket",
 
   # dashboard
   "get | /api/v1/dashboard | Bot.Dashboard.overview",
@@ -125,5 +125,9 @@ pathname = [
   
   "get | /api/v1/admin/dashboard | Bot.ExchangeHub.getDashboardData",
 
-  "get | /api/v1/logout | Bot.ExchangeHub.logout"
+  "get | /api/v1/logout | Bot.ExchangeHub.logout",
+
+  "get | /api/v1/private/audit-accounts | Bot.ExchangeHub.auditorMemberAccounts",
+  "get | /api/v1/private/members | Bot.ExchangeHub.getMembers",
+  "get | /api/v1/private/clients | Bot.WSChannel.getPrivateClients"
 ]
