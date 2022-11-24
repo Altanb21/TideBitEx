@@ -5116,7 +5116,7 @@ class ExchangeHub extends Bot {
         if (!prev[curr.account_id]) prev[curr.account_id] = curr;
         return prev;
       }, {});
-      this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
+      // this.logger.debug(`lastestAuditRecords`, lastestAuditRecords);
       // let lastestAccountVersionIds =
       //   await this.database.getMembersLatestAccountVersionIds([memberId], true);
       // lastestAccountVersions =
@@ -5245,21 +5245,21 @@ class ExchangeHub extends Bot {
     try {
       if (offset == 0 || email) counts = await this.database.countMembers();
       if (email) {
-        this.logger.debug("email", email);
+        // this.logger.debug("email", email);
         const member = await this.database.getMemberByCondition({
           email: email,
         });
-        this.logger.debug("member", member);
+        // this.logger.debug("member", member);
         if (member) {
           number = await this.database.countMembers({ before: member.id });
           page = Math.floor(number / limit) + 1;
           offset = (page - 1) * limit;
-          this.logger.debug("number", number);
-          this.logger.debug("page", page);
-          this.logger.debug("offset", offset);
+          // this.logger.debug("number", number);
+          // this.logger.debug("page", page);
+          // this.logger.debug("offset", offset);
         }
       }
-      this.logger.debug("offset == 0 || !!offset", offset == 0 || !!offset);
+      // this.logger.debug("offset == 0 || !!offset", offset == 0 || !!offset);
       if (offset == 0 || !!offset) {
         result = await this.database.getMembers({ limit, offset });
         members = result.map((r) => {
