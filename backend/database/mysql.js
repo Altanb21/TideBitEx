@@ -71,10 +71,12 @@ class mysql {
   }
 
   async auditAccountBalance({ memberId, currency, startId }) {
+    if (!memberId) throw Error(`memberId is required`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
     if (currency) placeholder = [...placeholder, `currency = ${currency}`];
     if (startId) placeholder = [...placeholder, `id > ${startId}`];
+    let condition = placeholder.join(` AND `);
     const query = `
       SELECT
         account_id,
@@ -87,7 +89,7 @@ class mysql {
       FROM
         account_versions
       WHERE
-        ${placeholder.join(` AND `)}
+        ${condition}
       GROUP BY account_id
       ;`;
     try {
@@ -380,6 +382,8 @@ class mysql {
   }
 
   async getMembersLatestAuditRecordIds(ids, groupByAccountId) {
+    let placeholder = ids.join(`,`);
+    let groupBy = `member_id${groupByAccountId ? ", account_id" : ""}`;
     const query = `
     SELECT
 	    max(id) as id,
@@ -387,9 +391,9 @@ class mysql {
     FROM
       audit_account_records
     WHERE
-	    member_id in(${ids.join(`,`)})
+	    member_id in(${placeholder})
     GROUP BY
-	    member_id${groupByAccountId ? ", account_id" : ""}
+	    ${groupBy}
     ORDER BY
       id
     ;`;
@@ -406,6 +410,7 @@ class mysql {
   }
 
   async getMembersAuditRecordByIds(ids) {
+    let placeholder = ids.join(`,`);
     const query = `
     SELECT
       id,
@@ -423,7 +428,7 @@ class mysql {
     FROM
       audit_account_records
     WHERE
-	    id in(${ids.join(`,`)})
+	    id in(${placeholder})
     ORDER BY
       id
     ;`;
@@ -440,6 +445,8 @@ class mysql {
   }
 
   async getMembersLatestAccountVersionIds(ids, groupByAccountId) {
+    let placeholder = ids.join(`,`);
+    let groupBy = `member_id${groupByAccountId ? ", account_id" : ""}`;
     const query = `
     SELECT
 	    max(id) as id,
@@ -447,9 +454,9 @@ class mysql {
     FROM
 	    account_versions
     WHERE
-	    member_id in(${ids.join(`,`)})
+	    member_id in(${placeholder})
     GROUP BY
-	    member_id${groupByAccountId ? ", account_id" : ""}
+	    ${groupBy}
     ;`;
     try {
       // this.logger.debug("getMembersLatestAccountVersionIds", query);
@@ -464,6 +471,7 @@ class mysql {
   }
 
   async getMembersAccountVersionByIds(ids) {
+    let placeholder = ids.join(`,`);
     const query = `
     SELECT
       account_versions.id,
@@ -482,7 +490,7 @@ class mysql {
     FROM
 	    account_versions
     WHERE
-	    account_versions.id in (${ids.join(` , `)})
+	    account_versions.id in (${placeholder})
     ORDER BY
       id
     ;`;
@@ -2165,8 +2173,13 @@ class mysql {
     { dbTransaction }
   ) {
     let result, accountVersionId;
-    const query = `INSERT INTO audit_account_records (id, account_id, member_id, currency, account_version_id_start, account_version_id_end, balance, expect_balance, locked, expect_locked, created_at, updated_at, fixed_at, issued_by) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE balance = ${balance}, expect_balance = ${expect_balance}, locked = ${locked}, expect_locked = ${expect_locked}, updated_at = ${updated_at};`;
+    const query = `
+    INSERT INTO audit_account_records (id, account_id, member_id, currency, account_version_id_start, account_version_id_end, balance, expect_balance, locked, expect_locked, created_at, updated_at, fixed_at, issued_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE balance = ${balance}, 
+      expect_balance = ${expect_balance}, 
+      locked = ${locked}, 
+      expect_locked = ${expect_locked}, 
+      updated_at = "${updated_at}";`;
     try {
       this.logger.debug(
         "insertAuditAccountRecord",
@@ -2233,6 +2246,36 @@ class mysql {
         ${where};
       `;
       this.logger.debug("updateAccount", query);
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+  }
+
+  async updateAuditAccountRecord(datas, { dbTransaction }) {
+    try {
+      const id = datas.id;
+      const where = "id = " + id;
+      delete datas.id;
+      const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
+      const placeholder = set.join(", ");
+      let query = `
+      UPDATE
+      	audit_account_records
+      SET
+        ${placeholder}
+      WHERE
+        ${where};
+      `;
+      this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,
