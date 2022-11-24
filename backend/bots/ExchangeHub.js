@@ -5219,8 +5219,9 @@ class ExchangeHub extends Bot {
   async getMembers({ query }) {
     let { email, limit = 10, offset } = query;
     let result,
+      number,
       counts,
-      members,
+      members = [],
       memberIds = [],
       auditRecords,
       accountVersions,
@@ -5231,56 +5232,61 @@ class ExchangeHub extends Bot {
         const member = await this.database.getMemberByCondition({
           email: email,
         });
-        page = Math.floor(member.number / counts) + 1;
-        offset = (page - 1) * limit;
+        if (member) {
+          number = await this.database.countMembers({ before: member.id });
+          page = Math.floor(number / counts) + 1;
+          offset = (page - 1) * limit;
+        }
       }
-      result = await this.database.getMembers({ limit, offset });
-      members = result.map((r) => {
-        memberIds = [...memberIds, r.id];
-        let member = {
-          ...r,
-          activated: SafeMath.eq(r.activated, 1),
-        };
-        return member;
-      });
-      // get last audior records
-      auditRecords = await this.database.getMembersLatestAuditRecords(
-        memberIds
-      );
-      auditRecords = auditRecords.reduce((prev, curr) => {
-        prev[curr.member_id] = curr;
-        return prev;
-      }, {});
-      // get last active time
-      accountVersions = await this.database.getMembersLatestAccountVersions(
-        memberIds
-      );
-      accountVersions = accountVersions.reduce((prev, curr) => {
-        prev[curr.member_id] = curr;
-        return prev;
-      }, {});
-      members = members.map((m) => {
-        let lastestAccountAuditTime = auditRecords[m.id]
-            ? new Date(auditRecords[m.id].updated_at).getTime()
-            : null,
-          lastestsActivityTime = accountVersions[m.id]
-            ? new Date(accountVersions[m.id].updated_at).getTime()
-            : null,
-          alert =
-            lastestsActivityTime &&
-            (!lastestAccountAuditTime ||
-              SafeMath.gt(
-                SafeMath.minus(lastestsActivityTime, lastestAccountAuditTime),
-                24 * 60 * 60 * 1000 // 1天
-              )),
-          member = {
-            ...m,
-            lastestAccountAuditTime,
-            lastestsActivityTime,
-            alert,
+      if (offset == 0 || !!offset) {
+        result = await this.database.getMembers({ limit, offset });
+        members = result.map((r) => {
+          memberIds = [...memberIds, r.id];
+          let member = {
+            ...r,
+            activated: SafeMath.eq(r.activated, 1),
           };
-        return member;
-      });
+          return member;
+        });
+        // get last audior records
+        auditRecords = await this.database.getMembersLatestAuditRecords(
+          memberIds
+        );
+        auditRecords = auditRecords.reduce((prev, curr) => {
+          prev[curr.member_id] = curr;
+          return prev;
+        }, {});
+        // get last active time
+        accountVersions = await this.database.getMembersLatestAccountVersions(
+          memberIds
+        );
+        accountVersions = accountVersions.reduce((prev, curr) => {
+          prev[curr.member_id] = curr;
+          return prev;
+        }, {});
+        members = members.map((m) => {
+          let lastestAccountAuditTime = auditRecords[m.id]
+              ? new Date(auditRecords[m.id].updated_at).getTime()
+              : null,
+            lastestsActivityTime = accountVersions[m.id]
+              ? new Date(accountVersions[m.id].updated_at).getTime()
+              : null,
+            alert =
+              lastestsActivityTime &&
+              (!lastestAccountAuditTime ||
+                SafeMath.gt(
+                  SafeMath.minus(lastestsActivityTime, lastestAccountAuditTime),
+                  24 * 60 * 60 * 1000 // 1天
+                )),
+            member = {
+              ...m,
+              lastestAccountAuditTime,
+              lastestsActivityTime,
+              alert,
+            };
+          return member;
+        });
+      }
       return new ResponseFormat({
         message: "getMembers",
         payload: {

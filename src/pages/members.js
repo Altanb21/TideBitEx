@@ -11,6 +11,7 @@ import SafeMath from "../utils/SafeMath";
 import LoadingDialog from "../components/LoadingDialog";
 import { IoRefresh } from "react-icons/io5";
 import { dateFormatter } from "../utils/Utils";
+import { useSnackbar } from "notistack";
 
 const MemberAsset = (props) => {
   const { t } = useTranslation();
@@ -227,6 +228,7 @@ const Members = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [enableSearchButton, setEnableSearchButton] = useState("");
   const inputRef = useRef();
+  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
 
   // const filter = useCallback(
   //   ({ members, keyword, option }) => {
@@ -310,21 +312,35 @@ const Members = () => {
       member,
       email = inputRef.current.value;
     while (newPage <= pages && !member) {
-      member = members[newPage].find((m) => m.email === email);
+      member = members[newPage]?.find((m) => m.email === email);
       if (!member) newPage = newPage + 1;
     }
     if (member) {
       setPage(newPage);
     } else {
       let result = await getMembers({ email, limit });
-      newPage = result.page;
-      if (newPage) setPage(newPage);
-      setMembers((prev) => {
-        newMembers = { ...prev };
-        newMembers[newPage] = result.members;
-        return newMembers;
-      });
-      console.log(newMembers);
+      if (result.page) {
+        newPage = result.page;
+        if (newPage) setPage(newPage);
+        setMembers((prev) => {
+          newMembers = { ...prev };
+          newMembers[newPage] = result.members;
+          return newMembers;
+        });
+        console.log(newMembers);
+      }else{
+      // ++TODO show member not found
+      enqueueSnackbar(
+        `${t("did_not_find_member")}`,
+        {
+          variant: "error",
+          anchorOrigin: {
+            vertical: "top",
+            horizontal: "center",
+          },
+        }
+      );
+      }
     }
     // filter({ members: memberList });
     setIsLoading(false);

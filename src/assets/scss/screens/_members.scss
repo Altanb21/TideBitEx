@@ -14,6 +14,9 @@
       cursor: pointer;
     }
   }
+  & .screen__search-box {
+    width: 300px;
+  }
   &__tile {
     //   position: relative;
     //   border: 1px solid #707070;
@@ -21,20 +24,6 @@
     //   padding: 15px 20px;
     //   cursor: pointer;
     margin-bottom: 20px;
-  }
-  &__label {
-    position: relative;
-    border: 1px solid #707070;
-    border-radius: 15px;
-    padding: 15px 20px;
-    cursor: pointer;
-    margin-bottom: 0px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  &__controller {
-    display: none;
   }
   &__alert--icon {
     opacity: 0;
@@ -132,12 +121,32 @@
     align-items: center;
     gap: 20px;
   }
+  &__controller {
+    display: none;
+  }
   &__icon {
-    background-image: url("../../images/plus@2x.png");
+    background-image: url("../../images/minus@2x.png");
     width: 20px;
     height: 20px;
     background-position: center;
     background-size: contain;
+  }
+  &__label {
+    position: relative;
+    border: 1px solid #707070;
+    border-radius: 15px;
+    padding: 15px 20px;
+    cursor: default;
+    margin-bottom: 0px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  &__controller + &__label {
+    cursor: pointer;
+  }
+  &__controller + &__label &__icon {
+    background-image: url("../../images/plus@2x.png");
   }
   &__controller:checked + &__label &__icon {
     background-image: url("../../images/minus@2x.png");

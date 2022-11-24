@@ -323,15 +323,21 @@ class mysql {
     }
   }
 
-  async countMembers() {
+  async countMembers(conditions) {
+    let placeholder = [];
+    if (conditions?.before)
+      placeholder = [...placeholder, `id < ${conditions.before}}`];
+    if (conditions?.activated)
+      placeholder = [...placeholder, `activated = ${conditions.activated}}`];
     const query = `
     SELECT 
         count(*) as counts
     FROM
         members
-    WHERE
-        activated = 1
+        ${placeholder.length > 0 ? `WHERE ${placeholder.join(` AND `)}` : ``}
     ;`;
+    // WHERE
+    //     activated = 1
     try {
       // this.logger.debug("countMembers", query);
       const [[result]] = await this.db.query({
@@ -530,7 +536,12 @@ class mysql {
       let values = Object.values(conditions);
       for (let index = 0; index < Object.keys(conditions).length; index++) {
         if (values[index])
-          placeholder = [...placeholder, `${keys[index]} = ${values[index]}`];
+          placeholder = [
+            ...placeholder,
+            keys[index] === "email"
+              ? `${keys[index]} = "${values[index]}"`
+              : `${keys[index]} = ${values[index]}`,
+          ];
       }
     }
     const query = `
@@ -541,14 +552,7 @@ class mysql {
 	    member_tag,
 	    refer,
       refer_code,
-      activated,
-      (
-        SELECT
-          count(*)
-        FROM
-          members
-        WHERE
-          ${placeholder.join(` AND `)}) + 1 AS number
+      activated
     FROM
 	    members
     WHERE

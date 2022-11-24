@@ -83,8 +83,8 @@ class DBOperator {
     return this.database.getCurrencyByKey(currencyKey);
   }
 
-  async countMembers() {
-    return this.database.countMembers();
+  async countMembers(conditions) {
+    return this.database.countMembers(conditions);
   }
 
   async getMembers({ limit, offset = 0 }) {
