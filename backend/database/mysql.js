@@ -93,13 +93,13 @@ class mysql {
       GROUP BY account_id
       ;`;
     try {
-      this.logger.debug(
-        "auditAccountBalance",
-        query,
-        memberId,
-        currency,
-        startId
-      );
+      // this.logger.debug(
+      //   "auditAccountBalance",
+      //   query,
+      //   memberId,
+      //   currency,
+      //   startId
+      // );
       const [accountVersions] = await this.db.query({
         query,
       });
@@ -122,7 +122,7 @@ class mysql {
           placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }
-    this.logger.debug(placeholder);
+    // this.logger.debug(placeholder);
     const query = `
     SELECT
 	    accounts.id,
@@ -1299,17 +1299,17 @@ class mysql {
             : ``
         };`;
     try {
-      this.logger.debug(
-        "countOuterTrades",
-        query,
-        `${
-          type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `[${exchangeCode}, ${days}]`
-            : type === Database.TIME_RANGE_TYPE.BETWEEN
-            ? `[${exchangeCode}, ${start}, ${end}]`
-            : `[${exchangeCode}]`
-        }`
-      );
+      // this.logger.debug(
+      //   "countOuterTrades",
+      //   query,
+      //   `${
+      //     type === Database.TIME_RANGE_TYPE.DAY_AFTER
+      //       ? `[${exchangeCode}, ${days}]`
+      //       : type === Database.TIME_RANGE_TYPE.BETWEEN
+      //       ? `[${exchangeCode}, ${start}, ${end}]`
+      //       : `[${exchangeCode}]`
+      //   }`
+      // );
       const [[counts]] = await this.db.query({
         query,
         values:
@@ -1730,7 +1730,7 @@ class mysql {
     ORDER BY
       id;`;
     try {
-      this.logger.debug("getAbnormalAccountVersions", query, id);
+      // this.logger.debug("getAbnormalAccountVersions", query, id);
       const [accountVersions] = await this.db.query({
         query,
         values: [id],
@@ -1773,30 +1773,30 @@ class mysql {
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     try {
-      this.logger.debug(
-        "insertOrder",
-        "DEFAULT",
-        query,
-        bid,
-        ask,
-        currency,
-        price,
-        volume,
-        origin_volume,
-        state,
-        done_at,
-        type,
-        member_id,
-        created_at,
-        updated_at,
-        sn,
-        source,
-        ord_type,
-        locked,
-        origin_locked,
-        funds_received,
-        trades_count
-      );
+      // this.logger.debug(
+      //   "insertOrder",
+      //   "DEFAULT",
+      //   query,
+      //   bid,
+      //   ask,
+      //   currency,
+      //   price,
+      //   volume,
+      //   origin_volume,
+      //   state,
+      //   done_at,
+      //   type,
+      //   member_id,
+      //   created_at,
+      //   updated_at,
+      //   sn,
+      //   source,
+      //   ord_type,
+      //   locked,
+      //   origin_locked,
+      //   funds_received,
+      //   trades_count
+      // );
       return this.db.query(
         {
           query,
@@ -1854,24 +1854,24 @@ class mysql {
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertAccountVersion",
-        query,
-        "DEFAULT",
-        member_id,
-        accountId,
-        reason,
-        balance,
-        locked,
-        fee,
-        amount,
-        modifiable_id,
-        modifiable_type,
-        created_at,
-        updated_at,
-        currency,
-        fun
-      );
+      // this.logger.debug(
+      //   "insertAccountVersion",
+      //   query,
+      //   "DEFAULT",
+      //   member_id,
+      //   accountId,
+      //   reason,
+      //   balance,
+      //   locked,
+      //   fee,
+      //   amount,
+      //   modifiable_id,
+      //   modifiable_type,
+      //   created_at,
+      //   updated_at,
+      //   currency,
+      //   fun
+      // );
       result = await this.db.query(
         {
           query,
@@ -1921,7 +1921,7 @@ class mysql {
     }
     let result;
     try {
-      this.logger.debug("[mysql] insertOuterTrades", query, values);
+      // this.logger.debug("[mysql] insertOuterTrades", query, values);
       result = await this.db.query(
         {
           query,
@@ -1959,23 +1959,23 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertTrades",
-        query,
-        "DEFAULT",
-        price,
-        volume,
-        ask_id,
-        bid_id,
-        trend,
-        currency,
-        created_at,
-        updated_at,
-        ask_member_id,
-        bid_member_id,
-        funds,
-        trade_fk
-      );
+      // this.logger.debug(
+      //   "insertTrades",
+      //   query,
+      //   "DEFAULT",
+      //   price,
+      //   volume,
+      //   ask_id,
+      //   bid_id,
+      //   trend,
+      //   currency,
+      //   created_at,
+      //   updated_at,
+      //   ask_member_id,
+      //   bid_member_id,
+      //   funds,
+      //   trade_fk
+      // );
       result = await this.db.query(
         {
           query,
@@ -2029,24 +2029,24 @@ class mysql {
       "INSERT INTO `vouchers` (`id`,`member_id`,`order_id`,`trade_id`,`designated_trading_fee_asset_history_id`,`ask`,`bid`,`price`,`volume`,`value`,`trend`,`ask_fee`,`bid_fee`,`created_at`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertVouchers",
-        query,
-        "DEFAULT",
-        member_id,
-        order_id,
-        trade_id,
-        designated_trading_fee_asset_history_id,
-        ask,
-        bid,
-        price,
-        volume,
-        value,
-        trend,
-        ask_fee,
-        bid_fee,
-        created_at
-      );
+      // this.logger.debug(
+      //   "insertVouchers",
+      //   query,
+      //   "DEFAULT",
+      //   member_id,
+      //   order_id,
+      //   trade_id,
+      //   designated_trading_fee_asset_history_id,
+      //   ask,
+      //   bid,
+      //   price,
+      //   volume,
+      //   value,
+      //   trend,
+      //   ask_fee,
+      //   bid_fee,
+      //   created_at
+      // );
       result = await this.db.query(
         {
           query,
@@ -2104,26 +2104,26 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      this.logger.debug(
-        "insertReferralCommission",
-        query,
-        "DEFAULT",
-        referredByMemberId,
-        tradeMemberId,
-        voucherId,
-        appliedPlanId,
-        appliedPolicyId,
-        trend,
-        market,
-        currency,
-        refGrossFee,
-        refNetFee,
-        amount,
-        state,
-        depositedAt,
-        createdAt,
-        updatedAt
-      );
+      // this.logger.debug(
+      //   "insertReferralCommission",
+      //   query,
+      //   "DEFAULT",
+      //   referredByMemberId,
+      //   tradeMemberId,
+      //   voucherId,
+      //   appliedPlanId,
+      //   appliedPolicyId,
+      //   trend,
+      //   market,
+      //   currency,
+      //   refGrossFee,
+      //   refNetFee,
+      //   amount,
+      //   state,
+      //   depositedAt,
+      //   createdAt,
+      //   updatedAt
+      // );
       result = await this.db.query(
         {
           query,
@@ -2184,24 +2184,24 @@ class mysql {
       expect_locked = ${expect_locked}, 
       updated_at = "${updated_at}";`;
     try {
-      this.logger.debug(
-        "insertAuditAccountRecord",
-        query,
-        "DEFAULT",
-        account_id,
-        member_id,
-        currency,
-        account_version_id_start,
-        account_version_id_end,
-        balance,
-        expect_balance,
-        locked,
-        expect_locked,
-        created_at,
-        updated_at,
-        fixed_at,
-        issued_by
-      );
+      // this.logger.debug(
+      //   "insertAuditAccountRecord",
+      //   query,
+      //   "DEFAULT",
+      //   account_id,
+      //   member_id,
+      //   currency,
+      //   account_version_id_start,
+      //   account_version_id_end,
+      //   balance,
+      //   expect_balance,
+      //   locked,
+      //   expect_locked,
+      //   created_at,
+      //   updated_at,
+      //   fixed_at,
+      //   issued_by
+      // );
       result = await this.db.query(
         {
           query,
@@ -2250,7 +2250,7 @@ class mysql {
         ${where}
       LIMIT 1;
       `;
-      this.logger.debug("updateAccount", query);
+      // this.logger.debug("updateAccount", query);
       if(!id) throw Error(`id is required`)
       await this.db.query(
         {
@@ -2282,7 +2282,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      this.logger.debug("updateAuditAccountRecord", query);
+      // this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,
@@ -2314,7 +2314,7 @@ class mysql {
         " WHERE " +
         where +
         " LIMIT 1;";
-      this.logger.debug("updateAccountVersion", query);
+      // this.logger.debug("updateAccountVersion", query);
       await this.db.query(
         {
           query,
@@ -2345,7 +2345,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      this.logger.debug("updateOrder", query);
+      // this.logger.debug("updateOrder", query);
       await this.db.query(
         {
           query,
@@ -2373,7 +2373,7 @@ class mysql {
       );
       let query =
         "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + " LIMIT 1;";
-      this.logger.debug("updateOuterTrade", query);
+      // this.logger.debug("updateOuterTrade", query);
       await this.db.query(
         {
           query,
@@ -2404,7 +2404,7 @@ class mysql {
         //   lock: dbTransaction.LOCK., // ++ TODO verify
         // }
       );
-      this.logger.debug(query, values);
+      // this.logger.debug(query, values);
       return result;
     } catch (error) {
       this.logger.error(error);
