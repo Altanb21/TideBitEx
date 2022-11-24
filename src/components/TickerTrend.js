@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-  useRef,
-} from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import StoreContext from "../store/store-context";
 import SafeMath from "../utils/SafeMath";
 import { useTranslation } from "react-i18next";
@@ -80,18 +74,19 @@ const TickerTrendContainer = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [isInit, setIsInit] = useState(false);
-  const changePctRef = useRef();
+  const [changePctClassname, setChangePctClassname] = useState(
+    `ticker-trend__change-pct${
+      !props.ticker?.changePct
+        ? ""
+        : props.ticker?.changePct.includes("-")
+        ? " decrease"
+        : " increase"
+    }${props.ticker?.increase === true ? " green-highlight" : ""}${
+      props.ticker?.increase === false ? " red-highlight" : ""
+    }`
+  );
   const imageAlt = props.ticker?.baseUnit || "--";
   const name = props.ticker?.name || "--";
-  const changePctClassname = `ticker-trend__change-pct${
-    !props.ticker?.changePct
-      ? ""
-      : props.ticker?.changePct.includes("-")
-      ? " decrease"
-      : " increase"
-  }${props.ticker?.increase === true ? " green-highlight" : ""}${
-    props.ticker?.increase === false ? " red-highlight" : ""
-  }`;
   const changePct = !props.ticker
     ? "-- %"
     : `${formateDecimal(SafeMath.mult(props.ticker?.changePct, "100"), {
@@ -116,6 +111,18 @@ const TickerTrendContainer = (props) => {
       })
     : "--";
 
+  const animationEndHandler = useCallback(() => {
+    setChangePctClassname(
+      `ticker-trend__change-pct${
+        !props.ticker?.changePct
+          ? ""
+          : props.ticker?.changePct.includes("-")
+          ? " decrease"
+          : " increase"
+      }`
+    );
+  }, [props.ticker?.changePct]);
+
   const init = useCallback(async () => {
     if (props.ticker?.market) {
       setIsInit(async (prev) => {
@@ -126,6 +133,20 @@ const TickerTrendContainer = (props) => {
       });
     }
   }, [props.ticker?.market, storeCtx]);
+
+  useEffect(() => {
+    setChangePctClassname(
+      `ticker-trend__change-pct${
+        !props.ticker?.changePct
+          ? ""
+          : props.ticker?.changePct.includes("-")
+          ? " decrease"
+          : " increase"
+      }${props.ticker?.increase === true ? " green-highlight" : ""}${
+        props.ticker?.increase === false ? " red-highlight" : ""
+      }`
+    );
+  }, [props.ticker?.changePct, props.ticker?.increase]);
 
   useEffect(() => {
     if (!isInit) {
@@ -150,7 +171,12 @@ const TickerTrendContainer = (props) => {
           </span>
           <span className="ticker-trend__text">{name}</span>
         </div>
-        <div ref={changePctRef} className={changePctClassname}>{changePct}</div>
+        <div
+          onAnimationEnd={animationEndHandler}
+          className={changePctClassname}
+        >
+          {changePct}
+        </div>
       </div>
       <div className="ticker-trend__content">
         <div className="ticker-trend__price">{price}</div>
