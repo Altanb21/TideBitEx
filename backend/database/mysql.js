@@ -111,7 +111,8 @@ class mysql {
   }
 
   async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
-    let placeholder = ``;
+    let placeholder = ``,
+      limitCondition = limit ? `LIMIT ${limit}` : ``;
     // this.logger.debug(options);
     if (Object.keys(options)?.length > 0) {
       let keys = Object.keys(options);
@@ -135,7 +136,7 @@ class mysql {
 	    accounts
     WHERE
 	    accounts.member_id = ?${placeholder}
-    ${limit ? `LIMIT ${limit}` : ``}
+    ${limitCondition}
     ;`;
     const values = [memberId];
     // this.logger.debug(query, values);
@@ -331,15 +332,16 @@ class mysql {
       placeholder = [...placeholder, `id < ${conditions.before}`];
     if (conditions?.activated)
       placeholder = [...placeholder, `activated = ${conditions.activated}`];
+    let condition =
+      placeholder.length > 0 ? `WHERE ${placeholder.join(` AND `)}` : ``;
     const query = `
     SELECT 
         count(*) as counts
     FROM
         members
-        ${placeholder.length > 0 ? `WHERE ${placeholder.join(` AND `)}` : ``}
+    ${condition}
     ;`;
-    // WHERE
-    //     activated = 1
+
     try {
       // this.logger.debug("countMembers", query);
       const [[result]] = await this.db.query({
