@@ -178,8 +178,11 @@ const Member = (props) => {
             {t("locked")}
           </div>
           <div className="members__header members__header--button">
-            <div className="members__button-icon">{t("force_fixed")}</div>
-            <div onClick={auditorMemberAccounts}>
+            <div>{t("force_fixed")}</div>
+            <div
+              className="members__button-icon"
+              onClick={auditorMemberAccounts}
+            >
               <IoRefresh />
             </div>
           </div>
