@@ -610,20 +610,21 @@ class mysql {
           ];
       }
     }
+    let condition = placeholder.join(` AND `);
     const query = `
-    SELECT
-	    id,
-	    sn,
-	    email,
-	    member_tag,
-	    refer,
-      refer_code,
-      activated
-    FROM
-	    members
-    WHERE
-      ${placeholder.join(` AND `)}
-    LIMIT 1;
+      SELECT
+	      id,
+	      sn,
+	      email,
+	      member_tag,
+	      refer,
+        refer_code,
+        activated
+      FROM
+	      members
+      WHERE
+        ${condition}
+      LIMIT 1;
     `;
     try {
       const [[member]] = await this.db.query({
@@ -2239,11 +2240,12 @@ class mysql {
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
+      const placeholder = set.join(", ");
       let query = `
       UPDATE
       	accounts
       SET
-        ${set.join(", ")}
+        ${placeholder}
       WHERE
         ${where};
       `;
@@ -2329,11 +2331,12 @@ class mysql {
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
+      const placeholder = set.join(", ");
       let query = `
       UPDATE
         orders
       SET
-        ${set.join(", ")}
+        ${placeholder}
       WHERE
         ${where};
       `;
