@@ -37,7 +37,7 @@ const CurrentOrders = () => {
   const [isInit, setIsInit] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [filterOrders, setFilterOrders] = useState(null);
-  const [filterOption, setFilterOption] = useState("all"); //'ask','bid'
+  const [filterOption, setFilterOption] = useState("all"); //'buy','sell'
   const [filterKey, setFilterKey] = useState("");
   const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
   const [filterExchange, setFilterExchange] = useState(exchanges[0]);
@@ -50,7 +50,7 @@ const CurrentOrders = () => {
 
   const getCurrentOrders = useCallback(
     async ({ exchange, ticker }) => {
-      let updatedOrders = {},
+      let updatedOrders = { ...orders },
         askOrders = [],
         bidOrders = [],
         pendingOrders;
@@ -59,40 +59,36 @@ const CurrentOrders = () => {
           instId: ticker,
           exchange,
         });
-        setOrders((prev) => {
-          updatedOrders = { ...prev };
-          if (!updatedOrders[exchange]) updatedOrders[exchange] = {};
-          if (!updatedOrders[exchange][ticker])
-            updatedOrders[exchange][ticker] = [];
-          if (pendingOrders.length > 0) {
-            let onlyInNewOrders = onlyInLeft(
-              pendingOrders,
-              updatedOrders[exchange][ticker]
-            );
-            console.log(`onlyInNewOrders[:${onlyInNewOrders.length}]`);
-            updatedOrders[exchange][ticker] =
-              updatedOrders[exchange][ticker].concat(onlyInNewOrders);
-            for (let o of updatedOrders[exchange][ticker]) {
-              if (o.side === "buy") bidOrders = [...bidOrders, o];
-              else askOrders = [...askOrders, o];
-            }
-            askOrders.sort((a, b) => a.price - b.price);
-            bidOrders.sort((a, b) => b.price - a.price);
-            updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
-            let pages = Math.ceil(
-              updatedOrders[exchange][ticker].length / limit
-            );
-            if (SafeMath.lt(page, pages)) setNextPageIsExit("");
-            setPages(pages);
-          } else {
-            setPages(1);
-          }
-          return updatedOrders;
-        });
+        if (!updatedOrders[exchange]) updatedOrders[exchange] = {};
+        if (!updatedOrders[exchange][ticker])
+          updatedOrders[exchange][ticker] = [];
+        let onlyInNewOrders = onlyInLeft(
+          pendingOrders,
+          updatedOrders[exchange][ticker]
+        );
+        updatedOrders[exchange][ticker] =
+          updatedOrders[exchange][ticker].concat(onlyInNewOrders);
+        for (let o of updatedOrders[exchange][ticker]) {
+          if (o.side === "buy") bidOrders = [...bidOrders, o];
+          else askOrders = [...askOrders, o];
+        }
+        askOrders.sort((a, b) => a.price - b.price);
+        bidOrders.sort((a, b) => b.price - a.price);
+        updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
+        let newPage = 1,
+          pages = Math.ceil(updatedOrders[exchange][ticker].length / limit);
+        pages = pages > 0 ? pages : 1;
+        setPage(newPage);
+        setPages(pages);
+        if (SafeMath.gt(newPage, 1)) setPrevPageIsExit("");
+        else setPrevPageIsExit(" disable");
+        if (SafeMath.lt(newPage, pages)) setNextPageIsExit("");
+        else setNextPageIsExit(" disable");
+        setOrders(updatedOrders);
       }
       return updatedOrders;
     },
-    [limit, page, storeCtx]
+    [limit, orders, storeCtx]
   );
 
   const filterHandler = useCallback(
@@ -113,7 +109,8 @@ const CurrentOrders = () => {
                   order.id.includes(_keyword) ||
                   order.memberId.includes(_keyword) ||
                   order.instId.includes(_keyword) ||
-                  order.email.includes(_keyword) ||
+                  order.email === null ||
+                  order.email?.includes(_keyword) ||
                   order.exchange.includes(_keyword);
                 if (_option !== "all")
                   condition = condition && order.side === _option;
@@ -143,7 +140,7 @@ const CurrentOrders = () => {
         exchange: filterExchange,
         ticker,
       });
-      filterHandler({ updateOrders: orders });
+      filterHandler({ updateOrders: orders, newPage: 1 });
       setIsLoading(false);
     },
     [filterExchange, filterHandler, getCurrentOrders]
@@ -175,13 +172,8 @@ const CurrentOrders = () => {
 
   const displayOptionHandler = useCallback(
     (option) => {
-      let _option = option === "bid" ? "buy" : option === "ask" ? "sell" : null;
-      if (_option) {
-        setFilterOption(option);
-        filterHandler({
-          side: option,
-        });
-      }
+      setFilterOption(option);
+      filterHandler({ option });
     },
     [filterHandler]
   );
@@ -227,7 +219,7 @@ const CurrentOrders = () => {
               exchange: exchanges[0],
               ticker: filterTicker,
             });
-            filterHandler({ updateOrders: orders });
+            filterHandler({ updateOrders: orders, newPage: 1 });
           } catch (error) {
             enqueueSnackbar(`${t("error-happen")}`, {
               variant: "error",
@@ -255,11 +247,12 @@ const CurrentOrders = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
+        // console.log(`call getCurrentOrders`);
         const orders = await getCurrentOrders({
           exchange: exchanges[0],
           ticker: filterTicker,
         });
-        filterHandler({ updateOrders: orders });
+        filterHandler({ updateOrders: orders, newPage: 1 });
         setIsLoading(false);
         return !prev;
       } else return prev;
@@ -302,7 +295,7 @@ const CurrentOrders = () => {
           <div className="screen__display">
             <div className="screen__display-title">{`${t("show")}:`}</div>
             <ScreenDisplayOptions
-              options={["all", "bid", "ask"]}
+              options={["all", "buy", "sell"]}
               selectedOption={filterOption}
               selectHandler={displayOptionHandler}
             />
