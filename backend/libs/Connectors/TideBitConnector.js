@@ -900,17 +900,27 @@ class TibeBitConnector extends ConnectorBase {
           ],
         });
       } else {
+        this.logger.error(`postPlaceOrder result false`, tbOrdersRes.data);
         return new ResponseFormat({
-          message: "postPlaceOrder error",
-          code: Codes.USER_IS_LOGOUT,
+          message: tbOrdersRes.data?.errors
+            ? tbOrdersRes.data?.errors
+            : "postPlaceOrder error",
+          code:
+            tbOrdersRes.data?.errors === "市場深度不足"
+              ? Codes.MARKET_NOT_DEEP_ENOUGH
+              : Codes.USER_IS_LOGOUT,
         });
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`postPlaceOrder catch Error`, error.response);
       // debug for postman so return error
       return new ResponseFormat({
-        message: "postPlaceOrder error",
-        code: Codes.USER_IS_LOGOUT,
+        message: error.response?.data?.errors
+          ? error.response?.data?.errors
+          : "postPlaceOrder error",
+        code: error.response?.data?.errors //++TODO
+          ? Codes.MARKET_NOT_DEEP_ENOUGH
+          : Codes.USER_IS_LOGOUT,
       });
     }
   }

@@ -412,6 +412,7 @@ class mysql {
   }
 
   async getMembersAuditRecordByIds(ids) {
+    if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     const query = `
     SELECT
@@ -473,6 +474,7 @@ class mysql {
   }
 
   async getMembersAccountVersionByIds(ids) {
+    if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     const query = `
     SELECT
@@ -639,10 +641,11 @@ class mysql {
   }
 
   async getReferralCommissionsByConditions({ conditions, limit, offset, asc }) {
-    let tableName = `referral_commissions`;
-    let placeholder = ``;
-    let arr = [],
-      values = [];
+    let tableName = `referral_commissions`,
+      placeholder = ``,
+      arr = [],
+      values = [],
+      orderCodition = asc ? "ASC" : "DESC";
     if (conditions[`referredByMemberId`]) {
       arr = [...arr, `${tableName}.referred_by_member_id = ?`];
       values = [...values, conditions[`referredByMemberId`]];
@@ -691,7 +694,7 @@ class mysql {
     WHERE 
         ${placeholder}
     ORDER BY
-        referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
+        referral_commissions.created_at ${orderCodition};`;
     // LIMIT ${limit} OFFSET ${offset};`;
     // ++ TODO 要小心資料量過大的問題
     try {
@@ -771,12 +774,6 @@ class mysql {
     }
   }
 
-  // ++ TODO 2022/10/14
-  // CASE WHEN orders.type = 'OrderBid' THEN
-  // (orders.origin_locked - orders.locked) / orders.funds_received
-  // WHEN orders.type = 'OrderAsk' THEN
-  // (orders.funds_received / orders.origin_volume)
-  // END) AS price_avg,
   async getDoneOrders({
     orderId,
     quoteCcy,
@@ -792,6 +789,21 @@ class mysql {
       this.logger.error("missing params");
       return [];
     }
+    let whereCondition = orderId
+      ? ` orders.id = ?`
+      : ` orders.member_id = ?
+	        AND orders.bid = ?
+	        AND orders.ask = ?
+          AND orders.state = ?
+          AND orders.type = ?
+          AND orders.ord_type <> '${ordType}
+        ORDER BY 
+          updated_at DESC`;
+    let limitCondition = orderId
+      ? `LIMIT 1`
+      : limit
+      ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
+      : ``;
     const query = `
       SELECT
 	        orders.id,
@@ -817,33 +829,14 @@ class mysql {
       FROM
           orders
       WHERE
-          ${
-            orderId
-              ? `
-          orders.id = ?
-      LIMIT 1`
-              : `
-          orders.member_id = ?
-	        AND orders.bid = ?
-	        AND orders.ask = ?
-          AND orders.state = ?
-          AND orders.type = ?
-          AND orders.ord_type <> '${ordType}'
-      ORDER BY 
-          updated_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-      `
-          }
+          ${whereCondition}
+      ${limitCondition}
          ;`;
     try {
       // this.logger.debug(
       //   "getDoneOrders",
       //   query,
-      //   `${
-      //     orderId
-      //       ? `[${orderId}]`
-      //       : `[${memberId}, ${quoteCcy}, ${baseCcy}, ${state}, ${type}]`
-      //   }`
+      //   orderId ? [orderId] : [memberId, quoteCcy, baseCcy, state, type]
       // );
       const [orders] = await this.db.query({
         query,
@@ -859,7 +852,16 @@ class mysql {
   }
 
   async getOrderList({ quoteCcy, baseCcy, memberId, orderType, state, asc }) {
-    // async getOrderList({ quoteCcy, baseCcy, memberId, orderType = "limit" }) {
+    if (!memberId || !quoteCcy || !baseCcy) throw Error(`missing params`);
+    let placeholder = [];
+    if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (quoteCcy) placeholder = [...placeholder, `bid = ${quoteCcy}`];
+    if (baseCcy) placeholder = [...placeholder, `ask = ${baseCcy}`];
+    if (orderType) placeholder = [...placeholder, `ord_type = ${orderType}`];
+    if (state) placeholder = [...placeholder, `state = ${state}`];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+    let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT
       orders.id,
@@ -881,27 +883,14 @@ class mysql {
       orders.updated_at
     FROM
       orders
-    WHERE
-      orders.member_id = ?
-      AND orders.bid = ?
-      AND orders.ask = ?
-      ${state ? `AND orders.state = ${state}` : ``}
-      ${orderType ? `AND orders.ord_type = ${orderType}` : ``}
+    ${whereCondition}
     ORDER BY
-      orders.updated_at ${asc ? "ASC" : "DESC"};`;
-    // AND orders.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
-    // LIMIT ${limit} OFFSET ${offset};`;// -- TODO
+      orders.updated_at ${orderCodition};`;
+
     try {
-      // this.logger.debug(
-      //   "getOrderList",
-      //   query,
-      //   `[${memberId}, ${quoteCcy}, ${baseCcy}]`
-      //   // `[${memberId}, ${quoteCcy}, ${baseCcy}, ${orderType}]`
-      // );
+      // this.logger.debug("getOrderList", query);
       const [orders] = await this.db.query({
         query,
-        values: [memberId, quoteCcy, baseCcy],
-        // values: [memberId, quoteCcy, baseCcy, orderType],
       });
       return orders;
     } catch (error) {
@@ -915,6 +904,7 @@ class mysql {
    * 沒有地方呼叫
    */
   async getVouchers({ memberId, ask, bid, days, asc, limit, offset }) {
+    let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT
       vouchers.id,
@@ -938,7 +928,7 @@ class mysql {
       AND vouchers.bid = ?
       AND vouchers.created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)
     ORDER BY
-      vouchers.created_at ${asc ? "ASC" : "DESC"}
+      vouchers.created_at ${orderCodition}
     LIMIT ${limit} OFFSET ${offset};`;
     try {
       // this.logger.debug("getVouchers", query, `[${memberId}, ${ask}, ${bid}]`);
@@ -1144,6 +1134,7 @@ class mysql {
    * integrate with getReferralCommissionsByConditions
    */
   async getReferralCommissions({ market, start, end, limit, offset, asc }) {
+    let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
         referral_commissions.id,
@@ -1163,7 +1154,7 @@ class mysql {
         AND referral_commissions.created_at BETWEEN ?
         AND ?
     ORDER BY
-        referral_commissions.created_at ${asc ? "ASC" : "DESC"}
+        referral_commissions.created_at ${orderCodition}
     LIMIT ${limit} OFFSET ${offset};`;
     try {
       // this.logger.debug(
@@ -1196,6 +1187,34 @@ class mysql {
     offset,
     asc,
   }) {
+    if (
+      !exchangeCode ||
+      (type === Database.TIME_RANGE_TYPE.DAY_AFTER && !days) ||
+      (type === Database.TIME_RANGE_TYPE.BETWEEN && (!start || !end))
+    )
+      throw Error(`missing params`);
+    let placeholder = [];
+    if (exchangeCode)
+      placeholder = [...placeholder, `exchange_code = ${exchangeCode}`];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (status) placeholder = [...placeholder, `status = ${status}`];
+    if (type === Database.TIME_RANGE_TYPE.DAY_AFTER && days)
+      placeholder = [
+        ...placeholder,
+        `create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)`,
+      ];
+    if (type === Database.TIME_RANGE_TYPE.BETWEEN && start && end)
+      placeholder = [
+        ...placeholder,
+        `create_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+    let orderCodition = asc ? "ASC" : "DESC";
+    let limitCondition = limit
+      ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
+      : ``;
     const query = `
     SELECT 
         outer_trades.id,
@@ -1221,40 +1240,15 @@ class mysql {
         outer_trades.voucher_id
     FROM 
         outer_trades
-    WHERE 
-        outer_trades.exchange_code = ?
-        ${currency ? `AND outer_trades.currency = ${currency}` : ``}
-        ${status ? `AND outer_trades.status = ${status}` : ``}
-      ${
-        type === Database.TIME_RANGE_TYPE.DAY_AFTER
-          ? `
-        AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
-        `
-          : `
-        AND outer_trades.create_at BETWEEN ?
-        AND ?
-        `
-      }
+    ${whereCondition}
     ORDER BY
-        outer_trades.create_at ${asc ? "ASC" : "DESC"}
-    ${limit ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}` : ``}
+        outer_trades.create_at ${orderCodition}
+    ${limitCondition}
     ;`;
     try {
-      // this.logger.debug(
-      //   "getOuterTrades",
-      //   query,
-      //   `${
-      //     type === Database.TIME_RANGE_TYPE.DAY_AFTER
-      //       ? `[${exchangeCode} ${days}]`
-      //       : `[${exchangeCode}, ${start}, ${end}]`
-      //   }`
-      // );
+      // this.logger.debug("getOuterTrades", query);
       const [outerTrades] = await this.db.query({
         query,
-        values:
-          type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, days]
-            : [exchangeCode, start, end],
       });
       return outerTrades;
     } catch (error) {
@@ -1273,51 +1267,42 @@ class mysql {
     start,
     end,
   }) {
+    if (
+      !exchangeCode ||
+      (type === Database.TIME_RANGE_TYPE.DAY_AFTER && !days) ||
+      (type === Database.TIME_RANGE_TYPE.BETWEEN && (!start || !end))
+    )
+      throw Error(`missing params`);
+    let placeholder = [];
+    if (exchangeCode)
+      placeholder = [...placeholder, `exchange_code = ${exchangeCode}`];
+    if (orderId) placeholder = [...placeholder, `order_id = ${orderId}`];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (status) placeholder = [...placeholder, `status = ${status}`];
+    if (type === Database.TIME_RANGE_TYPE.DAY_AFTER && days)
+      placeholder = [
+        ...placeholder,
+        `create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)`,
+      ];
+    if (type === Database.TIME_RANGE_TYPE.BETWEEN && start && end)
+      placeholder = [
+        ...placeholder,
+        `create_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
     const query = `
     SELECT 
         count(*) as counts
     FROM 
         outer_trades
-    WHERE 
-        outer_trades.exchange_code = ?
-        ${orderId ? `AND outer_trades.order_id = ${orderId}` : ``}
-        ${currency ? `AND outer_trades.currency = ${currency}` : ``}
-        ${status ? `AND outer_trades.status = ${status}` : ``}
-        ${
-          type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? `
-        AND outer_trades.create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ? DAY)
-        `
-            : ``
-        }
-        ${
-          type === Database.TIME_RANGE_TYPE.BETWEEN
-            ? `
-        AND outer_trades.create_at BETWEEN ?
-        AND ?
-        `
-            : ``
-        };`;
+    ${whereCondition}
+    ;`;
     try {
-      // this.logger.debug(
-      //   "countOuterTrades",
-      //   query,
-      //   `${
-      //     type === Database.TIME_RANGE_TYPE.DAY_AFTER
-      //       ? `[${exchangeCode}, ${days}]`
-      //       : type === Database.TIME_RANGE_TYPE.BETWEEN
-      //       ? `[${exchangeCode}, ${start}, ${end}]`
-      //       : `[${exchangeCode}]`
-      //   }`
-      // );
+      // this.logger.debug("countOuterTrades", query);
       const [[counts]] = await this.db.query({
         query,
-        values:
-          type === Database.TIME_RANGE_TYPE.DAY_AFTER
-            ? [exchangeCode, days]
-            : type === Database.TIME_RANGE_TYPE.BETWEEN
-            ? [exchangeCode, start, end]
-            : [exchangeCode],
       });
       // this.logger.debug(`counts`, counts);
       return counts;
@@ -1556,6 +1541,7 @@ class mysql {
   }
 
   async getOrdersByIds(ids) {
+    if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     let query = `
     SELECT
@@ -1587,6 +1573,7 @@ class mysql {
   }
 
   async getTradesByIds(ids) {
+    if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     let query = `
     SELECT
@@ -1619,6 +1606,7 @@ class mysql {
   }
 
   async getVouchersByIds(ids) {
+    if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     let query = `
     SELECT
@@ -1647,9 +1635,6 @@ class mysql {
     }
   }
 
-  /**
-   *  -- temporary 2022-11-18
-   */
   async getOuterTradesByTradeIds(tradeIds) {
     let placeholder = tradeIds.join(`,`);
     let query = `
@@ -1919,10 +1904,10 @@ class mysql {
       values.push(trade.data);
       index++;
     }
-    let result;
+    // let result;
     try {
       // this.logger.debug("[mysql] insertOuterTrades", query, values);
-      result = await this.db.query(
+      await this.db.query(
         {
           query,
           values,
@@ -2251,7 +2236,7 @@ class mysql {
       LIMIT 1;
       `;
       // this.logger.debug("updateAccount", query);
-      if(!id) throw Error(`id is required`)
+      if (!id) throw Error(`id is required`);
       await this.db.query(
         {
           query,
@@ -2269,7 +2254,7 @@ class mysql {
   async updateAuditAccountRecord(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      if(!id) throw Error(`id is required`)
+      if (!id) throw Error(`id is required`);
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
@@ -2304,13 +2289,14 @@ class mysql {
   async updateAccountVersion(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      if(!id) throw Error(`id is required`)
+      if (!id) throw Error(`id is required`);
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
+      const placeholder = set.join(", ");
       let query =
         "UPDATE `account_versions` SET " +
-        set.join(", ") +
+        placeholder +
         " WHERE " +
         where +
         " LIMIT 1;";
@@ -2332,7 +2318,7 @@ class mysql {
   async updateOrder(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      if(!id) throw Error(`id is required`)
+      if (!id) throw Error(`id is required`);
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
@@ -2364,15 +2350,20 @@ class mysql {
   async updateOuterTrade(datas, { dbTransaction }) {
     try {
       const id = datas.id;
-      if(!id) throw Error(`id is required`)
+      if (!id) throw Error(`id is required`);
       const where = "`id` = " + id;
       delete datas.id;
       const set = Object.keys(datas).map(
         (key) =>
           `\`${key}\` = ${key === "email" ? `"${datas[key]}"` : datas[key]}`
       );
+      const placeholder = set.join(", ");
       let query =
-        "UPDATE `outer_trades` SET " + set.join(", ") + " WHERE " + where + " LIMIT 1;";
+        "UPDATE `outer_trades` SET " +
+        placeholder +
+        " WHERE " +
+        where +
+        " LIMIT 1;";
       // this.logger.debug("updateOuterTrade", query);
       await this.db.query(
         {
