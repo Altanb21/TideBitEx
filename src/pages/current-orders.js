@@ -3,10 +3,11 @@ import StoreContext from "../store/store-context";
 import { useTranslation } from "react-i18next";
 import TableDropdown from "../components/TableDropdown";
 import LoadingDialog from "../components/LoadingDialog";
-import { convertExponentialToDecimal, dateFormatter } from "../utils/Utils";
 import { TableHeader } from "./vouchers";
 import SafeMath from "../utils/SafeMath";
 import { useSnackbar } from "notistack";
+import ScreenDisplayOptions from "../components/ScreenDisplayOptions";
+import CurrentOrdersTile from "./CurrentOrdersTile";
 
 const exchanges = ["OKEx"];
 const tickers = {
@@ -19,6 +20,7 @@ const defaultOrders = {
     "ETH-USDT": [],
   },
 };
+
 const compareFunction = (leftValue, rightValue) => {
   return leftValue?.id !== rightValue?.id;
 };
@@ -32,7 +34,6 @@ const CurrentOrders = () => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [limit, setLimit] = useState(10);
-  // const [totalCounts, setTotalCounts] = useState(0);
   const [newestOrderId, setNewestOrderId] = useState(null); // ordId
   const [oldestOrderId, setOldestOrderId] = useState(null); // ordId
   const [isInit, setIsInit] = useState(null);
@@ -45,7 +46,9 @@ const CurrentOrders = () => {
   const [orders, setOrders] = useState(defaultOrders);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const [prevPageIsExit, setPrevPageIsExit] = useState(" disable");
+  const [nextPageIsExit, setNextPageIsExit] = useState(" disable");
+  const { enqueueSnackbar } = useSnackbar();
 
   const getCurrentOrders = useCallback(
     async ({ exchange, ticker, limit, before, after }) => {
@@ -158,82 +161,87 @@ const CurrentOrders = () => {
     [filter, filterExchange, getCurrentOrders, limit]
   );
 
+  const switchPageHandler = useCallback(
+    async (newPage) => {
+      let newOrders,
+        arr = [];
+      setPage(newPage);
+      if (SafeMath.gt(newPage, 1)) setPrevPageIsExit("");
+      else setPrevPageIsExit(" disable");
+      if (SafeMath.lt(newPage, pages)) setNextPageIsExit("");
+      else setNextPageIsExit(" disable");
+      setIsLoading(true);
+      if (
+        orders &&
+        orders[filterExchange] &&
+        orders[filterExchange][filterTicker]
+      ) {
+        newOrders = orders[filterExchange][filterTicker]
+          .map((o) => ({ ...o }))
+          .sort((a, b) => b.ts - a.ts);
+        arr = newOrders.slice((page - 1) * limit, page * limit);
+        console.log(
+          `arr[:${arr.length}] (page - 1) * limit[${
+            (page - 1) * limit
+          }] page * limit[${page * limit}] page[${page}] limit[:limit]`
+        );
+      }
+      if (arr.length < limit && oldestOrderId) {
+        newOrders = await getCurrentOrders({
+          ticker: filterTicker,
+          exchange: exchanges[0],
+          after: oldestOrderId,
+          limit: limit,
+        });
+      }
+      filter({ orders: newOrders });
+      setIsLoading(false);
+    },
+    [
+      filter,
+      filterExchange,
+      filterTicker,
+      getCurrentOrders,
+      limit,
+      oldestOrderId,
+      orders,
+      page,
+      pages,
+    ]
+  );
+
   const prevPageHandler = useCallback(async () => {
-    let newOrders,
-      newPage = page - 1 > 0 ? page - 1 : 1,
-      arr = [];
-    setPage(newPage);
-    setIsLoading(true);
-    // if (newestOrderId) {
-    //   newOrders = await getCurrentOrders({
-    //     ticker: filterTicker,
-    //     exchange: exchanges[0],
-    //     before: newestOrderId,
-    //     limit: limit,
-    //   });
-    //   // setOffset((prev) => (prev + 1) * limit);
-    // }
-    if (
-      orders &&
-      orders[filterExchange] &&
-      orders[filterExchange][filterTicker]
-    ) {
-      newOrders = orders[filterExchange][filterTicker]
-        .map((o) => ({ ...o }))
-        .sort((a, b) => b.ts - a.ts);
-      arr = newOrders.slice((page - 1) * limit, page * limit);
-      console.log(
-        `arr[:${arr.length}] (page - 1) * limit[${
-          (page - 1) * limit
-        }] page * limit[${page * limit}] page[${page}] limit[:limit]`
-      );
-    }
-    filter({ orders: newOrders });
-    setIsLoading(false);
-  }, [page, orders, filterExchange, filterTicker, filter, limit]);
+    let newPage = page - 1 > 0 ? page - 1 : 1;
+    await switchPageHandler(newPage);
+  }, [switchPageHandler, page]);
 
   const nextPageHandler = useCallback(async () => {
-    setIsLoading(true);
-    let newOrders,
-      newPage = page + 1,
-      arr = [];
-    setPage(newPage);
-    if (
-      orders &&
-      orders[filterExchange] &&
-      orders[filterExchange][filterTicker]
-    ) {
-      newOrders = orders[filterExchange][filterTicker]
-        .map((o) => ({ ...o }))
-        .sort((a, b) => b.ts - a.ts);
-      arr = newOrders.slice((page - 1) * limit, page * limit);
-      console.log(
-        `arr[:${arr.length}] (page - 1) * limit[${
-          (page - 1) * limit
-        }] page * limit[${page * limit}] page[${page}] limit[:limit]`
-      );
-    }
-    if (arr.length < limit && oldestOrderId) {
-      newOrders = await getCurrentOrders({
-        ticker: filterTicker,
-        exchange: exchanges[0],
-        after: oldestOrderId,
-        limit: limit,
+    let newPage = page + 1;
+    await switchPageHandler(newPage);
+  }, [switchPageHandler, page]);
+
+  const displayOptionHandler = useCallback(
+    (option) => {
+      filter({
+        orders: orders[filterExchange][filterTicker],
+        side: option,
       });
-      // setOffset((prev) => (prev + 1) * limit);
-    }
-    filter({ orders: newOrders });
-    setIsLoading(false);
-  }, [
-    page,
-    orders,
-    filterExchange,
-    filterTicker,
-    limit,
-    oldestOrderId,
-    filter,
-    getCurrentOrders,
-  ]);
+    },
+    [filter, filterExchange, filterTicker, orders]
+  );
+
+  const inputHandler = useCallback(
+    (e) => {
+      setFilterKey(e.target.value);
+      filter({ orders: filterOrders, keyword: e.target.value });
+    },
+    [filter, filterOrders]
+  );
+
+  const flowbackHandler = useCallback(() => {
+    const screenSection = window.document.querySelector(".screen__section");
+    screenSection.scroll(0, 0);
+  }, []);
 
   const forceCancelOrder = useCallback(
     async (order) => {
@@ -319,8 +327,8 @@ const CurrentOrders = () => {
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"
-            selectHandler={(ticker) => selectTickerHandler(ticker)}
-            options={tickers ? Object.values(tickers) : []}
+            selectHandler={selectTickerHandler}
+            options={Object.values(tickers)}
             selected={filterTicker}
           />
           <div className="screen__search-box">
@@ -329,10 +337,7 @@ const CurrentOrders = () => {
               inputMode="search"
               className="screen__search-input"
               placeholder={t("search-keywords")}
-              onInput={(e) => {
-                setFilterKey(e.target.value);
-                filter({ orders: filterOrders, keyword: e.target.value });
-              }}
+              onInput={inputHandler}
             />
             <div className="screen__search-icon">
               <div className="screen__search-icon--circle"></div>
@@ -343,47 +348,11 @@ const CurrentOrders = () => {
         <div className="screen__tool-bar">
           <div className="screen__display">
             <div className="screen__display-title">{`${t("show")}:`}</div>
-            <ul className="screen__display-options">
-              <li
-                className={`screen__display-option${
-                  filterOption === "all" ? " active" : ""
-                }`}
-                onClick={() =>
-                  filter({
-                    orders: orders[filterExchange][filterTicker],
-                    side: "all",
-                  })
-                }
-              >
-                {t("all")}
-              </li>
-              <li
-                className={`screen__display-option${
-                  filterOption === "buy" ? " active" : ""
-                }`}
-                onClick={() =>
-                  filter({
-                    orders: orders[filterExchange][filterTicker],
-                    side: "buy",
-                  })
-                }
-              >
-                {t("bid")}
-              </li>
-              <li
-                className={`screen__display-option${
-                  filterOption === "sell" ? " active" : ""
-                }`}
-                onClick={() =>
-                  filter({
-                    orders: orders[filterExchange][filterTicker],
-                    side: "sell",
-                  })
-                }
-              >
-                {t("ask")}
-              </li>
-            </ul>
+            <ScreenDisplayOptions
+              options={["all", "bid", "ask"]}
+              selectedOption={filterOption}
+              selectHandler={displayOptionHandler}
+            />
           </div>
           {/* <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
@@ -434,212 +403,23 @@ const CurrentOrders = () => {
                 filterOrders
                   .slice((page - 1) * limit, page * limit)
                   .map((order, index) => (
-                    <tr
-                      className={`current-orders__tile screen__table-row${
-                        order.email ? "" : " unknown"
-                      }${order.alert ? " screen__table-row--alert" : ""}`}
-                      key={order.id}
-                    >
-                      <td className="current-orders__text screen__shrink">
-                        {index + 1}
-                      </td>
-                      <td className="current-orders__text screen__table-item">
-                        {dateFormatter(order.ts).text}
-                      </td>
-                      <td className="current-orders__text screen__email screen__table-item">
-                        {`${order.email ? order.email : "-"}`}
-                        {/* <div>{`${order.email ? order.memberId : ""}`}</div> */}
-                      </td>
-                      <td className="screen__box screen__table-item">
-                        <div className="current-orders__text">
-                          {order.innerOrder?.exchange || "-"}
-                        </div>
-                        {order.outerOrder && (
-                          <div className="current-orders__text">
-                            {order.outerOrder?.exchange || "-"}
-                          </div>
-                        )}
-                      </td>
-                      <td
-                        className={`current-orders__text screen__table-item${
-                          order.side === "buy" ? " positive" : " negative"
-                        }`}
-                      >
-                        {`${t(order.kind)}${t(order.side)}`}
-                      </td>
-                      <td className="current-orders__text screen__table-item">
-                        {order.innerOrder?.orderId || "-"}
-                      </td>
-                      <td className="screen__box screen__table-item">
-                        <div className="current-orders__text">
-                          {order.innerOrder?.state
-                            ? t(order.innerOrder?.state)
-                            : "-"}
-                        </div>
-                        <div className="current-orders__text">
-                          {order.outerOrder?.state
-                            ? t(order.outerOrder?.state)
-                            : "-"}
-                        </div>
-                      </td>
-                      <td className="screen__box screen__table-item screen__expand">
-                        <div
-                          className={`"current-orders__text${
-                            order.side === "buy" ? " positive" : " negative"
-                          }`}
-                        >
-                          {`${
-                            order.innerOrder?.price
-                              ? convertExponentialToDecimal(
-                                  order.innerOrder?.price
-                                )
-                              : "-"
-                          } / ${
-                            order.innerOrder?.avgFillPrice
-                              ? convertExponentialToDecimal(
-                                  order.innerOrder?.avgFillPrice
-                                )
-                              : "-"
-                          }`}
-                        </div>
-                        {order.outerOrder && (
-                          <div
-                            className={`"current-orders__text${
-                              order.side === "buy" ? " positive" : " negative"
-                            }`}
-                          >
-                            {`${
-                              order.outerOrder?.price
-                                ? convertExponentialToDecimal(
-                                    order.outerOrder?.price
-                                  )
-                                : "-"
-                            } / ${
-                              order.outerOrder?.avgFillPrice
-                                ? convertExponentialToDecimal(
-                                    order.outerOrder?.avgFillPrice
-                                  )
-                                : "-"
-                            }`}
-                          </div>
-                        )}
-                      </td>
-                      <td className="screen__box screen__table-item screen__expand">
-                        <div
-                          className={`"current-orders__text${
-                            order.side === "buy" ? " positive" : " negative"
-                          }`}
-                        >
-                          {`${
-                            order.innerOrder?.volume
-                              ? convertExponentialToDecimal(
-                                  order.innerOrder?.volume
-                                )
-                              : "-"
-                          } / ${
-                            order.innerOrder?.accFillVolume
-                              ? convertExponentialToDecimal(
-                                  order.innerOrder?.accFillVolume
-                                )
-                              : "-"
-                          }`}
-                        </div>
-                        {order.outerOrder && (
-                          <div
-                            className={`"current-orders__text${
-                              order.side === "buy" ? " positive" : " negative"
-                            }`}
-                          >
-                            {`${
-                              order.outerOrder?.volume
-                                ? convertExponentialToDecimal(
-                                    order.outerOrder?.volume
-                                  )
-                                : "-"
-                            } / ${
-                              order.outerOrder?.accFillVolume
-                                ? convertExponentialToDecimal(
-                                    order.outerOrder?.accFillVolume
-                                  )
-                                : "-"
-                            }`}
-                          </div>
-                        )}
-                      </td>
-                      <td className="screen__box screen__table-item screen__expand">
-                        <div
-                          className={`"current-orders__text${
-                            order.side === "buy" ? " positive" : " negative"
-                          }`}
-                        >
-                          {`${
-                            order.innerOrder?.expect
-                              ? convertExponentialToDecimal(
-                                  order.innerOrder?.expect
-                                )
-                              : "-"
-                          } / ${
-                            order.innerOrder?.received
-                              ? convertExponentialToDecimal(
-                                  order.innerOrder?.received
-                                )
-                              : "-"
-                          }`}
-                        </div>
-                        {order.outerOrder && (
-                          <div
-                            className={`"current-orders__text screen__expand${
-                              order.side === "buy" ? " positive" : " negative"
-                            }`}
-                          >
-                            {`${
-                              order.outerOrder?.expect
-                                ? convertExponentialToDecimal(
-                                    order.outerOrder?.expect
-                                  )
-                                : "-"
-                            } / ${
-                              order.outerOrder?.received
-                                ? convertExponentialToDecimal(
-                                    order.outerOrder?.received
-                                  )
-                                : "-"
-                            }`}
-                          </div>
-                        )}
-                      </td>
-                      <td
-                        className={`screen__table-item screen__table-item--button${
-                          !order.email ? " disabled" : ""
-                        }`}
-                        onClick={() => forceCancelOrder(order)}
-                        disabled={!order.email}
-                      >
-                        {t("force_cancel")}
-                      </td>
-                    </tr>
+                    <CurrentOrdersTile
+                      order={order}
+                      index={index}
+                      forceCancelOrder={forceCancelOrder}
+                    />
                   ))}
             </tr>
-            {/* <tfoot
-              className="screen__table-btn screen__table-text"
-              onClick={showMoreHandler}
-            >
-              {showMore ? t("show-less") : t("show-more")}
-            </tfoot> */}
             <tfoot className="screen__table-tools">
               <div
-                className={`screen__table-tool${
-                  SafeMath.gt(page, 1) ? "" : " disable"
-                }`}
+                className={`screen__table-tool${prevPageIsExit}`}
                 onClick={prevPageHandler}
               >
                 <div className="screen__table-tool--left"></div>
               </div>
               <div className="screen__page">{`${page}/${pages}`}</div>
               <div
-                className={`screen__table-tool${
-                  SafeMath.gte(page, Math.ceil(pages)) ? " disable" : ""
-                }`}
+                className={`screen__table-tool${nextPageIsExit}`}
                 onClick={nextPageHandler}
               >
                 <div className="screen__table-tool--right"></div>
@@ -648,14 +428,7 @@ const CurrentOrders = () => {
           </table>
         </div>
         <div className="screen__floating-box">
-          <div
-            className="screen__floating-btn"
-            onClick={() => {
-              const screenSection =
-                window.document.querySelector(".screen__section");
-              screenSection.scroll(0, 0);
-            }}
-          >
+          <div className="screen__floating-btn" onClick={flowbackHandler}>
             <img src="/img/floating-btn@2x.png" alt="arrow" />
           </div>
         </div>
