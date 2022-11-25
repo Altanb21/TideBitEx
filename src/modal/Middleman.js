@@ -602,7 +602,7 @@ class Middleman {
 
   async selectMarket(market) {
     let lotSz;
-    // this.tickerBook.setCurrentMarket(market);
+    this.tickerBook.setCurrentMarket(market);
     if (!this.tickerBook.getCurrentTicker()) await this._getTicker(market);
     lotSz = this.tickerBook.getCurrentTicker()?.lotSz;
     this.depthBook.lotSz = lotSz;
