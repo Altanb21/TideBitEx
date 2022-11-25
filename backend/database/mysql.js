@@ -982,6 +982,7 @@ class mysql {
   }
 
   async getEmailsByMemberIds(memberIds) {
+    if (!memberIds.length > 0) return [];
     let placeholder = memberIds.join(`,`);
     let query = `
     SELECT
@@ -1659,6 +1660,7 @@ class mysql {
 
   async getReferralCommissionsByMarkets({ markets, start, end, asc }) {
     let placeholder = markets.join(`,`);
+    let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
         referral_commissions.id,
@@ -1680,7 +1682,7 @@ class mysql {
         AND referral_commissions.created_at BETWEEN "${start}"
         AND "${end}"
     ORDER BY
-        referral_commissions.created_at ${asc ? "ASC" : "DESC"};`;
+        referral_commissions.created_at ${orderCodition};`;
     try {
       // this.logger.debug("getReferralCommissionsByConditions", query, markets);
       const [referralCommissions] = await this.db.query({
@@ -1889,6 +1891,7 @@ class mysql {
     return accountVersionId;
   }
 
+  // ++ TODO 2022/11/25 需要優化 query 不在同一句可以看到
   async insertOuterTrades(trades, { dbTransaction }) {
     let query =
         "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`create_at`,`status`,`data`) VALUES",
@@ -2380,6 +2383,9 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022-11-25
+   */
   async deleteOuterTrade(datas, { dbTransaction }) {
     const query =
       "DELETE FROM `outer_trades` WHERE `outer_trades`.`id` = ? AND `outer_trades`.`exchange_code` = ?;";

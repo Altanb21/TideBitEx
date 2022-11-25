@@ -918,7 +918,7 @@ class TibeBitConnector extends ConnectorBase {
         message: error.response?.data?.errors
           ? error.response?.data?.errors
           : "postPlaceOrder error",
-        code: error.response?.data?.errors //++TODO
+        code: error.response?.data?.errors //++TODO 2022/11/25 需要找出判讀 peatioSession 過期的方法
           ? Codes.MARKET_NOT_DEEP_ENOUGH
           : Codes.USER_IS_LOGOUT,
       });
