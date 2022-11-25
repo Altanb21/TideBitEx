@@ -1,5 +1,5 @@
 import React from "react";
-import CurrentOrdersTile from "../pages/CurrentOrdersTile";
+import CurrentOrdersTile from "./CurrentOrdersTile";
 
 const CurrentOrdersList = (props) => {
   const { orders, forceCancelOrder } = props;
