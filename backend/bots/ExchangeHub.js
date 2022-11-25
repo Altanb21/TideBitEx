@@ -2644,22 +2644,22 @@ class ExchangeHub extends Bot {
       orderIds = [],
       emails = [],
       pendingOrders = [],
-      memberIds = {},
-      totalCounts,
-      id = query.instId.replace("-", "").toLowerCase(),
-      tickerSetting = this.tickersSettings[id];
+      memberIds = {};
+    // totalCounts,
+    // id = query.instId.replace("-", "").toLowerCase(),
+    // tickerSetting = this.tickersSettings[id];
     switch (query.exchange) {
       case SupportedExchange.OKEX:
+        // ++ TODO 2022/11/25 (需處理 pendingOrders 超過100筆的情況)
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
-        let result = await this.database.countOrders({
-          currency: tickerSetting.code,
-          state: Database.ORDER_STATE_CODE.WAIT,
-        });
-        totalCounts = result["counts"];
+        // let result = await this.database.countOrders({
+        //   currency: tickerSetting.code,
+        //   state: Database.ORDER_STATE_CODE.WAIT,
+        // });
+        // totalCounts = result["counts"];
         if (res.success) {
-          // this.logger.debug(`getAllOrders res.payload`, res.payload)  //desc
           for (let order of res.payload) {
             let parsedClOrdId, memberId, orderId, outerOrder, innerOrder;
             outerOrder = {
@@ -2786,34 +2786,6 @@ class ExchangeHub extends Bot {
                 !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
                 order.outerOrder.state !== innerOrder.state
               ) {
-                // this.logger.error(
-                //   `add alert !SafeMath.eq(
-                //   order.outerOrder.accFillVolume[:${order.outerOrder.accFillVolume}],
-                //   innerOrder.accFillVolume[:${innerOrder.accFillVolume}]
-                // )`,
-                //   !SafeMath.eq(
-                //     order.outerOrder.accFillVolume,
-                //     innerOrder.accFillVolume
-                //   )
-                // );
-                // this.logger.error(
-                //   `add alert !SafeMath.eq(
-                //   order.outerOrder.expect[:${order.outerOrder.expect}],
-                //   innerOrder.expect[:${innerOrder.expect}]
-                // )`,
-                //   !SafeMath.eq(order.outerOrder.expect, innerOrder.expect)
-                // );
-                // this.logger.error(
-                //   `add alert !SafeMath.eq(
-                //   order.outerOrder.received[:${order.outerOrder.received}],
-                //   innerOrder.received[:${innerOrder.received}]
-                // )`,
-                //   !SafeMath.eq(order.outerOrder.received, innerOrder.received)
-                // );
-                // this.logger.error(
-                //   `add alert order.outerOrder.state[:${order.outerOrder.state}] !== innerOrder.state[:${innerOrder.state}]`,
-                //   order.outerOrder.state !== innerOrder.state
-                // );
                 alert = true;
               }
             }
@@ -2832,7 +2804,7 @@ class ExchangeHub extends Bot {
         }
         return new ResponseFormat({
           message: "getOuterPendingOrders",
-          payload: { pendingOrders, totalCounts },
+          payload: pendingOrders,
         });
       default:
         return new ResponseFormat({

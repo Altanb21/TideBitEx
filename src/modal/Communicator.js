@@ -411,13 +411,12 @@ class Communicator {
     }
   }
 
-  async getOuterPendingOrders({ instId, exchange, limit, before, after }) {
+  async getOuterPendingOrders({ instId, exchange, before, after }) {
     try {
       if (!exchange) return { message: "exchange cannot be null" };
       let arr = [];
       arr.push(`exchange=${exchange}`);
       if (instId) arr.push(`instId=${instId}`);
-      if (limit) arr.push(`limit=${limit}`);
       if (before) arr.push(`before=${before}`);
       if (after) arr.push(`after=${after}`);
       const qs = !!arr.length ? `?${arr.join("&")}` : "";
