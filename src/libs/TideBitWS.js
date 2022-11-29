@@ -39,10 +39,10 @@ class TideBitWS {
     });
   }
   clear(msg) {
-    console.log(
-      "Socket is closed. Reconnect will be attempted in 1 second.",
-      msg.reason
-    );
+    // console.log(
+    //   "Socket is closed. Reconnect will be attempted in 1 second.",
+    //   msg.reason
+    // );
     clearTimeout(this.wsReConnectTimeout);
     // in case connection is broken
     if (msg.code === 1006 || msg.reason === "" || msg.wasClean === false)
@@ -55,7 +55,7 @@ class TideBitWS {
     if (this.ws) {
       this.ws.onclose = (msg) => this.clear(msg);
       this.ws.onerror = async (err) => {
-        console.error(`[TideBitWS] this.ws.onerror`, err);
+        // console.error(`[TideBitWS] this.ws.onerror`, err);
         clearTimeout(this.wsReConnectTimeout);
         this.wsReConnectTimeout = setTimeout(async () => {
           await this.init({ url: this.url });
@@ -77,6 +77,7 @@ class TideBitWS {
       //   return result;
       // })
       .push(data);
+    // console.log(`this.connection_resolvers`, this.connection_resolvers);
     this.sendDataFromQueue();
   }
 
@@ -109,22 +110,22 @@ class TideBitWS {
       this.url = url;
       this.ws = new WebSocket(url);
       this.eventListener();
-      if (this.currentMarket) {
-        this.setCurrentMarket(this.currentMarket);
-      }
-      if (this.currentUser) {
-        this.setCurrentUser(this.currentUser);
-      }
       this.onmessage = this.cb;
       return new Promise((resolve) => {
         if (this.ws)
           this.ws.onopen = (r) => {
-            console.log("Socket is open");
+            // console.log("Socket is open");
+            if (this.currentMarket) {
+              this.setCurrentMarket(this.currentMarket);
+            }
+            if (this.currentUser) {
+              this.setCurrentUser(this.currentUser);
+            }
             return resolve(r);
           };
       });
     } catch (e) {
-      console.log(`middleman ws init error:`, e);
+      // console.log(`middleman ws init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init({ url: this.url });

@@ -259,7 +259,6 @@ const StoreContext = React.createContext({
   getOuterPendingOrders: async ({
     instId,
     exchange,
-    limit,
     before,
     after,
   }) => {},
