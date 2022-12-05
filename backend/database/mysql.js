@@ -411,6 +411,44 @@ class mysql {
     }
   }
 
+  async getAccountLatestAuditRecord(accountId){
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      currency,
+      account_version_id_start,
+      account_version_id_end,
+      balance,
+      expect_balance,
+      locked,
+      expect_locked,
+      created_at,
+      updated_at,
+      fixed_at,
+      issued_by
+    FROM
+      audit_account_records
+    WHERE
+      account_id = ?
+    ORDER BY
+      id DESC
+    LIMIT 1
+    ;`;
+    try {
+      // this.logger.debug("getAccountLatestAuditRecord", query);
+      const [[auditRecord]] = await this.db.query({
+        query,
+        values:[accountId]
+      });
+      return auditRecord;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getMembersAuditRecordByIds(ids) {
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);

@@ -628,6 +628,10 @@ const StoreProvider = (props) => {
     return await middleman.auditorMemberAccounts({ memberId, currency });
   };
 
+  const fixAccountHandler = async (accountId) => {
+    return await middleman.fixAccountHandler(accountId);
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -701,6 +705,7 @@ const StoreProvider = (props) => {
         getTradesSnapshot,
         getMembers,
         auditorMemberAccounts,
+        fixAccountHandler
       }}
     >
       {props.children}

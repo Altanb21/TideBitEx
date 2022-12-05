@@ -549,6 +549,10 @@ class DBOperator {
     return this.database.getMembersLatestAuditRecordIds(ids, groupByAccountId);
   }
 
+  async getAccountLatestAuditRecord(accountId) {
+    return this.database.getAccountLatestAuditRecord(accountId);
+  }
+
   async getMembersLatestAccountVersionIds(ids, groupByAccountId = false) {
     return this.database.getMembersLatestAccountVersionIds(
       ids,
