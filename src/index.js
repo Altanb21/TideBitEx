@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { BrowserRouter, Route } from "react-router-dom";
-import { CookiesProvider } from "react-cookie";
+// import { CookiesProvider } from "react-cookie";
 import App from "./App";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
@@ -17,12 +17,12 @@ const ScrollToTop = () => {
 
 ReactDOM.render(
   <React.StrictMode>
-    <CookiesProvider>
+    {/* <CookiesProvider> */}
       <BrowserRouter>
         <Route component={ScrollToTop} />
         <App />
       </BrowserRouter>
-    </CookiesProvider>
+    {/* </CookiesProvider> */}
   </React.StrictMode>,
   document.getElementById("root")
 );

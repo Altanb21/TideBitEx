@@ -7,7 +7,7 @@ import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import Events from "../constant/Events";
 import Codes from "../constant/Codes";
-import { useCookies } from "react-cookie";
+// import { useCookies } from "react-cookie";
 
 let interval,
   depthBookSyncInterval = 500,
@@ -48,7 +48,7 @@ const StoreProvider = (props) => {
   const [focusEl, setFocusEl] = useState(null);
   const [baseCurrency, setBaseCurrency] = useState("hkd");
   const [registerTickers, setRgisterTickers] = useState(["btcusdt", "ethusdt"]);
-  const [cookies, setCookie] = useCookies(["_peatio_session"]);
+  // const [cookies, setCookie] = useCookies(["_peatio_session"]);s
   /**
    * [deprecated] 2022/10/28
    */
