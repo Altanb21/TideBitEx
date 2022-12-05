@@ -1717,8 +1717,8 @@ class ExchangeHub extends Bot {
     });
   }
 
-  async logout({ header }) {
-    return this.tideBitConnector.router("logout", { header });
+  async logout({ header, body }) {
+    return this.tideBitConnector.router("logout", { header, body });
   }
 
   async getTicker({ params, query }) {
