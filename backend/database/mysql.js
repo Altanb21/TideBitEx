@@ -2293,7 +2293,6 @@ class mysql {
   }
 
   async updateAuditAccountRecord(datas, { dbTransaction }) {
-    this.logger.debug("updateAuditAccountRecord datas", datas);
     try {
       const id = datas.id;
       if (!id) throw Error(`id is required`);
@@ -2309,7 +2308,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      // this.logger.debug("updateAuditAccountRecord", query);
+      this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,

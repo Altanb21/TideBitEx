@@ -38,17 +38,20 @@ const MemberAsset = (props) => {
   }`;
 
   const fixAccountHandler = useCallback(async () => {
-    props.fixAccountHandler("Are you sure?", async () => {
-      try {
-        console.log(`fixAccountHandler asset.accountId`, asset.accountId);
-        const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
-        console.log(`fixAccountHandler updateAsset`, updateAsset);
-        setAsset(updateAsset);
-      } catch (e) {
-        console.error(e);
+    props.fixAccountHandler(
+      t("fix_abnormal_account_confirm", { accountId: asset.accountId }),
+      async () => {
+        try {
+          console.log(`fixAccountHandler asset.accountId`, asset.accountId);
+          const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
+          console.log(`fixAccountHandler updateAsset`, updateAsset);
+          setAsset(updateAsset);
+        } catch (e) {
+          console.error(e);
+        }
       }
-    });
-  }, [asset.accountId, props, storeCtx]);
+    );
+  }, [asset.accountId, props, storeCtx, t]);
 
   return (
     <li className="members__asset">
@@ -359,10 +362,27 @@ const Members = () => {
     const confirm = window.confirm(confirmText);
     if (confirm) {
       setIsLoading(true);
-      callback().then((result) => {
-        console.log(`result`, result);
-        setIsLoading(false);
-      });
+      callback()
+        .then((result) => {
+          console.log(`result`, result);
+          setIsLoading(false);
+          enqueueSnackbar(`${t("success-update")}`, {
+            variant: "success",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          });
+        })
+        .catch((error) => {
+          enqueueSnackbar(`${t("error-happen")}`, {
+            variant: "error",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          });
+        });
     }
   }, []);
 

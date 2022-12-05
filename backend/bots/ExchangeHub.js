@@ -5291,7 +5291,7 @@ class ExchangeHub extends Bot {
    * audit_records table 還沒有建立
    */
   async fixAbnormalAccount({ params, email }) {
-    this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
+    // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
       auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
@@ -5305,7 +5305,6 @@ class ExchangeHub extends Bot {
         message: `Permission denied`,
         code: Codes.INVALID_INPUT,
       });
-      this.logger.debug(`fixAbnormalAccount params.id`, params.id, `!params.id`, !params.id);
     if (!params.id) {
       result = new ResponseFormat({
         message: "Account id is required",
@@ -5313,7 +5312,7 @@ class ExchangeHub extends Bot {
       });
     }
     if (!result) {
-      dbTransaction = await this.database.transaction;
+      dbTransaction = await this.database.transaction();
       try {
         /******************************
          * 1. get latest audit account records
@@ -5328,10 +5327,11 @@ class ExchangeHub extends Bot {
          *******************************************/
         /* !!! HIGH RISK (start) !!! */
         //1. select * from accounts for update
-        auditRecord = this.database.getAccountLatestAuditRecord(
+        auditRecord = await this.database.getAccountLatestAuditRecord(
           params.id,
           dbTransaction
         );
+        this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
         if (auditRecord) {
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
           // 2. update account
@@ -5345,7 +5345,7 @@ class ExchangeHub extends Bot {
           let updateAuditRecord = {
             id: auditRecord.id,
             fixed_at: `"${now}"`,
-            issued_by: currentUser.email,
+            issued_by: `"${currentUser.email}"`,
           };
           //
           await this.database.updateAuditAccountRecord(updateAuditRecord, {
@@ -5358,22 +5358,20 @@ class ExchangeHub extends Bot {
           return new ResponseFormat({
             message: "auditorAccounts",
             payload: {
-              auditRecord: {
-                accountId: params.id,
-                currency: coinsSettings[auditRecord.currency]?.code,
-                balance: {
-                  current: Utils.removeZeroEnd(auditRecord.expect_balance),
-                  shouldBe: Utils.removeZeroEnd(auditRecord.expect_balance),
-                  alert: false,
-                },
-                locked: {
-                  current: Utils.removeZeroEnd(auditRecord.expect_locked),
-                  shouldBe: Utils.removeZeroEnd(auditRecord.expect_locked),
-                  alert: false,
-                },
-                createdAt: new Date(auditRecord.created_at).toISOString(),
-                updatedAt: now,
+              accountId: params.id,
+              currency: coinsSettings[auditRecord.currency]?.code,
+              balance: {
+                current: Utils.removeZeroEnd(auditRecord.expect_balance),
+                shouldBe: Utils.removeZeroEnd(auditRecord.expect_balance),
+                alert: false,
               },
+              locked: {
+                current: Utils.removeZeroEnd(auditRecord.expect_locked),
+                shouldBe: Utils.removeZeroEnd(auditRecord.expect_locked),
+                alert: false,
+              },
+              createdAt: new Date(auditRecord.created_at).toISOString(),
+              updatedAt: now,
             },
           });
         }
