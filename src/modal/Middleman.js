@@ -268,7 +268,11 @@ class Middleman {
 
   async logout() {
     try {
-      return await this.communicator.logout();
+      await this.communicator.logout();
+      this.tbWebSocket.setCurrentUser(null);
+      this.memberId = null;
+      this.email = null;
+      this.isLogin = false;
     } catch (error) {
       throw error;
     }

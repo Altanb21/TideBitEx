@@ -69,6 +69,7 @@ const StoreProvider = (props) => {
       setTokenExpired(true);
       // console.log(`TokenExpired`)
       await middleman.logout();
+      setIsLogin(middleman.isLogin);
     }, expireTime);
   }, [middleman]);
 
