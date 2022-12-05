@@ -412,7 +412,7 @@ class TibeBitConnector extends ConnectorBase {
       });
       return new ResponseFormat({
         message: "logout",
-        payload: res.data,
+        payload: res.headers["set-cookie"],
       });
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] logout`, error);

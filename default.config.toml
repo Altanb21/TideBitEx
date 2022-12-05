@@ -125,7 +125,7 @@ pathname = [
   
   "get | /api/v1/admin/dashboard | Bot.ExchangeHub.getDashboardData",
 
-  "get | /api/v1/logout | Bot.ExchangeHub.logout",
+  "post | /api/v1/logout | Bot.ExchangeHub.logout",
 
   "get | /api/v1/private/audit-accounts | Bot.ExchangeHub.auditorMemberAccounts",
   "put | /api/v1/private/audit-accounts/:id | Bot.ExchangeHub.fixAbnormalAccount",

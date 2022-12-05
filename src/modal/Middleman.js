@@ -268,11 +268,12 @@ class Middleman {
 
   async logout() {
     try {
-      await this.communicator.logout();
+      const res = await this.communicator.logout();
       this.tbWebSocket.setCurrentUser(null);
       this.memberId = null;
       this.email = null;
       this.isLogin = false;
+      return res;
     } catch (error) {
       throw error;
     }
