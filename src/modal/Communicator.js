@@ -872,7 +872,7 @@ class Communicator {
       const res = await this._request({
         method: "PUT",
         url,
-        data: {},
+        data: { id: accountId },
       });
       if (res.success) {
         return res.data;

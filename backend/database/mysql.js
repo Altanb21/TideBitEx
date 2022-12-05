@@ -2293,6 +2293,7 @@ class mysql {
   }
 
   async updateAuditAccountRecord(datas, { dbTransaction }) {
+    this.logger.debug("updateAuditAccountRecord datas", datas);
     try {
       const id = datas.id;
       if (!id) throw Error(`id is required`);

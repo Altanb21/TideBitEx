@@ -38,18 +38,16 @@ const MemberAsset = (props) => {
   }`;
 
   const fixAccountHandler = useCallback(async () => {
-    props.fixAccountHandler(
-      "Are you sure?",
-      new Promise(async (resolve, reject) => {
-        try {
-          const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
-          setAsset(updateAsset);
-          resolve(updateAsset);
-        } catch (e) {
-          reject(e);
-        }
-      })
-    );
+    props.fixAccountHandler("Are you sure?", async () => {
+      try {
+        console.log(`fixAccountHandler asset.accountId`, asset.accountId);
+        const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
+        console.log(`fixAccountHandler updateAsset`, updateAsset);
+        setAsset(updateAsset);
+      } catch (e) {
+        console.error(e);
+      }
+    });
   }, [asset.accountId, props, storeCtx]);
 
   return (
@@ -358,10 +356,13 @@ const Members = () => {
   ]);
 
   const fixAccountHandler = useCallback((confirmText, callback) => {
-    window.confirm(confirmText);
-    if (confirmText) {
+    const confirm = window.confirm(confirmText);
+    if (confirm) {
       setIsLoading(true);
-      callback().then((_) => setIsLoading(false));
+      callback().then((result) => {
+        console.log(`result`, result);
+        setIsLoading(false);
+      });
     }
   }, []);
 
@@ -381,7 +382,7 @@ const Members = () => {
           members[page] = result.members;
           return members;
         });
-        console.log(`members`, members);
+        // console.log(`members`, members);
         // filter({
         //   members: Object.values(members).reduce((prev, curr) => {
         //     prev = [...prev, ...curr];

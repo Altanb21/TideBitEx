@@ -5291,8 +5291,7 @@ class ExchangeHub extends Bot {
    * audit_records table 還沒有建立
    */
   async fixAbnormalAccount({ params, email }) {
-    this.logger.debug(`fixAbnormalAccount email`, email);
-    let { id } = params;
+    this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
       auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
@@ -5306,9 +5305,10 @@ class ExchangeHub extends Bot {
         message: `Permission denied`,
         code: Codes.INVALID_INPUT,
       });
-    if (!id) {
+      this.logger.debug(`fixAbnormalAccount params.id`, params.id, `!params.id`, !params.id);
+    if (!params.id) {
       result = new ResponseFormat({
-        message: `${!id && "id is required"}`,
+        message: "Account id is required",
         code: Codes.INVALID_INPUT,
       });
     }
@@ -5329,20 +5329,21 @@ class ExchangeHub extends Bot {
         /* !!! HIGH RISK (start) !!! */
         //1. select * from accounts for update
         auditRecord = this.database.getAccountLatestAuditRecord(
-          id,
+          params.id,
           dbTransaction
         );
         if (auditRecord) {
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
           // 2. update account
           let updateAccount = {
-            id: id,
+            id: params.id,
             balance: auditRecord.expect_balance,
             locked: auditRecord.expect_locked,
             updated_at: `"${now}"`,
           };
           // 3. update audit record
           let updateAuditRecord = {
+            id: auditRecord.id,
             fixed_at: `"${now}"`,
             issued_by: currentUser.email,
           };
@@ -5358,7 +5359,7 @@ class ExchangeHub extends Bot {
             message: "auditorAccounts",
             payload: {
               auditRecord: {
-                accountId: id,
+                accountId: params.id,
                 currency: coinsSettings[auditRecord.currency]?.code,
                 balance: {
                   current: Utils.removeZeroEnd(auditRecord.expect_balance),
