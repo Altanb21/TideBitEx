@@ -72,10 +72,10 @@ class Communicator {
   async logout() {
     try {
       // ++ TODO
-      const res = await this._request({
-        method: "POST",
-        url: `/logout`,
-        data: { "X-CSRF-Token": this.CSRFToken },
+      const res = await this.httpAgent.rawRequest({
+        method: "GET",
+        url: `/signout`,
+        // data: { "X-CSRF-Token": this.CSRFToken },
       });
       console.log(`res`);
       if (res.success) {

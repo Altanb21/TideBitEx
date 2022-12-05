@@ -71,14 +71,21 @@ const StoreProvider = (props) => {
       setTokenExpired(true);
       // console.log(`TokenExpired`)
       const res = await middleman.logout();
-      for (let cookie of res) {
-        let values = cookie.split(`=`);
-        console.log(`logout`, values);
-        setCookie(values[0], values[1]);
-      }
+      // for (let cookie of res) {
+      //   if (cookie.includes("XSRF-TOKEN")) {
+      //     let values = cookie.split(`=`);
+      //     setCookie(values[0], values[1]);
+      //   }
+      //   if (cookie.includes("_peatio_session")) {
+      //     let values = cookie.split(`;`);
+      //     values = values.find((v) => v.includes(`_peatio_session`));
+      //     values = values.split(`=`);
+      //     setCookie(values[0], values[1]);
+      //   }
+      // }
       setIsLogin(middleman.isLogin);
     }, expireTime);
-  }, [middleman, setCookie]);
+  }, [middleman]);
 
   const action = useCallback(
     (key) => (
