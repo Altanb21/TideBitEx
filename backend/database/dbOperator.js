@@ -588,7 +588,7 @@ class DBOperator {
   }
 
   async insertFixedAccountRecord(fixedAccountRecord, { dbTransaction }) {
-    return this.database.insertAuditAccountRecord(
+    return this.database.insertFixedAccountRecord(
       fixedAccountRecord.account_id,
       fixedAccountRecord.member_id,
       fixedAccountRecord.currency,

@@ -2276,7 +2276,7 @@ class mysql {
   ) {
     let result, accountVersionId;
     const query = `
-    INSERT INTO audit_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
+    INSERT INTO fixed_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
     try {
       // this.logger.debug(

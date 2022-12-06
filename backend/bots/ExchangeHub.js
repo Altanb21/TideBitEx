@@ -5340,7 +5340,7 @@ class ExchangeHub extends Bot {
             dbTransaction,
           }
         );
-        this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
+        // this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
         if (auditRecord) {
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
           // 2. update account
@@ -5352,7 +5352,7 @@ class ExchangeHub extends Bot {
           };
           // 3. update audit record
           let fixedAuditRecord = {
-            account_id: params.id,
+            account_id: auditRecord.account_id,
             member_id: auditRecord.member_id,
             currency: auditRecord.currency,
             audit_account_records_id: auditRecord.id,
@@ -5360,10 +5360,12 @@ class ExchangeHub extends Bot {
             balance: auditRecord.expect_balance,
             origin_locked: account.locked,
             locked: auditRecord.expect_locked,
-            created_at: `"${now}"`,
-            updated_at: `"${now}"`,
+            created_at: now,
+            updated_at: now,
             issued_by: `"${currentUser.email}"`,
           };
+          // this.logger.debug(`fixAbnormalAccount updateAccount`, updateAccount);
+          // this.logger.debug(`fixAbnormalAccount fixedAuditRecord`, fixedAuditRecord);
           //
           await this.database.insertFixedAccountRecord(fixedAuditRecord, {
             dbTransaction,
@@ -5372,7 +5374,7 @@ class ExchangeHub extends Bot {
           await this.database.updateAccount(updateAccount, { dbTransaction });
           await dbTransaction.commit();
           /* !!! HIGH RISK (end) !!! */
-          return new ResponseFormat({
+          result = new ResponseFormat({
             message: "auditorAccounts",
             payload: {
               accountId: params.id,
@@ -5393,6 +5395,7 @@ class ExchangeHub extends Bot {
           });
         }
       } catch (error) {
+        this.logger.error(`fixAbnormalAccount error`, error);
         await dbTransaction.rollback();
         result = new ResponseFormat({
           message: `fixAbnormalAccount ${JSON.stringify(error)}`,
@@ -5400,6 +5403,7 @@ class ExchangeHub extends Bot {
         });
       }
     }
+    // this.logger.debug(`fixAbnormalAccount result`, result);
     return result;
   }
 

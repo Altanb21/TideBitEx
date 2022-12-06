@@ -15,4 +15,4 @@ CREATE TABLE `audit_account_records` (
   `issued_by` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `index_account_version_id_start_and_account_version_id_end` (`account_version_id_start`,`account_version_id_end`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;

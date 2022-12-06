@@ -12,4 +12,4 @@ CREATE TABLE `fixed_account_records` (
   `updated_at` datetime DEFAULT NULL,
   `issued_by` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=latin1;
