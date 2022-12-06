@@ -5362,7 +5362,7 @@ class ExchangeHub extends Bot {
             locked: auditRecord.expect_locked,
             created_at: now,
             updated_at: now,
-            issued_by: `"${currentUser.email}"`,
+            issued_by: currentUser.email,
           };
           // this.logger.debug(`fixAbnormalAccount updateAccount`, updateAccount);
           // this.logger.debug(`fixAbnormalAccount fixedAuditRecord`, fixedAuditRecord);
