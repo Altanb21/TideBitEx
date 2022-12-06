@@ -587,10 +587,30 @@ class DBOperator {
     );
   }
 
+  async insertFixedAccountRecord(fixedAccountRecord, { dbTransaction }) {
+    return this.database.insertAuditAccountRecord(
+      fixedAccountRecord.account_id,
+      fixedAccountRecord.member_id,
+      fixedAccountRecord.currency,
+      fixedAccountRecord.audit_account_records_id,
+      fixedAccountRecord.origin_balance,
+      fixedAccountRecord.balance,
+      fixedAccountRecord.origin_locked,
+      fixedAccountRecord.locked,
+      fixedAccountRecord.created_at,
+      fixedAccountRecord.updated_at,
+      fixedAccountRecord.issued_by,
+      { dbTransaction }
+    );
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     return this.database.updateAccount(datas, { dbTransaction });
   }
 
+  /**
+   * [deprecated] 2022-12-06
+   */
   async updateAuditAccountRecord(datas, { dbTransaction }) {
     return this.database.updateAuditAccountRecord(datas, { dbTransaction });
   }

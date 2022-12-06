@@ -7,7 +7,6 @@ import StoreContext from "./store-context";
 import SafeMath from "../utils/SafeMath";
 import Events from "../constant/Events";
 import Codes from "../constant/Codes";
-// import { useCookies } from "react-cookie";
 
 let interval,
   depthBookSyncInterval = 500,
@@ -48,7 +47,6 @@ const StoreProvider = (props) => {
   const [focusEl, setFocusEl] = useState(null);
   const [baseCurrency, setBaseCurrency] = useState("hkd");
   const [registerTickers, setRgisterTickers] = useState(["btcusdt", "ethusdt"]);
-  // const [cookies, setCookie] = useCookies(["_peatio_session"]);s
   /**
    * [deprecated] 2022/10/28
    */
@@ -69,20 +67,7 @@ const StoreProvider = (props) => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       setTokenExpired(true);
-      // console.log(`TokenExpired`)
-      const res = await middleman.logout();
-      // for (let cookie of res) {
-      //   if (cookie.includes("XSRF-TOKEN")) {
-      //     let values = cookie.split(`=`);
-      //     setCookie(values[0], values[1]);
-      //   }
-      //   if (cookie.includes("_peatio_session")) {
-      //     let values = cookie.split(`;`);
-      //     values = values.find((v) => v.includes(`_peatio_session`));
-      //     values = values.split(`=`);
-      //     setCookie(values[0], values[1]);
-      //   }
-      // }
+      await middleman.logout();
       setIsLogin(middleman.isLogin);
     }, expireTime);
   }, [middleman]);

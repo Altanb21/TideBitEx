@@ -42,21 +42,20 @@ const Index = () => {
 
   return (
     <>
-      {storeCtx.tokenExpired && (
-        <Dialog
-          className="exchange"
-          title="Info"
-          block={true}
-          onConfirm={() => {
-            history.replace({
-              pathname: `/signin`,
-            });
-            window.location.reload();
-          }}
-        >
-          <p className="info__text">{t("token_expired")}</p>
-        </Dialog>
-      )}
+      <Dialog
+        open={storeCtx.tokenExpired}
+        className="exchange"
+        title="Info"
+        block={true}
+        onConfirm={() => {
+          history.replace({
+            pathname: `/signin`,
+          });
+          window.location.reload();
+        }}
+      >
+        <p className="info__text">{t("token_expired")}</p>
+      </Dialog>
       <Suspense fallback={<div></div>}>
         <Switch>
           <Route exact path="/">

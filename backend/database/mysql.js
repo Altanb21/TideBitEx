@@ -411,7 +411,7 @@ class mysql {
     }
   }
 
-  async getAccountLatestAuditRecord(accountId){
+  async getAccountLatestAuditRecord(accountId) {
     const query = `
     SELECT
       id,
@@ -440,7 +440,7 @@ class mysql {
       // this.logger.debug("getAccountLatestAuditRecord", query);
       const [[auditRecord]] = await this.db.query({
         query,
-        values:[accountId]
+        values: [accountId],
       });
       return auditRecord;
     } catch (error) {
@@ -2260,6 +2260,71 @@ class mysql {
     return accountVersionId;
   }
 
+  async insertFixedAccountRecord(
+    account_id,
+    member_id,
+    currency,
+    audit_account_records_id,
+    origin_balance,
+    balance,
+    origin_locked,
+    locked,
+    created_at,
+    updated_at,
+    issued_by,
+    { dbTransaction }
+  ) {
+    let result, accountVersionId;
+    const query = `
+    INSERT INTO audit_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+    try {
+      // this.logger.debug(
+      //   "insertFixedAccountRecord",
+      //   query,
+      //   "DEFAULT",
+      // account_id,
+      // member_id,
+      // currency,
+      // audit_account_records_id,
+      // origin_balance,
+      // balance,
+      // origin_locked,
+      // locked,
+      // created_at,
+      // updated_at,
+      // issued_by,
+      // );
+      result = await this.db.query(
+        {
+          query,
+          values: [
+            "DEFAULT",
+            account_id,
+            member_id,
+            currency,
+            audit_account_records_id,
+            origin_balance,
+            balance,
+            origin_locked,
+            locked,
+            created_at,
+            updated_at,
+            issued_by,
+          ],
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      accountVersionId = result[0];
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+    return accountVersionId;
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     try {
       const id = datas.id;
@@ -2292,6 +2357,9 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022-12-06
+   */
   async updateAuditAccountRecord(datas, { dbTransaction }) {
     try {
       const id = datas.id;

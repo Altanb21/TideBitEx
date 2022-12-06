@@ -5293,6 +5293,7 @@ class ExchangeHub extends Bot {
   async fixAbnormalAccount({ params, email }) {
     // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
+      account,
       auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
       coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
@@ -5331,6 +5332,14 @@ class ExchangeHub extends Bot {
           params.id,
           dbTransaction
         );
+        account = await this.database.getAccountsByMemberId(
+          auditRecord.member_id,
+          {
+            options: { id: params.id },
+            limit: 1,
+            dbTransaction,
+          }
+        );
         this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
         if (auditRecord) {
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
@@ -5342,13 +5351,21 @@ class ExchangeHub extends Bot {
             updated_at: `"${now}"`,
           };
           // 3. update audit record
-          let updateAuditRecord = {
-            id: auditRecord.id,
-            fixed_at: `"${now}"`,
+          let fixedAuditRecord = {
+            account_id: params.id,
+            member_id: auditRecord.member_id,
+            currency: auditRecord.currency,
+            audit_account_records_id: auditRecord.id,
+            origin_balance: account.balance,
+            balance: auditRecord.expect_balance,
+            origin_locked: account.locked,
+            locked: auditRecord.expect_locked,
+            created_at: `"${now}"`,
+            updated_at: `"${now}"`,
             issued_by: `"${currentUser.email}"`,
           };
           //
-          await this.database.updateAuditAccountRecord(updateAuditRecord, {
+          await this.database.insertFixedAccountRecord(fixedAuditRecord, {
             dbTransaction,
           });
 
