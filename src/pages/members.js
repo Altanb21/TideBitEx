@@ -42,9 +42,9 @@ const MemberAsset = (props) => {
       t("fix_abnormal_account_confirm", { accountId: asset.accountId }),
       async () => {
         try {
-          console.log(`fixAccountHandler asset.accountId`, asset.accountId);
+          // console.log(`fixAccountHandler asset.accountId`, asset.accountId);
           const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
-          console.log(`fixAccountHandler updateAsset`, updateAsset);
+          // console.log(`fixAccountHandler updateAsset`, updateAsset);
           setAsset(updateAsset);
         } catch (e) {
           console.error(e);
@@ -375,6 +375,7 @@ const Members = () => {
           });
         })
         .catch((error) => {
+          setIsLoading(false);
           enqueueSnackbar(`${t("error-happen")}`, {
             variant: "error",
             anchorOrigin: {
