@@ -1255,12 +1255,14 @@ class OkexConnector extends ConnectorBase {
     return keepGO;
   }
 
-  updateRequestRecord(name, now, instId) {
+  updateRequestRecord(name, now, instId, isReset) {
     if (this.rateLimit[name].differByInstId) {
-      this.rateLimit[name].count[instId] = 0;
+      this.rateLimit[name].count[instId] = isReset
+        ? 0
+        : this.rateLimit[name].count[instId] + 1;
       this.rateLimit[name].timestamp[instId] = now;
     } else {
-      this.rateLimit[name].count = 0;
+      this.rateLimit[name].count = isReset ? 0 : this.rateLimit[name].count + 1;
       this.rateLimit[name].timestamp = now;
     }
     this.logger.debug(
@@ -1280,13 +1282,9 @@ class OkexConnector extends ConnectorBase {
         console.time("wait");
         await wait(rateLimit.restTime);
         console.timeEnd("wait");
-        this.updateRequestRecord(name, now, instId);
+        this.updateRequestRecord(name, now, instId, true);
       }
-      if (rateLimit.differByInstId)
-        this.rateLimit[name].count[instId] =
-          this.rateLimit[name].count[instId] + 1;
-      if (!rateLimit.differByInstId)
-        this.rateLimit[name].count = this.rateLimit[name].count + 1;
+      this.updateRequestRecord(name, now, instId);
       const res = await axios(options);
       if (res.data && res.data.code == "0") {
         result = new ResponseFormat({
