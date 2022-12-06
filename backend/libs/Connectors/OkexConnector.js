@@ -41,6 +41,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 60, // 60 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     trade_fills_history: {
@@ -49,6 +50,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 10, // 10 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     trade_order: {
@@ -58,6 +60,7 @@ class OkexConnector extends ConnectorBase {
       // rule: UserID + Instrument ID
       differByInstId: true,
       restTime: 2 * 1000,
+      timestamp: {},
       count: {},
     },
     trade_orders_history: {
@@ -66,6 +69,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 40, // 40 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     account_balance: {
@@ -74,6 +78,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 10, // 10 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     market_ticker: {
@@ -82,6 +87,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 20, // 20 requests per 2 seconds
       // rule: IP
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     market_tickers: {
@@ -90,6 +96,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 20, // 20 requests per 2 seconds
       // rule: IP
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     market_books: {
@@ -98,6 +105,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 20, // 20 requests per 2 seconds
       // rule: IP
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     market_candles: {
@@ -106,6 +114,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 40, // 40 requests per 2 seconds
       // rule: IP
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     market_trades: {
@@ -114,6 +123,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 100, // 100 requests per 2 seconds
       // rule: IP
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     users_subaccount_list: {
@@ -122,6 +132,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 2, // 2 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     account_subaccount_balances: {
@@ -130,15 +141,17 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 2, // 2 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     post_trade_order: {
       path: "/api/v5/trade/order",
       functionName: ["postPlaceOrder"],
-      maxRequestTimes: 1, // 60 requests per 2 seconds
+      maxRequestTimes: 60, // 60 requests per 2 seconds
       // rule: UserID + Instrument ID
       differByInstId: true,
       restTime: 2 * 1000,
+      timestamp: {},
       count: {},
     },
     trade_orders_pending: {
@@ -147,6 +160,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 60, // 60 requests per 2 seconds
       // rule: UserID
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
     trade_cancel_order: {
@@ -156,6 +170,7 @@ class OkexConnector extends ConnectorBase {
       // rule: UserID + Instrument ID
       differByInstId: true,
       restTime: 2 * 1000,
+      timestamp: {},
       count: {},
     },
     trade_cancel_batch_orders: {
@@ -165,6 +180,7 @@ class OkexConnector extends ConnectorBase {
       // rule: UserID + Instrument ID
       differByInstId: true,
       restTime: 2 * 1000,
+      timestamp: {},
       count: {},
     },
     public_instruments: {
@@ -173,6 +189,7 @@ class OkexConnector extends ConnectorBase {
       maxRequestTimes: 20, // 20 requests per 2 seconds
       // rule: IP + instrumentType
       restTime: 2 * 1000,
+      timestamp: null,
       count: 0,
     },
   };
@@ -1215,31 +1232,55 @@ class OkexConnector extends ConnectorBase {
   }
   // public data api end
 
+  checkRequestRate(name, now, instId) {
+    let keepGO = true;
+    let rateLimit = this.rateLimit[name];
+    // this.logger.debug(`test _request rateLimit`, rateLimit);
+    if (rateLimit.differByInstId && !instId)
+      this.logger.error(`_request error missing instId`, rateLimit);
+    if (rateLimit.differByInstId && !rateLimit.count[instId])
+      this.rateLimit[name].count[instId] = 0;
+    if (rateLimit.differByInstId && !rateLimit.timestamp[instId])
+      this.rateLimit[name].timestamp[instId] = now;
+    if (
+      (rateLimit.differByInstId &&
+        now - rateLimit.timestamp[instId] < rateLimit.restTime &&
+        !(rateLimit.count[instId] < rateLimit.maxRequestTimes)) ||
+      (!rateLimit.differByInstId &&
+        now - rateLimit.timestamp < rateLimit.restTime &&
+        !(rateLimit.count < rateLimit.maxRequestTimes))
+    ) {
+      keepGO = false;
+    }
+    return keepGO;
+  }
+
+  updateRequestRecord(name, now, instId) {
+    if (this.rateLimit[name].differByInstId) {
+      this.rateLimit[name].count[instId] = 0;
+      this.rateLimit[name].timestamp[instId] = now;
+    } else {
+      this.rateLimit[name].count = 0;
+      this.rateLimit[name].timestamp = now;
+    }
+    this.logger.debug(
+      `_request  this.rateLimit[${name}]`,
+      this.rateLimit[name]
+    );
+  }
+
   async _request(name, options, instId) {
-    let result;
+    let result,
+      now = new Date();
     try {
       let rateLimit = this.rateLimit[name];
       // this.logger.debug(`test _request rateLimit`, rateLimit);
-      if (rateLimit.differByInstId && !instId)
-        this.logger.error(`_request error missing instId`, rateLimit);
-      if (rateLimit.differByInstId && !rateLimit.count[instId])
-        rateLimit.count[instId] = 0;
-      if (
-        (rateLimit.differByInstId &&
-          !(rateLimit.count[instId] < rateLimit.maxRequestTimes)) ||
-        (!rateLimit.differByInstId &&
-          !(rateLimit.count < rateLimit.maxRequestTimes))
-      ) {
+      if (!this.checkRequestRate(name, now, instId)) {
         this.logger.debug(`_request rateLimit`, rateLimit);
         console.time("wait");
         await wait(rateLimit.restTime);
         console.timeEnd("wait");
-        if (rateLimit.differByInstId) this.rateLimit[name].count[instId] = 0;
-        if (!rateLimit.differByInstId) this.rateLimit[name].count = 0;
-        this.logger.debug(
-          `_request  this.rateLimit[${name}]`,
-          this.rateLimit[name]
-        );
+        this.updateRequestRecord(name, now, instId);
       }
       if (rateLimit.differByInstId)
         this.rateLimit[name].count[instId] =
