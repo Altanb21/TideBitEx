@@ -400,10 +400,11 @@ class TibeBitConnector extends ConnectorBase {
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
-  async logout({ header }) {
+  async logout({ header, body }) {
     try {
       const headers = {
         "content-type": "application/x-www-form-urlencoded",
+        "x-csrf-token": body["X-CSRF-Token"],
         cookie: header.cookie,
       };
       const res = await axios.get(`${this.peatio}/signout`, {
@@ -411,7 +412,7 @@ class TibeBitConnector extends ConnectorBase {
       });
       return new ResponseFormat({
         message: "logout",
-        payload: res.data,
+        payload: res.headers["set-cookie"],
       });
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] logout`, error);

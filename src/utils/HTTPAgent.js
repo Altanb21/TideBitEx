@@ -18,6 +18,13 @@ class HTTPAgent {
       },
       baseURL: this.url + this.apiVersion,
     });
+    this.rawAxios = axios.create({
+      headers: {
+        // userId,
+        "OK-ACCESS-KEY": apiKey,
+      },
+      baseURL: this.url,
+    });
     // this.axios.interceptors.request.use(
     //   config => {
     //     config.headers['userId'] = userId;
@@ -89,6 +96,10 @@ class HTTPAgent {
 
   request(options) {
     return this._request(() => this.axios(options));
+  }
+
+  rawRequest(options) {
+    return this._request(() => this.rawAxios(options));
   }
 
   CSRFTokenRenew(options) {

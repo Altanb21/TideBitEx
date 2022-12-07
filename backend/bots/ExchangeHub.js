@@ -1717,8 +1717,8 @@ class ExchangeHub extends Bot {
     });
   }
 
-  async logout({ header }) {
-    return this.tideBitConnector.router("logout", { header });
+  async logout({ header, body }) {
+    return this.tideBitConnector.router("logout", { header, body });
   }
 
   async getTicker({ params, query }) {
@@ -5091,7 +5091,7 @@ class ExchangeHub extends Bot {
     return auditAccountResult;
   }
 
-  async auditorMemberAccounts({ query }, dbTransaction) {
+  async auditorMemberAccounts({ query }) {
     let { memberId, currency } = query;
     let tmp,
       accounts,
@@ -5115,7 +5115,6 @@ class ExchangeHub extends Bot {
       );
       accounts = await this.database.getAccountsByMemberId(memberId, {
         options: { currency: currency },
-        dbTransaction: dbTransaction,
       });
       accounts = accounts.reduce((prev, curr) => {
         if (!prev[curr.id]) prev[curr.id] = curr;
@@ -5151,7 +5150,6 @@ class ExchangeHub extends Bot {
             },
             createdAt: new Date(account.created_at).toISOString(),
             updatedAt: new Date(account.updated_at).toISOString(),
-            dbTransaction: dbTransaction,
           };
           /* !!! HIGH RISK (start) !!! */
           if (
@@ -5292,88 +5290,120 @@ class ExchangeHub extends Bot {
    * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
    * audit_records table 還沒有建立
    */
-  async fixAbnormalAccount({ query, email }) {
-    this.logger.debug(`fixAbnormalAccount email`, email);
-    let { memberId, currency, id } = query;
+  async fixAbnormalAccount({ params, email }) {
+    // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
+      account,
+      auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
+      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
+        return prev;
+      }, {}),
       dbTransaction;
     if (!currentUser.roles?.includes("root"))
       result = new ResponseFormat({
         message: `Permission denied`,
         code: Codes.INVALID_INPUT,
       });
-    if (!memberId || !currency) {
+    if (!params.id) {
       result = new ResponseFormat({
-        message: `${!memberId && "memberId is required"}${
-          !memberId && !currency && " AND "
-        }${!currency && "currency is required"}`,
+        message: "Account id is required",
         code: Codes.INVALID_INPUT,
       });
     }
     if (!result) {
-      dbTransaction = await this.database.transaction;
+      dbTransaction = await this.database.transaction();
       try {
         /******************************
-         * 1. select * from accounts for update
-         *   1.1 ++TODO 檢查是否需要更新
-         * 2. insert audit_account_records
-         *   2.1  account_id
-         *   2.2  member_id
-         *   2.3  reason: 1 accounts amount is differernt account_versions sum
-         *   2.4  currency
-         *   2.5  balance_origin
-         *   2.6  balance_updated
-         *   2.7  locked_origin
-         *   2.8  locked_updated
-         *   2.9  created_at 稽核時間
-         *   2.10 issued_by 經手人
-         * 3. update account
-         *   3.1 balance
-         *   3.2 locked
-         *   3.3 updated_at
+         * 1. get latest audit account records
+         *   1.1  檢查是否需要更新
+         * 2. update account
+         *   2.1 balance
+         *   2.2 locked
+         *   2.3 updated_at
+         * 3. update audit_account_records
+         *   3.1 fixed_at 稽核時間
+         *   3.2 issued_by 經手人 email
          *******************************************/
         /* !!! HIGH RISK (start) !!! */
         //1. select * from accounts for update
-        result = this.auditorMemberAccounts(
-          {
-            query: { ...query },
-          },
+        auditRecord = await this.database.getAccountLatestAuditRecord(
+          params.id,
           dbTransaction
         );
-        if (result.success) {
-          let account = Object.values(result.payload?.accounts).shift();
-          let now = new Date().toISOString().slice(0, 19).replace("T", " ");
-          // 2. update audit record
-          let auditRecord = {
-            fixed_at: `"${now}"`,
-            issued_by: currentUser.email,
-          };
-          //
-          await this.database.updateAuditAccountRecord(auditRecord, {
+        account = await this.database.getAccountsByMemberId(
+          auditRecord.member_id,
+          {
+            options: { id: params.id },
+            limit: 1,
             dbTransaction,
-          });
-          // 3. update account
-          const newAccount = {
-            id: account.id,
-            balance: account.balance?.shouldBe,
-            locked: account.locked?.shouldBe,
+          }
+        );
+        // this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
+        if (auditRecord) {
+          let now = new Date().toISOString().slice(0, 19).replace("T", " ");
+          // 2. update account
+          let updateAccount = {
+            id: params.id,
+            balance: auditRecord.expect_balance,
+            locked: auditRecord.expect_locked,
             updated_at: `"${now}"`,
           };
-          await this.database.updateAccount(newAccount, { dbTransaction });
+          // 3. update audit record
+          let fixedAuditRecord = {
+            account_id: auditRecord.account_id,
+            member_id: auditRecord.member_id,
+            currency: auditRecord.currency,
+            audit_account_records_id: auditRecord.id,
+            origin_balance: account.balance,
+            balance: auditRecord.expect_balance,
+            origin_locked: account.locked,
+            locked: auditRecord.expect_locked,
+            created_at: now,
+            updated_at: now,
+            issued_by: currentUser.email,
+          };
+          // this.logger.debug(`fixAbnormalAccount updateAccount`, updateAccount);
+          // this.logger.debug(`fixAbnormalAccount fixedAuditRecord`, fixedAuditRecord);
+          //
+          await this.database.insertFixedAccountRecord(fixedAuditRecord, {
+            dbTransaction,
+          });
+
+          await this.database.updateAccount(updateAccount, { dbTransaction });
+          await dbTransaction.commit();
           /* !!! HIGH RISK (end) !!! */
-          return new ResponseFormat({
+          result = new ResponseFormat({
             message: "auditorAccounts",
-            payload: { auditRecord, newAccount },
+            payload: {
+              accountId: params.id,
+              currency: coinsSettings[auditRecord.currency]?.code,
+              balance: {
+                current: Utils.removeZeroEnd(auditRecord.expect_balance),
+                shouldBe: Utils.removeZeroEnd(auditRecord.expect_balance),
+                alert: false,
+              },
+              locked: {
+                current: Utils.removeZeroEnd(auditRecord.expect_locked),
+                shouldBe: Utils.removeZeroEnd(auditRecord.expect_locked),
+                alert: false,
+              },
+              createdAt: new Date(auditRecord.created_at).toISOString(),
+              updatedAt: now,
+            },
           });
         }
       } catch (error) {
+        this.logger.error(`fixAbnormalAccount error`, error);
+        await dbTransaction.rollback();
         result = new ResponseFormat({
           message: `fixAbnormalAccount ${JSON.stringify(error)}`,
           code: Codes.UNKNOWN_ERROR,
         });
       }
     }
+    // this.logger.debug(`fixAbnormalAccount result`, result);
     return result;
   }
 

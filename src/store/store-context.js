@@ -256,12 +256,7 @@ const StoreContext = React.createContext({
     limit,
     offset,
   }) => {},
-  getOuterPendingOrders: async ({
-    instId,
-    exchange,
-    before,
-    after,
-  }) => {},
+  getOuterPendingOrders: async ({ instId, exchange, before, after }) => {},
   setFocusEl: () => {},
   changeRange: () => {},
   getAdminUser: async () => {},
@@ -288,6 +283,7 @@ const StoreContext = React.createContext({
   getTradesSnapshot: async (market, length, asc) => {},
   getMembers: async ({ email, offset, limit }) => {},
   auditorMemberAccounts: async ({ memberId, currency }) => {},
+  fixAccountHandler: async (accountId) => {},
 });
 
 export default StoreContext;

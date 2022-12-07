@@ -239,7 +239,7 @@
   "sub-account": "子帳號",
   "asset-balance": "資產水位",
   "value": "數量",
-  "tokex_expire": "頁面閒置過久，請重新登入",
+  "token_expired": "頁面閒置過久，請重新登入",
   "email-exist": "此 Email 已有管理者權限",
   "state": "狀態",
   "home-announcement-1": "有關全球加密貨幣監管及合規聲明",

@@ -411,6 +411,44 @@ class mysql {
     }
   }
 
+  async getAccountLatestAuditRecord(accountId) {
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      currency,
+      account_version_id_start,
+      account_version_id_end,
+      balance,
+      expect_balance,
+      locked,
+      expect_locked,
+      created_at,
+      updated_at,
+      fixed_at,
+      issued_by
+    FROM
+      audit_account_records
+    WHERE
+      account_id = ?
+    ORDER BY
+      id DESC
+    LIMIT 1
+    ;`;
+    try {
+      // this.logger.debug("getAccountLatestAuditRecord", query);
+      const [[auditRecord]] = await this.db.query({
+        query,
+        values: [accountId],
+      });
+      return auditRecord;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getMembersAuditRecordByIds(ids) {
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
@@ -2222,6 +2260,71 @@ class mysql {
     return accountVersionId;
   }
 
+  async insertFixedAccountRecord(
+    account_id,
+    member_id,
+    currency,
+    audit_account_records_id,
+    origin_balance,
+    balance,
+    origin_locked,
+    locked,
+    created_at,
+    updated_at,
+    issued_by,
+    { dbTransaction }
+  ) {
+    let result, accountVersionId;
+    const query = `
+    INSERT INTO fixed_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+    try {
+      // this.logger.debug(
+      //   "insertFixedAccountRecord",
+      //   query,
+      //   "DEFAULT",
+      // account_id,
+      // member_id,
+      // currency,
+      // audit_account_records_id,
+      // origin_balance,
+      // balance,
+      // origin_locked,
+      // locked,
+      // created_at,
+      // updated_at,
+      // issued_by,
+      // );
+      result = await this.db.query(
+        {
+          query,
+          values: [
+            "DEFAULT",
+            account_id,
+            member_id,
+            currency,
+            audit_account_records_id,
+            origin_balance,
+            balance,
+            origin_locked,
+            locked,
+            created_at,
+            updated_at,
+            issued_by,
+          ],
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      accountVersionId = result[0];
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+    return accountVersionId;
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     try {
       const id = datas.id;
@@ -2254,6 +2357,9 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022-12-06
+   */
   async updateAuditAccountRecord(datas, { dbTransaction }) {
     try {
       const id = datas.id;
@@ -2270,7 +2376,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      // this.logger.debug("updateAuditAccountRecord", query);
+      this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,
