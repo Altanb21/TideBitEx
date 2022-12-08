@@ -1,5 +1,6 @@
 const os = require("os");
 const fs = require("fs");
+const { Console } = require("console");
 const path = require("path");
 const url = require("url");
 const toml = require("toml");
@@ -503,12 +504,19 @@ class Utils {
   }
 
   static initialLogger({ homeFolder, base }) {
-    _logger = {
-      log: console.log,
-      debug: base.debug ? console.log : () => {},
-      trace: console.trace,
-      error: console.error,
-    };
+    const output = fs.createWriteStream(homeFolder + "/stdout.log", {
+      flags: "a",
+    });
+    const errorOutput = fs.createWriteStream(homeFolder + "/stderr.log", {
+      flags: "a",
+    });
+    _logger = new Console({ stdout: output, stderr: errorOutput });
+    // _logger = {
+    //   log: console.log,
+    //   debug: base.debug ? console.log : () => {},
+    //   trace: console.trace,
+    //   error: console.error,
+    // };
     return Promise.resolve(_logger);
   }
 

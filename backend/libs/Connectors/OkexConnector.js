@@ -1265,10 +1265,10 @@ class OkexConnector extends ConnectorBase {
       this.rateLimit[name].count = isReset ? 0 : this.rateLimit[name].count + 1;
       this.rateLimit[name].timestamp = now;
     }
-    this.logger.debug(
-      `_request  this.rateLimit[${name}]`,
-      this.rateLimit[name]
-    );
+    // this.logger.debug(
+    //   `_request  this.rateLimit[${name}]`,
+    //   this.rateLimit[name]
+    // );
   }
 
   async _request(name, options, instId) {
