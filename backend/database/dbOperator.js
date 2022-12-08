@@ -30,6 +30,10 @@ class DBOperator {
     return this.database.getAccounts();
   }
 
+  async getAssetBalances() {
+    return this.database.getAssetBalances();
+  }
+
   async getTotalAccountsAssets() {
     return this.database.getTotalAccountsAssets();
   }

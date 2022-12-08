@@ -453,6 +453,11 @@ class ExchangeHub extends Bot {
       sources = {},
       hasError = false; //,
     const _accounts = await this.database.getTotalAccountsAssets();
+    let _assetBalances = await this.database.getAssetBalances();
+    _assetBalances = _assetBalances.reduce((prev, assetBalance) => {
+      return (prev[assetBalance.asset_key] = _assetBalances);
+    }, {});
+    this.logger.debug(`_assetBalances`, _assetBalances);
     coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
       if (!prev[coinSetting.id.toString()])
         prev[coinSetting.id.toString()] = { ...coinSetting };
@@ -561,10 +566,16 @@ class ExchangeHub extends Bot {
                     break;
                   case SupportedExchange.TIDEBIT:
                     // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
+                    this.logger.debug(
+                      `_assetBalances[${coinSetting.code}]`,
+                      _assetBalances[coinSetting.code]
+                    );
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
                       {
-                        balance: "0",
+                        balance:
+                          _assetBalances[coinSetting.code]?.amount || "0",
                         locked: "0",
+                        sum: _assetBalances[coinSetting.code]?.amount || "0",
                         alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
                       };
                     break;
