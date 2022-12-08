@@ -27,23 +27,16 @@ const ToggleButton = (props) => {
 };
 
 const AssetsList = (props) => {
-  const component = props.accounts
-    .filter((account) => {
-      let result = false;
-      if (account.currency) result = true;
-      else console.error(`account.currency is undefined`, account);
-      return result;
-    })
-    .map((account) => (
-      <AccountMobileTile
-        withTitle={true}
-        showTotal={true}
-        showAvailable={false}
-        currency={account.currency?.toLowerCase()}
-        total={account.total}
-        locked={account.locked}
-      />
-    ));
+  const component = props.accounts.map((account) => (
+    <AccountMobileTile
+      withTitle={true}
+      showTotal={true}
+      showAvailable={false}
+      currency={account.currency?.toLowerCase()}
+      total={account.total}
+      locked={account.locked}
+    />
+  ));
   return component;
 };
 
@@ -51,13 +44,12 @@ const UserAssets = (props) => {
   const storeCtx = useContext(StoreContext);
   const { t } = useTranslation();
   const [accountsShowMore, setAccountsShowMore] = useState(false);
-  const [hintText, setHintText] = useState(t("hide"));
+  const [hintText, setHintText] = useState(t("check-all"));
   const [accounts, setAccounts] = useState([]);
   const [openAccounts, setOpenAccounts] = useState(false);
-  const accountsDropdownClass = useCallback(
-    () => `user-info__accounts--dropdown${openAccounts ? " open" : ""}`,
-    [openAccounts]
-  );
+  const accountsDropdownClass = `user-info__accounts--dropdown${
+    openAccounts ? " open" : ""
+  }`;
   const toggleAccountsHandler = useCallback(
     (open) => {
       if (storeCtx.selectedTicker && storeCtx.accounts?.accounts)
@@ -74,17 +66,29 @@ const UserAssets = (props) => {
     [toggleAccountsHandler]
   );
   const showMoreHandler = useCallback(() => {
-    let showMore = !accountsShowMore;
+    let showMore = !accountsShowMore,
+      accounts;
     if (showMore) {
-      setAccounts(Object.values(storeCtx.accounts?.accounts));
+      accounts = Object.values(storeCtx.accounts?.accounts).filter((account) => {
+        let result = false;
+        if (account.currency) result = true;
+        else console.error(`account.currency is undefined`, account);
+        return result;
+      });
+      setAccounts(accounts);
       setHintText(t("hide"));
     } else {
-      if (storeCtx.selectedTicker.instId) {
-        setAccounts(
-          storeCtx.selectedTicker.instId
-            .split("-")
-            ?.map((ccy) => storeCtx.accounts?.accounts[ccy])
-        );
+      if (storeCtx.selectedTicker?.instId) {
+        accounts = storeCtx.selectedTicker.instId
+          .split("-")
+          ?.map((ccy) => storeCtx.accounts?.accounts[ccy])
+          .filter((account) => {
+            let result = false;
+            if (account.currency) result = true;
+            else console.error(`account.currency is undefined`, account);
+            return result;
+          });
+        setAccounts(accounts);
       } else setAccounts([]);
       setHintText(t("check-all"));
     }
@@ -92,9 +96,20 @@ const UserAssets = (props) => {
   }, [
     accountsShowMore,
     storeCtx.accounts?.accounts,
-    storeCtx.selectedTicker.instId,
+    storeCtx.selectedTicker?.instId,
     t,
   ]);
+  const button =
+    accounts.length > 0 ? (
+      <div
+        className="user-info__accounts--dropdown-btn"
+        onClick={showMoreHandler}
+      >
+        {hintText}
+      </div>
+    ) : (
+      <></>
+    );
   const component = props.display ? (
     <div
       className="user-info__accounts"
@@ -113,12 +128,7 @@ const UserAssets = (props) => {
             <AssetsList accounts={accounts} />
           </React.Suspense>
         </div>
-        <div
-          className="user-info__accounts--dropdown-btn"
-          onClick={showMoreHandler}
-        >
-          {hintText}
-        </div>
+        {button}
       </div>
     </div>
   ) : (
@@ -133,10 +143,9 @@ const UserSetting = (props) => {
   const [openSound, setOpenSound] = useState(false);
   const [openNotification, setOpenNotification] = useState(false);
   const [openNav, setOpenNav] = useState(false);
-  const settingDropdownClass = useCallback(
-    () => `user-info__navs--dropdown${openNav ? " open" : ""}`,
-    [openNav]
-  );
+  const settingDropdownClass = `user-info__navs--dropdown${
+    openNav ? " open" : ""
+  }`;
   const toggleNavsHandler = (open) => {
     setOpenNav((prev) => (open !== undefined ? open : !prev));
   };
