@@ -105,9 +105,9 @@ const Vouchers = () => {
         totalCounts,
         newTrades,
         updateTrades;
-      console.log(
-        `trades[${exchange}][${ticker}][${start}][${end}][${limit}][${offset}][${page}]`
-      );
+      // console.log(
+      //   `trades[${exchange}][${ticker}][${start}][${end}][${limit}][${offset}][${page}]`
+      // );
       let res = await storeCtx.getOuterTradeFills({
         instId: ticker,
         exchange,
@@ -118,7 +118,7 @@ const Vouchers = () => {
       });
       totalCounts = res.totalCounts;
       newTrades = res.trades;
-      console.log(`newTrades`, newTrades);
+      // console.log(`newTrades`, newTrades);
       setTotalCounts(totalCounts);
       setTrades((prev) => {
         updateTrades = { ...prev };
@@ -130,7 +130,7 @@ const Vouchers = () => {
             updateTrades[exchange][ticker][page] = newTrades;
           }
         }
-        console.log(`updateTrades`, updateTrades);
+        // console.log(`updateTrades`, updateTrades);
         return updateTrades;
       });
       return newTrades;
@@ -140,13 +140,13 @@ const Vouchers = () => {
 
   const filter = useCallback(
     (trades, { keyword, exchange, ticker }) => {
-      console.log(`trades[:${trades?.length}]`, trades);
+      // console.log(`trades[:${trades?.length}]`, trades);
       let _keyword = keyword === undefined ? filterKey : keyword,
         _exchange = exchange || filterExchange,
         _ticker = ticker || filterTicker,
         _trades;
       if (ticker) setFilterTicker(ticker);
-      console.log(`before filter trades[:${trades.length}]`);
+      // console.log(`before filter trades[:${trades.length}]`);
       _trades = trades.filter((trade) => {
         let condition =
           trade.instId?.includes(_keyword) ||
@@ -158,7 +158,7 @@ const Vouchers = () => {
         if (_ticker) condition = condition && trade.instId === _ticker;
         return condition;
       });
-      console.log(`after filter _trades[:${_trades.length}]`);
+      // console.log(`after filter _trades[:${_trades.length}]`);
       setFilterTrades(_trades);
     },
     [filterExchange, filterKey, filterTicker]
@@ -277,36 +277,27 @@ const Vouchers = () => {
       });
       setChartData(result.chartData);
       setProfits(result.profits);
-      if (
-        trades &&
-        trades[filterExchange] &&
-        trades[filterExchange][ticker] &&
-        trades[filterExchange][ticker][newPage]
-      ) {
-        newTrades = trades[filterExchange][ticker][newPage];
-        console.log(`newTrades`, newTrades);
-      } else {
-        newTrades = await getVouchers({
-          ticker,
-          exchange: exchanges[0],
-          offset: (newPage - 1) * limit,
-          limit: limit,
-        });
-        console.log(`newTrades`, newTrades);
-      }
+      // if (
+      //   trades &&
+      //   trades[filterExchange] &&
+      //   trades[filterExchange][ticker] &&
+      //   trades[filterExchange][ticker][newPage]
+      // ) {
+      //   newTrades = trades[filterExchange][ticker][newPage];
+      //   console.log(`newTrades`, newTrades);
+      // } else {
+      newTrades = await getVouchers({
+        ticker,
+        exchange: exchanges[0],
+        offset: (newPage - 1) * limit,
+        limit: limit,
+      });
+      // console.log(`newTrades`, newTrades);
+      // }
       filter(newTrades, { ticker });
       setIsLoading(false);
     },
-    [
-      storeCtx,
-      startDate,
-      endDate,
-      trades,
-      filterExchange,
-      filter,
-      getVouchers,
-      limit,
-    ]
+    [storeCtx, startDate, endDate, filter, getVouchers, limit]
   );
 
   const nextPageHandler = useCallback(async () => {
@@ -322,7 +313,7 @@ const Vouchers = () => {
         trades[filterExchange][filterTicker][newPage]
       ) {
         newTrades = trades[filterExchange][filterTicker][newPage];
-        console.log(`newTrades`, newTrades);
+        // console.log(`newTrades`, newTrades);
       } else {
         newTrades = await getVouchers({
           ticker: filterTicker,
@@ -330,7 +321,7 @@ const Vouchers = () => {
           offset: (newPage - 1) * limit,
           limit: limit,
         });
-        console.log(`newTrades`, newTrades);
+        // console.log(`newTrades`, newTrades);
       }
       filter(newTrades, {});
       setIsLoading(false);
@@ -349,11 +340,11 @@ const Vouchers = () => {
   const prevPageHandler = useCallback(async () => {
     let newTrades,
       newPage = page - 1;
-    console.log(`prevPageHandler newPage`, newPage);
-    console.log(
-      `trades[${filterExchange}][${filterTicker}][${newPage}]`,
-      trades
-    );
+    // console.log(`prevPageHandler newPage`, newPage);
+    // console.log(
+    //   `trades[${filterExchange}][${filterTicker}][${newPage}]`,
+    //   trades
+    // );
     if (
       SafeMath.gte(newPage, 1) &&
       trades &&
@@ -453,11 +444,11 @@ const Vouchers = () => {
               placeholder={t("search-keywords")}
               onInput={(e) => {
                 setFilterKey(e.target.value);
-                console.log(`setFilterKey e.target.value`, e.target.value);
-                console.log(
-                  `trades[${filterExchange}][${filterTicker}][${page}]`,
-                  trades
-                );
+                // console.log(`setFilterKey e.target.value`, e.target.value);
+                // console.log(
+                //   `trades[${filterExchange}][${filterTicker}][${page}]`,
+                //   trades
+                // );
                 if (
                   trades &&
                   trades[filterExchange] &&
