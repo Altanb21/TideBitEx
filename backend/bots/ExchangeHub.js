@@ -446,6 +446,24 @@ class ExchangeHub extends Bot {
     );
   }
 
+  estimateAlertLevel({ account, amount, sum, MPA, RRR }) {
+    let alertLevel;
+    if (!account || SafeMath.eq(amount, 0)) {
+      if (SafeMath.eq(sum, 0)) alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+      else if (SafeMath.gt(sum, 0))
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+    } else {
+      if (SafeMath.gt(amount, MPA)) {
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+      } else {
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+      }
+      if (SafeMath.lte(amount, RRR)) {
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+      }
+    }
+    return alertLevel;
+  }
   async getPlatformAssets({ email, query }) {
     let result = null,
       coins = {},
@@ -455,9 +473,10 @@ class ExchangeHub extends Bot {
     const _accounts = await this.database.getTotalAccountsAssets();
     let _assetBalances = await this.database.getAssetBalances();
     _assetBalances = _assetBalances.reduce((prev, assetBalance) => {
-      return (prev[assetBalance.asset_key] = _assetBalances);
+      prev[assetBalance.asset_key] = assetBalance;
+      return prev;
     }, {});
-    this.logger.debug(`_assetBalances`, _assetBalances);
+    // this.logger.debug(`_assetBalances`, _assetBalances);
     coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
       if (!prev[coinSetting.id.toString()])
         prev[coinSetting.id.toString()] = { ...coinSetting };
@@ -465,7 +484,6 @@ class ExchangeHub extends Bot {
     }, {});
     for (let exchange of Object.keys(SupportedExchange)) {
       let source = SupportedExchange[exchange];
-
       switch (source) {
         // okx api 拿 balance 的資料
         case SupportedExchange.OKEX:
@@ -523,37 +541,8 @@ class ExchangeHub extends Bot {
                 sources: {},
               };
               for (let exchange of Object.keys(SupportedExchange)) {
-                let alertLevel;
                 switch (SupportedExchange[exchange]) {
                   case SupportedExchange.OKEX:
-                    if (
-                      !sources[exchange][coinSetting.code] ||
-                      SafeMath.eq(sources[exchange][coinSetting.code]?.sum, 0)
-                    ) {
-                      if (SafeMath.eq(sum, 0))
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
-                      else if (SafeMath.gt(sum, 0))
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
-                    } else {
-                      if (
-                        SafeMath.gt(
-                          sources[exchange][coinSetting.code]?.sum,
-                          MPA
-                        )
-                      ) {
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
-                      } else {
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
-                      }
-                      if (
-                        SafeMath.lte(
-                          sources[exchange][coinSetting.code]?.sum,
-                          RRR
-                        )
-                      ) {
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
-                      }
-                    }
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
                       {
                         balance:
@@ -561,22 +550,29 @@ class ExchangeHub extends Bot {
                         locked:
                           sources[exchange][coinSetting.code]?.locked || "0",
                         sum: sources[exchange][coinSetting.code]?.sum || "0",
-                        alertLevel,
+                        alertLevel: this.estimateAlertLevel({
+                          account: sources[exchange][coinSetting.code],
+                          amount: sources[exchange][coinSetting.code]?.amount,
+                          sum,
+                          MPA,
+                          RRR,
+                        }),
                       };
                     break;
                   case SupportedExchange.TIDEBIT:
-                    // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
-                    this.logger.debug(
-                      `_assetBalances[${coinSetting.code}]`,
-                      _assetBalances[coinSetting.code]
-                    );
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
                       {
                         balance:
                           _assetBalances[coinSetting.code]?.amount || "0",
                         locked: "0",
                         sum: _assetBalances[coinSetting.code]?.amount || "0",
-                        alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+                        alertLevel: this.estimateAlertLevel({
+                          account: _assetBalances[coinSetting.code],
+                          amount: _assetBalances[coinSetting.code]?.amount,
+                          sum,
+                          MPA,
+                          RRR,
+                        }),
                       };
                     break;
                   default:
@@ -591,7 +587,7 @@ class ExchangeHub extends Bot {
           }
         }
         result = new ResponseFormat({
-          message: "getCoinsSettings",
+          message: "getPlatformAssets",
           payload: coins,
         });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
@@ -664,7 +660,7 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateCoinSetting`, e);
+      this.logger.error(`updatePlatformAsset`, e);
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,

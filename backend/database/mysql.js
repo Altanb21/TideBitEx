@@ -220,7 +220,6 @@ class mysql {
     const query = `
     SELECT
       id,
-      key,
       asset_key,
       category,
       amount,
