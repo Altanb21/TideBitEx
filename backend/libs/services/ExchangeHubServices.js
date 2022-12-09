@@ -423,8 +423,8 @@ class ExchangeHubService {
         let parsedClOrdId = Utils.parseClOrdId(outerOrder.clOrdId);
         let _formatOrder = {
           id: parsedClOrdId.orderId,
-          memberId: parsedClOrdId.memberId,
           exchangeCode: Database.EXCHANGE.OKEX,
+          memberId: parsedClOrdId.memberId,
           market: market,
           price: outerOrder.px,
           volume: outerOrder.sz,
