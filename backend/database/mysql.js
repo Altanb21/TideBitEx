@@ -1985,7 +1985,7 @@ class mysql {
     `;
     // let result;
     try {
-      this.logger.debug("[mysql] insertOuterOrder query", query);
+      // this.logger.debug("[mysql] insertOuterOrder query", query);
       await this.db.query(
         {
           query,
