@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS `outer_orders` (
 	`id` int(11) NOT NULL DEFAULT '0',
 	`exchange_code` int(11) DEFAULT NULL,
-	`member_id` int(11) NOT NULL DEFAULT '0',
+	`member_id` int(11) DEFAULT NULL,
 	`market` int(11) DEFAULT NULL,
 	`price` decimal (32, 16) DEFAULT NULL,
 	`volume` decimal (32, 16) DEFAULT NULL,
