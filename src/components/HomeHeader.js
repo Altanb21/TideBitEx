@@ -40,7 +40,7 @@ const HomeHeader = (props) => {
         </a>
       </div>
       <div className="home-header__item">
-        <a className="home-header__link" href="/register">
+        <a className="home-header__link" href="/signup">
           {t("register")}
         </a>
       </div>

@@ -44,7 +44,7 @@ const HomeSidebar = (props) => {
         </a>
       </li>
       <li className="home-sidebar__item">
-        <a className="home-sidebar__link" href="/register">
+        <a className="home-sidebar__link" href="/signup">
           {t("register")}
         </a>
       </li>

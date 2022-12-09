@@ -31,7 +31,7 @@ class WebSocket {
         };
       });
     } catch (e) {
-      // console.log(`WebSocket init error:`, e);
+      this.logger.error(`WebSocket init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init({ url: this.url });
@@ -62,14 +62,14 @@ class WebSocket {
   async clear(event) {
     clearTimeout(this.wsReConnectTimeout);
     if (event.wasClean) {
-      // this.logger.debug(
-      //   `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
-      // );
+      this.logger.debug(
+        `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
+      );
       clearTimeout(this.pingTimeout);
     } else {
       // e.g. server process killed or network down
       // event.code is usually 1006 in this case
-      this.logger.error("[WebSocket][close] Connection died");
+      this.logger.error("[WebSocket][close] Connection died event", event);
       this.wsReConnectTimeout = setTimeout(async () => {
         await this.init({ url: this.url });
       }, 1000);

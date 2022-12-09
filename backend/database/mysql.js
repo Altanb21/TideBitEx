@@ -216,6 +216,32 @@ class mysql {
     }
   }
 
+  async getAssetBalances() {
+    const query = `
+    SELECT
+      id,
+      asset_key,
+      category,
+      amount,
+      crash_counter,
+      refresh_at,
+      benchmark_realtime
+    FROM
+      asset_balances
+    ;
+    `;
+    try {
+      // this.logger.debug("getAssetBalances", query);
+      const [assetBalances] = await this.db.query({
+        query,
+      });
+      return assetBalances;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getTotalAccountsAssets() {
     const query = `
     SELECT
