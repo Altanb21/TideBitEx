@@ -24,6 +24,8 @@ class WebSocket {
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
     try {
+      // ++ TODO #983 2022/12/09 NEW LEAD 👇
+      // if (Math.random() < 0.9) throw new Error("test");
       if (!url && !this.url) throw new Error("Invalid input");
       if (url) this.url = url;
       if (options) this.options = { ...options };
@@ -31,6 +33,7 @@ class WebSocket {
       if (!!this.options) {
         this.ws = new ws(this.url, this.options);
       } else this.ws = new ws(this.url);
+      // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
       return new Promise((resolve) => {
         this.ws.onopen = (r) => {
           this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url);
@@ -40,9 +43,10 @@ class WebSocket {
         };
       });
     } catch (e) {
-      this.logger.error(`[WebSocket] init error:`, e);
+      this.logger.debug(`[WebSocket] init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
+        this.logger.debug(`[Websocket] recursive init`, new Date().toLocaleString());
         await this.init();
       }, 1000);
     }
