@@ -27,7 +27,7 @@ class OkexConnector extends ConnectorBase {
   okexWsChannels = {};
   instIds = [];
   slanger = {};
-  registerMarkets = [];
+  // registerMarkets = [];
 
   fetchedTrades = {};
   fetchedBook = {};
@@ -258,8 +258,7 @@ class OkexConnector extends ConnectorBase {
         this.tickersSettings[id]?.source === SupportedExchange.OKEX &&
         this.tickersSettings[id]?.visible
       ) {
-        this.instIds.push(this.tickersSettings[id].instId);
-        this.subscribeTicker(this.tickersSettings[id].instId);
+        this._registerMarket(id);
       }
     });
     let instruments,
@@ -1484,7 +1483,8 @@ class OkexConnector extends ConnectorBase {
         trades: this.tradeBook.getSnapshot(instId),
       });
       // this.loggers.debug(`_updateTrades[${market}] ${this.registerMarkets.includes(market)}`, this.registerMarkets);
-      if (this.registerMarkets.includes(market)) {
+      // if (this.registerMarkets.includes(market)) {
+      if (this.instIds.includes(instId)) {
         EventBus.emit(Events.publicTrades, {
           market,
           trades: this.tradeBook.getSnapshot(instId),
@@ -1655,7 +1655,7 @@ class OkexConnector extends ConnectorBase {
     );
   }
 
-  subscribeTicker(instId) {
+  _subscribeTicker(instId) {
     const channel = Events.tickers;
     if (!this.okexWsChannels[channel]) this.okexWsChannels[channel] = {};
     if (!this.okexWsChannels[channel][instId])
@@ -1673,7 +1673,7 @@ class OkexConnector extends ConnectorBase {
     );
   }
 
-  unsubscribeTicker(instId) {
+  _unsubscribeTicker(instId) {
     const channel = Events.tickers;
     this.websocket.ws.send(
       JSON.stringify({
@@ -1795,14 +1795,44 @@ class OkexConnector extends ConnectorBase {
 
   _registerMarket(market) {
     let tickerSetting = this.tickersSettings[market];
-    if (
-      tickerSetting?.source === SupportedExchange.OKEX &&
-      !this.registerMarkets.includes(market)
-    ) {
-      this._subscribeTrades(tickerSetting?.instId);
-      this.registerMarkets = [...this.registerMarkets, market];
+    if (tickerSetting?.source === SupportedExchange.OKEX) {
+      // if (!this.registerMarkets.includes(market)) {
+      //   this._subscribeTrades(tickerSetting?.instId);
+      //   this.registerMarkets = [...this.registerMarkets, market];
+      // }
+      if (!this.instIds.includes(tickerSetting?.instId)) {
+        this._subscribeTicker(tickerSetting?.instId);
+        this._subscribeTrades(tickerSetting?.instId);
+        this.instIds = [...this.instIds, tickerSetting?.instId];
+      }
     }
   }
+
+  registerMarket(market) {
+    this._registerMarket(market);
+  }
+
+  _unregisterMarket(market) {
+    let tickerSetting = this.tickersSettings[market];
+    if (tickerSetting?.source === SupportedExchange.OKEX) {
+      // if (!this.registerMarkets.includes(market)) {
+      //   this._unsubscribeTrades(tickerSetting?.instId);
+      //   this.registerMarkets = this.registerMarkets.filter((m) => m !== market);
+      // }
+      if (!this.instIds.includes(tickerSetting?.instId)) {
+        this._unsubscribeTicker(tickerSetting?.instId);
+        this._unsubscribeTrades(tickerSetting?.instId);
+        this.instIds = this.instIds.filter(
+          (instId) => instId !== tickerSetting?.instId
+        );
+      }
+    }
+  }
+
+  unregisterMarket(market) {
+    this._unregisterMarket(market);
+  }
+
   _subscribeUser() {}
 
   _unsubscribeUser() {}

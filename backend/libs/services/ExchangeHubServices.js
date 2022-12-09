@@ -41,56 +41,6 @@ class ExchangeHubService {
    * 做 GC的時候要先有地方記錄外部交易所收取的手續費 !!!
    * */
   async garbageCollection(outerTrades) {
-    let order = {
-      accFillSz: "0.8",
-      amendResult: "",
-      avgPx: "1222",
-      cTime: "1668408620024",
-      cancelSource: "",
-      category: "normal",
-      ccy: "",
-      clOrdId: "377bd372412fSCDE61498m398929621o",
-      code: "0",
-      execType: "M",
-      fee: "-0.78208",
-      feeCcy: "USDT",
-      fillFee: "-0.450898448",
-      fillFeeCcy: "USDT",
-      fillNotionalUsd: "976.250912",
-      fillPx: "1222",
-      fillSz: "0.46123",
-      fillTime: "1668408621050",
-      instId: "ETH-USDT",
-      instType: "SPOT",
-      lever: "0",
-      msg: "",
-      notionalUsd: "976.250912",
-      ordId: "512278113913557007",
-      ordType: "limit",
-      pnl: "0",
-      posSide: "",
-      px: "1222",
-      quickMgnType: "",
-      rebate: "0",
-      rebateCcy: "ETH",
-      reduceOnly: "false",
-      reqId: "",
-      side: "sell",
-      slOrdPx: "",
-      slTriggerPx: "",
-      slTriggerPxType: "last",
-      source: "",
-      state: "filled",
-      sz: "0.8",
-      tag: "",
-      tdMode: "cash",
-      tgtCcy: "",
-      tpOrdPx: "",
-      tpTriggerPx: "",
-      tpTriggerPxType: "last",
-      tradeId: "267229452",
-      uTime: "1668408621051",
-    };
     for (let trade of outerTrades) {
       const date = new Date(trade.update_at);
       const timestamp = date.getTime();
@@ -155,6 +105,25 @@ class ExchangeHubService {
       result = false;
       await t.rollback();
     }
+    /* !!! HIGH RISK (end) !!! */
+    return result;
+  }
+
+  async insertOuterOrders(outerOrders) {
+    /* !!! HIGH RISK (start) !!! */
+    let result;
+    const t = await this.database.transaction();
+    try {
+      await this.database.insertOuterOrders(outerOrders, { dbTransaction: t });
+      result = true;
+      await t.commit();
+    } catch (error) {
+      this.logger.error(new Date().toISOString());
+      this.logger.error(`insertOuterOrders`, outerOrders, error);
+      result = false;
+      await t.rollback();
+    }
+    /* !!! HIGH RISK (end) !!! */
     return result;
   }
 
@@ -442,7 +411,45 @@ class ExchangeHubService {
     await this.insertOuterTrades(outerTrades);
 
     // 3. 將 outerTrade 一一交給承辦員 ( this.processor ) 處理更新下列 DB table trades、orders、accounts、accounts_version、vouchers
-    await this._processOuterTrades(outerTrades, { needParse: false });
+    this._processOuterTrades(outerTrades, { needParse: false });
+  }
+
+  async syncOuterOrders(exchange = SupportedExchange.OKEX) {
+    let apiResonse,
+      outerOrders = [],
+      tmp;
+    // this.logger.debug(`this.tickersSettings`, this.tickersSettings);
+    switch (exchange) {
+      case SupportedExchange.OKEX:
+        for (let instId of this.okexConnector.instIds) {
+          apiResonse = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: instId,
+            },
+          });
+          if (apiResonse.success)
+            tmp = apiResonse.payload.map((outerOrder) => ({
+              id: outerOrder.ordId,
+              exchangeCode: Database.EXCHANGE.OKEX,
+              market:
+                this.tickersSettings[instId.replace("-", "").toLowerCase()],
+              price: outerOrder.px,
+              volume: outerOrder.sz,
+              averageFilledPrice: outerOrder.avgPx,
+              accumulateFilledvolume: outerOrder.accFillSz,
+              state: outerOrder.state,
+              createdAt: new Date(parseInt(outerOrder.cTime)).toISOString(),
+              updatedAt: new Date(parseInt(outerOrder.uTime)).toISOString(),
+              data: JSON.stringify(outerOrder),
+            }));
+          this.logger.debug(`syncOuterOrders outerOrders[${instId}]`, tmp);
+          outerOrders = outerOrders.concat(tmp);
+        }
+        break;
+      default:
+        break;
+    }
+    if (outerOrders.length > 0) await this.insertOuterOrders(outerOrders);
   }
 
   async sync({
@@ -460,9 +467,10 @@ class ExchangeHubService {
     ) {
       this._lastSyncTime = Date.now();
       try {
+        await this.syncOuterOrders(exchange);
         await this.syncAPIOuterTrades(exchange, data, interval);
         await this.syncUnProcessedOuterTrades(exchange);
-      } catch(e) {
+      } catch (e) {
         this.logger.error(e);
       }
       // this.abnormalAccountVersionsHandler();

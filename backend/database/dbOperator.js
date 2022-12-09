@@ -487,6 +487,10 @@ class DBOperator {
     );
   }
 
+  async insertOuterOrders(orders, { dbTransaction }) {
+    return this.database.insertOuterOrders(orders, { dbTransaction });
+  }
+
   async insertOuterTrades(trades, { dbTransaction }) {
     return this.database.insertOuterTrades(trades, { dbTransaction });
   }

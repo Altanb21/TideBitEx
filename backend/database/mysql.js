@@ -662,19 +662,19 @@ class mysql {
   }
 
   async getMemberByCondition(conditions) {
-    let placeholder = [];
-    if (Object.keys(conditions)?.length > 0) {
-      let keys = Object.keys(conditions);
-      let values = Object.values(conditions);
-      for (let index = 0; index < Object.keys(conditions).length; index++) {
-        if (values[index])
-          placeholder = [
-            ...placeholder,
-            keys[index] === "email"
-              ? `${keys[index]} = "${values[index]}"`
-              : `${keys[index]} = ${values[index]}`,
-          ];
-      }
+    let placeholder = [],
+      values = [];
+    if (conditions.id) {
+      placeholder = [...placeholder, `id = ?`];
+      values = [...values, conditions.id];
+    }
+    if (conditions.email) {
+      placeholder = [...placeholder, `email = ?`];
+      values = [...values, conditions.email];
+    }
+    if (conditions.referCode) {
+      placeholder = [...placeholder, `refer_code = ?`];
+      values = [...values, conditions.referCode];
     }
     let condition = placeholder.join(` AND `);
     const query = `
@@ -695,6 +695,7 @@ class mysql {
     try {
       const [[member]] = await this.db.query({
         query,
+        values,
       });
       return member;
     } catch (error) {
@@ -1953,6 +1954,44 @@ class mysql {
       if (dbTransaction) throw error;
     }
     return accountVersionId;
+  }
+
+  async insertOuterOrders(orders, { dbTransaction }) {
+    let query,
+      placeholder,
+      values = [];
+    for (let order of orders) {
+      values = [
+        ...values,
+        `(${order.id}, ${order.exchangeCode}, ${order.market}, ${order.price}, ${order.volume}, ${order.averageFilledPrice}, ${order.accumulateFilledvolume}, ${order.state}, ${order.createdAt}, ${order.updatedAt}), ${order.data}`,
+      ];
+    }
+    placeholder = values.join(`, `);
+    query = `
+    INSERT INTO outer_orders (id, exchange_code, market, price, volume, average_filled_price, accumulate_filled_volume, state, created_at, updated_at, data)
+      VALUES ${placeholder} ON DUPLICATE KEY UPDATE average_filled_price = VALUES(average_filled_price), 
+      accumulate_filled_volume = VALUES(accumulate_filled_volume),
+      state = VALUES(state),
+      updated_at = VALUES(updated_at),
+      data = VALUES(data),
+    `;
+    // let result;
+    try {
+      this.logger.debug("[mysql] insertOuterOrders", query, values);
+      // await this.db.query(
+      //   {
+      //     query,
+      //     values,
+      //   },
+      //   {
+      //     transaction: dbTransaction,
+      //   }
+      // );
+      // this.logger.debug(`insertOuterOrders`, result);
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
   }
 
   // ++ TODO 2022/11/25 需要優化 query 不在同一句可以看到

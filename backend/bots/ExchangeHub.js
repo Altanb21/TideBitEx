@@ -721,12 +721,16 @@ class ExchangeHub extends Bot {
                 SupportedExchange.OKEX
               ) {
                 if (data.visible)
-                  this.okexConnector.subscribeTicker(
-                    this.tickersSettings[params.id].instId
+                  this.okexConnector.registerMarket(
+                    this.tickersSettings[params.id].market
+                      .replace("-", "")
+                      .toLowerCase()
                   );
                 else
-                  this.okexConnector.unsubscribeTicker(
-                    this.tickersSettings[params.id].instId
+                  this.okexConnector.unregisterMarket(
+                    this.tickersSettings[params.id].market
+                      .replace("-", "")
+                      .toLowerCase()
                   );
               }
               updatedTickersSettings[params.id] = {
@@ -736,16 +740,16 @@ class ExchangeHub extends Bot {
               break;
             case TICKER_SETTING_TYPE.SOURCE:
               if (data.source === SupportedExchange.OKEX)
-                this.okexConnector.subscribeTicker(
-                  this.tickersSettings[params.id].instId
+                this.okexConnector.registerMarket(
+                  this.tickersSettings[params.id].market
                 );
               else if (
                 data.source !== SupportedExchange.OKEX &&
                 updatedTickersSettings[params.id].source ===
                   SupportedExchange.OKEX
               )
-                this.okexConnector.unsubscribeTicker(
-                  this.tickersSettings[params.id].instId
+                this.okexConnector.unregisterMarket(
+                  this.tickersSettings[params.id].market
                 );
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
@@ -4872,7 +4876,7 @@ class ExchangeHub extends Bot {
               break;
           }
           if (apiResonse.success) {
-            orderDetail = apiResonse.payload;
+            orderDetail = apiResonse.payload.shift();
             // this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
               if (data.tradeId) {
