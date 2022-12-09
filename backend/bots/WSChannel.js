@@ -206,7 +206,7 @@ class WSChannel extends Bot {
   }
 
   _onOpRegisterMarket(ws, args) {
-    this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarket`, args);
+    // this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarket`, args);
     EventBus.emit(Events.registerMarket, args.market);
   }
 

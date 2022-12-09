@@ -14,6 +14,14 @@ class WebSocket {
     return this;
   }
 
+  heartbeat() {
+    clearTimeout(this.pingTimeout);
+    this.pingTimeout = setTimeout(() => {
+      // this.logger.debug("heartbeat");
+      this.ws.ping();
+    }, this.heartBeatTime);
+  }
+
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
     try {
       if (!url && !this.url) throw new Error("Invalid input");
@@ -25,55 +33,63 @@ class WebSocket {
       } else this.ws = new ws(this.url);
       return new Promise((resolve) => {
         this.ws.onopen = (r) => {
+          this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url);
           this.heartbeat();
           this.eventListener();
           return resolve(r);
         };
       });
     } catch (e) {
-      this.logger.error(`WebSocket init error:`, e);
+      this.logger.error(`[WebSocket] init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
-        await this.init({ url: this.url });
+        await this.init();
       }, 1000);
     }
   }
 
   eventListener() {
     this.ws.on("pong", () => this.heartbeat());
-    this.ws.on("close", async (event) => await this.clear(event));
-    this.ws.on("error", async (err) => {
-      this.logger.error(`this.ws.on("error")`, err);
-      clearTimeout(this.wsReConnectTimeout);
-      this.wsReConnectTimeout = setTimeout(async () => {
-        await this.init();
-      }, 1000);
-    });
+    this.ws.on(
+      "close",
+      async (code, reason) => await this.clear({ type: "close", code, reason })
+    );
+    this.ws.on(
+      "error",
+      async (error) => await this.clear({ type: "error", error })
+    );
   }
 
-  heartbeat() {
-    clearTimeout(this.pingTimeout);
-    this.pingTimeout = setTimeout(() => {
-      // this.logger.debug("heartbeat");
-      this.ws.ping();
-    }, this.heartBeatTime);
-  }
-
-  async clear(event) {
+  async clear({ type, error, code, reason }) {
     clearTimeout(this.wsReConnectTimeout);
-    if (event.wasClean) {
+    if (type === "close")
       this.logger.debug(
-        `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`
+        `Websocket] this.ws.on("close")`,
+        new Date().toLocaleString(),
+        code,
+        reason
       );
-      clearTimeout(this.pingTimeout);
-    } else {
-      // e.g. server process killed or network down
-      // event.code is usually 1006 in this case
-      this.logger.error("[WebSocket][close] Connection died event", event);
-      this.wsReConnectTimeout = setTimeout(async () => {
-        await this.init({ url: this.url });
-      }, 1000);
-    }
+    else if (type === "error")
+      this.logger.debug(
+        `Websocket] this.ws.on("error")`,
+        new Date().toLocaleString(),
+        error
+      );
+    // -- if type is close params is code and reson instead of event
+    // if (event.wasClean) {
+    //   this.logger.debug(
+    //     `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`,
+    //     new Date().toLocaleString()
+    //   );
+    //   clearTimeout(this.pingTimeout);
+    // } else {
+    // e.g. server process killed or network down
+    // event.code is usually 1006 in this case
+    this.wsReConnectTimeout = setTimeout(async () => {
+      this.logger.debug(`[Websocket] called init`, new Date().toLocaleString());
+      await this.init();
+    }, 1000);
+    // }
   }
 
   send(data, cb) {

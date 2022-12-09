@@ -1278,10 +1278,10 @@ class OkexConnector extends ConnectorBase {
       let rateLimit = this.rateLimit[name];
       // this.logger.debug(`test _request rateLimit`, rateLimit);
       if (!this.checkRequestRate(name, now, instId)) {
-        this.logger.debug(`_request rateLimit`, rateLimit);
-        console.time("wait");
+        // this.logger.debug(`_request rateLimit`, rateLimit);
+        // console.time("wait");
         await wait(rateLimit.restTime);
-        console.timeEnd("wait");
+        // console.timeEnd("wait");
         this.updateRequestRecord(name, now, instId, true);
       }
       this.updateRequestRecord(name, now, instId);
@@ -1614,7 +1614,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.logger.debug(`_subscribeTrades instId[${instId}]`, args);
+    // this.logger.debug(`_subscribeTrades instId[${instId}]`, args);
     this.websocket.ws.send(
       JSON.stringify({
         op: Events.subscribe,
