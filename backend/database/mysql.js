@@ -700,7 +700,7 @@ class mysql {
       return member;
     } catch (error) {
       this.logger.error(error);
-      this.logger.trace("getMemberByCondition", query, conditions);
+      this.logger.trace("getMemberByCondition", query, values);
       return [];
     }
   }

@@ -1145,7 +1145,7 @@ class ExchangeHub extends Bot {
   async getMemberReferral(member) {
     let referredByMember, memberReferral;
     referredByMember = await this.database.getMemberByCondition({
-      refer_code: member.refer,
+      referCode: member.refer,
     });
     if (referredByMember) {
       memberReferral = await this.database.getMemberReferral({
@@ -1167,6 +1167,7 @@ class ExchangeHub extends Bot {
     //   Referral::CommissionService.get_default_commission_plan(member: member),
     //   { enabled_policies_only: true }
     // )
+    // this.logger.debug(`getReferrerCommissionPlan referral`, referral);
     let plan,
       planId = referral.commission_plan_id;
     if (!planId) {
@@ -3932,8 +3933,8 @@ class ExchangeHub extends Bot {
   }
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
-    this.logger.debug(`dbOrder`, dbOrder);
-    this.logger.debug(`apiOrder`, apiOrder);
+    this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
+    this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
@@ -3984,7 +3985,10 @@ class ExchangeHub extends Bot {
       updated_at: `"${now}"`,
       done_at: `"${doneAt}"`,
     };
-    this.logger.debug(`calculator updatedOrder`, updatedOrder);
+    this.logger.debug(
+      `abnormalOrderHandler calculator updatedOrder`,
+      updatedOrder
+    );
     await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
@@ -4908,7 +4912,7 @@ class ExchangeHub extends Bot {
             let tmp = await this.getMemberReferral(member);
             referredByMember = tmp.referredByMember;
             memberReferral = tmp.memberReferral;
-            // this.logger.debug(`updater tmp`, tmp);
+            // this.logger.debug(`updater getMemberReferral`, tmp);
           }
           try {
             result = await this.calculator({
