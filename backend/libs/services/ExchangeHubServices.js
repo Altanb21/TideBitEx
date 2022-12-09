@@ -418,19 +418,26 @@ class ExchangeHubService {
   }
 
   collectOrders(market, data) {
-    let orders = data.map((outerOrder) => ({
-      id: outerOrder.ordId,
-      exchangeCode: Database.EXCHANGE.OKEX,
-      market: market,
-      price: outerOrder.px,
-      volume: outerOrder.sz,
-      averageFilledPrice: outerOrder.avgPx,
-      accumulateFilledvolume: outerOrder.accFillSz,
-      state: outerOrder.state,
-      createdAt: new Date(parseInt(outerOrder.cTime)).toISOString(),
-      updatedAt: new Date(parseInt(outerOrder.uTime)).toISOString(),
-      data: JSON.stringify(outerOrder),
-    }));
+    let orders = data
+      .map((outerOrder) => {
+        let parsedClOrdId = Utils.parseClOrdId(outerOrder.clOrdId);
+        let _formatOrder = {
+          id: parsedClOrdId.orderId,
+          memberId: parsedClOrdId.memberId,
+          exchangeCode: Database.EXCHANGE.OKEX,
+          market: market,
+          price: outerOrder.px,
+          volume: outerOrder.sz,
+          averageFilledPrice: outerOrder.avgPx,
+          accumulateFilledvolume: outerOrder.accFillSz,
+          state: outerOrder.state,
+          createdAt: new Date(parseInt(outerOrder.cTime)).toISOString(),
+          updatedAt: new Date(parseInt(outerOrder.uTime)).toISOString(),
+          data: JSON.stringify(outerOrder),
+        };
+        return _formatOrder;
+      })
+      .filter((outerOrder) => !!outerOrder.id);
     return orders;
   }
 

@@ -1963,7 +1963,7 @@ class mysql {
     for (let order of orders) {
       values = [
         ...values,
-        `(${order.id}, ${order.exchangeCode}, ${order.market}, ${
+        `(${order.id}, ${order.memberId}, ${order.exchangeCode}, ${order.market}, ${
           order.price
         }, ${order.volume}, ${!!order.averageFilledPrice?order.averageFilledPrice:null}, ${
           order.accumulateFilledvolume
@@ -1975,7 +1975,7 @@ class mysql {
     // this.logger.debug("[mysql] insertOuterOrders values", values);
     placeholder = values.join(`, `);
     query = `
-    INSERT INTO outer_orders (id, exchange_code, market, price, volume, average_filled_price, accumulate_filled_volume, state, created_at, updated_at, data)
+    INSERT INTO outer_orders (id, member_id, exchange_code, market, price, volume, average_filled_price, accumulate_filled_volume, state, created_at, updated_at, data)
       VALUES ${placeholder} ON DUPLICATE KEY UPDATE average_filled_price = VALUES(average_filled_price), 
       accumulate_filled_volume = VALUES(accumulate_filled_volume),
       state = VALUES(state),

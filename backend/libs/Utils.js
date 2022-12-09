@@ -836,12 +836,17 @@ class Utils {
     // brokerId = 377bd372412fSCDE
     // memberId = 60976
     // orderId = 247674466
-    const slice1 = clOrdId?.slice(16); // slice broker id
-    const split1 = slice1?.split("m"); // split memberId
-    const split2 = split1[1]?.split("o"); // split orderId
+    let slice1, split1, split2;
+    try {
+      slice1 = clOrdId?.slice(16); // slice broker id
+      split1 = slice1?.split("m"); // split memberId
+      if (split1?.length > 0) split2 = split1[1]?.split("o"); // split orderId
+    } catch (error) {
+      this.logger.error(`parseClOrdId error clOrdId`, clOrdId);
+    }
     return {
-      memberId: split1 ? split1[0] : null,
-      orderId: split2 ? split2[0] : null,
+      memberId: split1.length > 0 ? split1[0] : null,
+      orderId: split2.length > 0 ? split2[0] : null,
     };
   }
 
