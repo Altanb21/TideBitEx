@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS `outer_orders` (
 	`volume` decimal (32, 16) DEFAULT NULL,
 	`average_filled_price` decimal (32, 16) DEFAULT NULL,
 	`accumulate_filled_volume` decimal (32, 16) DEFAULT NULL,
-	`state` tinyint (4) DEFAULT NULL,
+	`state` varchar(255) DEFAULT NULL,
 	`created_at` datetime DEFAULT NULL,
 	`updated_at` datetime DEFAULT NULL,
 	`data` text,

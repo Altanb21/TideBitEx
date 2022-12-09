@@ -258,7 +258,7 @@ class OkexConnector extends ConnectorBase {
         this.tickersSettings[id]?.source === SupportedExchange.OKEX &&
         this.tickersSettings[id]?.visible
       ) {
-        this._registerMarket(id);
+        this.registerMarket(id);
       }
     });
     let instruments,
@@ -452,91 +452,27 @@ class OkexConnector extends ConnectorBase {
     return res;
   }
 
-  /**
-   * [deprecated] 2022/11/17
-   */
-  async getOrderHistory(options) {
-    const { instType, instId, after, limit } = options;
+  async getOrderHistory({ query }) {
     const method = "GET";
     const path = "/api/v5/trade/orders-history";
-    let arr = [],
-      result;
+    let arr = [], instType= query.instType || "SPOT";
     if (instType) arr.push(`instType=${instType}`);
-    if (instId) arr.push(`instId=${instId}`);
-    if (after) arr.push(`after=${after}`);
-    if (limit) arr.push(`limit=${limit}`);
-
+    if (query.instId) arr.push(`instId=${query.instId}`);
+    if (query.after) arr.push(`after=${query.after}`);
+    if (query.limit) arr.push(`limit=${query.limit}`);
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
-
     const timeString = new Date().toISOString();
     const okAccessSign = await this.okAccessSign({
       timeString,
       method,
       path: `${path}${qs}`,
     });
-
-    const res = await this._request("getOrderHistory", {
+    const res = await this._request("trade_orders_history", {
       method: method.toLocaleLowerCase(),
       url: `${this.domain}${path}${qs}`,
       headers: this.getHeaders(true, { timeString, okAccessSign }),
     });
-    if (res.success) {
-      const formatOrders = {};
-      const formatOrdersForLib = {};
-      res.payload.forEach((data) => {
-        const tmp = data.clOrdId.replace(this.brokerId, "");
-        const memberId = tmp.substr(0, tmp.indexOf("m"));
-        if (!formatOrders[memberId]) formatOrders[memberId] = [];
-        if (!formatOrdersForLib[memberId]) formatOrdersForLib[memberId] = [];
-        formatOrders[memberId].push({
-          ...data,
-          cTime: parseInt(data.cTime),
-          fillTime: parseInt(data.fillTime),
-          uTime: parseInt(data.uTime),
-        });
-        formatOrdersForLib.push({
-          instId,
-          market: instId.replace("-", "").toLowerCase(),
-          clOrdId: data.clOrdId,
-          id: data.ordId,
-          ordType: data.ordType,
-          price: data.px,
-          kind:
-            data.side === Database.ORDER_SIDE.BUY
-              ? Database.ORDER_KIND.BID
-              : Database.ORDER_KIND.ASK,
-          volume: SafeMath.minus(data.sz, data.fillSz),
-          origin_volume: data.sz,
-          filled: data.state === Database.ORDER_STATE.FILLED,
-          state:
-            data.state === Database.ORDER_STATE.CANCEL
-              ? Database.ORDER_STATE.CANCEL
-              : data.state === Database.ORDER_STATE.FILLED
-              ? Database.ORDER_STATE.DONE
-              : Database.ORDER_STATE.WAIT,
-          state_text:
-            data.state === Database.ORDER_STATE.CANCEL
-              ? Database.ORDER_STATE_TEXT.CANCEL
-              : data.state === Database.ORDER_STATE.FILLED
-              ? Database.ORDER_STATE_TEXT.DONE
-              : Database.ORDER_STATE_TEXT.WAIT,
-          at: parseInt(SafeMath.div(data.uTime, "1000")),
-          ts: parseInt(data.uTime),
-        });
-      });
-      Object.keys(formatOrdersForLib).forEach((memberId) => {
-        this.orderBook.updateAll(
-          memberId,
-          instId,
-          formatOrdersForLib[memberId]
-        );
-      });
-      EventBus.emit(Events.orderDetailUpdate, instType, formatOrders);
-      result = { ...res, payload: formatOrders };
-    } else {
-      result = res;
-    }
-    return result;
+    return res;
   }
 
   async getBalance({ query }) {
@@ -1794,6 +1730,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   _registerMarket(market) {
+    // this.logger.debug(`_registerMarket market`, market)
     let tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.OKEX) {
       // if (!this.registerMarkets.includes(market)) {
@@ -1809,6 +1746,7 @@ class OkexConnector extends ConnectorBase {
   }
 
   registerMarket(market) {
+    // this.logger.debug(`registerMarket market`, market);
     this._registerMarket(market);
   }
 

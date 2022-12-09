@@ -118,8 +118,11 @@ class ExchangeHubService {
       result = true;
       await t.commit();
     } catch (error) {
-      this.logger.error(new Date().toISOString());
-      this.logger.error(`insertOuterOrders`, outerOrders, error);
+      this.logger.error(
+        `insertOuterOrders error${new Date().toISOString()}`,
+        outerOrders,
+        error
+      );
       result = false;
       await t.rollback();
     }
@@ -414,36 +417,55 @@ class ExchangeHubService {
     this._processOuterTrades(outerTrades, { needParse: false });
   }
 
+  collectOrders(market, data) {
+    let orders = data.map((outerOrder) => ({
+      id: outerOrder.ordId,
+      exchangeCode: Database.EXCHANGE.OKEX,
+      market: market,
+      price: outerOrder.px,
+      volume: outerOrder.sz,
+      averageFilledPrice: outerOrder.avgPx,
+      accumulateFilledvolume: outerOrder.accFillSz,
+      state: outerOrder.state,
+      createdAt: new Date(parseInt(outerOrder.cTime)).toISOString(),
+      updatedAt: new Date(parseInt(outerOrder.uTime)).toISOString(),
+      data: JSON.stringify(outerOrder),
+    }));
+    return orders;
+  }
+
   async syncOuterOrders(exchange = SupportedExchange.OKEX) {
     let apiResonse,
-      outerOrders = [],
-      tmp;
+      market,
+      outerOrders = [];
     // this.logger.debug(`this.tickersSettings`, this.tickersSettings);
     switch (exchange) {
       case SupportedExchange.OKEX:
         for (let instId of this.okexConnector.instIds) {
-          apiResonse = await this.okexConnector.router("getOrderDetails", {
+          market =
+            this.tickersSettings[instId.replace("-", "").toLowerCase()].code;
+          apiResonse = await this.okexConnector.router("getAllOrders", {
             query: {
               instId: instId,
             },
           });
-          if (apiResonse.success)
-            tmp = apiResonse.payload.map((outerOrder) => ({
-              id: outerOrder.ordId,
-              exchangeCode: Database.EXCHANGE.OKEX,
-              market:
-                this.tickersSettings[instId.replace("-", "").toLowerCase()],
-              price: outerOrder.px,
-              volume: outerOrder.sz,
-              averageFilledPrice: outerOrder.avgPx,
-              accumulateFilledvolume: outerOrder.accFillSz,
-              state: outerOrder.state,
-              createdAt: new Date(parseInt(outerOrder.cTime)).toISOString(),
-              updatedAt: new Date(parseInt(outerOrder.uTime)).toISOString(),
-              data: JSON.stringify(outerOrder),
-            }));
-          this.logger.debug(`syncOuterOrders outerOrders[${instId}]`, tmp);
-          outerOrders = outerOrders.concat(tmp);
+          if (apiResonse.success) {
+            outerOrders = outerOrders.concat(
+              this.collectOrders(market, apiResonse.payload)
+            );
+          }
+          apiResonse = await this.okexConnector.router("getOrderHistory", {
+            query: {
+              instType: "SPOT",
+              instId: instId,
+            },
+          });
+          // this.logger.debug(`getOrderHistory apiResonse`, apiResonse)
+          if (apiResonse.success) {
+            outerOrders = outerOrders.concat(
+              this.collectOrders(market, apiResonse.payload)
+            );
+          }
         }
         break;
       default:

@@ -1963,9 +1963,16 @@ class mysql {
     for (let order of orders) {
       values = [
         ...values,
-        `(${order.id}, ${order.exchangeCode}, ${order.market}, ${order.price}, ${order.volume}, ${order.averageFilledPrice}, ${order.accumulateFilledvolume}, ${order.state}, ${order.createdAt}, ${order.updatedAt}), ${order.data}`,
+        `(${order.id}, ${order.exchangeCode}, ${order.market}, ${
+          order.price
+        }, ${order.volume}, ${!!order.averageFilledPrice?order.averageFilledPrice:null}, ${
+          order.accumulateFilledvolume
+        }, "${order.state}", "${order.createdAt}", "${order.updatedAt}", '${
+          order.data
+        }')`,
       ];
     }
+    // this.logger.debug("[mysql] insertOuterOrders values", values);
     placeholder = values.join(`, `);
     query = `
     INSERT INTO outer_orders (id, exchange_code, market, price, volume, average_filled_price, accumulate_filled_volume, state, created_at, updated_at, data)
@@ -1973,20 +1980,20 @@ class mysql {
       accumulate_filled_volume = VALUES(accumulate_filled_volume),
       state = VALUES(state),
       updated_at = VALUES(updated_at),
-      data = VALUES(data),
+      data = VALUES(data)
+    ;
     `;
     // let result;
     try {
-      this.logger.debug("[mysql] insertOuterOrders", query, values);
-      // await this.db.query(
-      //   {
-      //     query,
-      //     values,
-      //   },
-      //   {
-      //     transaction: dbTransaction,
-      //   }
-      // );
+      this.logger.debug("[mysql] insertOuterOrder query", query);
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
       // this.logger.debug(`insertOuterOrders`, result);
     } catch (error) {
       this.logger.error(error);
