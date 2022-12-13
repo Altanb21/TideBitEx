@@ -67,16 +67,21 @@ class WebSocket {
   }
 
   send(data, cb) {
-    this.logger.debug(`webSocket custom send is called`)
+    this.logger.debug(`webSocket custom send is called`);
     this.connection_resolvers.push({ data, cb });
     this.sendDataFromQueue();
   }
 
   sendDataFromQueue() {
+    this.logger.debug(`webSocket sendDataFromQueue is called`);
     if (this.ws) {
+      this.logger.debug(
+        `this.connection_resolvers[${this.connection_resolvers.length}]`
+      );
       if (this.ws.readyState === ws.OPEN) {
         const obj = this.connection_resolvers.shift();
         if (obj) {
+          this.logger.debug(`this.ws.send`, obj.data);
           this.ws.send(obj.data, obj.cb);
           this.sendDataFromQueue();
         }
@@ -91,23 +96,29 @@ class WebSocket {
    * @param {{ (event: any): void; (event: any): void; (event: any): void; }} cb
    */
   set onmessage(cb) {
+    this.logger.debug(`webSocket set onmessage`)
     this.cb = cb || this.cb;
     if (this.ws) this.ws.onmessage = cb;
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
-    this.logger.debug(`init is called url & options`, url, options, new Date().toLocaleString());
+    this.logger.debug(
+      `init is called url & options`,
+      url,
+      options,
+      new Date().toLocaleString()
+    );
     try {
       // ++ TODO #983 2022/12/09 NEW LEAD 👇
       if (!url && !this.url) {
-        this.logger.debug(`Invalid input`,new Date().toLocaleString());
+        this.logger.debug(`Invalid input`, new Date().toLocaleString());
         throw new Error("Invalid input");
       }
       if (url) this.url = url;
       if (options) this.options = { ...options };
       this.heartBeatTime = heartBeat;
       if (Math.random() < 0.9) {
-        this.logger.debug(`create test error`,new Date().toLocaleString());
+        this.logger.debug(`create test error`, new Date().toLocaleString());
         throw new Error("test");
       }
       if (!!this.options) {
@@ -117,8 +128,13 @@ class WebSocket {
       // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
       return new Promise((resolve) => {
         this.ws.onopen = (r) => {
-          this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url,new Date().toLocaleString());
+          this.logger.debug(
+            `[WebSocket] this.ws.onopen:`,
+            this.url,
+            new Date().toLocaleString()
+          );
           this.heartbeat();
+          this.sendDataFromQueue();
           return resolve(r);
         };
       });
@@ -130,7 +146,7 @@ class WebSocket {
           `[Websocket] recursive init`,
           new Date().toLocaleString()
         );
-        await this.init({url, heartBeat, options});
+        await this.init({ url, heartBeat, options });
       }, 1000);
     }
   }

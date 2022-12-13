@@ -1253,6 +1253,7 @@ class OkexConnector extends ConnectorBase {
   // okex ws
   _okexWsEventListener() {
     this.websocket.onmessage = (event) => {
+      this.logger.debug(`OKX got ws event`)
       let instId, arg, channel, values, data;
       data = JSON.parse(event.data);
       if (data.event) {
