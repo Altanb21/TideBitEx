@@ -22,36 +22,6 @@ class WebSocket {
     }, this.heartBeatTime);
   }
 
-  init({ url, heartBeat = HEART_BEAT_TIME, options }) {
-    try {
-      // ++ TODO #983 2022/12/09 NEW LEAD 👇
-      // if (Math.random() < 0.9) throw new Error("test");
-      if (!url && !this.url) throw new Error("Invalid input");
-      if (url) this.url = url;
-      if (options) this.options = { ...options };
-      this.heartBeatTime = heartBeat;
-      if (!!this.options) {
-        this.ws = new ws(this.url, this.options);
-      } else this.ws = new ws(this.url);
-      // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
-      return new Promise((resolve) => {
-        this.ws.onopen = (r) => {
-          this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url);
-          this.heartbeat();
-          this.eventListener();
-          return resolve(r);
-        };
-      });
-    } catch (e) {
-      this.logger.debug(`[WebSocket] init error:`, e);
-      clearTimeout(this.wsReConnectTimeout);
-      this.wsReConnectTimeout = setTimeout(async () => {
-        this.logger.debug(`[Websocket] recursive init`, new Date().toLocaleString());
-        await this.init();
-      }, 1000);
-    }
-  }
-
   eventListener() {
     this.ws.on("pong", () => this.heartbeat());
     this.ws.on(
@@ -103,7 +73,7 @@ class WebSocket {
 
   sendDataFromQueue() {
     if (this.ws) {
-      if (this.ws.readyState === 1) {
+      if (this.ws.readyState === ws.OPEN) {
         const obj = this.connection_resolvers.shift();
         if (obj) {
           this.ws.send(obj.data, obj.cb);
@@ -116,8 +86,42 @@ class WebSocket {
     }
   }
 
+  /**
+   * @param {{ (event: any): void; (event: any): void; (event: any): void; }} cb
+   */
   set onmessage(cb) {
-    this.ws.onmessage = cb;
+    this.cb = cb || this.cb;
+    if (this.ws) this.ws.onmessage = cb;
+  }
+
+  init({ url, heartBeat = HEART_BEAT_TIME, options }) {
+    try {
+      // ++ TODO #983 2022/12/09 NEW LEAD 👇
+      if (Math.random() < 0.9) throw new Error("test");
+      if (!url && !this.url) throw new Error("Invalid input");
+      if (url) this.url = url;
+      if (options) this.options = { ...options };
+      this.heartBeatTime = heartBeat;
+      if (!!this.options) {
+        this.ws = new ws(this.url, this.options);
+      } else this.ws = new ws(this.url);
+      this.eventListener();
+      // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
+      return new Promise((resolve) => {
+        this.ws.onopen = (r) => {
+          this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url);
+          this.heartbeat();
+          return resolve(r);
+        };
+      });
+    } catch (e) {
+      this.logger.debug(`[WebSocket] init error:`, e);
+      clearTimeout(this.wsReConnectTimeout);
+      this.wsReConnectTimeout = setTimeout(async () => {
+        this.logger.debug(`[Websocket] recursive init`, new Date().toLocaleString());
+        await this.init();
+      }, 1000);
+    }
   }
 }
 
