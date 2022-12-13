@@ -1540,7 +1540,7 @@ class OkexConnector extends ConnectorBase {
         },
       ],
     };
-    this.websocket.ws.send(JSON.stringify(instruments));
+    this.websocket.send(JSON.stringify(instruments));
   }
 
   _subscribeTrades(instId) {
@@ -1551,7 +1551,7 @@ class OkexConnector extends ConnectorBase {
       },
     ];
     // this.logger.debug(`_subscribeTrades instId[${instId}]`, args);
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.subscribe,
         args,
@@ -1567,7 +1567,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.subscribe,
         args,
@@ -1583,7 +1583,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.subscribe,
         args,
@@ -1596,7 +1596,7 @@ class OkexConnector extends ConnectorBase {
     if (!this.okexWsChannels[channel]) this.okexWsChannels[channel] = {};
     if (!this.okexWsChannels[channel][instId])
       this.okexWsChannels[channel][instId] = {};
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.subscribe,
         args: [
@@ -1611,7 +1611,7 @@ class OkexConnector extends ConnectorBase {
 
   _unsubscribeTicker(instId) {
     const channel = Events.tickers;
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.unsubscribe,
         args: [
@@ -1632,7 +1632,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.unsubscribe,
         args,
@@ -1648,7 +1648,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.unsubscribe,
         args,
@@ -1663,7 +1663,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.websocket.ws.send(
+    this.websocket.send(
       JSON.stringify({
         op: Events.unsubscribe,
         args,
@@ -1693,7 +1693,7 @@ class OkexConnector extends ConnectorBase {
         },
       ],
     };
-    this.websocketPrivate.ws.send(JSON.stringify(login));
+    this.websocketPrivate.send(JSON.stringify(login));
   }
 
   _subscribeOrders() {
@@ -1706,7 +1706,7 @@ class OkexConnector extends ConnectorBase {
         },
       ],
     };
-    this.websocketPrivate.ws.send(JSON.stringify(orders));
+    this.websocketPrivate.send(JSON.stringify(orders));
   }
   // okex ws end
 

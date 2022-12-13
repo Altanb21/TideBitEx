@@ -67,6 +67,7 @@ class WebSocket {
   }
 
   send(data, cb) {
+    this.logger.debug(`webSocket custom send is called`)
     this.connection_resolvers.push({ data, cb });
     this.sendDataFromQueue();
   }
@@ -95,13 +96,20 @@ class WebSocket {
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
+    this.logger.debug(`init is called url & options`, url, options);
     try {
       // ++ TODO #983 2022/12/09 NEW LEAD 👇
-      if (Math.random() < 0.9) throw new Error("test");
-      if (!url && !this.url) throw new Error("Invalid input");
+      if (!url && !this.url) {
+        this.logger.debug(`Invalid input`);
+        throw new Error("Invalid input");
+      }
       if (url) this.url = url;
       if (options) this.options = { ...options };
       this.heartBeatTime = heartBeat;
+      if (Math.random() < 0.9) {
+        this.logger.debug(`create test error`);
+        throw new Error("test");
+      }
       if (!!this.options) {
         this.ws = new ws(this.url, this.options);
       } else this.ws = new ws(this.url);
@@ -118,7 +126,10 @@ class WebSocket {
       this.logger.debug(`[WebSocket] init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
-        this.logger.debug(`[Websocket] recursive init`, new Date().toLocaleString());
+        this.logger.debug(
+          `[Websocket] recursive init`,
+          new Date().toLocaleString()
+        );
         await this.init();
       }, 1000);
     }
