@@ -1255,8 +1255,7 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
-  okxPublicListenr(event) {
-    this.logger.debug(`OKX got ws event`);
+  okxPublicListenr = (event) => {
     let instId, arg, channel, values, data;
     data = JSON.parse(event.data);
     if (data.event) {
@@ -1314,7 +1313,7 @@ class OkexConnector extends ConnectorBase {
     this.websocket.heartbeat();
   }
 
-  okxPrivateListenr(event) {
+  okxPrivateListenr = (event) => {
     let instId, arg, channel, values, data;
     data = JSON.parse(event.data);
     if (data.event) {

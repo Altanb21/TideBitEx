@@ -67,17 +67,17 @@ class WebSocket {
   }
 
   send(data, cb) {
-    this.logger.debug(`webSocket custom send is called`);
+    // this.logger.debug(`webSocket custom send is called`);
     this.connection_resolvers.push({ data, cb });
     this.sendDataFromQueue();
   }
 
   sendDataFromQueue() {
     if (this.ws) {
-      this.logger.debug(
-        `this.connection_resolvers[${this.connection_resolvers.length}]`,
-        `this.ws.readyState:[${this.ws.readyState}]`
-      );
+      // this.logger.debug(
+      //   `this.connection_resolvers[${this.connection_resolvers.length}]`,
+      //   `this.ws.readyState:[${this.ws.readyState}]`
+      // );
       if (this.ws.readyState === ws.OPEN) {
         const obj = this.connection_resolvers.shift();
         if (obj) {
@@ -97,12 +97,12 @@ class WebSocket {
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options, listener }) {
-    this.logger.debug(
-      `init is called url & options`,
-      url,
-      options,
-      new Date().toLocaleString()
-    );
+    // this.logger.debug(
+    //   `init is called url & options`,
+    //   url,
+    //   options,
+    //   new Date().toLocaleString()
+    // );
     try {
       // ++ TODO #983 2022/12/09 NEW LEAD 👇
       if (!url && !this.url) {
