@@ -106,7 +106,7 @@ class WebSocket {
     try {
       // ++ TODO #983 2022/12/09 NEW LEAD 👇
       if (!url && !this.url) {
-        this.logger.debug(`Invalid input`, new Date().toLocaleString());
+        // this.logger.debug(`Invalid input`, new Date().toLocaleString());
         throw new Error("Invalid input");
       }
       if (url) this.url = url;
@@ -114,8 +114,8 @@ class WebSocket {
       if (listener) this.listener = listener;
       this.heartBeatTime = heartBeat;
       if (Math.random() < 0.9) {
-        this.logger.debug(`create test error`, new Date().toLocaleString());
-        throw new Error("test");
+        // this.logger.debug(`create test error`, new Date().toLocaleString());
+        // throw new Error("test");
       }
       if (!!this.options) this.ws = new ws(this.url, this.options);
       else this.ws = new ws(this.url);
@@ -138,10 +138,10 @@ class WebSocket {
       this.logger.debug(`[WebSocket] init error:`, e);
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
-        this.logger.debug(
-          `[Websocket] recursive init`,
-          new Date().toLocaleString()
-        );
+        // this.logger.debug(
+        //   `[Websocket] recursive init`,
+        //   new Date().toLocaleString()
+        // );
         await this.init({ url, heartBeat, options, listener });
       }, 1000);
     }
