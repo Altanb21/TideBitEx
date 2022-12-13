@@ -244,10 +244,15 @@ class OkexConnector extends ConnectorBase {
     this.orderBook = orderBook;
     this.database = database;
     this.tickersSettings = tickersSettings;
-    await this.websocket.init({ url: wssPublic, heartBeat: HEART_BEAT_TIME });
+    await this.websocket.init({
+      url: wssPublic,
+      heartBeat: HEART_BEAT_TIME,
+      listener: this.okxPublicListenr,
+    });
     await this.websocketPrivate.init({
       url: wssPrivate,
       heartBeat: HEART_BEAT_TIME,
+      listener: this.okxPrivateListenr,
     });
     return this;
   }
@@ -273,7 +278,6 @@ class OkexConnector extends ConnectorBase {
       }, {});
     }
     this.tickerBook.instruments = instruments;
-    this._okexWsEventListener();
     this._wsPrivateLogin();
   }
 
@@ -455,7 +459,8 @@ class OkexConnector extends ConnectorBase {
   async getOrderHistory({ query }) {
     const method = "GET";
     const path = "/api/v5/trade/orders-history";
-    let arr = [], instType= query.instType || "SPOT";
+    let arr = [],
+      instType = query.instType || "SPOT";
     if (instType) arr.push(`instType=${instType}`);
     if (query.instId) arr.push(`instId=${query.instId}`);
     if (query.after) arr.push(`after=${query.after}`);
@@ -1250,98 +1255,97 @@ class OkexConnector extends ConnectorBase {
     return result;
   }
 
-  // okex ws
-  _okexWsEventListener() {
-    this.websocket.onmessage = (event) => {
-      this.logger.debug(`OKX got ws event`)
-      let instId, arg, channel, values, data;
-      data = JSON.parse(event.data);
-      if (data.event) {
-        // subscribe return
-        arg = { ...data.arg };
-        channel = arg.channel;
-        delete arg.channel;
-        values = Object.values(arg);
-        instId = values[0];
-        if (data.event === Events.subscribe) {
-          this.okexWsChannels[channel] = this.okexWsChannels[channel] || {};
-          this.okexWsChannels[channel][instId] =
-            this.okexWsChannels[channel][instId] || {};
-        } else if (data.event === Events.unsubscribe) {
-          delete this.okexWsChannels[channel][instId];
-          // ++ TODO ws onClose clean channel
-          if (!Object.keys(this.okexWsChannels[channel]).length) {
-            delete this.okexWsChannels[channel];
-          }
-        } else if (data.event === Events.error) {
-          this.logger.error(
-            `[${this.constructor.name}] _okexWsEventListener data.event === Events.error`,
-            data
-          );
+  okxPublicListenr(event) {
+    this.logger.debug(`OKX got ws event`);
+    let instId, arg, channel, values, data;
+    data = JSON.parse(event.data);
+    if (data.event) {
+      // subscribe return
+      arg = { ...data.arg };
+      channel = arg.channel;
+      delete arg.channel;
+      values = Object.values(arg);
+      instId = values[0];
+      if (data.event === Events.subscribe) {
+        this.okexWsChannels[channel] = this.okexWsChannels[channel] || {};
+        this.okexWsChannels[channel][instId] =
+          this.okexWsChannels[channel][instId] || {};
+      } else if (data.event === Events.unsubscribe) {
+        delete this.okexWsChannels[channel][instId];
+        // ++ TODO ws onClose clean channel
+        if (!Object.keys(this.okexWsChannels[channel]).length) {
+          delete this.okexWsChannels[channel];
         }
-      } else if (data.data) {
-        // okex server push data
-        arg = { ...data.arg };
-        channel = arg.channel;
-        delete arg.channel;
-        values = Object.values(arg);
-        instId = values[0];
-        switch (channel) {
-          case Events.instruments:
-            // this._updateInstruments(instId, data.data);
-            break;
-          case Events.trades:
-            const market = instId.replace("-", "").toLowerCase();
-            const trades = this._formateTrades(market, data.data);
-            this._updateTrades(instId, market, trades);
-            this._updateCandle(market, trades);
-            break;
-          case Events.books:
-            this._updateBooks(instId, data.data, data.action);
-            break;
-          case this.candleChannel:
-            // this._updateCandle(data.arg.instId, data.arg.channel, data.data);
-            break;
-          case Events.tickers:
-            this._updateTickers(data.data);
-            break;
-          default:
-        }
+      } else if (data.event === Events.error) {
+        this.logger.error(
+          `[${this.constructor.name}] okxPublicListenr data.event === Events.error`,
+          data
+        );
       }
-      this.websocket.heartbeat();
-    };
-    this.websocketPrivate.onmessage = (event) => {
-      let instId, arg, channel, values, data;
-      data = JSON.parse(event.data);
-      if (data.event) {
-        // subscribe return
-        if (data.event === Events.login) {
-          if (data.code === "0") {
-            this._subscribeOrders();
-          }
-        } else if (data.event === Events.subscribe) {
-          // temp do nothing
-        } else if (data.event === Events.error) {
-          this.logger.error(
-            `[${this.constructor.name}] _okexWsPrivateEventListener data.event === Events.error`,
-            data
-          );
-        }
-      } else if (data.data) {
-        // okex server push data
-        arg = { ...data.arg };
-        channel = arg.channel;
-        delete arg.channel;
-        values = Object.values(arg);
-        instId = values[0];
-        switch (channel) {
-          case Events.orders:
-            this._updateOrderDetails(instId, data.data);
-            break;
-          default:
-        }
+    } else if (data.data) {
+      // okex server push data
+      arg = { ...data.arg };
+      channel = arg.channel;
+      delete arg.channel;
+      values = Object.values(arg);
+      instId = values[0];
+      switch (channel) {
+        case Events.instruments:
+          // this._updateInstruments(instId, data.data);
+          break;
+        case Events.trades:
+          const market = instId.replace("-", "").toLowerCase();
+          const trades = this._formateTrades(market, data.data);
+          this._updateTrades(instId, market, trades);
+          this._updateCandle(market, trades);
+          break;
+        case Events.books:
+          this._updateBooks(instId, data.data, data.action);
+          break;
+        case this.candleChannel:
+          // this._updateCandle(data.arg.instId, data.arg.channel, data.data);
+          break;
+        case Events.tickers:
+          this._updateTickers(data.data);
+          break;
+        default:
       }
-    };
+    }
+    this.websocket.heartbeat();
+  }
+
+  okxPrivateListenr(event) {
+    let instId, arg, channel, values, data;
+    data = JSON.parse(event.data);
+    if (data.event) {
+      // subscribe return
+      if (data.event === Events.login) {
+        if (data.code === "0") {
+          this._subscribeOrders();
+        }
+      } else if (data.event === Events.subscribe) {
+        // temp do nothing
+      } else if (data.event === Events.error) {
+        this.logger.error(
+          `[${this.constructor.name}] okxPrivateListenr data.event === Events.error`,
+          data
+        );
+      }
+    } else if (data.data) {
+      // okex server push data
+      arg = { ...data.arg };
+      channel = arg.channel;
+      delete arg.channel;
+      values = Object.values(arg);
+      instId = values[0];
+      switch (channel) {
+        case Events.orders:
+          this._updateOrderDetails(instId, data.data);
+          break;
+        default:
+      }
+    }
+    this.websocket.heartbeat();
   }
 
   _updateInstruments(instType, instData) {

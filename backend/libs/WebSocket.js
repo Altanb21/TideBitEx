@@ -73,16 +73,20 @@ class WebSocket {
   }
 
   sendDataFromQueue() {
-    this.logger.debug(`webSocket sendDataFromQueue is called`);
     if (this.ws) {
       this.logger.debug(
-        `this.connection_resolvers[${this.connection_resolvers.length}]`
+        `this.connection_resolvers[${this.connection_resolvers.length}]`,
+        `this.ws.readyState:[${this.ws.readyState}]`
       );
       if (this.ws.readyState === ws.OPEN) {
         const obj = this.connection_resolvers.shift();
         if (obj) {
           this.logger.debug(`this.ws.send`, obj.data);
-          this.ws.send(obj.data, obj.cb);
+          try {
+            this.ws.send(obj.data, obj.cb);
+          } catch (error) {
+            this.logger.error(`this.ws.send`, error);
+          }
           this.sendDataFromQueue();
         }
       } else {
@@ -92,16 +96,7 @@ class WebSocket {
     }
   }
 
-  /**
-   * @param {{ (event: any): void; (event: any): void; (event: any): void; }} cb
-   */
-  set onmessage(cb) {
-    this.logger.debug(`webSocket set onmessage`)
-    this.cb = cb || this.cb;
-    if (this.ws) this.ws.onmessage = cb;
-  }
-
-  init({ url, heartBeat = HEART_BEAT_TIME, options }) {
+  init({ url, heartBeat = HEART_BEAT_TIME, options, listener }) {
     this.logger.debug(
       `init is called url & options`,
       url,
@@ -116,14 +111,15 @@ class WebSocket {
       }
       if (url) this.url = url;
       if (options) this.options = { ...options };
+      if (listener) this.listener = listener;
       this.heartBeatTime = heartBeat;
       if (Math.random() < 0.9) {
         this.logger.debug(`create test error`, new Date().toLocaleString());
         throw new Error("test");
       }
-      if (!!this.options) {
-        this.ws = new ws(this.url, this.options);
-      } else this.ws = new ws(this.url);
+      if (!!this.options) this.ws = new ws(this.url, this.options);
+      else this.ws = new ws(this.url);
+      this.ws.onmessage = this.listener;
       this.eventListener();
       // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
       return new Promise((resolve) => {
@@ -146,7 +142,7 @@ class WebSocket {
           `[Websocket] recursive init`,
           new Date().toLocaleString()
         );
-        await this.init({ url, heartBeat, options });
+        await this.init({ url, heartBeat, options, listener });
       }, 1000);
     }
   }
