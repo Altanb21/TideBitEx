@@ -721,12 +721,16 @@ class ExchangeHub extends Bot {
                 SupportedExchange.OKEX
               ) {
                 if (data.visible)
-                  this.okexConnector.subscribeTicker(
-                    this.tickersSettings[params.id].instId
+                  this.okexConnector.registerMarket(
+                    this.tickersSettings[params.id].market
+                      .replace("-", "")
+                      .toLowerCase()
                   );
                 else
-                  this.okexConnector.unsubscribeTicker(
-                    this.tickersSettings[params.id].instId
+                  this.okexConnector.unregisterMarket(
+                    this.tickersSettings[params.id].market
+                      .replace("-", "")
+                      .toLowerCase()
                   );
               }
               updatedTickersSettings[params.id] = {
@@ -736,16 +740,16 @@ class ExchangeHub extends Bot {
               break;
             case TICKER_SETTING_TYPE.SOURCE:
               if (data.source === SupportedExchange.OKEX)
-                this.okexConnector.subscribeTicker(
-                  this.tickersSettings[params.id].instId
+                this.okexConnector.registerMarket(
+                  this.tickersSettings[params.id].market
                 );
               else if (
                 data.source !== SupportedExchange.OKEX &&
                 updatedTickersSettings[params.id].source ===
                   SupportedExchange.OKEX
               )
-                this.okexConnector.unsubscribeTicker(
-                  this.tickersSettings[params.id].instId
+                this.okexConnector.unregisterMarket(
+                  this.tickersSettings[params.id].market
                 );
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
@@ -1141,7 +1145,7 @@ class ExchangeHub extends Bot {
   async getMemberReferral(member) {
     let referredByMember, memberReferral;
     referredByMember = await this.database.getMemberByCondition({
-      refer_code: member.refer,
+      referCode: member.refer,
     });
     if (referredByMember) {
       memberReferral = await this.database.getMemberReferral({
@@ -1163,6 +1167,7 @@ class ExchangeHub extends Bot {
     //   Referral::CommissionService.get_default_commission_plan(member: member),
     //   { enabled_policies_only: true }
     // )
+    // this.logger.debug(`getReferrerCommissionPlan referral`, referral);
     let plan,
       planId = referral.commission_plan_id;
     if (!planId) {
@@ -3928,8 +3933,9 @@ class ExchangeHub extends Bot {
   }
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
-    this.logger.debug(`dbOrder`, dbOrder);
-    this.logger.debug(`apiOrder`, apiOrder);
+    // ++ TODO high priority !!!
+    // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
+    // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
@@ -3980,7 +3986,11 @@ class ExchangeHub extends Bot {
       updated_at: `"${now}"`,
       done_at: `"${doneAt}"`,
     };
-    this.logger.debug(`calculator updatedOrder`, updatedOrder);
+    // ++ TODO high priority !!!
+    // this.logger.debug(
+    //   `abnormalOrderHandler calculator updatedOrder`,
+    //   updatedOrder
+    // );
     await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
@@ -4872,7 +4882,7 @@ class ExchangeHub extends Bot {
               break;
           }
           if (apiResonse.success) {
-            orderDetail = apiResonse.payload;
+            orderDetail = apiResonse.payload.shift();
             // this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
               if (data.tradeId) {
@@ -4904,7 +4914,7 @@ class ExchangeHub extends Bot {
             let tmp = await this.getMemberReferral(member);
             referredByMember = tmp.referredByMember;
             memberReferral = tmp.memberReferral;
-            // this.logger.debug(`updater tmp`, tmp);
+            // this.logger.debug(`updater getMemberReferral`, tmp);
           }
           try {
             result = await this.calculator({
