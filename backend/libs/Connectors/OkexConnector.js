@@ -1311,7 +1311,7 @@ class OkexConnector extends ConnectorBase {
       }
     }
     this.websocket.heartbeat();
-  }
+  };
 
   okxPrivateListenr = (event) => {
     let instId, arg, channel, values, data;
@@ -1345,7 +1345,7 @@ class OkexConnector extends ConnectorBase {
       }
     }
     this.websocket.heartbeat();
-  }
+  };
 
   _updateInstruments(instType, instData) {
     const channel = Events.instruments;
@@ -1615,18 +1615,20 @@ class OkexConnector extends ConnectorBase {
 
   _unsubscribeTicker(instId) {
     const channel = Events.tickers;
-    this.websocket.send(
-      JSON.stringify({
-        op: Events.unsubscribe,
-        args: [
-          {
-            channel,
-            instId,
-          },
-        ],
-      })
-    );
-    delete this.okexWsChannels[channel][instId];
+    if (!this.instIds.includes(instId)) {
+      this.websocket.send(
+        JSON.stringify({
+          op: Events.unsubscribe,
+          args: [
+            {
+              channel,
+              instId,
+            },
+          ],
+        })
+      );
+      delete this.okexWsChannels[channel][instId];
+    }
   }
 
   _unsubscribeTrades(instId) {
@@ -1636,12 +1638,14 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    this.websocket.send(
-      JSON.stringify({
-        op: Events.unsubscribe,
-        args,
-      })
-    );
+    if (!this.instIds.includes(instId)) {
+      this.websocket.send(
+        JSON.stringify({
+          op: Events.unsubscribe,
+          args,
+        })
+      );
+    }
   }
 
   _unsubscribeBook(instId) {
