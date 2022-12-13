@@ -130,7 +130,7 @@ class WebSocket {
           `[Websocket] recursive init`,
           new Date().toLocaleString()
         );
-        await this.init();
+        await this.init({url, heartBeat, options});
       }, 1000);
     }
   }

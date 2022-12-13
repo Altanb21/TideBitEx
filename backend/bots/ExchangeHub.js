@@ -3933,7 +3933,7 @@ class ExchangeHub extends Bot {
   }
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
-    // ++ !!! TODO high priority
+    // ++ TODO high priority !!!
     // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
     // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
@@ -3986,10 +3986,11 @@ class ExchangeHub extends Bot {
       updated_at: `"${now}"`,
       done_at: `"${doneAt}"`,
     };
-    this.logger.debug(
-      `abnormalOrderHandler calculator updatedOrder`,
-      updatedOrder
-    );
+    // ++ TODO high priority !!!
+    // this.logger.debug(
+    //   `abnormalOrderHandler calculator updatedOrder`,
+    //   updatedOrder
+    // );
     await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
