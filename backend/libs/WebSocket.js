@@ -96,18 +96,18 @@ class WebSocket {
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options }) {
-    this.logger.debug(`init is called url & options`, url, options);
+    this.logger.debug(`init is called url & options`, url, options, new Date().toLocaleString());
     try {
       // ++ TODO #983 2022/12/09 NEW LEAD 👇
       if (!url && !this.url) {
-        this.logger.debug(`Invalid input`);
+        this.logger.debug(`Invalid input`,new Date().toLocaleString());
         throw new Error("Invalid input");
       }
       if (url) this.url = url;
       if (options) this.options = { ...options };
       this.heartBeatTime = heartBeat;
       if (Math.random() < 0.9) {
-        this.logger.debug(`create test error`);
+        this.logger.debug(`create test error`,new Date().toLocaleString());
         throw new Error("test");
       }
       if (!!this.options) {
@@ -117,7 +117,7 @@ class WebSocket {
       // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
       return new Promise((resolve) => {
         this.ws.onopen = (r) => {
-          this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url);
+          this.logger.debug(`[WebSocket] this.ws.onopen:`, this.url,new Date().toLocaleString());
           this.heartbeat();
           return resolve(r);
         };

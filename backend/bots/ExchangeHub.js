@@ -3933,8 +3933,9 @@ class ExchangeHub extends Bot {
   }
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
-    this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
-    this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
+    // ++ !!! TODO high priority
+    // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
+    // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
