@@ -62,6 +62,7 @@ class Receptor extends Bot {
               null /** (string) session cookie sameSite options (default null, don't set it) */,
           };
           const peatio = this.config.peatio.domain;
+          const peatioOptions = { limit: '20mb' };
           app
             .use(cors({ credentials: true }))
             .use(staticServe(this.config.base.static))
@@ -72,7 +73,7 @@ class Receptor extends Bot {
             .use(accesslog())
             .use(this.router.routes())
             .use(this.router.allowedMethods())
-            .use(proxy(peatio));
+            .use(proxy(peatio, peatioOptions));
           return this.listen({ options, callback: app.callback() });
         })
     );
