@@ -122,7 +122,7 @@ const UserAssets = (props) => {
   }, [
     accounts.length,
     storeCtx.accounts?.accounts,
-    storeCtx.selectedTicker.instId,
+    storeCtx.selectedTicker?.instId,
     t,
   ]);
   const button =
