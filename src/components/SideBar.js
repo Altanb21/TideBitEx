@@ -48,12 +48,12 @@ const SideBar = (props) => {
           <p>{t("block_trade")}</p>
         </a>
       </li>
-      <li className="sidebar__item">
+      {/* <li className="sidebar__item">
         <a className="sidebar__link" href="/digital_staking/plans">
           <FaDatabase size="1.8em" />
           <p>{t("digital_staking")}</p>
         </a>
-      </li>
+      </li> */}
       <li className="sidebar__item">
         <a className="sidebar__link" href="/referrals">
           <BiShare size="1.8em" />
