@@ -258,14 +258,14 @@ class OkexConnector extends ConnectorBase {
   }
 
   async start() {
-    Object.keys(this.tickersSettings).forEach((id) => {
-      if (
-        this.tickersSettings[id]?.source === SupportedExchange.OKEX &&
-        this.tickersSettings[id]?.visible
-      ) {
-        this.registerMarket(id);
-      }
-    });
+    // Object.keys(this.tickersSettings).forEach((id) => {
+    //   if (
+    //     this.tickersSettings[id]?.source === SupportedExchange.OKEX &&
+    //     this.tickersSettings[id]?.visible
+    //   ) {
+    //     this.registerMarket(id);
+    //   }
+    // });
     let instruments,
       instrumentsRes = await this.getInstruments({
         query: { instType: Database.INST_TYPE.SPOT },
