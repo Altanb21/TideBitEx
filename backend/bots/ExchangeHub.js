@@ -716,41 +716,41 @@ class ExchangeHub extends Bot {
 
           switch (type) {
             case TICKER_SETTING_TYPE.VISIBLE:
-              if (
-                updatedTickersSettings[params.id].source ===
-                SupportedExchange.OKEX
-              ) {
-                if (data.visible)
-                  this.okexConnector.registerMarket(
-                    this.tickersSettings[params.id].market
-                      .replace("-", "")
-                      .toLowerCase()
-                  );
-                else
-                  this.okexConnector.unregisterMarket(
-                    this.tickersSettings[params.id].market
-                      .replace("-", "")
-                      .toLowerCase()
-                  );
-              }
+              // if (
+              //   updatedTickersSettings[params.id].source ===
+              //   SupportedExchange.OKEX
+              // ) {
+              //   if (data.visible)
+              //     this.okexConnector.registerMarket(
+              //       this.tickersSettings[params.id].market
+              //         .replace("-", "")
+              //         .toLowerCase()
+              //     );
+              //   else
+              //     this.okexConnector.unregisterMarket(
+              //       this.tickersSettings[params.id].market
+              //         .replace("-", "")
+              //         .toLowerCase()
+              //     );
+              // }
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
                 visible: data.visible,
               };
               break;
             case TICKER_SETTING_TYPE.SOURCE:
-              if (data.source === SupportedExchange.OKEX)
-                this.okexConnector.registerMarket(
-                  this.tickersSettings[params.id].market
-                );
-              else if (
-                data.source !== SupportedExchange.OKEX &&
-                updatedTickersSettings[params.id].source ===
-                  SupportedExchange.OKEX
-              )
-                this.okexConnector.unregisterMarket(
-                  this.tickersSettings[params.id].market
-                );
+              // if (data.source === SupportedExchange.OKEX)
+              //   this.okexConnector.registerMarket(
+              //     this.tickersSettings[params.id].market
+              //   );
+              // else if (
+              //   data.source !== SupportedExchange.OKEX &&
+              //   updatedTickersSettings[params.id].source ===
+              //     SupportedExchange.OKEX
+              // )
+              //   this.okexConnector.unregisterMarket(
+              //     this.tickersSettings[params.id].market
+              //   );
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
                 source: data.source,
