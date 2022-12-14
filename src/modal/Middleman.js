@@ -700,7 +700,7 @@ class Middleman {
     }
   }
 
-  async initWs(registerTickers) {
+  async initWs() {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${

@@ -97,11 +97,11 @@ const HomeSidebar = (props) => {
               {t("block_trade")}
             </a>
           </li>
-          <li className="home-sidebar__item">
+          {/* <li className="home-sidebar__item">
             <a className="home-sidebar__link" href="/digital_staking/plans">
               {t("digital_staking")}
             </a>
-          </li>
+          </li> */}
           <li className="home-sidebar__item">
             <a className="home-sidebar__link" href="/tbt">
               TBT

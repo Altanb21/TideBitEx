@@ -539,7 +539,7 @@ const StoreProvider = (props) => {
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
     initLanguage();
-    await middleman.initWs(registerTickers);
+    await middleman.initWs();
     eventListener();
     await middleman.getTickers();
     setTickers(middleman.getTickersSnapshot());
@@ -552,7 +552,7 @@ const StoreProvider = (props) => {
     }
     setIsInit(true);
     // console.log(`storeCtx init end`);
-  }, [initLanguage, middleman, registerTickers, eventListener, countDown]);
+  }, [initLanguage, middleman, eventListener, countDown]);
 
   const start = useCallback(async () => {
     let market =

@@ -1170,7 +1170,7 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   _unregisterMarketChannel(market, wsId) {
-    if (!this.isStart || !this.market_channel[`market-${market}-global`])
+    if (!this.isStart || !this.market_channel[`market-${market}-global`] || this.registerMarkets.includes(market))
       return;
     try {
       if (

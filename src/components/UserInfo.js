@@ -1,4 +1,4 @@
-import React, { useState, useContext, useCallback } from "react";
+import React, { useState, useContext, useCallback, useEffect } from "react";
 import StoreContext from "../store/store-context";
 
 import { useTranslation } from "react-i18next";
@@ -69,12 +69,14 @@ const UserAssets = (props) => {
     let showMore = !accountsShowMore,
       accounts;
     if (showMore) {
-      accounts = Object.values(storeCtx.accounts?.accounts).filter((account) => {
-        let result = false;
-        if (account.currency) result = true;
-        else console.error(`account.currency is undefined`, account);
-        return result;
-      });
+      accounts = Object.values(storeCtx.accounts?.accounts).filter(
+        (account) => {
+          let result = false;
+          if (account.currency) result = true;
+          else console.error(`account.currency is undefined`, account);
+          return result;
+        }
+      );
       setAccounts(accounts);
       setHintText(t("hide"));
     } else {
@@ -95,6 +97,30 @@ const UserAssets = (props) => {
     setAccountsShowMore(showMore);
   }, [
     accountsShowMore,
+    storeCtx.accounts?.accounts,
+    storeCtx.selectedTicker?.instId,
+    t,
+  ]);
+  useEffect(() => {
+    if (
+      !accounts.length > 0 &&
+      !!storeCtx.selectedTicker?.instId &&
+      !!storeCtx.accounts?.accounts
+    ) {
+      let accounts = storeCtx.selectedTicker.instId
+        .split("-")
+        ?.map((ccy) => storeCtx.accounts?.accounts[ccy])
+        .filter((account) => {
+          let result = false;
+          if (account.currency) result = true;
+          else console.error(`account.currency is undefined`, account);
+          return result;
+        });
+      setAccounts(accounts);
+      setHintText(t("check-all"));
+    }
+  }, [
+    accounts.length,
     storeCtx.accounts?.accounts,
     storeCtx.selectedTicker?.instId,
     t,
