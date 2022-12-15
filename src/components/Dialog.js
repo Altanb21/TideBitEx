@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 
 const Dialog = (props) => {
   const { t } = useTranslation();
-  return (
+  const component = props.open ? (
     <React.Fragment>
       <React.Fragment>
         {ReactDOM.createPortal(
@@ -41,7 +41,10 @@ const Dialog = (props) => {
         document.getElementById("overlay-root")
       )}
     </React.Fragment>
+  ) : (
+    <></>
   );
+  return component;
 };
 
 export default Dialog;

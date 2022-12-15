@@ -92,42 +92,40 @@ class TibeBitConnector extends ConnectorBase {
         perMessageDeflate: false,
         rejectUnauthorized: false,
       },
+      listener: this.tidebitWsEventListener,
     });
-    this._tidebitWsEventListener();
     return this;
   }
 
-  _tidebitWsEventListener() {
-    this.websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.event === "pusher:connection_established") {
-        this.socketId = JSON.parse(data.data)["socket_id"];
-      }
-      if (data.event !== "pusher:error") {
-        // subscribe return
-        const channel = data.channel;
-        const market = channel?.replace(`market-`, "").replace("-global", "");
-        delete data.channel;
-        if (data.event === "pusher_internal:subscription_succeeded") {
-          this.tidebitWsChannels[channel] =
-            this.tidebitWsChannels[channel] || {};
-          this.tidebitWsChannels[channel][market] =
-            this.tidebitWsChannels[channel][market] || {};
-        } else if (data.event === "unsubscribe") {
-          delete this.tidebitWsChannels[channel][market];
-          if (!Object.keys(this.tidebitWsChannels[channel]).length) {
-            delete this.tidebitWsChannels[channel];
-          }
-        } else if (data.event === "error") {
-          this.logger.error(
-            `[${this.constructor.name}] _tidebitWsEventListener data.event === "error"`,
-            data
-          );
+  tidebitWsEventListener = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.event === "pusher:connection_established") {
+      this.socketId = JSON.parse(data.data)["socket_id"];
+    }
+    if (data.event !== "pusher:error") {
+      // subscribe return
+      const channel = data.channel;
+      const market = channel?.replace(`market-`, "").replace("-global", "");
+      delete data.channel;
+      if (data.event === "pusher_internal:subscription_succeeded") {
+        this.tidebitWsChannels[channel] = this.tidebitWsChannels[channel] || {};
+        this.tidebitWsChannels[channel][market] =
+          this.tidebitWsChannels[channel][market] || {};
+      } else if (data.event === "unsubscribe") {
+        delete this.tidebitWsChannels[channel][market];
+        if (!Object.keys(this.tidebitWsChannels[channel]).length) {
+          delete this.tidebitWsChannels[channel];
         }
-        let memberId;
-        switch (data.event) {
-          case Events.trades:
-            /**
+      } else if (data.event === "error") {
+        this.logger.error(
+          `[${this.constructor.name}] _tidebitWsEventListener data.event === "error"`,
+          data
+        );
+      }
+      let memberId;
+      switch (data.event) {
+        case Events.trades:
+          /**
             {
               trades: [
                {
@@ -140,37 +138,36 @@ class TibeBitConnector extends ConnectorBase {
               ]
             }
             */
-            const tickerSetting = this.tickersSettings[market];
-            const instId = tickerSetting?.instId;
-            const trades = JSON.parse(data.data).trades.map((trade) =>
-              this._formateTrade(market, trade)
-            );
-            this._updateTrades(instId, market, trades);
-            this._updateCandle(market, trades);
-            break;
-          case Events.update:
-            this._updateBooks(market, JSON.parse(data.data));
-            break;
-          case Events.tickers:
-            this._updateTickers(JSON.parse(data.data));
-            break;
-          case Events.account:
-            memberId = this.sn[channel.replace("private-", "")];
-            this._updateAccount(memberId, JSON.parse(data.data));
-            break;
-          case Events.order:
-            memberId = this.sn[channel.replace("private-", "")];
-            this._updateOrder(memberId, JSON.parse(data.data));
-            break;
-          case Events.trade:
-            memberId = this.sn[channel.replace("private-", "")];
-            this._updateTrade(memberId, JSON.parse(data.data));
-            break;
-          default:
-        }
+          const tickerSetting = this.tickersSettings[market];
+          const instId = tickerSetting?.instId;
+          const trades = JSON.parse(data.data).trades.map((trade) =>
+            this._formateTrade(market, trade)
+          );
+          this._updateTrades(instId, market, trades);
+          this._updateCandle(market, trades);
+          break;
+        case Events.update:
+          this._updateBooks(market, JSON.parse(data.data));
+          break;
+        case Events.tickers:
+          this._updateTickers(JSON.parse(data.data));
+          break;
+        case Events.account:
+          memberId = this.sn[channel.replace("private-", "")];
+          this._updateAccount(memberId, JSON.parse(data.data));
+          break;
+        case Events.order:
+          memberId = this.sn[channel.replace("private-", "")];
+          this._updateOrder(memberId, JSON.parse(data.data));
+          break;
+        case Events.trade:
+          memberId = this.sn[channel.replace("private-", "")];
+          this._updateTrade(memberId, JSON.parse(data.data));
+          break;
+        default:
       }
-      this.websocket.heartbeat();
-    };
+    }
+    this.websocket.heartbeat();
   }
 
   async getTicker({ query }) {
@@ -400,10 +397,11 @@ class TibeBitConnector extends ConnectorBase {
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
-  async logout({ header }) {
+  async logout({ header, body }) {
     try {
       const headers = {
         "content-type": "application/x-www-form-urlencoded",
+        "x-csrf-token": body["X-CSRF-Token"],
         cookie: header.cookie,
       };
       const res = await axios.get(`${this.peatio}/signout`, {
@@ -411,7 +409,7 @@ class TibeBitConnector extends ConnectorBase {
       });
       return new ResponseFormat({
         message: "logout",
-        payload: res.data,
+        payload: res.headers["set-cookie"],
       });
     } catch (error) {
       this.logger.error(`[${this.constructor.name}] logout`, error);
@@ -1172,7 +1170,7 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   _unregisterMarketChannel(market, wsId) {
-    if (!this.isStart || !this.market_channel[`market-${market}-global`])
+    if (!this.isStart || !this.market_channel[`market-${market}-global`] || this.registerMarkets.includes(market))
       return;
     try {
       if (

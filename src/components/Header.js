@@ -35,9 +35,9 @@ const Header = (props) => {
         <Nav.Link href="https://tidebit.zendesk.com/hc/zh-tw/articles/360003146914-%E5%A4%A7%E9%A1%8D%E4%BA%A4%E6%98%93Block-Trade-OTC-%E5%B0%88%E5%B1%AC-Whatsapp-852-62871829">
           {t("block_trade")}
         </Nav.Link>
-        <Nav.Link href="/digital_staking/plans">
+        {/* <Nav.Link href="/digital_staking/plans">
           {t("digital_staking")}
-        </Nav.Link>
+        </Nav.Link> */}
         <Nav.Link href="/referral">{t("refer_now")}</Nav.Link>
         {(storeCtx.isLogin === false || storeCtx.disableTrade) && (
           <React.Fragment>

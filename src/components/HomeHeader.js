@@ -40,7 +40,7 @@ const HomeHeader = (props) => {
         </a>
       </div>
       <div className="home-header__item">
-        <a className="home-header__link" href="/register">
+        <a className="home-header__link" href="/signup">
           {t("register")}
         </a>
       </div>
@@ -152,11 +152,11 @@ const HomeHeader = (props) => {
               </div>
             </div>
           </div>
-          <div className="home-header__item">
+          {/* <div className="home-header__item">
             <a className="home-header__link" href="/digital_staking/plans">
               {t("digital_staking")}
             </a>
-          </div>
+          </div> */}
           <div className="home-header__item">
             <a className="home-header__link" href="/tbt">
               TBT

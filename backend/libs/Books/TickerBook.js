@@ -80,7 +80,7 @@ class TickerBook extends BookBase {
     if (tickerSetting && tickerSetting?.visible) {
       switch (source) {
         case SupportedExchange.OKEX:
-          instrument = this.instruments[data.instId];
+          instrument = this.instruments ? this.instruments[data.instId] : null;
           change = SafeMath.minus(data.last, data.open24h);
           changePct = SafeMath.gt(data.open24h, "0")
             ? SafeMath.div(change, data.open24h)
@@ -101,17 +101,17 @@ class TickerBook extends BookBase {
             at: parseInt(SafeMath.div(data.ts, "1000")),
             ts: parseInt(data.ts),
             source,
-            tickSz: instrument.tickSz.toString(),
+            tickSz: instrument?.tickSz.toString() || 0,
             // tickSz: Math.max(
-            //   parseFloat(instrument.tickSz),
+            //   parseFloat(instrument?.tickSz)||0,
             //   parseFloat(Utils.getDecimal(tickerSetting["bid"]["fixed"]))
             // ).toString(),
-            lotSz: instrument.lotSz.toString(),
+            lotSz: instrument?.lotSz.toString() || 0,
             // lotSz: Math.max(
-            //   parseFloat(instrument.lotSz),
+            //   parseFloat(instrument?.lotSz)||0,
             //   parseFloat(Utils.getDecimal(tickerSetting["ask"]["fixed"]))
             // ).toString(),
-            minSz: instrument.minSz,
+            minSz: instrument?.minSz || 0,
             sell: data.askPx, // [about to decrepted]
             buy: data.bidPx, // [about to decrepted]
             ticker: {

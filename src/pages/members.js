@@ -13,42 +13,45 @@ import { IoRefresh } from "react-icons/io5";
 import { dateFormatter } from "../utils/Utils";
 import { useSnackbar } from "notistack";
 
+const AsssetAmount = (props) => {
+  const component = props.alert ? (
+    <>
+      <div className="members__value members__value--wrong">{props.amount}</div>
+      <div className="members__value members__value--expect">
+        {props.expectAmount}
+      </div>
+    </>
+  ) : (
+    <div className="members__value">{props.amount}</div>
+  );
+  return (
+    <div className={`members__item members__item--expand`}>{component}</div>
+  );
+};
+
 const MemberAsset = (props) => {
   const { t } = useTranslation();
-  const { memberId, asset } = props;
+  const storeCtx = useContext(StoreContext);
+  const [asset, setAsset] = useState(props.asset);
   const disabled = `${
     asset.balance.alert || asset.locked.alert ? " " : " disabled"
   }`;
 
-  const AssetBalance = asset.balance.alert ? (
-    <>
-      <div className="members__value members__value--wrong">
-        {asset.balance.current}
-      </div>
-      <div className="members__value members__value--expect">
-        {asset.balance.shouldBe}
-      </div>
-    </>
-  ) : (
-    <div className="members__value">{asset.balance.current}</div>
-  );
-
-  const AssetLocked = asset.locked.alert ? (
-    <>
-      <div className="members__value members__value--wrong">
-        {asset.locked.current}
-      </div>
-      <div className="members__value members__value--expect">
-        {asset.locked.shouldBe}
-      </div>
-    </>
-  ) : (
-    <div className="members__value">{asset.locked.current}</div>
-  );
-
-  const fixAccountHandler = () => {
-    props.fixAccountHandler(memberId, asset.accountId);
-  };
+  const fixAccountHandler = useCallback(async () => {
+    props.fixAccountHandler(
+      t("fix_abnormal_account_confirm", { accountId: asset.accountId }),
+      async () => {
+        try {
+          // console.log(`fixAccountHandler asset.accountId`, asset.accountId);
+          const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
+          // console.log(`fixAccountHandler updateAsset`, updateAsset);
+          setAsset(updateAsset);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    );
+  }, [asset.accountId, props, storeCtx, t]);
 
   return (
     <li className="members__asset">
@@ -63,10 +66,16 @@ const MemberAsset = (props) => {
         <div>{asset.currency.toUpperCase()}</div>
       </div>
       <div className="members__item">{asset.accountId}</div>
-      <div className={`members__item members__item--expand`}>
-        {AssetBalance}
-      </div>
-      <div className={`members__item members__item--expand`}>{AssetLocked}</div>
+      <AsssetAmount
+        alert={asset.balance.alert}
+        amount={asset.balance.current}
+        expectAmount={asset.balance.shouldBe}
+      />
+      <AsssetAmount
+        alert={asset.locked.alert}
+        amount={asset.locked.current}
+        expectAmount={asset.locked.shouldBe}
+      />
       <div className="members__item">
         <div
           className={`members__button${disabled}`}
@@ -79,13 +88,9 @@ const MemberAsset = (props) => {
   );
 };
 const MemberAssets = (props) => {
-  const { memberId, assets, fixAccountHandler } = props;
+  const { assets, fixAccountHandler } = props;
   const component = assets?.map((asset) => (
-    <MemberAsset
-      memberId={memberId}
-      asset={asset}
-      fixAccountHandler={fixAccountHandler}
-    />
+    <MemberAsset asset={asset} fixAccountHandler={fixAccountHandler} />
   ));
   return <ul className="members__values">{component}</ul>;
 };
@@ -112,10 +117,6 @@ const Member = (props) => {
       console.error(`error`, error);
     }
   }, [props.member.id, storeCtx]);
-
-  const fixAccountHandler = useCallback((memberId, accountId) => {
-    // ++TODO #1069
-  }, []);
 
   const openAssetsHandler = useCallback(
     async (e) => {
@@ -189,9 +190,8 @@ const Member = (props) => {
         </div>
         <ul className="members__values">
           <MemberAssets
-            memberId={props.member.id}
             assets={assets}
-            fixAccountHandler={fixAccountHandler}
+            fixAccountHandler={props.fixAccountHandler}
           />
         </ul>
       </div>
@@ -200,9 +200,13 @@ const Member = (props) => {
 };
 
 const MemberList = (props) => {
-  const { members } = props;
+  const { members, fixAccountHandler } = props;
   const component = members?.map((member) => (
-    <Member key={`member-${member.id}`} member={member} />
+    <Member
+      key={`member-${member.id}`}
+      member={member}
+      fixAccountHandler={fixAccountHandler}
+    />
   ));
   return (
     <tbody className="screen__table-rows members__list">{component}</tbody>
@@ -231,7 +235,7 @@ const Members = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [enableSearchButton, setEnableSearchButton] = useState("");
   const inputRef = useRef();
-  const { enqueueSnackbar, closeSnackbar } = useSnackbar();
+  const { enqueueSnackbar } = useSnackbar();
 
   // const filter = useCallback(
   //   ({ members, keyword, option }) => {
@@ -344,7 +348,44 @@ const Members = () => {
     }
     // filter({ members: memberList });
     setIsLoading(false);
-  }, [pages, members, getMembers, limit, enqueueSnackbar, t]);
+  }, [
+    pages,
+    members,
+    switchPageHandler,
+    getMembers,
+    limit,
+    enqueueSnackbar,
+    t,
+  ]);
+
+  const fixAccountHandler = useCallback((confirmText, callback) => {
+    const confirm = window.confirm(confirmText);
+    if (confirm) {
+      setIsLoading(true);
+      callback()
+        .then((result) => {
+          console.log(`result`, result);
+          setIsLoading(false);
+          enqueueSnackbar(`${t("success-update")}`, {
+            variant: "success",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          });
+        })
+        .catch((error) => {
+          setIsLoading(false);
+          enqueueSnackbar(`${t("error-happen")}`, {
+            variant: "error",
+            anchorOrigin: {
+              vertical: "top",
+              horizontal: "center",
+            },
+          });
+        });
+    }
+  }, []);
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -362,7 +403,7 @@ const Members = () => {
           members[page] = result.members;
           return members;
         });
-        console.log(`members`, members);
+        // console.log(`members`, members);
         // filter({
         //   members: Object.values(members).reduce((prev, curr) => {
         //     prev = [...prev, ...curr];
@@ -426,7 +467,10 @@ const Members = () => {
         </div>
         <div className="screen__container">
           <table className="screen__table">
-            <MemberList members={members[page]} />
+            <MemberList
+              members={members[page]}
+              fixAccountHandler={fixAccountHandler}
+            />
             <tfoot className="screen__table-tools">
               <div
                 className={`screen__table-tool${prevPageIsExit}`}

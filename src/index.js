@@ -16,10 +16,10 @@ const ScrollToTop = () => {
 
 ReactDOM.render(
   <React.StrictMode>
-    <BrowserRouter>
-      <Route component={ScrollToTop} />
-      <App />
-    </BrowserRouter>
+      <BrowserRouter>
+        <Route component={ScrollToTop} />
+        <App />
+      </BrowserRouter>
   </React.StrictMode>,
   document.getElementById("root")
 );

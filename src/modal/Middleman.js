@@ -258,9 +258,22 @@ class Middleman {
     }
   }
 
+  async fixAccountHandler(accountId) {
+    try {
+      return await this.communicator.fixAccountHandler(accountId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async logout() {
     try {
-      return await this.communicator.logout();
+      const res = await this.communicator.logout();
+      this.tbWebSocket.setCurrentUser(null);
+      this.memberId = null;
+      this.email = null;
+      this.isLogin = false;
+      return res;
     } catch (error) {
       throw error;
     }
@@ -610,25 +623,8 @@ class Middleman {
     await this._getDepthBooks({ market, lotSz });
     await this._getTrades({ market, lotSz });
     if (this.isLogin) {
-      // await this._getOrderList(market);
-      // await this._getOrderHistory(market);
       await this._getOrders(market);
     }
-    // let pusher = new Pusher("2b78567f96a2c0f40368", {
-    //   wsHost: "pusher.tinfo.top",
-    //   port: 4567,
-    //   disableFlash: true,
-    //   disableStats: true,
-    //   disabledTransports: ["flash", "sockjs"],
-    //   forceTLS: false,
-    // });
-    // window.pusher = pusher;
-    // let channel = pusher.subscribe(`market-${market}-global`);
-    // window.channel = channel;
-    // channel.bind("update", (data) => console.log(`update`, data));
-    // channel.bind("trades", (data) => console.log(`trades`, data));
-    // let globalChannel = pusher.subscribe("market-global");
-    // globalChannel.bind("tickers", (data) => console.log(`tickers`,data));
   }
 
   _tbWSEventListener() {
@@ -704,7 +700,7 @@ class Middleman {
     }
   }
 
-  async initWs(registerTickers) {
+  async initWs() {
     const options = await this.communicator.getOptions();
     this.tbWebSocket.init({
       url: `${window.location.protocol === "https:" ? "wss://" : "ws://"}${

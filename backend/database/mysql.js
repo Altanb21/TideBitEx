@@ -216,6 +216,32 @@ class mysql {
     }
   }
 
+  async getAssetBalances() {
+    const query = `
+    SELECT
+      id,
+      asset_key,
+      category,
+      amount,
+      crash_counter,
+      refresh_at,
+      benchmark_realtime
+    FROM
+      asset_balances
+    ;
+    `;
+    try {
+      // this.logger.debug("getAssetBalances", query);
+      const [assetBalances] = await this.db.query({
+        query,
+      });
+      return assetBalances;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getTotalAccountsAssets() {
     const query = `
     SELECT
@@ -411,6 +437,44 @@ class mysql {
     }
   }
 
+  async getAccountLatestAuditRecord(accountId) {
+    const query = `
+    SELECT
+      id,
+      member_id,
+      account_id,
+      currency,
+      account_version_id_start,
+      account_version_id_end,
+      balance,
+      expect_balance,
+      locked,
+      expect_locked,
+      created_at,
+      updated_at,
+      fixed_at,
+      issued_by
+    FROM
+      audit_account_records
+    WHERE
+      account_id = ?
+    ORDER BY
+      id DESC
+    LIMIT 1
+    ;`;
+    try {
+      // this.logger.debug("getAccountLatestAuditRecord", query);
+      const [[auditRecord]] = await this.db.query({
+        query,
+        values: [accountId],
+      });
+      return auditRecord;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async getMembersAuditRecordByIds(ids) {
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
@@ -598,19 +662,19 @@ class mysql {
   }
 
   async getMemberByCondition(conditions) {
-    let placeholder = [];
-    if (Object.keys(conditions)?.length > 0) {
-      let keys = Object.keys(conditions);
-      let values = Object.values(conditions);
-      for (let index = 0; index < Object.keys(conditions).length; index++) {
-        if (values[index])
-          placeholder = [
-            ...placeholder,
-            keys[index] === "email"
-              ? `${keys[index]} = "${values[index]}"`
-              : `${keys[index]} = ${values[index]}`,
-          ];
-      }
+    let placeholder = [],
+      values = [];
+    if (conditions.id) {
+      placeholder = [...placeholder, `id = ?`];
+      values = [...values, conditions.id];
+    }
+    if (conditions.email) {
+      placeholder = [...placeholder, `email = ?`];
+      values = [...values, conditions.email];
+    }
+    if (conditions.referCode) {
+      placeholder = [...placeholder, `refer_code = ?`];
+      values = [...values, conditions.referCode];
     }
     let condition = placeholder.join(` AND `);
     const query = `
@@ -631,11 +695,12 @@ class mysql {
     try {
       const [[member]] = await this.db.query({
         query,
+        values,
       });
       return member;
     } catch (error) {
       this.logger.error(error);
-      this.logger.trace("getMemberByCondition", query, conditions);
+      this.logger.trace("getMemberByCondition", query, values);
       return [];
     }
   }
@@ -1891,6 +1956,51 @@ class mysql {
     return accountVersionId;
   }
 
+  async insertOuterOrders(orders, { dbTransaction }) {
+    let query,
+      placeholder,
+      values = [];
+    for (let order of orders) {
+      values = [
+        ...values,
+        `(${order.id}, ${order.exchangeCode}, ${order.memberId}, ${order.market}, ${
+          order.price
+        }, ${order.volume}, ${!!order.averageFilledPrice?order.averageFilledPrice:null}, ${
+          order.accumulateFilledvolume
+        }, "${order.state}", "${order.createdAt}", "${order.updatedAt}", '${
+          order.data
+        }')`,
+      ];
+    }
+    // this.logger.debug("[mysql] insertOuterOrders values", values);
+    placeholder = values.join(`, `);
+    query = `
+    INSERT INTO outer_orders (id, exchange_code, member_id, market, price, volume, average_filled_price, accumulate_filled_volume, state, created_at, updated_at, data)
+      VALUES ${placeholder} ON DUPLICATE KEY UPDATE average_filled_price = VALUES(average_filled_price), 
+      accumulate_filled_volume = VALUES(accumulate_filled_volume),
+      state = VALUES(state),
+      updated_at = VALUES(updated_at),
+      data = VALUES(data)
+    ;
+    `;
+    // let result;
+    try {
+      // this.logger.debug("[mysql] insertOuterOrder query", query);
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      // this.logger.debug(`insertOuterOrders`, result);
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+  }
+
   // ++ TODO 2022/11/25 需要優化 query 不在同一句可以看到
   async insertOuterTrades(trades, { dbTransaction }) {
     let query =
@@ -2222,6 +2332,71 @@ class mysql {
     return accountVersionId;
   }
 
+  async insertFixedAccountRecord(
+    account_id,
+    member_id,
+    currency,
+    audit_account_records_id,
+    origin_balance,
+    balance,
+    origin_locked,
+    locked,
+    created_at,
+    updated_at,
+    issued_by,
+    { dbTransaction }
+  ) {
+    let result, accountVersionId;
+    const query = `
+    INSERT INTO fixed_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+    try {
+      // this.logger.debug(
+      //   "insertFixedAccountRecord",
+      //   query,
+      //   "DEFAULT",
+      // account_id,
+      // member_id,
+      // currency,
+      // audit_account_records_id,
+      // origin_balance,
+      // balance,
+      // origin_locked,
+      // locked,
+      // created_at,
+      // updated_at,
+      // issued_by,
+      // );
+      result = await this.db.query(
+        {
+          query,
+          values: [
+            "DEFAULT",
+            account_id,
+            member_id,
+            currency,
+            audit_account_records_id,
+            origin_balance,
+            balance,
+            origin_locked,
+            locked,
+            created_at,
+            updated_at,
+            issued_by,
+          ],
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+      accountVersionId = result[0];
+    } catch (error) {
+      this.logger.error(error);
+      if (dbTransaction) throw error;
+    }
+    return accountVersionId;
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     try {
       const id = datas.id;
@@ -2254,6 +2429,9 @@ class mysql {
     }
   }
 
+  /**
+   * [deprecated] 2022-12-06
+   */
   async updateAuditAccountRecord(datas, { dbTransaction }) {
     try {
       const id = datas.id;
@@ -2270,7 +2448,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      // this.logger.debug("updateAuditAccountRecord", query);
+      this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,

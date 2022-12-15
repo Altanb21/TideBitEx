@@ -11,12 +11,14 @@ class TideBitWS {
   setCurrentUser(userInfo) {
     this.currentUser = userInfo;
     // console.log(`setCurrentUser userInfo`, userInfo)
-    this.send({
-      op: "userStatusUpdate",
-      args: {
-        ...userInfo,
-      },
-    });
+    if (userInfo) {
+      this.send({
+        op: "userStatusUpdate",
+        args: {
+          ...userInfo,
+        },
+      });
+    }
   }
 
   setCurrentMarket(market, lotSz) {

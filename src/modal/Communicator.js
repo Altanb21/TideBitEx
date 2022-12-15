@@ -72,7 +72,11 @@ class Communicator {
   async logout() {
     try {
       // ++ TODO
-      const res = await this._get(`/logout`);
+      const res = await this.httpAgent.rawRequest({
+        method: "GET",
+        url: `/signout`,
+        // data: { "X-CSRF-Token": this.CSRFToken },
+      });
       console.log(`res`);
       if (res.success) {
         return res.data;
@@ -860,7 +864,26 @@ class Communicator {
       }
       return Promise.reject({ message: res.message, code: res.code });
     } catch (error) {
-      console.error(`[getMembers] error`, error);
+      console.error(`[auditorMemberAccounts] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
+  async fixAccountHandler(accountId) {
+    try {
+      const url = `/private/audit-accounts/${accountId}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "PUT",
+        url,
+        data: { id: accountId },
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[fixAccountHandler] error`, error);
       return Promise.reject({ ...error });
     }
   }

@@ -446,6 +446,24 @@ class ExchangeHub extends Bot {
     );
   }
 
+  estimateAlertLevel({ account, amount, sum, MPA, RRR }) {
+    let alertLevel;
+    if (!account || SafeMath.eq(amount, 0)) {
+      if (SafeMath.eq(sum, 0)) alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
+      else if (SafeMath.gt(sum, 0))
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+    } else {
+      if (SafeMath.gt(amount, MPA)) {
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
+      } else {
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
+      }
+      if (SafeMath.lte(amount, RRR)) {
+        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
+      }
+    }
+    return alertLevel;
+  }
   async getPlatformAssets({ email, query }) {
     let result = null,
       coins = {},
@@ -453,6 +471,12 @@ class ExchangeHub extends Bot {
       sources = {},
       hasError = false; //,
     const _accounts = await this.database.getTotalAccountsAssets();
+    let _assetBalances = await this.database.getAssetBalances();
+    _assetBalances = _assetBalances.reduce((prev, assetBalance) => {
+      prev[assetBalance.asset_key] = assetBalance;
+      return prev;
+    }, {});
+    // this.logger.debug(`_assetBalances`, _assetBalances);
     coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
       if (!prev[coinSetting.id.toString()])
         prev[coinSetting.id.toString()] = { ...coinSetting };
@@ -460,7 +484,6 @@ class ExchangeHub extends Bot {
     }, {});
     for (let exchange of Object.keys(SupportedExchange)) {
       let source = SupportedExchange[exchange];
-
       switch (source) {
         // okx api 拿 balance 的資料
         case SupportedExchange.OKEX:
@@ -518,37 +541,8 @@ class ExchangeHub extends Bot {
                 sources: {},
               };
               for (let exchange of Object.keys(SupportedExchange)) {
-                let alertLevel;
                 switch (SupportedExchange[exchange]) {
                   case SupportedExchange.OKEX:
-                    if (
-                      !sources[exchange][coinSetting.code] ||
-                      SafeMath.eq(sources[exchange][coinSetting.code]?.sum, 0)
-                    ) {
-                      if (SafeMath.eq(sum, 0))
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.NULL;
-                      else if (SafeMath.gt(sum, 0))
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
-                    } else {
-                      if (
-                        SafeMath.gt(
-                          sources[exchange][coinSetting.code]?.sum,
-                          MPA
-                        )
-                      ) {
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_1;
-                      } else {
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_2;
-                      }
-                      if (
-                        SafeMath.lte(
-                          sources[exchange][coinSetting.code]?.sum,
-                          RRR
-                        )
-                      ) {
-                        alertLevel = PLATFORM_ASSET.WARNING_LEVEL.LEVEL_4;
-                      }
-                    }
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
                       {
                         balance:
@@ -556,16 +550,29 @@ class ExchangeHub extends Bot {
                         locked:
                           sources[exchange][coinSetting.code]?.locked || "0",
                         sum: sources[exchange][coinSetting.code]?.sum || "0",
-                        alertLevel,
+                        alertLevel: this.estimateAlertLevel({
+                          account: sources[exchange][coinSetting.code],
+                          amount: sources[exchange][coinSetting.code]?.amount,
+                          sum,
+                          MPA,
+                          RRR,
+                        }),
                       };
                     break;
                   case SupportedExchange.TIDEBIT:
-                    // ++ TODO 現階段資料拿不到 Tidebit ，顯示 0
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
                       {
-                        balance: "0",
+                        balance:
+                          _assetBalances[coinSetting.code]?.amount || "0",
                         locked: "0",
-                        alertLevel: PLATFORM_ASSET.WARNING_LEVEL.NULL,
+                        sum: _assetBalances[coinSetting.code]?.amount || "0",
+                        alertLevel: this.estimateAlertLevel({
+                          account: _assetBalances[coinSetting.code],
+                          amount: _assetBalances[coinSetting.code]?.amount,
+                          sum,
+                          MPA,
+                          RRR,
+                        }),
                       };
                     break;
                   default:
@@ -580,7 +587,7 @@ class ExchangeHub extends Bot {
           }
         }
         result = new ResponseFormat({
-          message: "getCoinsSettings",
+          message: "getPlatformAssets",
           payload: coins,
         });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
@@ -653,7 +660,7 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateCoinSetting`, e);
+      this.logger.error(`updatePlatformAsset`, e);
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -709,37 +716,41 @@ class ExchangeHub extends Bot {
 
           switch (type) {
             case TICKER_SETTING_TYPE.VISIBLE:
-              if (
-                updatedTickersSettings[params.id].source ===
-                SupportedExchange.OKEX
-              ) {
-                if (data.visible)
-                  this.okexConnector.subscribeTicker(
-                    this.tickersSettings[params.id].instId
-                  );
-                else
-                  this.okexConnector.unsubscribeTicker(
-                    this.tickersSettings[params.id].instId
-                  );
-              }
+              // if (
+              //   updatedTickersSettings[params.id].source ===
+              //   SupportedExchange.OKEX
+              // ) {
+              //   if (data.visible)
+              //     this.okexConnector.registerMarket(
+              //       this.tickersSettings[params.id].market
+              //         .replace("-", "")
+              //         .toLowerCase()
+              //     );
+              //   else
+              //     this.okexConnector.unregisterMarket(
+              //       this.tickersSettings[params.id].market
+              //         .replace("-", "")
+              //         .toLowerCase()
+              //     );
+              // }
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
                 visible: data.visible,
               };
               break;
             case TICKER_SETTING_TYPE.SOURCE:
-              if (data.source === SupportedExchange.OKEX)
-                this.okexConnector.subscribeTicker(
-                  this.tickersSettings[params.id].instId
-                );
-              else if (
-                data.source !== SupportedExchange.OKEX &&
-                updatedTickersSettings[params.id].source ===
-                  SupportedExchange.OKEX
-              )
-                this.okexConnector.unsubscribeTicker(
-                  this.tickersSettings[params.id].instId
-                );
+              // if (data.source === SupportedExchange.OKEX)
+              //   this.okexConnector.registerMarket(
+              //     this.tickersSettings[params.id].market
+              //   );
+              // else if (
+              //   data.source !== SupportedExchange.OKEX &&
+              //   updatedTickersSettings[params.id].source ===
+              //     SupportedExchange.OKEX
+              // )
+              //   this.okexConnector.unregisterMarket(
+              //     this.tickersSettings[params.id].market
+              //   );
               updatedTickersSettings[params.id] = {
                 ...updatedTickersSettings[params.id],
                 source: data.source,
@@ -1134,7 +1145,7 @@ class ExchangeHub extends Bot {
   async getMemberReferral(member) {
     let referredByMember, memberReferral;
     referredByMember = await this.database.getMemberByCondition({
-      refer_code: member.refer,
+      referCode: member.refer,
     });
     if (referredByMember) {
       memberReferral = await this.database.getMemberReferral({
@@ -1156,6 +1167,7 @@ class ExchangeHub extends Bot {
     //   Referral::CommissionService.get_default_commission_plan(member: member),
     //   { enabled_policies_only: true }
     // )
+    // this.logger.debug(`getReferrerCommissionPlan referral`, referral);
     let plan,
       planId = referral.commission_plan_id;
     if (!planId) {
@@ -1717,8 +1729,8 @@ class ExchangeHub extends Bot {
     });
   }
 
-  async logout({ header }) {
-    return this.tideBitConnector.router("logout", { header });
+  async logout({ header, body }) {
+    return this.tideBitConnector.router("logout", { header, body });
   }
 
   async getTicker({ params, query }) {
@@ -3921,8 +3933,9 @@ class ExchangeHub extends Bot {
   }
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
-    this.logger.debug(`dbOrder`, dbOrder);
-    this.logger.debug(`apiOrder`, apiOrder);
+    // ++ TODO high priority !!!
+    // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
+    // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
@@ -3973,7 +3986,11 @@ class ExchangeHub extends Bot {
       updated_at: `"${now}"`,
       done_at: `"${doneAt}"`,
     };
-    this.logger.debug(`calculator updatedOrder`, updatedOrder);
+    // ++ TODO high priority !!!
+    // this.logger.debug(
+    //   `abnormalOrderHandler calculator updatedOrder`,
+    //   updatedOrder
+    // );
     await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
@@ -4865,7 +4882,7 @@ class ExchangeHub extends Bot {
               break;
           }
           if (apiResonse.success) {
-            orderDetail = apiResonse.payload;
+            orderDetail = apiResonse.payload.shift();
             // this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
               if (data.tradeId) {
@@ -4897,7 +4914,7 @@ class ExchangeHub extends Bot {
             let tmp = await this.getMemberReferral(member);
             referredByMember = tmp.referredByMember;
             memberReferral = tmp.memberReferral;
-            // this.logger.debug(`updater tmp`, tmp);
+            // this.logger.debug(`updater getMemberReferral`, tmp);
           }
           try {
             result = await this.calculator({
@@ -5091,7 +5108,7 @@ class ExchangeHub extends Bot {
     return auditAccountResult;
   }
 
-  async auditorMemberAccounts({ query }, dbTransaction) {
+  async auditorMemberAccounts({ query }) {
     let { memberId, currency } = query;
     let tmp,
       accounts,
@@ -5115,7 +5132,6 @@ class ExchangeHub extends Bot {
       );
       accounts = await this.database.getAccountsByMemberId(memberId, {
         options: { currency: currency },
-        dbTransaction: dbTransaction,
       });
       accounts = accounts.reduce((prev, curr) => {
         if (!prev[curr.id]) prev[curr.id] = curr;
@@ -5151,7 +5167,6 @@ class ExchangeHub extends Bot {
             },
             createdAt: new Date(account.created_at).toISOString(),
             updatedAt: new Date(account.updated_at).toISOString(),
-            dbTransaction: dbTransaction,
           };
           /* !!! HIGH RISK (start) !!! */
           if (
@@ -5292,88 +5307,120 @@ class ExchangeHub extends Bot {
    * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
    * audit_records table 還沒有建立
    */
-  async fixAbnormalAccount({ query, email }) {
-    this.logger.debug(`fixAbnormalAccount email`, email);
-    let { memberId, currency, id } = query;
+  async fixAbnormalAccount({ params, email }) {
+    // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
+      account,
+      auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
+      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
+        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
+        return prev;
+      }, {}),
       dbTransaction;
     if (!currentUser.roles?.includes("root"))
       result = new ResponseFormat({
         message: `Permission denied`,
         code: Codes.INVALID_INPUT,
       });
-    if (!memberId || !currency) {
+    if (!params.id) {
       result = new ResponseFormat({
-        message: `${!memberId && "memberId is required"}${
-          !memberId && !currency && " AND "
-        }${!currency && "currency is required"}`,
+        message: "Account id is required",
         code: Codes.INVALID_INPUT,
       });
     }
     if (!result) {
-      dbTransaction = await this.database.transaction;
+      dbTransaction = await this.database.transaction();
       try {
         /******************************
-         * 1. select * from accounts for update
-         *   1.1 ++TODO 檢查是否需要更新
-         * 2. insert audit_account_records
-         *   2.1  account_id
-         *   2.2  member_id
-         *   2.3  reason: 1 accounts amount is differernt account_versions sum
-         *   2.4  currency
-         *   2.5  balance_origin
-         *   2.6  balance_updated
-         *   2.7  locked_origin
-         *   2.8  locked_updated
-         *   2.9  created_at 稽核時間
-         *   2.10 issued_by 經手人
-         * 3. update account
-         *   3.1 balance
-         *   3.2 locked
-         *   3.3 updated_at
+         * 1. get latest audit account records
+         *   1.1  檢查是否需要更新
+         * 2. update account
+         *   2.1 balance
+         *   2.2 locked
+         *   2.3 updated_at
+         * 3. update audit_account_records
+         *   3.1 fixed_at 稽核時間
+         *   3.2 issued_by 經手人 email
          *******************************************/
         /* !!! HIGH RISK (start) !!! */
         //1. select * from accounts for update
-        result = this.auditorMemberAccounts(
-          {
-            query: { ...query },
-          },
+        auditRecord = await this.database.getAccountLatestAuditRecord(
+          params.id,
           dbTransaction
         );
-        if (result.success) {
-          let account = Object.values(result.payload?.accounts).shift();
-          let now = new Date().toISOString().slice(0, 19).replace("T", " ");
-          // 2. update audit record
-          let auditRecord = {
-            fixed_at: `"${now}"`,
-            issued_by: currentUser.email,
-          };
-          //
-          await this.database.updateAuditAccountRecord(auditRecord, {
+        account = await this.database.getAccountsByMemberId(
+          auditRecord.member_id,
+          {
+            options: { id: params.id },
+            limit: 1,
             dbTransaction,
-          });
-          // 3. update account
-          const newAccount = {
-            id: account.id,
-            balance: account.balance?.shouldBe,
-            locked: account.locked?.shouldBe,
+          }
+        );
+        // this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
+        if (auditRecord) {
+          let now = new Date().toISOString().slice(0, 19).replace("T", " ");
+          // 2. update account
+          let updateAccount = {
+            id: params.id,
+            balance: auditRecord.expect_balance,
+            locked: auditRecord.expect_locked,
             updated_at: `"${now}"`,
           };
-          await this.database.updateAccount(newAccount, { dbTransaction });
+          // 3. update audit record
+          let fixedAuditRecord = {
+            account_id: auditRecord.account_id,
+            member_id: auditRecord.member_id,
+            currency: auditRecord.currency,
+            audit_account_records_id: auditRecord.id,
+            origin_balance: account.balance,
+            balance: auditRecord.expect_balance,
+            origin_locked: account.locked,
+            locked: auditRecord.expect_locked,
+            created_at: now,
+            updated_at: now,
+            issued_by: currentUser.email,
+          };
+          // this.logger.debug(`fixAbnormalAccount updateAccount`, updateAccount);
+          // this.logger.debug(`fixAbnormalAccount fixedAuditRecord`, fixedAuditRecord);
+          //
+          await this.database.insertFixedAccountRecord(fixedAuditRecord, {
+            dbTransaction,
+          });
+
+          await this.database.updateAccount(updateAccount, { dbTransaction });
+          await dbTransaction.commit();
           /* !!! HIGH RISK (end) !!! */
-          return new ResponseFormat({
+          result = new ResponseFormat({
             message: "auditorAccounts",
-            payload: { auditRecord, newAccount },
+            payload: {
+              accountId: params.id,
+              currency: coinsSettings[auditRecord.currency]?.code,
+              balance: {
+                current: Utils.removeZeroEnd(auditRecord.expect_balance),
+                shouldBe: Utils.removeZeroEnd(auditRecord.expect_balance),
+                alert: false,
+              },
+              locked: {
+                current: Utils.removeZeroEnd(auditRecord.expect_locked),
+                shouldBe: Utils.removeZeroEnd(auditRecord.expect_locked),
+                alert: false,
+              },
+              createdAt: new Date(auditRecord.created_at).toISOString(),
+              updatedAt: now,
+            },
           });
         }
       } catch (error) {
+        this.logger.error(`fixAbnormalAccount error`, error);
+        await dbTransaction.rollback();
         result = new ResponseFormat({
           message: `fixAbnormalAccount ${JSON.stringify(error)}`,
           code: Codes.UNKNOWN_ERROR,
         });
       }
     }
+    // this.logger.debug(`fixAbnormalAccount result`, result);
     return result;
   }
 

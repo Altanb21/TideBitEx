@@ -67,8 +67,8 @@ const StoreProvider = (props) => {
     clearTimeout(timer);
     timer = setTimeout(async () => {
       setTokenExpired(true);
-      // console.log(`TokenExpired`)
       await middleman.logout();
+      setIsLogin(middleman.isLogin);
     }, expireTime);
   }, [middleman]);
 
@@ -539,7 +539,7 @@ const StoreProvider = (props) => {
   const init = useCallback(async () => {
     // console.log(`storeCtx init`);
     initLanguage();
-    await middleman.initWs(registerTickers);
+    await middleman.initWs();
     eventListener();
     await middleman.getTickers();
     setTickers(middleman.getTickersSnapshot());
@@ -552,7 +552,7 @@ const StoreProvider = (props) => {
     }
     setIsInit(true);
     // console.log(`storeCtx init end`);
-  }, [initLanguage, middleman, registerTickers, eventListener, countDown]);
+  }, [initLanguage, middleman, eventListener, countDown]);
 
   const start = useCallback(async () => {
     let market =
@@ -628,6 +628,10 @@ const StoreProvider = (props) => {
     return await middleman.auditorMemberAccounts({ memberId, currency });
   };
 
+  const fixAccountHandler = async (accountId) => {
+    return await middleman.fixAccountHandler(accountId);
+  };
+
   return (
     <StoreContext.Provider
       value={{
@@ -701,6 +705,7 @@ const StoreProvider = (props) => {
         getTradesSnapshot,
         getMembers,
         auditorMemberAccounts,
+        fixAccountHandler,
       }}
     >
       {props.children}
