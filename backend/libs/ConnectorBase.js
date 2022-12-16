@@ -37,8 +37,8 @@ class ConnectorBase {
   }
 
   async _tideBitExEventListener() {
-    EventBus.on(Events.tickerOnSibscribe, (market, wsId, lotSz) => {
-      this._subscribeMarket(market, wsId, lotSz);
+    EventBus.on(Events.tickerOnSibscribe, (market, wsId) => {
+      this._subscribeMarket(market, wsId);
     });
     EventBus.on(Events.tickerOnUnsubscribe, (market, wsId) => {
       this._unsubscribeMarket(market, wsId);
