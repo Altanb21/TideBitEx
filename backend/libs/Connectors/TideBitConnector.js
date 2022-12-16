@@ -378,7 +378,7 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   _updateBooks(market, updateBooks) {
-    const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
+    // const lotSz = this.market_channel[`market-${market}-global`]["lotSz"];
     /**
     {
         asks: [
@@ -393,7 +393,7 @@ class TibeBitConnector extends ConnectorBase {
     */
     const tickerSetting = this.tickersSettings[market];
     const instId = tickerSetting?.instId;
-    this.depthBook.updateAll(instId, lotSz, updateBooks);
+    this.depthBook.updateAll(instId, tickerSetting?.lotSz, updateBooks);
     EventBus.emit(Events.update, market, this.depthBook.getSnapshot(instId));
   }
 
@@ -482,8 +482,8 @@ class TibeBitConnector extends ConnectorBase {
        price: "105.0"
        volume: "0.1"
       }*/
-    const lotSz =
-      this.market_channel[`market-${newTrade.market}-global`]["lotSz"];
+    // const lotSz =
+    //   this.market_channel[`market-${newTrade.market}-global`]["lotSz"];
     const tickerSetting = this.tickersSettings[newTrade.market];
     const instId = tickerSetting?.instId;
     const newTrades = [
@@ -492,7 +492,7 @@ class TibeBitConnector extends ConnectorBase {
         ts: parseInt(SafeMath.mult(newTrade.at, "1000")),
       },
     ];
-    this.tradeBook.updateByDifference(instId, lotSz, newTrades);
+    this.tradeBook.updateByDifference(instId, tickerSetting?.lotSz, newTrades);
     EventBus.emit(Events.trade, memberId, newTrade.market, {
       market: newTrade.market,
       difference: this.tradeBook.getDifference(instId),
@@ -511,11 +511,12 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   _updateTrades(instId, market, trades) {
-    const lotSz = this.market_channel[`market-${market}-global`]
-      ? this.market_channel[`market-${market}-global`]["lotSz"]
-      : undefined;
+    // const lotSz = this.market_channel[`market-${market}-global`]
+    //   ? this.market_channel[`market-${market}-global`]["lotSz"]
+    //   : undefined;
+    const tickerSetting = this.tickersSettings[market];
     const newTrades = trades.map((trade) => this._formateTrade(market, trade));
-    this.tradeBook.updateByDifference(instId, lotSz, newTrades);
+    this.tradeBook.updateByDifference(instId, tickerSetting?.lotSz, newTrades);
     EventBus.emit(Events.trades, market, {
       market,
       trades: this.tradeBook.getSnapshot(instId),
@@ -1144,7 +1145,7 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
-  _registerMarketChannel(market, wsId, lotSz) {
+  _registerMarketChannel(market, wsId) {
     if (!this.market_channel[`market-${market}-global`]) {
       try {
         this.market_channel[`market-${market}-global`] = {};
@@ -1158,8 +1159,8 @@ class TibeBitConnector extends ConnectorBase {
         );
         if (wsId)
           this.market_channel[`market-${market}-global`]["listener"] = [wsId];
-        if (lotSz)
-          this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
+        // if (lotSz)
+        //   this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
       } catch (error) {
         this.logger.error(`_registerMarketChannel error`, error);
         throw error;
@@ -1373,11 +1374,11 @@ class TibeBitConnector extends ConnectorBase {
     }
   }
 
-  _subscribeMarket(market, wsId, lotSz) {
+  _subscribeMarket(market, wsId) {
     const tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.TIDEBIT) {
       if (!this.isStart) this._startPusher();
-      this._registerMarketChannel(market, wsId, lotSz);
+      this._registerMarketChannel(market, wsId);
     }
   }
 

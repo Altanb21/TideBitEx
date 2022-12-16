@@ -1416,8 +1416,9 @@ class OkexConnector extends ConnectorBase {
 
   async _updateTrades(instId, market, trades) {
     try {
-      const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
-      this.tradeBook.updateByDifference(instId, lotSz, trades);
+      const tickerSetting = this.tickersSettings[market];
+      // const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
+      this.tradeBook.updateByDifference(instId, tickerSetting?.lotSz, trades);
       EventBus.emit(Events.trades, market, {
         market,
         trades: this.tradeBook.getSnapshot(instId),
@@ -1469,10 +1470,11 @@ class OkexConnector extends ConnectorBase {
   _updateBooks(instId, data, action) {
     const [updateBooks] = data;
     const market = instId.replace("-", "").toLowerCase();
-    const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
+    // const lotSz = this.okexWsChannels[Events.tickers][instId]["lotSz"];
+    const tickerSetting = this.tickersSettings[market];
     if (action === Events.booksActions.snapshot) {
       try {
-        this.depthBook.updateAll(instId, lotSz, updateBooks);
+        this.depthBook.updateAll(instId, tickerSetting?.lotSz, updateBooks);
       } catch (error) {
         this.logger.error(
           `[${this.constructor.name}]_updateBooks depthBook.updateAll error`,
@@ -1482,7 +1484,7 @@ class OkexConnector extends ConnectorBase {
     }
     if (action === Events.booksActions.update) {
       try {
-        this.depthBook.updateByDifference(instId, lotSz, updateBooks);
+        this.depthBook.updateByDifference(instId, tickerSetting?.lotSz, updateBooks);
       } catch (error) {
         this.logger.error(
           `[${this.constructor.name}]_updateBooks depthBook.updateByDifference error`,
@@ -1719,13 +1721,13 @@ class OkexConnector extends ConnectorBase {
   // okex ws end
 
   // TideBitEx ws
-  _subscribeMarket(market, wsId, lotSz) {
+  _subscribeMarket(market, wsId) {
     const tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.OKEX) {
       this._subscribeTrades(tickerSetting?.instId);
       this._subscribeBook(tickerSetting?.instId);
-      this.okexWsChannels[Events.tickers][tickerSetting?.instId]["lotSz"] =
-        lotSz;
+      // this.okexWsChannels[Events.tickers][tickerSetting?.instId]["lotSz"] =
+      //   lotSz;
     }
   }
 
