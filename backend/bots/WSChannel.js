@@ -94,7 +94,7 @@ class WSChannel extends Bot {
                 // );
                 this._onOpSwitchMarket(ws, args);
                 break;
-                case Events.registerMarket:
+              case Events.registerMarket:
                 // this.logger.debug(
                 //   `[${this.constructor.name} _onOpRegisterMarket]`,
                 //   args
@@ -221,7 +221,7 @@ class WSChannel extends Bot {
         this._channelClients[args.market] = {};
       }
       if (Object.values(this._channelClients[args.market]).length === 0) {
-        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id, args.lotSz);
+        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id);
       }
       this._channelClients[args.market][ws.id] = ws;
     } else {
@@ -235,7 +235,7 @@ class WSChannel extends Bot {
         this._channelClients[args.market] = {};
       }
       if (Object.values(this._channelClients[args.market]).length === 0) {
-        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id, args.lotSz);
+        EventBus.emit(Events.tickerOnSibscribe, args.market, ws.id);
       }
       this._channelClients[args.market][ws.id] = ws;
     }

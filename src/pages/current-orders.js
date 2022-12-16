@@ -16,8 +16,14 @@ const tickers = {
 };
 const defaultOrders = {
   OKEx: {
-    "BTC-USDT": [],
-    "ETH-USDT": [],
+    "BTC-USDT": {
+      orders: [],
+      pages: 1,
+    },
+    "ETH-USDT": {
+      orders: [],
+      pages: 1,
+    },
   },
 };
 
@@ -48,6 +54,19 @@ const CurrentOrders = () => {
   const [nextPageIsExit, setNextPageIsExit] = useState(" disable");
   const { enqueueSnackbar } = useSnackbar();
 
+  const updatePage = useCallback(
+    (newPage, newPages) => {
+      let _pages = newPages || pages;
+      setPage(newPage);
+      setPages(_pages);
+      if (SafeMath.gt(newPage, 1)) setPrevPageIsExit("");
+      else setPrevPageIsExit(" disable");
+      if (SafeMath.lt(newPage, _pages)) setNextPageIsExit("");
+      else setNextPageIsExit(" disable");
+    },
+    [pages]
+  );
+
   const getCurrentOrders = useCallback(
     async ({ exchange, ticker }) => {
       let updatedOrders = { ...orders },
@@ -61,29 +80,35 @@ const CurrentOrders = () => {
         });
         if (!updatedOrders[exchange]) updatedOrders[exchange] = {};
         if (!updatedOrders[exchange][ticker])
-          updatedOrders[exchange][ticker] = [];
+          updatedOrders[exchange][ticker] = {
+            orders: [],
+            pages: 1,
+          };
         let onlyInNewOrders = onlyInLeft(
           pendingOrders,
-          updatedOrders[exchange][ticker]
+          updatedOrders[exchange][ticker].orders
         );
-        updatedOrders[exchange][ticker] =
-          updatedOrders[exchange][ticker].concat(onlyInNewOrders);
-        for (let o of updatedOrders[exchange][ticker]) {
+        updatedOrders[exchange][ticker].orders =
+          updatedOrders[exchange][ticker].orders.concat(onlyInNewOrders);
+        for (let o of updatedOrders[exchange][ticker].orders) {
           if (o.side === "buy") bidOrders = [...bidOrders, o];
           else askOrders = [...askOrders, o];
         }
         askOrders.sort((a, b) => a.price - b.price);
         bidOrders.sort((a, b) => b.price - a.price);
-        updatedOrders[exchange][ticker] = bidOrders.concat(askOrders);
-        let newPage = 1,
-          pages = Math.ceil(updatedOrders[exchange][ticker].length / limit);
+        updatedOrders[exchange][ticker].orders = bidOrders.concat(askOrders);
+        let // newPage = 1,
+          pages = Math.ceil(
+            updatedOrders[exchange][ticker].orders.length / limit
+          );
         pages = pages > 0 ? pages : 1;
-        setPage(newPage);
-        setPages(pages);
-        if (SafeMath.gt(newPage, 1)) setPrevPageIsExit("");
-        else setPrevPageIsExit(" disable");
-        if (SafeMath.lt(newPage, pages)) setNextPageIsExit("");
-        else setNextPageIsExit(" disable");
+        updatedOrders[exchange][ticker].pages = pages;
+        // console.log(
+        //   `updatedOrders[exchange][ticker]`,
+        //   updatedOrders[exchange][ticker]
+        // );
+        // console.log(`pages`, pages);
+        // updatePage(newPage, pages);
         setOrders(updatedOrders);
       }
       return updatedOrders;
@@ -92,18 +117,21 @@ const CurrentOrders = () => {
   );
 
   const filterHandler = useCallback(
-    async ({ updateOrders, newPage, keyword, option }) => {
+    async ({ updateOrders, newPage, updateTicker, keyword, option }) => {
       let _option = option || filterOption,
         _page = newPage || page,
         _keyword = keyword === undefined ? filterKey : keyword,
         _orders = updateOrders || orders,
+        _ticker = updateTicker || filterTicker,
         filteredOrders;
+      // console.log(`filterHandler _orders`, orders)
       filteredOrders =
         _orders &&
         _orders[filterExchange] &&
-        _orders[filterExchange][filterTicker]
-          ? _orders[filterExchange][filterTicker]
-              .slice((_page - 1) * limit, _page * limit)
+        _orders[filterExchange][_ticker] &&
+        _orders[filterExchange][_ticker].orders
+          ? _orders[filterExchange][_ticker].orders
+              // .slice((_page - 1) * limit, _page * limit)
               .filter((order) => {
                 let condition =
                   order.id.includes(_keyword) ||
@@ -117,9 +145,22 @@ const CurrentOrders = () => {
                 return condition;
               })
           : [];
-      setFilterOrders(filteredOrders);
+      let pages = Math.ceil(filteredOrders.length / limit);
+      pages = pages > 0 ? pages : 1;
+      if (_page > pages) _page = 1;
+      updatePage(_page, pages);
+      setFilterOrders(filteredOrders.slice((_page - 1) * limit, _page * limit));
     },
-    [filterExchange, filterKey, filterOption, filterTicker, limit, orders, page]
+    [
+      filterExchange,
+      filterKey,
+      filterOption,
+      filterTicker,
+      limit,
+      orders,
+      page,
+      updatePage,
+    ]
   );
 
   const sorting = (key, ascending) => {
@@ -140,7 +181,7 @@ const CurrentOrders = () => {
         exchange: filterExchange,
         ticker,
       });
-      filterHandler({ updateOrders: orders, newPage: 1 });
+      filterHandler({ updateOrders: orders, newPage: 1, updateTicker: ticker });
       setIsLoading(false);
     },
     [filterExchange, filterHandler, getCurrentOrders]
@@ -148,16 +189,12 @@ const CurrentOrders = () => {
 
   const switchPageHandler = useCallback(
     async (newPage) => {
-      setPage(newPage);
-      if (SafeMath.gt(newPage, 1)) setPrevPageIsExit("");
-      else setPrevPageIsExit(" disable");
-      if (SafeMath.lt(newPage, pages)) setNextPageIsExit("");
-      else setNextPageIsExit(" disable");
+      updatePage(newPage);
       setIsLoading(true);
       filterHandler({ newPage });
       setIsLoading(false);
     },
-    [filterHandler, pages]
+    [filterHandler, updatePage]
   );
 
   const prevPageHandler = useCallback(async () => {
@@ -173,7 +210,7 @@ const CurrentOrders = () => {
   const displayOptionHandler = useCallback(
     (option) => {
       setFilterOption(option);
-      filterHandler({ option });
+      filterHandler({ option, newPage: 1 });
     },
     [filterHandler]
   );
@@ -181,7 +218,7 @@ const CurrentOrders = () => {
   const inputHandler = useCallback(
     (e) => {
       setFilterKey(e.target.value);
-      filterHandler({ keyword: e.target.value });
+      filterHandler({ keyword: e.target.value, newPage: 1 });
     },
     [filterHandler]
   );
