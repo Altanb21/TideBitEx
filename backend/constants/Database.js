@@ -97,6 +97,7 @@ module.exports = {
     API_ORDER_CANCEL: 6,
     DB_ORDER_CANCEL: 5,
     DUPLICATE_PROCESS: 4,
+    CALCULATOR_ERROR: 3,
     // DB_ORDER_DONE: 4,
   },
   STATE: {

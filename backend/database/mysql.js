@@ -1324,6 +1324,7 @@ class mysql {
   }
 
   async countOuterTrades({
+    id,
     exchangeCode,
     currency,
     type,
@@ -1340,6 +1341,7 @@ class mysql {
     )
       throw Error(`missing params`);
     let placeholder = [];
+    if (id) placeholder = [...id, `id = ${id}`];
     if (exchangeCode)
       placeholder = [...placeholder, `exchange_code = ${exchangeCode}`];
     if (orderId) placeholder = [...placeholder, `order_id = ${orderId}`];
@@ -1366,11 +1368,11 @@ class mysql {
     ${whereCondition}
     ;`;
     try {
-      // this.logger.debug("countOuterTrades", query);
+      this.logger.debug("countOuterTrades", query);
       const [[counts]] = await this.db.query({
         query,
       });
-      // this.logger.debug(`counts`, counts);
+      this.logger.debug(`counts`, counts);
       return counts;
     } catch (error) {
       this.logger.error(error);

@@ -3934,8 +3934,8 @@ class ExchangeHub extends Bot {
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
     // ++ TODO high priority !!!
-    // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
-    // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
+    this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
+    this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
@@ -3973,7 +3973,7 @@ class ExchangeHub extends Bot {
         : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
     let count = await this.database.countOuterTrades({
       exchangeCode: Database.EXCHANGE.OKEX,
-      orderId: dbOrder.id,
+      id: apiOrder.tradeId,
     });
     orderTradesCount = count["counts"];
     updatedOrder = {
@@ -3987,11 +3987,12 @@ class ExchangeHub extends Bot {
       done_at: `"${doneAt}"`,
     };
     // ++ TODO high priority !!!
-    // this.logger.debug(
-    //   `abnormalOrderHandler calculator updatedOrder`,
-    //   updatedOrder
-    // );
-    await this.database.updateOrder(updatedOrder, { dbTransaction });
+    this.logger.debug(
+      `abnormalOrderHandler combined dbOrder & apiOrder get updatedOrder`,
+      updatedOrder
+    );
+    return updatedOrder;
+    // await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
   /**
@@ -4079,6 +4080,48 @@ class ExchangeHub extends Bot {
     try {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
       orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
+      orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
+      // 3. 根據 data side （BUY，SELL）需要分別計算
+      // 3.1 order 新的鎖定金額
+      // 3.2 order 新的 fund receiced
+      if (data.side === Database.ORDER_SIDE.BUY) {
+        orderLocked = SafeMath.minus(dbOrder.locked, value);
+        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
+      }
+      if (data.side === Database.ORDER_SIDE.SELL) {
+        orderLocked = SafeMath.minus(dbOrder.locked, data.fillSz);
+        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
+      }
+      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
+      // 4.1 更新 order doneAt
+      // 4.2 更新 order state
+      // this.logger.debug(`calculator orderVolume`, orderVolume);
+      if (SafeMath.eq(orderVolume, "0")) {
+        orderState = Database.ORDER_STATE_CODE.DONE;
+        doneAt = now;
+        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+        // if (SafeMath.gt(orderLocked, 0)) {
+        // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
+        // this.logger.debug(
+        //   `calculator orderFullFilledAccountVersion`,
+        //   orderFullFilledAccountVersion
+        // );
+        // }
+      } else if (SafeMath.gt(orderVolume, "0")) {
+        orderState = Database.ORDER_STATE_CODE.WAIT;
+      }
+      // 根據前 5 點 可以得到最終需要更新的 order
+      updatedOrder = {
+        id: dbOrder.id,
+        volume: orderVolume,
+        state: orderState,
+        locked: orderLocked,
+        funds_received: orderFundsReceived,
+        trades_count: orderTradesCount,
+        updated_at: `"${now}"`,
+        done_at: `"${doneAt}"`,
+      };
       if (
         SafeMath.lt(orderVolume, 0) ||
         SafeMath.lt(
@@ -4089,40 +4132,51 @@ class ExchangeHub extends Bot {
         /**
          * ALERT: handle abnormal order
          */
-        throw Error(
-          `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+        this.logger.debug(
+          // throw Error(
+          `!!! ERROR !!!, abnormal order:update orderVolume:[${orderVolume}] less than 0(${SafeMath.lt(
             orderVolume,
             0
-          )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
+          )}) or orderVolume less than orderDetail(sz:[${
+            orderDetail.sz
+          }] - accFillSz:[${orderDetail.accFillSz}]) remain size( ${SafeMath.lt(
             orderVolume,
             SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
           )})`
         );
-        // throw OuterTradeError({
-        //   message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
-        //     orderVolume,
-        //     0
-        //   )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
-        //     orderVolume,
-        //     SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
-        //   )})`,
-        //   code: Codes.ABNORMAL_ORDER,
-        //   data: {
-        //     dbOrder,
-        //     orderDetail,
-        //   },
-        // });
+        try {
+          updatedOrder = await this.abnormalOrderHandler({
+            dbOrder,
+            apiOrder: orderDetail,
+          });
+        } catch (error) {
+          throw error;
+        }
       }
-      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
-      orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
+
+      if (SafeMath.eq(updatedOrder.orderVolume, "0")) {
+        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+        if (SafeMath.gt(updatedOrder.orderLocked, 0)) {
+          orderFullFilledAccountVersion = {
+            member_id: member.id,
+            currency: dbOrder.bid,
+            created_at: now,
+            updated_at: now,
+            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+            reason: Database.REASON.ORDER_FULLFILLED,
+            fun: Database.FUNC.UNLOCK_FUNDS,
+            fee: 0,
+            balance: updatedOrder.orderLocked,
+            locked: SafeMath.mult(updatedOrder.orderLocked, "-1"),
+            // ++TODO modifiable_id
+          };
+        }
+      }
+
       // 3. 根據 data side （BUY，SELL）需要分別計算
-      // 3.1 order 新的鎖定金額
-      // 3.2 order 新的 fund receiced
       // 3.3 voucher 及 account version 的手需費
       // 3.4 voucher 與 account version 裡面的手續費是對應的
       if (data.side === Database.ORDER_SIDE.BUY) {
-        orderLocked = SafeMath.minus(dbOrder.locked, value);
-        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
         trend = Database.ORDER_KIND.BID;
         askFee = 0;
         bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
@@ -4148,8 +4202,6 @@ class ExchangeHub extends Bot {
         };
       }
       if (data.side === Database.ORDER_SIDE.SELL) {
-        orderLocked = SafeMath.minus(dbOrder.locked, data.fillSz);
-        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
         trend = Database.ORDER_KIND.ASK;
         askFee = SafeMath.mult(value, askFeeRate);
         refGrossFee = askFee;
@@ -4214,49 +4266,6 @@ class ExchangeHub extends Bot {
         // trade_fk: data?.tradeId, ++ TODO
       };
       // this.logger.debug(`calculator trade`, trade);
-
-      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
-      // 4.1 更新 order doneAt
-      // 4.2 更新 order state
-      // this.logger.debug(`calculator orderVolume`, orderVolume);
-      if (SafeMath.eq(orderVolume, "0")) {
-        orderState = Database.ORDER_STATE_CODE.DONE;
-        doneAt = now;
-        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
-        if (SafeMath.gt(orderLocked, 0)) {
-          orderFullFilledAccountVersion = {
-            member_id: member.id,
-            currency: dbOrder.bid,
-            created_at: now,
-            updated_at: now,
-            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
-            reason: Database.REASON.ORDER_FULLFILLED,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-            fee: 0,
-            balance: orderLocked,
-            locked: SafeMath.mult(orderLocked, "-1"),
-            // ++TODO modifiable_id
-          };
-          // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
-          // this.logger.debug(
-          //   `calculator orderFullFilledAccountVersion`,
-          //   orderFullFilledAccountVersion
-          // );
-        }
-      } else if (SafeMath.gt(orderVolume, "0")) {
-        orderState = Database.ORDER_STATE_CODE.WAIT;
-      }
-      // 根據前 5 點 可以得到最終需要更新的 order
-      updatedOrder = {
-        id: dbOrder.id,
-        volume: orderVolume,
-        state: orderState,
-        locked: orderLocked,
-        funds_received: orderFundsReceived,
-        trades_count: orderTradesCount,
-        updated_at: `"${now}"`,
-        done_at: `"${doneAt}"`,
-      };
       if (referredByMember) {
         // this.logger.debug(`calculator referredByMember`, referredByMember);
         // this.logger.debug(`calculator memberReferral`, memberReferral);
@@ -4931,9 +4940,12 @@ class ExchangeHub extends Bot {
             // if (error.code === Codes.ABNORMAL_ORDER) {
             stop = true;
             try {
-              await this.abnormalOrderHandler({
+              await this.updateOuterTrade({
+                id: data.tradeId,
+                currency: market.code,
+                status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
                 dbOrder: order,
-                apiOrder: orderDetail,
+                member,
                 dbTransaction,
               });
               await dbTransaction.commit();

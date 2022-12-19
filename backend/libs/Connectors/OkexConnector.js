@@ -1721,7 +1721,7 @@ class OkexConnector extends ConnectorBase {
   // okex ws end
 
   // TideBitEx ws
-  _subscribeMarket(market, wsId) {
+  _subscribeMarket(market) {
     const tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.OKEX) {
       this._subscribeTrades(tickerSetting?.instId);
