@@ -38,8 +38,14 @@ class DBOperator {
     return this.database.getTotalAccountsAssets();
   }
 
-  async auditAccountBalance({ memberId, currency, startId }) {
-    return this.database.auditAccountBalance({ memberId, currency, startId });
+  async auditAccountBalance({ memberId, currency, startId, start, end }) {
+    return this.database.auditAccountBalance({
+      memberId,
+      currency,
+      startId,
+      start,
+      end,
+    });
   }
 
   async getAccountsByMemberId(
@@ -355,6 +361,35 @@ class DBOperator {
       end,
       limit,
       offset,
+      asc,
+    });
+  }
+
+  async getDepositRecords({ memberId, currency, start, end, asc = true }) {
+    return this.database.getDepositRecords({
+      memberId,
+      currency,
+      start,
+      end,
+      asc,
+    });
+  }
+
+  async getWithdrawRecords({ memberId, currency, start, end, asc = true }) {
+    return this.database.getWithdrawRecords({
+      memberId,
+      currency,
+      start,
+      end,
+      asc,
+    });
+  }
+
+  async getOrderRecords({ memberId, start, end, asc = true }) {
+    return this.database.getOrderRecords({
+      memberId,
+      start,
+      end,
       asc,
     });
   }

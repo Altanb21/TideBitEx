@@ -25,6 +25,7 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+const { trade } = require("../constants/Events");
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};
@@ -3934,8 +3935,8 @@ class ExchangeHub extends Bot {
 
   async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
     // ++ TODO high priority !!!
-    this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
-    this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
+    // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
+    // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
@@ -3987,10 +3988,10 @@ class ExchangeHub extends Bot {
       done_at: `"${doneAt}"`,
     };
     // ++ TODO high priority !!!
-    this.logger.debug(
-      `abnormalOrderHandler combined dbOrder & apiOrder get updatedOrder`,
-      updatedOrder
-    );
+    // this.logger.debug(
+    //   `abnormalOrderHandler combined dbOrder & apiOrder get updatedOrder`,
+    //   updatedOrder
+    // );
     return updatedOrder;
     // await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
@@ -5314,11 +5315,6 @@ class ExchangeHub extends Bot {
     }
   }
 
-  /**
-   * ++ TODO test is required
-   * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
-   * audit_records table 還沒有建立
-   */
   async fixAbnormalAccount({ params, email }) {
     // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
@@ -5434,6 +5430,120 @@ class ExchangeHub extends Bot {
     }
     // this.logger.debug(`fixAbnormalAccount result`, result);
     return result;
+  }
+
+  async auditOrder(order) {
+    let tradesCounts,
+      fundsReceived,
+      volume,
+      locked,
+      accountVersions = [],
+      // trades = [],
+      vouchers = [];
+    // 1. getVouchers
+    vouchers = await this.database.getVouchersByOrderId(order.id);
+    // SELECT
+    //     id,
+    //     order_id,
+    //     trade_id,
+    //     ask,
+    //     bid,
+    //     price,
+    //     volume,
+    //     value,
+    //     trend,
+    //     ask_fee,
+    //     bid_fee,
+    //     created_at
+    // FROM
+    //   vouchers
+    // WHERE
+    //   order_id = order.id;
+    tradesCounts = vouchers.length;
+    fundsReceived = vouchers.reduce((prev, curr) => {
+      prev = SafeMath.plus(prev, curr.value)
+      return prev;
+    }, 0);
+    // ~2. getTrades~
+    // let ids = vouchers.map((v) => v.trade_id);
+    // trades = await this.database.getTradesByIds(ids);
+    
+    
+  }
+
+  /**
+   * Auditor
+   */
+  async auditMemberBehavior({ query }) {
+    let { memberId, currency, start, end } = query;
+    let balanceDiff = 0,
+      lockedDiff = 0,
+      auditedOrder,
+      auditedOrders = [];
+    // 1. getDepositRecords
+    let depositRecords = await this.database.getDepositRecords({
+      memberId,
+      currency,
+      start,
+      end,
+    });
+    for (let deposit of depositRecords) {
+      balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
+    }
+    // 2. getWithdrawRecords
+    let withdrawRecords = await this.database.getWithdrawRecords({
+      memberId,
+      currency,
+      start,
+      end,
+    });
+    for (let withdraw of withdrawRecords) {
+      balanceDiff = SafeMath.plus(balanceDiff, withdraw.amount);
+    }
+    // 3. getOrderRecords
+    let orderRecords = await this.database.getOrderRecords({
+      memberId,
+      start,
+      end,
+    });
+    for (let order of orderRecords) {
+      if (
+        (order.ask === currency && order.type === Database.TYPE.ORDER_BID) ||
+        (order.bid === currency && order.type === Database.TYPE.ORDER_ASK)
+      ) {
+        balanceDiff = SafeMath.plus(balanceDiff, order.funds_received);
+      } else if (
+        (order.bid === currency && order.type === Database.TYPE.ORDER_BID) ||
+        (order.ask === currency && order.type === Database.TYPE.ORDER_ASK)
+      ) {
+        // post Order 扣除可用餘額，增加鎖定餘額
+        balanceDiff = SafeMath.minus(balanceDiff, order.origin_locked);
+        lockedDiff = SafeMath.plus(lockedDiff, order.locked);
+        if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
+          // cancel Order 解鎖 order 剩餘鎖定餘額 ||   done Order 返回 order 剩餘鎖定餘額
+          balanceDiff = SafeMath.plus(balanceDiff, order.locked);
+          lockedDiff = SafeMath.minus(lockedDiff, order.locked);
+        }
+      }
+      auditedOrder = await this.auditOrder(order);
+      auditedOrders = [...auditedOrder];
+    }
+    // 4. 與 accountVersions 比較
+    let accVersR = await this.database.auditAccountBalance({
+      memberId,
+      currency,
+      start,
+      end,
+    });
+    return {
+      balanceDiff_records: accVersR.sum_balance,
+      balanceDiff_behavior: balanceDiff,
+      lockedDiff_records: accVersR.sum_locked,
+      lockedDiff_behavior: lockedDiff,
+      depositRecords,
+      withdrawRecords,
+      auditedOrders,
+    };
   }
 
   async _updateOrderDetail(formatOrder) {
