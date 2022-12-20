@@ -130,6 +130,7 @@ const AuditOrderList = (props) => {
 };
 
 const MemberBehavior = (props) => {
+  console.log(`MemberBehavior`, props)
   const { member, asset, assets } = props;
   const storeCtx = useContext(StoreContext);
   const [isLoading, setIsLoading] = useState(false);
@@ -148,7 +149,7 @@ const MemberBehavior = (props) => {
   }, []);
 
   const searchHandler = useCallback(async () => {
-    if (member.id && asset.currency && date) {
+    if (member?.id && asset?.currency && date) {
       // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
       try {
         let result = await storeCtx.auditorMemberAccounts({
@@ -162,7 +163,7 @@ const MemberBehavior = (props) => {
         console.error(`error`, error);
       }
     }
-  }, [member.id, asset.currency, asset.currencyId, date, storeCtx]);
+  }, [member?.id, asset?.currency, asset?.currencyId, date, storeCtx]);
 
   return (
     <>
@@ -170,7 +171,7 @@ const MemberBehavior = (props) => {
       <section className="screen__section member-behavior">
         <div className="screen__header">{t("match-behavior")}</div>
         <div className="screen__search-bar">
-          <div className="screen__title">{member.email}</div>
+          <div className="screen__title">{member?.email}</div>
           <TableDropdown
             className="screen__filter"
             selectHandler={() => {}}
