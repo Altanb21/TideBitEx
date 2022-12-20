@@ -195,7 +195,7 @@ const MemberBehavior = (props) => {
             className="screen__filter"
             selectHandler={() => {}}
             options={assets.map((a) => a.currency)}
-            selected={selectedAsset.currency}
+            selected={selectedAsset?.currency}
           />
           <DatePicker date={date} setDate={updateDateHandler} maxDate={date} />
           <button className="screen__btn" onClick={searchHandler}>
