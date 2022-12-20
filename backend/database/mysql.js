@@ -1419,7 +1419,7 @@ class mysql {
     if (!memberId || !start || !end) throw Error(`missing params`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
-    if (currency) placeholder = [...placeholder, `(ask = ${currency}) OR bid = ${currency})`];
+    if (currency) placeholder = [...placeholder, `(ask = ${currency} OR bid = ${currency})`];
     if (start && end)
       placeholder = [
         ...placeholder,
@@ -1456,7 +1456,7 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      this.logger.debug("getWithdrawRecords", query);
+      this.logger.debug("getOrderRecords", query);
       let [withdraws] = await this.db.query({
         query,
       });
