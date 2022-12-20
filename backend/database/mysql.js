@@ -1600,7 +1600,7 @@ class mysql {
     }
   }
 
-  async getVouchersByOrderId(orderId, { dbTransaction }) {
+  async getVouchersByOrderId(orderId) {
     const query = `
     SELECT
       vouchers.id,
@@ -1623,24 +1623,13 @@ class mysql {
     LIMIT 1;`;
     try {
       // this.logger.debug("getVouchersByOrderId", query, orderId);
-      const [vouchers] = dbTransaction
-        ? await this.db.query(
-            {
-              query,
-              values: [orderId],
-            },
-            {
-              transaction: dbTransaction,
-            }
-          )
-        : await this.db.query({
-            query,
-            values: [orderId],
-          });
+      const [vouchers] = await this.db.query({
+        query,
+        values: [orderId],
+      });
       return vouchers;
     } catch (error) {
       this.logger.error(error);
-      if (dbTransaction) throw error;
       return [];
     }
   }

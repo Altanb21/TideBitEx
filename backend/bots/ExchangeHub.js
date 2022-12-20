@@ -5451,6 +5451,7 @@ class ExchangeHub extends Bot {
       quoteUnitLocDiffByAccV = 0;
     // 1. getVouchers
     vouchers = await this.database.getVouchersByOrderId(order.id);
+    this.logger.debug(`vouchers`, vouchers)
     tradesCounts = vouchers.length;
     fundsReceived = vouchers.reduce((prev, curr) => {
       prev = SafeMath.plus(prev, curr.value);
@@ -5596,6 +5597,7 @@ class ExchangeHub extends Bot {
     for (let deposit of depositRecords) {
       balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
     }
+    this.logger.debug(`depositRecords`, depositRecords)
     // 2. getWithdrawRecords
     let withdrawRecords = await this.database.getWithdrawRecords({
       memberId,
@@ -5606,6 +5608,7 @@ class ExchangeHub extends Bot {
     for (let withdraw of withdrawRecords) {
       balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
     }
+    this.logger.debug(`withdrawRecords`, withdrawRecords)
     // 3. getOrderRecords
     let orderRecords = await this.database.getOrderRecords({
       currency,
@@ -5613,6 +5616,7 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
+    this.logger.debug(`orderRecords`, orderRecords)
     // orderRecords = orderRecords.filter(
     //   (order) =>
     //     SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
@@ -5991,30 +5995,6 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
 
-  /**
-   * [deprecated] 2022/10/19
-   * 沒有地方呼叫
-   */
-  async _calculateFee(orderId, trend, totalFee, dbTransaction) {
-    const vouchers = await this.database.getVouchersByOrderId(orderId, {
-      dbTransaction,
-    });
-    let totalVfee = "0";
-    for (const voucher of vouchers) {
-      if (voucher.trend === trend) {
-        switch (trend) {
-          case Database.ORDER_KIND.ASK:
-            totalVfee = SafeMath.plus(totalVfee, voucher.ask_fee);
-            break;
-          case Database.ORDER_KIND.BID:
-            totalVfee = SafeMath.plus(totalVfee, voucher.bid_fee);
-            break;
-          default:
-        }
-      }
-    }
-    return SafeMath.minus(totalFee, totalVfee);
-  }
   /**
    *
    * @param {String} memberId

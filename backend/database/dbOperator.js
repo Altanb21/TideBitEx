@@ -232,8 +232,8 @@ class DBOperator {
     });
   }
 
-  async getVouchersByOrderId(orderId, { dbTransaction }) {
-    return this.database.getVouchersByOrderId(orderId, { dbTransaction });
+  async getVouchersByOrderId(orderId) {
+    return this.database.getVouchersByOrderId(orderId);
   }
 
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
