@@ -1620,7 +1620,7 @@ class mysql {
       vouchers
     WHERE
       vouchers.order_id = ?
-    LIMIT 1;`;
+    ;`;
     try {
       // this.logger.debug("getVouchersByOrderId", query, orderId);
       const [vouchers] = await this.db.query({

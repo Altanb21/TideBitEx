@@ -5454,7 +5454,10 @@ class ExchangeHub extends Bot {
     this.logger.debug(`vouchers`, vouchers);
     tradesCounts = vouchers.length;
     fundsReceived = vouchers.reduce((prev, curr) => {
-      prev = SafeMath.plus(prev, curr.value);
+      prev = SafeMath.plus(
+        prev,
+        order.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
+      );
       return prev;
     }, 0);
     if (order.type === Database.TYPE.ORDER_BID) {
@@ -5599,7 +5602,7 @@ class ExchangeHub extends Bot {
     for (let deposit of depositRecords) {
       balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
     }
-    this.logger.debug(`depositRecords`, depositRecords);
+    // this.logger.debug(`depositRecords`, depositRecords);
     // 2. getWithdrawRecords
     let withdrawRecords = await this.database.getWithdrawRecords({
       memberId,
@@ -5610,7 +5613,7 @@ class ExchangeHub extends Bot {
     for (let withdraw of withdrawRecords) {
       balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
     }
-    this.logger.debug(`withdrawRecords`, withdrawRecords);
+    // this.logger.debug(`withdrawRecords`, withdrawRecords);
     // 3. getOrderRecords
     let orderRecords = await this.database.getOrderRecords({
       currency,
@@ -5618,7 +5621,7 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
-    this.logger.debug(`orderRecords`, orderRecords);
+    // this.logger.debug(`orderRecords`, orderRecords);
     // orderRecords = orderRecords.filter(
     //   (order) =>
     //     SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
