@@ -385,9 +385,10 @@ class DBOperator {
     });
   }
 
-  async getOrderRecords({ memberId, start, end, asc = true }) {
+  async getOrderRecords({ memberId, currency, start, end, asc = true }) {
     return this.database.getOrderRecords({
       memberId,
+      currency,
       start,
       end,
       asc,

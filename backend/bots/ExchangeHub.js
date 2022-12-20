@@ -5577,7 +5577,8 @@ class ExchangeHub extends Bot {
   }
 
   /**
-   * Auditor
+   * Audit
+   * MemberBehavior: Deposit, Withdraw, Order(post or cancel)
    */
   async auditMemberBehavior({ query }) {
     let { memberId, currency, start, end } = query;
@@ -5603,18 +5604,19 @@ class ExchangeHub extends Bot {
       end,
     });
     for (let withdraw of withdrawRecords) {
-      balanceDiff = SafeMath.plus(balanceDiff, withdraw.amount);
+      balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
     }
     // 3. getOrderRecords
     let orderRecords = await this.database.getOrderRecords({
+      currency,
       memberId,
       start,
       end,
     });
-    orderRecords = orderRecords.filter(
-      (order) =>
-        SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
-    );
+    // orderRecords = orderRecords.filter(
+    //   (order) =>
+    //     SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
+    // );
     for (let order of orderRecords) {
       auditedOrder = await this.auditOrder(order);
       auditedOrders = [...auditedOrder];

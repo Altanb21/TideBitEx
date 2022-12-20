@@ -1415,10 +1415,11 @@ class mysql {
     }
   }
 
-  async getOrderRecords({ memberId, start, end, asc }) {
+  async getOrderRecords({ memberId, currency, start, end, asc }) {
     if (!memberId || !start || !end) throw Error(`missing params`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (currency) placeholder = [...placeholder, `(ask = ${currency}) OR bid = ${currency})`];
     if (start && end)
       placeholder = [
         ...placeholder,
