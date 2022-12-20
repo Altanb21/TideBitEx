@@ -5625,7 +5625,7 @@ class ExchangeHub extends Bot {
     // );
     for (let order of orderRecords) {
       auditedOrder = await this.auditOrder(order);
-      auditedOrders = [...auditedOrder];
+      auditedOrders = [...auditedOrders, auditedOrder];
       // if (order.ask === currency) {
       //   balanceDiff = SafeMath.plus(
       //     balanceDiff,
