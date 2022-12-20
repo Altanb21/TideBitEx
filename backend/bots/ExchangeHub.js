@@ -25,7 +25,6 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
-const { trade } = require("../constants/Events");
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};

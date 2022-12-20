@@ -1372,32 +1372,6 @@ class mysql {
     }
   }
 
-  /**
-SELECT
-	withdraws.id,
-	account_versions.id,
-	withdraws.account_id,
-	withdraws.member_id,
-	withdraws.currency,
-	withdraws.amount,
-	account_versions.balance,
-	account_versions.locked,
-	account_versions.reason,
-	account_versions.fee,
-	withdraws.fee AS w_f,
-	withdraws.created_at AS w_c,
-	withdraws.created_at AS w_u,
-	account_versions.created_at,
-	account_versions.updated_at,
-	aasm_state
-FROM
-	withdraws
-	INNER JOIN account_versions ON modifiable_id = withdraws.id
-WHERE
-	withdraws.member_id = 35394
-	AND withdraws.currency = 2
-	AND modifiable_type = 'Withdraw';
- */
   async getWithdrawRecords({ memberId, currency, start, end, asc }) {
     if (!memberId || !currency || !start || !end) throw Error(`missing params`);
     let placeholder = [`aasm_state = 'done'`];
