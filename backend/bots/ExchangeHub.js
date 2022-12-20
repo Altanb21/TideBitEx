@@ -5451,7 +5451,7 @@ class ExchangeHub extends Bot {
       quoteUnitLocDiffByAccV = 0;
     // 1. getVouchers
     vouchers = await this.database.getVouchersByOrderId(order.id);
-    this.logger.debug(`vouchers`, vouchers)
+    this.logger.debug(`vouchers`, vouchers);
     tradesCounts = vouchers.length;
     fundsReceived = vouchers.reduce((prev, curr) => {
       prev = SafeMath.plus(prev, curr.value);
@@ -5525,11 +5525,13 @@ class ExchangeHub extends Bot {
         [order.id],
         Database.MODIFIABLE_TYPE.ORDER
       );
+    this.logger.debug(`accountVersionsByOrder`, accountVersionsByOrder);
     let accountVersionsByTrade =
       await this.database.getAccountVersionsByModifiableIds(
         ids,
-        Database.MODIFIABLE_TYPE.ORDER
+        Database.MODIFIABLE_TYPE.TRADE
       );
+    this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
     let accountVersions = accountVersionsByOrder.concat(accountVersionsByTrade);
     for (let accV of accountVersions) {
       if (SafeMath.eq(accV.currency, order.ask)) {
@@ -5597,7 +5599,7 @@ class ExchangeHub extends Bot {
     for (let deposit of depositRecords) {
       balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
     }
-    this.logger.debug(`depositRecords`, depositRecords)
+    this.logger.debug(`depositRecords`, depositRecords);
     // 2. getWithdrawRecords
     let withdrawRecords = await this.database.getWithdrawRecords({
       memberId,
@@ -5608,7 +5610,7 @@ class ExchangeHub extends Bot {
     for (let withdraw of withdrawRecords) {
       balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
     }
-    this.logger.debug(`withdrawRecords`, withdrawRecords)
+    this.logger.debug(`withdrawRecords`, withdrawRecords);
     // 3. getOrderRecords
     let orderRecords = await this.database.getOrderRecords({
       currency,
@@ -5616,7 +5618,7 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
-    this.logger.debug(`orderRecords`, orderRecords)
+    this.logger.debug(`orderRecords`, orderRecords);
     // orderRecords = orderRecords.filter(
     //   (order) =>
     //     SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
