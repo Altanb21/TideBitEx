@@ -1,7 +1,7 @@
 import { t } from "i18next";
 import React, { useState, useEffect, useCallback, useContext } from "react";
 import DatePicker from "../components/DatePicker";
-// import EmailSeacrh from "../components/EmailSeacrh";
+import EmailSeacrh from "../components/EmailSeacrh";
 import LoadingDialog from "../components/LoadingDialog";
 import TableDropdown from "../components/TableDropdown";
 import StoreContext from "../store/store-context";
@@ -130,11 +130,13 @@ const AuditOrderList = (props) => {
 };
 
 const MemberBehavior = (props) => {
-  console.log(`MemberBehavior`, props)
-  const { member, asset, assets } = props;
+  // console.log(`MemberBehavior`, props)
+  // const { member, asset, assets } = props;
   const storeCtx = useContext(StoreContext);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState({ ...asset });
+  const [member, setMember] = useState(null);
+  const [assets, setAssets] = useState([]);
+  const [selectedAsset, setSelectedAsset] = useState(null);
   const [behaviors, setBehaviors] = useState([]);
   const [date, setDate] = useState(
     new Date(
@@ -148,13 +150,29 @@ const MemberBehavior = (props) => {
     setDate(date);
   }, []);
 
+  const searchMemberHandler = useCallback(
+    async (email) => {
+      setIsLoading(true);
+      let result = await storeCtx.getMembers({ email });
+      let member = result.members.find((m) => m.email === email);
+      let assets = await storeCtx.auditorMemberAccounts({
+        memberId: member.id,
+      });
+      setMember(member);
+      setAssets(assets);
+      setSelectedAsset(assets[0]);
+      setIsLoading(false);
+    },
+    [storeCtx]
+  );
+
   const searchHandler = useCallback(async () => {
-    if (member?.id && asset?.currency && date) {
+    if (member?.id && selectedAsset?.currencyId && date) {
       // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
       try {
         let result = await storeCtx.auditorMemberAccounts({
           memberId: member.id,
-          currency: asset.currencyId,
+          currency: selectedAsset.currencyId,
           start: date.toISOString().substring(0, 10),
           end: getNextDailyDate(date).toISOString().substring(0, 10),
         });
@@ -163,19 +181,20 @@ const MemberBehavior = (props) => {
         console.error(`error`, error);
       }
     }
-  }, [member?.id, asset?.currency, asset?.currencyId, date, storeCtx]);
+  }, [member?.id, selectedAsset?.currencyId, date, storeCtx]);
 
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
       <section className="screen__section member-behavior">
+        <EmailSeacrh searchMemberHandler={searchMemberHandler} />
         <div className="screen__header">{t("match-behavior")}</div>
         <div className="screen__search-bar">
           <div className="screen__title">{member?.email}</div>
           <TableDropdown
             className="screen__filter"
             selectHandler={() => {}}
-            options={assets ? assets.map((a) => a.currency) : []}
+            options={assets.map((a) => a.currency)}
             selected={selectedAsset.currency}
           />
           <DatePicker date={date} setDate={updateDateHandler} maxDate={date} />
