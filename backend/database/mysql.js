@@ -1419,7 +1419,11 @@ class mysql {
     if (!memberId || !start || !end) throw Error(`missing params`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
-    if (currency) placeholder = [...placeholder, `(ask = ${currency} OR bid = ${currency})`];
+    if (currency)
+      placeholder = [
+        ...placeholder,
+        `(ask = ${currency} OR bid = ${currency})`,
+      ];
     if (start && end)
       placeholder = [
         ...placeholder,
@@ -1619,15 +1623,20 @@ class mysql {
     LIMIT 1;`;
     try {
       // this.logger.debug("getVouchersByOrderId", query, orderId);
-      const [vouchers] = await this.db.query(
-        {
-          query,
-          values: [orderId],
-        },
-        {
-          transaction: dbTransaction,
-        }
-      );
+      const [vouchers] = dbTransaction
+        ? await this.db.query(
+            {
+              query,
+              values: [orderId],
+            },
+            {
+              transaction: dbTransaction,
+            }
+          )
+        : await this.db.query({
+            query,
+            values: [orderId],
+          });
       return vouchers;
     } catch (error) {
       this.logger.error(error);
@@ -1662,11 +1671,7 @@ class mysql {
       AND modifiable_type = ?
     LIMIT 10;`;
     try {
-      this.logger.debug(
-        "getAccountVersionsByModifiableId",
-        query,
-        `[${type}]`
-      );
+      this.logger.debug("getAccountVersionsByModifiableId", query, `[${type}]`);
       const [accountVersions] = await this.db.query({
         query,
         values: [type],
