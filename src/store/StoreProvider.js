@@ -628,6 +628,15 @@ const StoreProvider = (props) => {
     return await middleman.auditorMemberAccounts({ memberId, currency });
   };
 
+  const auditorMemberBehavior = async ({ memberId, currency, start, end }) => {
+    return await middleman.auditorMemberBehavior({
+      memberId,
+      currency,
+      start,
+      end,
+    });
+  };
+
   const fixAccountHandler = async (accountId) => {
     return await middleman.fixAccountHandler(accountId);
   };
@@ -705,6 +714,7 @@ const StoreProvider = (props) => {
         getTradesSnapshot,
         getMembers,
         auditorMemberAccounts,
+        auditorMemberBehavior,
         fixAccountHandler,
       }}
     >

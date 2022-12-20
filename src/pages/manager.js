@@ -9,6 +9,7 @@ import TickerSetting from "./ticker-setting";
 import Vouchers from "./vouchers";
 import CurrentOrders from "./current-orders";
 import UserSetting from "./user-setting";
+import MemberBehavior from "./member-behavior";
 
 const Manager = (props) => {
   return (
@@ -25,7 +26,15 @@ const Manager = (props) => {
       )}
       {props.activeSection === "sub-account" && <SubAccounts />}
       {props.activeSection === "platform-assets" && <PlatformAssets />}
-      {props.activeSection === "members" && <Members />}
+      {props.activeSection === "members" && (
+        <Members switchSectionHandler={props.onSelectedSection} />
+      )}
+      {props.activeSection === "member-behavior" && (
+        <MemberBehavior
+          switchSectionHandler={props.onSelectedSection}
+          data={props.data}
+        />
+      )}
       {props.activeSection === "user-setting" && (
         <UserSetting currentUser={props.user} />
       )}

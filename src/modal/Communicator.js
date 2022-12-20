@@ -869,6 +869,31 @@ class Communicator {
     }
   }
 
+  async auditorMemberBehavior({ memberId, currency, start, end }) {
+    try {
+      let arr = [],
+        qs;
+      if (memberId) arr = [...arr, `memberId=${memberId}`];
+      if (currency) arr = [...arr, `currency=${currency}`];
+      if (start) arr = [...arr, `start=${start}`];
+      if (end) arr = [...arr, `end=${end}`];
+      qs = !!arr.length ? `?${arr.join("&")}` : "";
+      const url = `/private/audit-member${qs}`;
+      // const res = await this._get(url);
+      const res = await this._request({
+        method: "GET",
+        url,
+      });
+      if (res.success) {
+        return res.data;
+      }
+      return Promise.reject({ message: res.message, code: res.code });
+    } catch (error) {
+      console.error(`[auditorMemberBehavior] error`, error);
+      return Promise.reject({ ...error });
+    }
+  }
+
   async fixAccountHandler(accountId) {
     try {
       const url = `/private/audit-accounts/${accountId}`;

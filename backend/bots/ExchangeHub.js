@@ -5167,6 +5167,7 @@ class ExchangeHub extends Bot {
           result.accounts[accountId] = {
             accountId,
             currency: coinsSettings[account.currency]?.code,
+            currencyId: coinsSettings[account.currency]?.id,
             balance: {
               current: Utils.removeZeroEnd(account.balance),
               shouldBe: correctBalance,
