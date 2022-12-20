@@ -240,8 +240,8 @@ class DBOperator {
     return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
   }
 
-  async getAccountVersionsByModifiableId(id, type) {
-    return this.database.getAccountVersionsByModifiableId(id, type);
+  async getAccountVersionsByModifiableIds(ids, type) {
+    return this.database.getAccountVersionsByModifiableIds(ids, type);
   }
 
   async getTradeByTradeFk(tradeFk) {

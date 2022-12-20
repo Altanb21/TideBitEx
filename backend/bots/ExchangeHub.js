@@ -4387,8 +4387,8 @@ class ExchangeHub extends Bot {
         case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
           // 確保 cancel order 的 locked 金額有還給用戶
           let dbCancelOrderAccountVersions =
-            await this.database.getAccountVersionsByModifiableId(
-              dbOrder.id,
+            await this.database.getAccountVersionsByModifiableIds(
+              [dbOrder.id],
               Database.MODIFIABLE_TYPE.ORDER
             );
           let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
@@ -4559,8 +4559,8 @@ class ExchangeHub extends Bot {
           tradeId
         );
         dbAccountVersions =
-          await this.database.getAccountVersionsByModifiableId(
-            tradeId,
+          await this.database.getAccountVersionsByModifiableIds(
+            [tradeId],
             Database.MODIFIABLE_TYPE.TRADE
           );
         throw Error(
@@ -5435,40 +5435,146 @@ class ExchangeHub extends Bot {
   async auditOrder(order) {
     let tradesCounts,
       fundsReceived,
+      fee = 0,
       volume,
       locked,
-      accountVersions = [],
-      // trades = [],
-      vouchers = [];
+      baseUnitAccountVersions = [],
+      quoteUnitAccountVersions = [],
+      trades = [],
+      vouchers = [],
+      baseUnitBalDiffByOrder = 0,
+      baseUnitLocDiffByOrder = 0,
+      quoteUnitBalDiffByOrder = 0,
+      quoteUnitLocDiffByOrder = 0,
+      baseUnitBalDiffByAccV = 0,
+      baseUnitLocDiffByAccV = 0,
+      quoteUnitBalDiffByAccV = 0,
+      quoteUnitLocDiffByAccV = 0;
     // 1. getVouchers
     vouchers = await this.database.getVouchersByOrderId(order.id);
-    // SELECT
-    //     id,
-    //     order_id,
-    //     trade_id,
-    //     ask,
-    //     bid,
-    //     price,
-    //     volume,
-    //     value,
-    //     trend,
-    //     ask_fee,
-    //     bid_fee,
-    //     created_at
-    // FROM
-    //   vouchers
-    // WHERE
-    //   order_id = order.id;
     tradesCounts = vouchers.length;
     fundsReceived = vouchers.reduce((prev, curr) => {
-      prev = SafeMath.plus(prev, curr.value)
+      prev = SafeMath.plus(prev, curr.value);
       return prev;
     }, 0);
-    // ~2. getTrades~
-    // let ids = vouchers.map((v) => v.trade_id);
-    // trades = await this.database.getTradesByIds(ids);
-    
-    
+    if (order.type === Database.TYPE.ORDER_BID) {
+      // when order create 扣除可用餘額，增加鎖定餘額
+      quoteUnitBalDiffByOrder = SafeMath.minus(
+        quoteUnitBalDiffByOrder,
+        order.origin_locked
+      );
+      quoteUnitLocDiffByOrder = SafeMath.plus(
+        quoteUnitLocDiffByOrder,
+        order.locked
+      );
+      // fee = vouchers.reduce((prev, curr) => {
+      //   prev = SafeMath.plus(prev, curr.bid_fee);
+      //   return prev;
+      // }, 0);
+      baseUnitBalDiffByOrder = SafeMath.plus(
+        baseUnitBalDiffByOrder,
+        SafeMath.minus(order.funds_received, fee)
+      );
+      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
+        // cancel Order 解鎖 order 剩餘鎖定餘額  ||   done Order 返回 order 剩餘鎖定餘額
+        quoteUnitBalDiffByOrder = SafeMath.plus(
+          quoteUnitBalDiffByOrder,
+          order.locked
+        );
+        quoteUnitLocDiffByOrder = SafeMath.minus(
+          quoteUnitLocDiffByOrder,
+          order.locked
+        );
+      }
+    } else {
+      // when order create 扣除可用餘額，增加鎖定餘額
+      baseUnitBalDiffByOrder = SafeMath.minus(
+        baseUnitBalDiffByOrder,
+        order.origin_locked
+      );
+      baseUnitLocDiffByOrder = SafeMath.plus(
+        baseUnitLocDiffByOrder,
+        order.locked
+      );
+      // fee = vouchers.reduce((prev, curr) => {
+      //   prev = SafeMath.plus(prev, curr.ask_fee);
+      //   return prev;
+      // }, 0);
+      quoteUnitBalDiffByOrder = SafeMath.plus(
+        quoteUnitBalDiffByOrder,
+        SafeMath.minus(order.funds_received, fee)
+      );
+      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
+        // cancel Order 解鎖 order 剩餘鎖定餘額 ||   done Order 返回 order 剩餘鎖定餘額
+        baseUnitBalDiffByOrder = SafeMath.plus(
+          baseUnitBalDiffByOrder,
+          order.locked
+        );
+        baseUnitLocDiffByOrder = SafeMath.minus(
+          baseUnitLocDiffByOrder,
+          order.locked
+        );
+      }
+    }
+    // 2. getTrades
+    let ids = vouchers.map((v) => v.trade_id);
+    trades = await this.database.getTradesByIds(ids);
+    // 3. getAccountVersions
+    let accountVersionsByOrder =
+      await this.database.getAccountVersionsByModifiableIds(
+        [order.id],
+        Database.MODIFIABLE_TYPE.ORDER
+      );
+    let accountVersionsByTrade =
+      await this.database.getAccountVersionsByModifiableIds(
+        ids,
+        Database.MODIFIABLE_TYPE.ORDER
+      );
+    let accountVersions = accountVersionsByOrder.concat(accountVersionsByTrade);
+    for (let accV of accountVersions) {
+      if (SafeMath.eq(accV.currency, order.ask)) {
+        baseUnitAccountVersions = [...baseUnitAccountVersions, accV];
+      }
+      if (SafeMath.eq(accV.currency, order.bid)) {
+        quoteUnitAccountVersions = [...quoteUnitAccountVersions, accV];
+      }
+    }
+    for (let bAccV of baseUnitAccountVersions) {
+      baseUnitBalDiffByAccV = SafeMath.plus(
+        baseUnitBalDiffByAccV,
+        bAccV.balance
+      );
+      baseUnitLocDiffByAccV = SafeMath.plus(
+        baseUnitBalDiffByAccV,
+        bAccV.locked
+      );
+    }
+    for (let qAccV of quoteUnitAccountVersions) {
+      quoteUnitBalDiffByAccV = SafeMath.plus(
+        quoteUnitBalDiffByAccV,
+        qAccV.balance
+      );
+      quoteUnitLocDiffByAccV = SafeMath.plus(
+        baseUnitBalDiffByAccV,
+        qAccV.locked
+      );
+    }
+    return {
+      baseUnitBalDiffByOrder,
+      baseUnitBalDiffByAccV,
+      baseUnitLocDiffByOrder,
+      baseUnitLocDiffByAccV,
+      quoteUnitBalDiffByOrder,
+      quoteUnitBalDiffByAccV,
+      quoteUnitLocDiffByOrder,
+      quoteUnitLocDiffByAccV,
+      tradesCounts,
+      fundsReceived,
+      order,
+      vouchers,
+      accountVersions,
+      trades,
+    };
   }
 
   /**
@@ -5506,7 +5612,33 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
+    orderRecords = orderRecords.filter(
+      (order) =>
+        SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
+    );
     for (let order of orderRecords) {
+      auditedOrder = await this.auditOrder(order);
+      auditedOrders = [...auditedOrder];
+      // if (order.ask === currency) {
+      //   balanceDiff = SafeMath.plus(
+      //     balanceDiff,
+      //     auditedOrder.baseUnitBalDiffByOrder
+      //   );
+      //   lockedDiff = SafeMath.plus(
+      //     lockedDiff,
+      //     auditedOrder.baseUnitLocDiffByOrder
+      //   );
+      // }
+      // if (order.bid === currency) {
+      //   balanceDiff = SafeMath.plus(
+      //     balanceDiff,
+      //     auditedOrder.quoteUnitBalDiffByOrder
+      //   );
+      //   lockedDiff = SafeMath.plus(
+      //     lockedDiff,
+      //     auditedOrder.quoteUnitLocDiffByOrder
+      //   );
+      // }
       if (
         (order.ask === currency && order.type === Database.TYPE.ORDER_BID) ||
         (order.bid === currency && order.type === Database.TYPE.ORDER_ASK)
@@ -5525,8 +5657,6 @@ class ExchangeHub extends Bot {
           lockedDiff = SafeMath.minus(lockedDiff, order.locked);
         }
       }
-      auditedOrder = await this.auditOrder(order);
-      auditedOrders = [...auditedOrder];
     }
     // 4. 與 accountVersions 比較
     let accVersR = await this.database.auditAccountBalance({

@@ -77,11 +77,11 @@ class mysql {
     if (currency) placeholder = [...placeholder, `currency = ${currency}`];
     if (startId) placeholder = [...placeholder, `id > ${startId}`];
     if (start && end)
-    placeholder = [
-      ...placeholder,
-      `created_at BETWEEN "${start}"
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
       AND "${end}"`,
-    ];
+      ];
     let condition = placeholder.join(` AND `);
     const query = `
       SELECT
@@ -1662,37 +1662,39 @@ WHERE
   }
 
   // 不應該超過 3 筆
-  async getAccountVersionsByModifiableId(id, type) {
+  async getAccountVersionsByModifiableIds(ids, type) {
+    if (!ids.length > 0) return [];
+    let placeholder = ids.join(`,`);
     const query = `
     SELECT
-      account_versions.id,
-      account_versions.member_id,
-      account_versions.account_id,
-      account_versions.reason,
-      account_versions.balance,
-      account_versions.locked,
-      account_versions.fee,
-      account_versions.amount,
-      account_versions.modifiable_id,
-      account_versions.modifiable_type,
-      account_versions.created_at,
-      account_versions.currency,
-      account_versions.fun
+      id,
+      member_id,
+      account_id,
+      reason,
+      balance,
+      locked,
+      fee,
+      amount,
+      modifiable_id,
+      modifiable_type,
+      created_at,
+      currency,
+      fun
     FROM
 	    account_versions
     WHERE
-	    account_versions.modifiable_id = ?
-      AND account_versions.modifiable_type = ?
+	    modifiable_id in(${placeholder})
+      AND modifiable_type = ?
     LIMIT 10;`;
     try {
-      // this.logger.debug(
-      //   "getAccountVersionsByModifiableId",
-      //   query,
-      //   `[${id}, ${type}]`
-      // );
+      this.logger.debug(
+        "getAccountVersionsByModifiableId",
+        query,
+        `[${type}]`
+      );
       const [accountVersions] = await this.db.query({
         query,
-        values: [id, type],
+        values: [type],
       });
       return accountVersions;
     } catch (error) {
