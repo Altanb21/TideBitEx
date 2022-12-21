@@ -159,6 +159,8 @@ const MemberBehavior = (props) => {
         memberId: member.id,
       });
       let assets = assetsR.accounts || [];
+      console.log(`searchMemberHandler assetsR`, assetsR)
+      console.log(`searchMemberHandler assets`, assets)
       setMember(member);
       setAssets(assets);
       setSelectedAsset(assets[0]);
