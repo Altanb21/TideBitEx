@@ -5487,7 +5487,7 @@ class ExchangeHub extends Bot {
       balance: removeZeroEnd(v.balance),
       locked: removeZeroEnd(v.locked),
       fee: removeZeroEnd(v.fee),
-      created_at: v.created_at.substring(0, 19).replace("T", " "),
+      created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
     }));
     let accountVersionsByTrade =
       await this.database.getAccountVersionsByModifiableIds(
