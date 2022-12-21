@@ -5456,21 +5456,21 @@ class ExchangeHub extends Bot {
     // 2. getTrades
     let ids = vouchers.map((v) => v.trade_id);
     trades = await this.database.getTradesByIds(ids);
-    order.trades_count = {
-      expect: order.trades_count,
+    auditedOrder.trades_count = {
+      expect: auditedOrder.trades_count,
       real: vouchers.length,
       alert:
-        !SafeMath.eq(order.trades_count, vouchers.length) ||
+        !SafeMath.eq(auditedOrder.trades_count, vouchers.length) ||
         trades.length !== vouchers.length,
     };
     let fundsReceived = vouchers.reduce((prev, curr) => {
       prev = SafeMath.plus(
         prev,
-        order.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
+        auditedOrder.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
       );
       return prev;
     }, 0);
-    order.funds_received = {
+    auditedOrder.funds_received = {
       expect: auditedOrder.funds_received,
       real: fundsReceived,
       alert: !SafeMath.eq(auditedOrder.funds_received, fundsReceived),
@@ -5478,10 +5478,10 @@ class ExchangeHub extends Bot {
     // 3. getAccountVersions
     let accountVersionsByOrder =
       await this.database.getAccountVersionsByModifiableIds(
-        [order.id],
+        [auditedOrder.id],
         Database.MODIFIABLE_TYPE.ORDER
       );
-    order.accountVersions = accountVersionsByOrder.map((v) => ({
+    auditedOrder.accountVersions = accountVersionsByOrder.map((v) => ({
       ...v,
       currency: this.coinsSettingsMap[v.currency]?.code,
       balance: removeZeroEnd(v.balance),
@@ -5509,7 +5509,7 @@ class ExchangeHub extends Bot {
       accountVersions = accountVersionsByTrade
         .filter(
           (acc) =>
-            SafeMath.eq(acc.member_id, order.member_id) &&
+            SafeMath.eq(acc.member_id, auditedOrder.member_id) &&
             SafeMath.eq(acc.modifiable_id, v.trade_id)
         )
         .map((v) => {
@@ -5532,12 +5532,12 @@ class ExchangeHub extends Bot {
       add = accountVersionAdds.reduce((prev, accV) => {
         prev = SafeMath.plus(prev, SafeMath.plus(accV.balance, accV.fee));
         return prev;
-      }, []);
+      }, 0);
       sub = accountVersionSubs.reduce((prev, accV) => {
         prev = SafeMath.plus(prev, accV.locked);
         return prev;
-      }, []);
-      if (order.type === Database.TYPE.ORDER_BID) {
+      }, 0);
+      if (auditedOrder.type === Database.TYPE.ORDER_BID) {
         realValue = SafeMath.mult(v.value, "-1");
         expectValue = sub;
         realVolume = removeZeroEnd(v.volume);
@@ -5551,8 +5551,8 @@ class ExchangeHub extends Bot {
       isValueCorrect = SafeMath.eq(expectValue, realValue);
       isVolumeCorrect = SafeMath.eq(expectVolume, realVolume);
       if (
-        order.trades_count.alert ||
-        order.funds_received.alert ||
+        auditedOrder.trades_count.alert ||
+        auditedOrder.funds_received.alert ||
         !isValueCorrect ||
         !isVolumeCorrect
       )
