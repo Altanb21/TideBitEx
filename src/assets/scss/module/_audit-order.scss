@@ -54,17 +54,25 @@
   &__container {
     border: 1px solid #707070;
     border-radius: 5px;
+    display: block;
+    margin-bottom: 10px;
+    &--alert {
+      border-color: #d0021b;
+    }
   }
   &__row {
     &--header {
       border-bottom: 1px solid #707070;
     }
-    &--main{
-        background-color: #fff;
+    &--main {
+      background-color: #fff;
+      border-bottom: 1px solid #707070;
     }
     display: flex;
     flex-direction: row;
     gap: 10px;
     padding: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
   }
 }

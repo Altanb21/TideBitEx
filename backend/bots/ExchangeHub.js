@@ -5540,6 +5540,7 @@ class ExchangeHub extends Bot {
         ids,
         Database.MODIFIABLE_TYPE.TRADE
       );
+    this.logger.debug(`auditOrder ids`, ids);
     this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
     vouchers = vouchers.map((v) => ({
       ...v,

@@ -41,6 +41,9 @@ const AccountVersionTable = (props) => {
             </td>
           </tr>
         ))}
+        {!props.accountVersions.length > 0 && (
+          <tr className="audit-order__row">{t("no-data")}</tr>
+        )}
       </tbody>
     </table>
   );
@@ -98,7 +101,7 @@ const AuditOrder = (props) => {
       <table className="audit-order__table">
         <thead className="audit-order__header ">Order</thead>
         <tbody div className="audit-order__container">
-          <tr className="audit-order__row audit-order__row--header audit-order__row--main">
+          <tr className="audit-order__row audit-order__row--main">
             <th className="audit-order__value">{t("created_at")}</th>
             <th className="audit-order__value">{t("id")}</th>
             <th className="audit-order__value">{t("price")}</th>
@@ -148,8 +151,14 @@ const AuditOrder = (props) => {
         <thead className="audit-order__header ">Vouchers</thead>
         {auditOrder.vouchers.map((voucher) => (
           <>
-            <tbody className="audit-order__container">
-              <tr className="audit-order__row audit-order__row--header audit-order__row--main">
+            <tbody
+              className={`audit-order__container ${
+                voucher.accountVersions.length > 0
+                  ? ""
+                  : "audit-order__container--alert"
+              }`}
+            >
+              <tr className="audit-order__row audit-order__row--main">
                 <th className="audit-order__value">{t("created_at")}</th>
                 <th className="audit-order__value">{t("id")}</th>
                 <th className="audit-order__value">{t("trade_id")}</th>

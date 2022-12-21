@@ -1658,7 +1658,7 @@ class mysql {
     WHERE
 	    modifiable_id in(${placeholder})
       AND modifiable_type = ?
-    LIMIT 10;`;
+    ;`;
     try {
       // this.logger.debug("getAccountVersionsByModifiableId", query, `[${type}]`);
       const [accountVersions] = await this.db.query({
