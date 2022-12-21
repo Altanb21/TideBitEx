@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 const DepositList = (props) => {
   const { t } = useTranslation();
   const component =
-    props.deposits.length > 0 ? (
+    props.deposits?.length > 0 ? (
       props.deposits?.map((deposit) => (
         <tr className="audit-order__row" key={`deposit-${deposit.id}`}>
           <th className="audit-order__value">{deposit.created_at}</th>

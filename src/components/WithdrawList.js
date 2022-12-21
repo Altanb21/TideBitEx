@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 const WithdrawList = (props) => {
   const { t } = useTranslation();
   const component =
-    props.withdraws.length > 0 ? (
+    props.withdraws?.length > 0 ? (
       props.withdraws?.map((withdraw) => (
         <tr className="audit-order__row" key={`withdraw-${withdraw.id}`}>
           <th className="audit-order__value">{withdraw.created_at}</th>
