@@ -5685,7 +5685,7 @@ class ExchangeHub extends Bot {
       withdrawRecords,
       auditedOrders,
     }
-    return ResponseFormat(
+    return new ResponseFormat(
       {
         message: "auditMemberBehavior",
         payload,

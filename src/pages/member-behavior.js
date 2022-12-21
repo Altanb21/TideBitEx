@@ -10,7 +10,6 @@ import { dateFormatter } from "../utils/Utils";
 
 let currentDate = new Date();
 
-
 const AuditOrder = (props) => {
   const { order } = props;
   return (
@@ -176,7 +175,7 @@ const MemberBehavior = (props) => {
           start: date.toISOString().substring(0, 10),
           end: getNextDailyDate(date).toISOString().substring(0, 10),
         });
-        console.log(`searchHandler result`, result)
+        console.log(`searchHandler result`, result);
         setBehaviors(result);
       } catch (error) {
         console.error(`error`, error);
@@ -218,7 +217,11 @@ const MemberBehavior = (props) => {
             options={assets.map((a) => a.currency)}
             selected={selectedAsset?.currency}
           />
-          <DatePicker date={date} setDate={updateDateHandler} maxDate={date} />
+          <DatePicker
+            date={date}
+            setDate={updateDateHandler}
+            maxDate={currentDate}
+          />
           <button className="screen__btn" onClick={searchHandler}>
             {t("search")}
           </button>

@@ -197,7 +197,7 @@
     top: 60%;
     right: 10px;
     text-align: center;
-
+    cursor: default;
     width: 25px;
     height: 25px;
     margin: 0 auto;
@@ -216,6 +216,16 @@
       border: 1px solid #707070;
       border-top-right-radius: 3px;
       border-bottom-right-radius: 3px;
+    }
+  }
+  &__search-icon {
+    &.enabled {
+      cursor: pointer;
+    }
+    &.enabled &--circle,
+    &.enabled &--rectangle {
+      border-color: #2699fb;
+      cursor: pointer;
     }
   }
   &__tool-bar {
@@ -387,14 +397,14 @@
       border-radius: 5px;
       padding: 2px 5px;
       cursor: pointer;
-      justify-content: center
+      justify-content: center;
     }
-    &--button:hover{
+    &--button:hover {
       background-color: #2699fb;
       border: 1px solid #2699fb;
       color: white;
     }
-    &--button.disabled{
+    &--button.disabled {
       cursor: default !important;
       pointer-events: none !important;
       background-color: transparent !important;

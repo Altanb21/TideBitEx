@@ -3,17 +3,6 @@
   & .screen__table-rows {
     border: none;
   }
-  & .screen__search-icon {
-    cursor: default;
-  }
-  & .screen__search-icon.enabled {
-    cursor: pointer;
-    .screen__search-icon--circle,
-    .screen__search-icon--rectangle {
-      border-color: #2699fb;
-      cursor: pointer;
-    }
-  }
   & .screen__search-box {
     width: 300px;
   }
