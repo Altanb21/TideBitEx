@@ -173,7 +173,7 @@ const MemberBehavior = (props) => {
     if (member?.id && selectedAsset?.currencyId && date) {
       // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
       try {
-        let result = await storeCtx.auditorMemberAccounts({
+        let result = await storeCtx.auditorMemberBehavior({
           memberId: member.id,
           currency: selectedAsset.currencyId,
           start: date.toISOString().substring(0, 10),
