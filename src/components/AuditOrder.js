@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import SafeMath from "../utils/SafeMath";
+import Reason from "../constant/Reason";
+
 
 const AccountVersionTable = (props) => {
   const { t } = useTranslation();
@@ -9,6 +10,7 @@ const AccountVersionTable = (props) => {
       <tbody className="audit-order__rows">
         <tr className="audit-order__row audit-order__row--header">
           <th className="audit-order__value">{t("created_at")}</th>
+          <th className="audit-order__value">{t("id")}</th>
           <th className="audit-order__value">{t("reason")}</th>
           <th className="audit-order__value">{t("balance")}</th>
           <th className="audit-order__value">{t("locked")}</th>
@@ -18,7 +20,8 @@ const AccountVersionTable = (props) => {
         {props.accountVersions.map((accountVersion) => (
           <tr className="audit-order__row">
             <td className="audit-order__value">{accountVersion.created_at}</td>
-            <td className="audit-order__value">{accountVersion.reason}</td>
+            <td className="audit-order__value">{accountVersion.id}</td>
+            <td className="audit-order__value">{Reason[accountVersion.reason]}</td>
             <td className="audit-order__value">
               {`${accountVersion.balance} ${accountVersion.currency}`}
             </td>
@@ -103,7 +106,7 @@ const AuditOrder = (props) => {
             <th className="audit-order__value">{t("trades_count")}</th>
           </tr>
           <tr className="audit-order__row audit-order__row--data">
-            <td className="audit-order__value">{auditOrder.created_at}</td>
+            <td className="audit-order__value">{auditOrder.order.created_at}</td>
             <td className="audit-order__value">{auditOrder.order.id}</td>
             <td className="audit-order__value">{`${auditOrder.order.price} ${auditOrder.order.baseUnit}/${auditOrder.order.quoteUnit}`}</td>
             <td className="audit-order__value">
@@ -130,6 +133,7 @@ const AuditOrder = (props) => {
         <tbody className="audit-order__rows">
           <tr className="audit-order__row audit-order__row--header">
             <th className="audit-order__value">{t("created_at")}</th>
+            <th className="audit-order__value">{t("id")}</th>
             <th className="audit-order__value">{t("trend")}</th>
             <th className="audit-order__value">{t("price")}</th>
             <th className="audit-order__value">{t("volume")}</th>
@@ -140,6 +144,7 @@ const AuditOrder = (props) => {
           {auditOrder.vouchers.map((voucher) => (
             <tr className="audit-order__row">
               <td className="audit-order__value">{voucher.created_at}</td>
+              <td className="audit-order__value">{voucher.id}</td>
               <td className="audit-order__value">{voucher.trend}</td>
               <td className="audit-order__value">{`${voucher.price} ${voucher.bid}/${voucher.ask}`}</td>
               <td className="audit-order__value">
