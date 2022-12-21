@@ -5540,12 +5540,12 @@ class ExchangeHub extends Bot {
       realValue = removeZeroEnd(v.value);
       realVolume = removeZeroEnd(v.volume);
       if (order.type === Database.TYPE.ORDER_BID) {
-        this.logger.debug(`accountVersionAdds add${add}`, accountVersionAdds);
-        this.logger.debug(`accountVersionSubs sub${sub}`, accountVersionSubs);
+        // this.logger.debug(`accountVersionAdds add${add}`, accountVersionAdds);
+        // this.logger.debug(`accountVersionSubs sub${sub}`, accountVersionSubs);
         expectVolume = add;
         expectValue = SafeMath.mult(sub, "-1");
-        this.logger.debug(`expectVolume`, expectVolume);
-        this.logger.debug(`expectValue`, expectValue);
+        // this.logger.debug(`expectVolume`, expectVolume);
+        // this.logger.debug(`expectValue`, expectValue);
       } else {
         expectVolume = SafeMath.mult(sub, "-1");
         expectValue = add;
