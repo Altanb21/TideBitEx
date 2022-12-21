@@ -5,7 +5,12 @@ const AuditOrderList = (props) => {
     <AuditOrder key={`order-${order.id}`} auditOrder={order} />
   ));
   return (
-    <tbody className="screen__table-rows audit-order__list">{component}</tbody>
+    <table className="screen__table">
+      <thead className="screen__table-header">Audited Orders</thead>
+      <tbody className="screen__table-rows audit-order__list">
+        {component}
+      </tbody>
+    </table>
   );
 };
 

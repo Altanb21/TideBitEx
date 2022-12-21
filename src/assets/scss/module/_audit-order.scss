@@ -51,13 +51,16 @@
   &__suffix {
     color: #707070;
   }
-  &__rows {
+  &__container {
     border: 1px solid #707070;
     border-radius: 5px;
   }
   &__row {
     &--header {
       border-bottom: 1px solid #707070;
+    }
+    &--main{
+        background-color: #fff;
     }
     display: flex;
     flex-direction: row;

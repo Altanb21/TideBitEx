@@ -6,6 +6,8 @@ import LoadingDialog from "../components/LoadingDialog";
 import TableDropdown from "../components/TableDropdown";
 import StoreContext from "../store/store-context";
 import AuditOrderList from "../components/AuditOrderList";
+import DepositList from "../components/DepositList";
+import WithdrawList from "../components/WithdrawList";
 
 const MemberBehavior = (props) => {
   // console.log(`MemberBehavior`, props)
@@ -102,7 +104,7 @@ const MemberBehavior = (props) => {
           <TableDropdown
             className="screen__filter"
             selectHandler={updateAssetHandler}
-            options={assets.map((a) => a.currency)}
+            options={assets.map((a) => a.currency.toUpperCase())}
             selected={selectedAsset?.currency}
           />
           <EmailSeacrh searchMemberHandler={searchMemberHandler} />
@@ -133,12 +135,12 @@ const MemberBehavior = (props) => {
           </button>
         </div>
         <div className="screen__container">
-          <div className="screen__title">{member?.email}</div>
-          <table className="screen__table">
-            {/* <DepositList behaviors={behaviors.depositRecords}/>
-            <WithdrawList behaviors={behaviors.withdrawRecords}/> */}
-            <AuditOrderList orders={behaviors.auditedOrders} />
-          </table>
+          <div className="screen__table-header screen__table-header--em">
+            {member?.email}
+          </div>
+          <DepositList deposits={behaviors.depositRecords} />
+          <WithdrawList withdraws={behaviors.withdrawRecords} />
+          <AuditOrderList orders={behaviors.auditedOrders} />
         </div>
       </section>
     </>

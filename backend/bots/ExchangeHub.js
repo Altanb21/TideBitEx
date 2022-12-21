@@ -5449,15 +5449,7 @@ class ExchangeHub extends Bot {
       quoteUnit = this.coinsSettingsMap[order.bid.toString()]?.code;
     // 1. getVouchers
     vouchers = await this.database.getVouchersByOrderId(order.id);
-    vouchers = vouchers.map((v) => ({
-      ...v,
-      price: removeZeroEnd(v.price),
-      volume: removeZeroEnd(v.volume),
-      value: removeZeroEnd(v.value),
-      ask_fee: removeZeroEnd(v.ask_fee),
-      bid_fee: removeZeroEnd(v.bid_fee),
-      // created_at: v.created_at.substring(0, 19).replace("T", " "),
-    }));
+
     this.logger.debug(`vouchers`, vouchers);
     tradesCounts = vouchers.length;
     fundsReceived = vouchers.reduce((prev, curr) => {
@@ -5549,14 +5541,30 @@ class ExchangeHub extends Bot {
         ids,
         Database.MODIFIABLE_TYPE.TRADE
       );
-    accountVersionsByTrade = accountVersionsByTrade.map((v) => ({
+    vouchers = vouchers.map((v) => ({
       ...v,
-      currency: this.coinsSettingsMap[v.currency]?.code,
-      balance: removeZeroEnd(v.balance),
-      locked: removeZeroEnd(v.locked),
-      fee: removeZeroEnd(v.fee),
+      price: removeZeroEnd(v.price),
+      volume: removeZeroEnd(v.volume),
+      value: removeZeroEnd(v.value),
+      ask_fee: removeZeroEnd(v.ask_fee),
+      bid_fee: removeZeroEnd(v.bid_fee),
       // created_at: v.created_at.substring(0, 19).replace("T", " "),
+      accountVersions: accountVersionsByTrade
+        .filter(
+          (v) =>
+            SafeMath.eq(v.member_id, order.member_id) &&
+            SafeMath.eq(v.trade_id, v.modifiable_id)
+        )
+        .map((v) => ({
+          ...v,
+          currency: this.coinsSettingsMap[v.currency]?.code,
+          balance: removeZeroEnd(v.balance),
+          locked: removeZeroEnd(v.locked),
+          fee: removeZeroEnd(v.fee),
+          // created_at: v.created_at.substring(0, 19).replace("T", " "),
+        })),
     }));
+
     this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
     let accountVersions = accountVersionsByOrder.concat(accountVersionsByTrade);
     for (let accV of accountVersions) {
@@ -5594,16 +5602,16 @@ class ExchangeHub extends Bot {
       order.updated_at
     );
     return {
-      baseUnitBalDiffByOrder,
-      baseUnitBalDiffByAccV,
-      baseUnitLocDiffByOrder,
-      baseUnitLocDiffByAccV,
-      quoteUnitBalDiffByOrder,
-      quoteUnitBalDiffByAccV,
-      quoteUnitLocDiffByOrder,
-      quoteUnitLocDiffByAccV,
-      tradesCounts,
-      fundsReceived,
+      // baseUnitBalDiffByOrder,
+      // baseUnitBalDiffByAccV,
+      // baseUnitLocDiffByOrder,
+      // baseUnitLocDiffByAccV,
+      // quoteUnitBalDiffByOrder,
+      // quoteUnitBalDiffByAccV,
+      // quoteUnitLocDiffByOrder,
+      // quoteUnitLocDiffByAccV,
+      // tradesCounts,
+      // fundsReceived,
       order: {
         baseUnit,
         quoteUnit,
@@ -5616,11 +5624,10 @@ class ExchangeHub extends Bot {
         locked: removeZeroEnd(order.locked),
         origin_locked: removeZeroEnd(order.origin_locked),
         funds_received: removeZeroEnd(order.funds_received),
+        accountVersions: accountVersionsByOrder,
         // updated_at: order.updated_at.substring(0, 19).replace("T", " "),
       },
       vouchers,
-      accountVersionsByOrder,
-      accountVersionsByTrade,
       trades,
     };
   }
