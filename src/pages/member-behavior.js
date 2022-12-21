@@ -158,9 +158,9 @@ const MemberBehavior = (props) => {
       let assetsR = await storeCtx.auditorMemberAccounts({
         memberId: member.id,
       });
-      let assets = assetsR.accounts || [];
-      console.log(`searchMemberHandler assetsR`, assetsR)
-      console.log(`searchMemberHandler assets`, assets)
+      let assets = assetsR.accounts ? Object.values(assetsR.accounts) : [];
+      console.log(`searchMemberHandler assetsR`, assetsR);
+      console.log(`searchMemberHandler assets`, assets);
       setMember(member);
       setAssets(assets);
       setSelectedAsset(assets[0]);
