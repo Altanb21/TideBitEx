@@ -5535,12 +5535,12 @@ class ExchangeHub extends Bot {
       fee: removeZeroEnd(v.fee),
       // created_at: v.created_at.substring(0, 19).replace("T", " "),
     }));
-    this.logger.debug(`accountVersionsByOrder`, accountVersionsByOrder);
     let accountVersionsByTrade =
       await this.database.getAccountVersionsByModifiableIds(
         ids,
         Database.MODIFIABLE_TYPE.TRADE
       );
+    this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
     vouchers = vouchers.map((v) => ({
       ...v,
       price: removeZeroEnd(v.price),
@@ -5551,9 +5551,9 @@ class ExchangeHub extends Bot {
       // created_at: v.created_at.substring(0, 19).replace("T", " "),
       accountVersions: accountVersionsByTrade
         .filter(
-          (v) =>
-            SafeMath.eq(v.member_id, order.member_id) &&
-            SafeMath.eq(v.trade_id, v.modifiable_id)
+          (acc) =>
+            SafeMath.eq(acc.member_id, order.member_id) &&
+            SafeMath.eq(acc.modifiable_id, v.trade_id)
         )
         .map((v) => ({
           ...v,

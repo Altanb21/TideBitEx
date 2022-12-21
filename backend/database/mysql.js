@@ -1361,7 +1361,7 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      this.logger.debug("getDepositRecords", query);
+      // this.logger.debug("getDepositRecords", query);
       const [deposits] = await this.db.query({
         query,
       });
@@ -1404,7 +1404,7 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      this.logger.debug("getWithdrawRecords", query);
+      // this.logger.debug("getWithdrawRecords", query);
       const [withdraws] = await this.db.query({
         query,
       });
@@ -1460,7 +1460,7 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      this.logger.debug("getOrderRecords", query);
+      // this.logger.debug("getOrderRecords", query);
       let [withdraws] = await this.db.query({
         query,
       });
@@ -1516,11 +1516,11 @@ class mysql {
     ${whereCondition}
     ;`;
     try {
-      this.logger.debug("countOuterTrades", query);
+      // this.logger.debug("countOuterTrades", query);
       const [[counts]] = await this.db.query({
         query,
       });
-      this.logger.debug(`counts`, counts);
+      // this.logger.debug(`counts`, counts);
       return counts;
     } catch (error) {
       this.logger.error(error);
@@ -1660,7 +1660,7 @@ class mysql {
       AND modifiable_type = ?
     LIMIT 10;`;
     try {
-      this.logger.debug("getAccountVersionsByModifiableId", query, `[${type}]`);
+      // this.logger.debug("getAccountVersionsByModifiableId", query, `[${type}]`);
       const [accountVersions] = await this.db.query({
         query,
         values: [type],
@@ -2590,7 +2590,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      this.logger.debug("updateAuditAccountRecord", query);
+      // this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,

@@ -138,10 +138,10 @@ const AuditOrder = (props) => {
               {auditOrder.order.trades_count}
             </td>
           </tr>
+          <AccountVersionTable
+            accountVersions={auditOrder.order.accountVersions}
+          />
         </tbody>
-        <AccountVersionTable
-          accountVersions={auditOrder.order.accountVersions}
-        />
       </table>
 
       <table className="audit-order__table">
@@ -177,8 +177,8 @@ const AuditOrder = (props) => {
                   {`${voucher.bid_fee} ${voucher.bid}`}
                 </td>
               </tr>
+              <AccountVersionTable accountVersions={voucher.accountVersions} />
             </tbody>
-            <AccountVersionTable accountVersions={voucher.accountVersions} />
           </>
         ))}
       </table>
