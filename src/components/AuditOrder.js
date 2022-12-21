@@ -16,6 +16,7 @@ const AccountVersionTable = (props) => {
           <th className="audit-order__value">{t("locked")}</th>
           <th className="audit-order__value">{t("fee")}</th>
           <th className="audit-order__value">{t("modifiable_type")}</th>
+          <th className="audit-order__value">{t("modifiable_id")}</th>
         </tr>
         {props.accountVersions.map((accountVersion) => (
           <tr className="audit-order__row">
@@ -33,6 +34,9 @@ const AccountVersionTable = (props) => {
             </td>
             <td className="audit-order__value">
               {accountVersion.modifiable_type}
+            </td>
+            <td className="audit-order__value">
+              {accountVersion.modifiable_id}
             </td>
           </tr>
         ))}
@@ -134,7 +138,7 @@ const AuditOrder = (props) => {
           <tr className="audit-order__row audit-order__row--header">
             <th className="audit-order__value">{t("created_at")}</th>
             <th className="audit-order__value">{t("id")}</th>
-            <th className="audit-order__value">{t("trend")}</th>
+            <th className="audit-order__value">{t("trade_id")}</th>
             <th className="audit-order__value">{t("price")}</th>
             <th className="audit-order__value">{t("volume")}</th>
             <th className="audit-order__value">{t("value")}</th>
@@ -145,7 +149,7 @@ const AuditOrder = (props) => {
             <tr className="audit-order__row">
               <td className="audit-order__value">{voucher.created_at}</td>
               <td className="audit-order__value">{voucher.id}</td>
-              <td className="audit-order__value">{voucher.trend}</td>
+              <td className="audit-order__value">{voucher.trade_id}</td>
               <td className="audit-order__value">{`${voucher.price} ${voucher.bid}/${voucher.ask}`}</td>
               <td className="audit-order__value">
                 {`${voucher.volume} ${voucher.ask}`}
