@@ -53,7 +53,9 @@ const AuditOrder = (props) => {
   const { t } = useTranslation();
   const { auditOrder } = props;
   return (
-    <div className="audit-order">
+    <div
+      className={`audit-order ${auditOrder.alert ? " audit-order--alert" : ""}`}
+    >
       <div div className="audit-order__summary">
         <div div className="audit-order__header">
           <div div className="audit-order__leading">
@@ -87,13 +89,32 @@ const AuditOrder = (props) => {
             <div div className="audit-order__suffix--title">
               {t("funds_received")}
             </div>
-            <div div className="audit-order__suffix--value">
-              {`${auditOrder.order.funds_received} ${
+            <div
+              div
+              className={`audit-order__suffix--value ${
+                auditOrder.order.funds_received.alert
+                  ? " audit-order__suffix--error"
+                  : ""
+              }`}
+            >
+              {`${auditOrder.order.funds_received.real} ${
                 auditOrder.order.type === "sell"
                   ? auditOrder.order.quoteUnit
                   : auditOrder.order.baseUnit
               }`}
             </div>
+            {auditOrder.order.funds_received.alert && (
+              <div
+                div
+                className="audit-order__suffix--value audit-order__suffix--alert"
+              >
+                {`${auditOrder.order.funds_received.expect} ${
+                  auditOrder.order.type === "sell"
+                    ? auditOrder.order.quoteUnit
+                    : auditOrder.order.baseUnit
+                }`}
+              </div>
+            )}
           </div>
         </div>
         {/* <div div className="audit-order__subheader"></div> */}
@@ -138,7 +159,20 @@ const AuditOrder = (props) => {
               }`}
             </td>
             <td className="audit-order__value">
-              {auditOrder.order.trades_count}
+              <span
+                className={`${
+                  auditOrder.order.trades_count.alert
+                    ? "audit-order__value--error"
+                    : ""
+                }`}
+              >
+                {auditOrder.order.trades_count.expect}
+              </span>
+              {auditOrder.order.trades_count.alert && (
+                <span className="audit-order__value--alert">
+                  {auditOrder.order.trades_count.real}
+                </span>
+              )}
             </td>
           </tr>
           <AccountVersionTable
@@ -155,7 +189,7 @@ const AuditOrder = (props) => {
               className={`audit-order__container ${
                 voucher.accountVersions.length > 0
                   ? ""
-                  : "audit-order__container--alert"
+                  : " audit-order__container--alert"
               }`}
             >
               <tr className="audit-order__row audit-order__row--main">
@@ -174,10 +208,32 @@ const AuditOrder = (props) => {
                 <td className="audit-order__value">{voucher.trade_id}</td>
                 <td className="audit-order__value">{`${voucher.price} ${voucher.bid}/${voucher.ask}`}</td>
                 <td className="audit-order__value">
-                  {`${voucher.volume} ${voucher.ask}`}
+                  <span
+                    className={`${
+                      voucher.volume.alert ? "audit-order__value--error" : ""
+                    }`}
+                  >
+                    {`${voucher.volume.real} ${voucher.ask}`}
+                  </span>
+                  {voucher.volume.alert && (
+                    <span className="audit-order__value--alert">
+                      {`${voucher.volume.expect} ${voucher.ask}`}
+                    </span>
+                  )}
                 </td>
                 <td className="audit-order__value">
-                  {`${voucher.value} ${voucher.bid}`}
+                  <span
+                    className={`${
+                      voucher.value.alert ? "audit-order__value--error" : ""
+                    }`}
+                  >
+                    {`${voucher.value.real} ${voucher.bid}`}
+                  </span>
+                  {voucher.value.alert && (
+                    <span className="audit-order__value--alert">
+                      {`${voucher.value.expect} ${voucher.bid}`}
+                    </span>
+                  )}
                 </td>
                 <td className="audit-order__value">
                   {`${voucher.ask_fee} ${voucher.ask}`}

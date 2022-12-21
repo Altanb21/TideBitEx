@@ -5428,192 +5428,12 @@ class ExchangeHub extends Bot {
   }
 
   async auditOrder(order) {
-    let tradesCounts,
-      fundsReceived,
-      fee = 0,
-      volume,
-      locked,
-      baseUnitAccountVersions = [],
-      quoteUnitAccountVersions = [],
+    let alert = false,
       trades = [],
       vouchers = [],
-      baseUnitBalDiffByOrder = 0,
-      baseUnitLocDiffByOrder = 0,
-      quoteUnitBalDiffByOrder = 0,
-      quoteUnitLocDiffByOrder = 0,
-      baseUnitBalDiffByAccV = 0,
-      baseUnitLocDiffByAccV = 0,
-      quoteUnitBalDiffByAccV = 0,
-      quoteUnitLocDiffByAccV = 0,
       baseUnit = this.coinsSettingsMap[order.ask.toString()]?.code,
-      quoteUnit = this.coinsSettingsMap[order.bid.toString()]?.code;
-    // 1. getVouchers
-    vouchers = await this.database.getVouchersByOrderId(order.id);
-
-    this.logger.debug(`vouchers`, vouchers);
-    tradesCounts = vouchers.length;
-    fundsReceived = vouchers.reduce((prev, curr) => {
-      prev = SafeMath.plus(
-        prev,
-        order.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
-      );
-      return prev;
-    }, 0);
-    if (order.type === Database.TYPE.ORDER_BID) {
-      // when order create 扣除可用餘額，增加鎖定餘額
-      quoteUnitBalDiffByOrder = SafeMath.minus(
-        quoteUnitBalDiffByOrder,
-        order.origin_locked
-      );
-      quoteUnitLocDiffByOrder = SafeMath.plus(
-        quoteUnitLocDiffByOrder,
-        order.locked
-      );
-      // fee = vouchers.reduce((prev, curr) => {
-      //   prev = SafeMath.plus(prev, curr.bid_fee);
-      //   return prev;
-      // }, 0);
-      baseUnitBalDiffByOrder = SafeMath.plus(
-        baseUnitBalDiffByOrder,
-        SafeMath.minus(order.funds_received, fee)
-      );
-      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
-        // cancel Order 解鎖 order 剩餘鎖定餘額  ||   done Order 返回 order 剩餘鎖定餘額
-        quoteUnitBalDiffByOrder = SafeMath.plus(
-          quoteUnitBalDiffByOrder,
-          order.locked
-        );
-        quoteUnitLocDiffByOrder = SafeMath.minus(
-          quoteUnitLocDiffByOrder,
-          order.locked
-        );
-      }
-    } else {
-      // when order create 扣除可用餘額，增加鎖定餘額
-      baseUnitBalDiffByOrder = SafeMath.minus(
-        baseUnitBalDiffByOrder,
-        order.origin_locked
-      );
-      baseUnitLocDiffByOrder = SafeMath.plus(
-        baseUnitLocDiffByOrder,
-        order.locked
-      );
-      // fee = vouchers.reduce((prev, curr) => {
-      //   prev = SafeMath.plus(prev, curr.ask_fee);
-      //   return prev;
-      // }, 0);
-      quoteUnitBalDiffByOrder = SafeMath.plus(
-        quoteUnitBalDiffByOrder,
-        SafeMath.minus(order.funds_received, fee)
-      );
-      if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
-        // cancel Order 解鎖 order 剩餘鎖定餘額 ||   done Order 返回 order 剩餘鎖定餘額
-        baseUnitBalDiffByOrder = SafeMath.plus(
-          baseUnitBalDiffByOrder,
-          order.locked
-        );
-        baseUnitLocDiffByOrder = SafeMath.minus(
-          baseUnitLocDiffByOrder,
-          order.locked
-        );
-      }
-    }
-    // 2. getTrades
-    let ids = vouchers.map((v) => v.trade_id);
-    trades = await this.database.getTradesByIds(ids);
-    // 3. getAccountVersions
-    let accountVersionsByOrder =
-      await this.database.getAccountVersionsByModifiableIds(
-        [order.id],
-        Database.MODIFIABLE_TYPE.ORDER
-      );
-    accountVersionsByOrder = accountVersionsByOrder.map((v) => ({
-      ...v,
-      currency: this.coinsSettingsMap[v.currency]?.code,
-      balance: removeZeroEnd(v.balance),
-      locked: removeZeroEnd(v.locked),
-      fee: removeZeroEnd(v.fee),
-      // created_at: v.created_at.substring(0, 19).replace("T", " "),
-    }));
-    let accountVersionsByTrade =
-      await this.database.getAccountVersionsByModifiableIds(
-        ids,
-        Database.MODIFIABLE_TYPE.TRADE
-      );
-    this.logger.debug(`auditOrder ids`, ids);
-    this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
-    vouchers = vouchers.map((v) => ({
-      ...v,
-      price: removeZeroEnd(v.price),
-      volume: removeZeroEnd(v.volume),
-      value: removeZeroEnd(v.value),
-      ask_fee: removeZeroEnd(v.ask_fee),
-      bid_fee: removeZeroEnd(v.bid_fee),
-      // created_at: v.created_at.substring(0, 19).replace("T", " "),
-      accountVersions: accountVersionsByTrade
-        .filter(
-          (acc) =>
-            SafeMath.eq(acc.member_id, order.member_id) &&
-            SafeMath.eq(acc.modifiable_id, v.trade_id)
-        )
-        .map((v) => ({
-          ...v,
-          currency: this.coinsSettingsMap[v.currency]?.code,
-          balance: removeZeroEnd(v.balance),
-          locked: removeZeroEnd(v.locked),
-          fee: removeZeroEnd(v.fee),
-          // created_at: v.created_at.substring(0, 19).replace("T", " "),
-        })),
-    }));
-
-    this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
-    let accountVersions = accountVersionsByOrder.concat(accountVersionsByTrade);
-    for (let accV of accountVersions) {
-      if (SafeMath.eq(accV.currency, order.ask)) {
-        baseUnitAccountVersions = [...baseUnitAccountVersions, accV];
-      }
-      if (SafeMath.eq(accV.currency, order.bid)) {
-        quoteUnitAccountVersions = [...quoteUnitAccountVersions, accV];
-      }
-    }
-    for (let bAccV of baseUnitAccountVersions) {
-      baseUnitBalDiffByAccV = SafeMath.plus(
-        baseUnitBalDiffByAccV,
-        bAccV.balance
-      );
-      baseUnitLocDiffByAccV = SafeMath.plus(
-        baseUnitBalDiffByAccV,
-        bAccV.locked
-      );
-    }
-    for (let qAccV of quoteUnitAccountVersions) {
-      quoteUnitBalDiffByAccV = SafeMath.plus(
-        quoteUnitBalDiffByAccV,
-        qAccV.balance
-      );
-      quoteUnitLocDiffByAccV = SafeMath.plus(
-        baseUnitBalDiffByAccV,
-        qAccV.locked
-      );
-    }
-    this.logger.debug(
-      `typeof order.updated_at`,
-      typeof order.updated_at,
-      order.updated_at.toISOString(),
-      order.updated_at
-    );
-    return {
-      baseUnitBalDiffByOrder,
-      baseUnitBalDiffByAccV,
-      baseUnitLocDiffByOrder,
-      baseUnitLocDiffByAccV,
-      quoteUnitBalDiffByOrder,
-      quoteUnitBalDiffByAccV,
-      quoteUnitLocDiffByOrder,
-      quoteUnitLocDiffByAccV,
-      tradesCounts,
-      fundsReceived,
-      order: {
+      quoteUnit = this.coinsSettingsMap[order.bid.toString()]?.code,
+      auditedOrder = {
         baseUnit,
         quoteUnit,
         ...order,
@@ -5625,9 +5445,136 @@ class ExchangeHub extends Bot {
         locked: removeZeroEnd(order.locked),
         origin_locked: removeZeroEnd(order.origin_locked),
         funds_received: removeZeroEnd(order.funds_received),
-        accountVersions: accountVersionsByOrder,
-        // updated_at: order.updated_at.substring(0, 19).replace("T", " "),
-      },
+        updated_at: order.updated_at
+          .toString()
+          .substring(0, 19)
+          .replace("T", " "),
+        // accountVersions: accountVersionsByOrder,
+      };
+    // 1. getVouchers
+    vouchers = await this.database.getVouchersByOrderId(order.id);
+    // 2. getTrades
+    let ids = vouchers.map((v) => v.trade_id);
+    trades = await this.database.getTradesByIds(ids);
+    order.trades_count = {
+      expect: order.trades_count,
+      real: vouchers.length,
+      alert:
+        !SafeMath.eq(order.trades_count, vouchers.length) ||
+        trades.length !== vouchers.length,
+    };
+    let fundsReceived = vouchers.reduce((prev, curr) => {
+      prev = SafeMath.plus(
+        prev,
+        order.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
+      );
+      return prev;
+    }, 0);
+    order.funds_received = {
+      expect: auditedOrder.funds_received,
+      real: fundsReceived,
+      alert: !SafeMath.eq(auditedOrder.funds_received, fundsReceived),
+    };
+    // 3. getAccountVersions
+    let accountVersionsByOrder =
+      await this.database.getAccountVersionsByModifiableIds(
+        [order.id],
+        Database.MODIFIABLE_TYPE.ORDER
+      );
+    order.accountVersions = accountVersionsByOrder.map((v) => ({
+      ...v,
+      currency: this.coinsSettingsMap[v.currency]?.code,
+      balance: removeZeroEnd(v.balance),
+      locked: removeZeroEnd(v.locked),
+      fee: removeZeroEnd(v.fee),
+      created_at: v.created_at.substring(0, 19).replace("T", " "),
+    }));
+    let accountVersionsByTrade =
+      await this.database.getAccountVersionsByModifiableIds(
+        ids,
+        Database.MODIFIABLE_TYPE.TRADE
+      );
+    vouchers = vouchers.map((v) => {
+      let add,
+        sub,
+        expectValue,
+        realValue,
+        expectVolume,
+        realVolume,
+        isValueCorrect,
+        isVolumeCorrect,
+        accountVersions,
+        accountVersionAdds = [],
+        accountVersionSubs = [];
+      accountVersions = accountVersionsByTrade
+        .filter(
+          (acc) =>
+            SafeMath.eq(acc.member_id, order.member_id) &&
+            SafeMath.eq(acc.modifiable_id, v.trade_id)
+        )
+        .map((v) => {
+          if (v.reason === Database.REASON.STRIKE_ADD)
+            accountVersionAdds = [...accountVersionAdds, v];
+          if (v.reason === Database.REASON.STRIKE_SUB)
+            accountVersionSubs = [...accountVersionSubs, v];
+          return {
+            ...v,
+            currency: this.coinsSettingsMap[v.currency]?.code,
+            balance: removeZeroEnd(v.balance),
+            locked: removeZeroEnd(v.locked),
+            fee: removeZeroEnd(v.fee),
+            created_at: v.created_at
+              .toString()
+              .substring(0, 19)
+              .replace("T", " "),
+          };
+        });
+      add = accountVersionAdds.reduce((prev, accV) => {
+        prev = SafeMath.plus(prev, SafeMath.plus(accV.balance, accV.fee));
+        return prev;
+      }, []);
+      sub = accountVersionSubs.reduce((prev, accV) => {
+        prev = SafeMath.plus(prev, accV.locked);
+        return prev;
+      }, []);
+      if (order.type === Database.TYPE.ORDER_BID) {
+        realValue = SafeMath.mult(v.value, "-1");
+        expectValue = sub;
+        realVolume = removeZeroEnd(v.volume);
+        expectVolume = add;
+      } else {
+        realValue = removeZeroEnd(v.value);
+        expectValue = add;
+        realVolume = SafeMath.mult(v.volume, "-1");
+        expectVolume = sub;
+      }
+      isValueCorrect = SafeMath.eq(expectValue, realValue);
+      isVolumeCorrect = SafeMath.eq(expectVolume, realVolume);
+      if (
+        order.trades_count.alert ||
+        order.funds_received.alert ||
+        !isValueCorrect ||
+        !isVolumeCorrect
+      )
+        alert = true;
+      return {
+        ...v,
+        price: removeZeroEnd(v.price),
+        volume: {
+          expect: expectVolume,
+          real: realVolume,
+          alert: !isVolumeCorrect,
+        },
+        value: { expect: expectValue, real: realValue, alert: !isValueCorrect },
+        ask_fee: removeZeroEnd(v.ask_fee),
+        bid_fee: removeZeroEnd(v.bid_fee),
+        created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
+        accountVersions,
+      };
+    });
+    return {
+      alert,
+      order: auditedOrder,
       vouchers,
       trades,
     };

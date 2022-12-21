@@ -3,6 +3,9 @@
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 5px;
+  &--alert {
+    border-color: #d0021b;
+  }
   &__header {
     display: flex;
     flex-direction: row;
@@ -15,6 +18,12 @@
   }
   &__value {
     width: 175px;
+    &----error {
+      text-decoration: line-through;
+    }
+    &----alert {
+      color: #d0021b;
+    }
   }
   &__suffix,
   &__leading,
@@ -49,6 +58,12 @@
     background-color: #2b90de;
   }
   &__suffix {
+    &----error {
+      text-decoration: line-through;
+    }
+    &----alert {
+      color: #d0021b;
+    }
     color: #707070;
   }
   &__container {

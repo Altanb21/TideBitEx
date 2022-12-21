@@ -19,6 +19,10 @@
       font-weight: bold;
     }
   }
+  &__row{
+    display: flex;
+    
+  }
   &__dialog-content {
     &--title {
       display: flex;
