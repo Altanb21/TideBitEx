@@ -8,6 +8,35 @@
     flex-direction: row;
     justify-content: space-between;
   }
+  &__title{
+    color: #2699fb;
+    font-size: 24px;
+  }
+  &__decoration{
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+  }
+  &__decorate{
+    font-size: 10px;
+    color: #fff;
+    border-radius: 5px;
+  }
+  &__decorate.green{
+    background-color:#00ce7d;
+  }
+  &__decorate.red{
+    background-color:#d0021b;
+  }
+  &__decorate.grey{
+    background-color:#999;
+  }
+  &__decorate.black{
+    background-color:#555;
+  }
+  &__decorate.blue{
+    background-color:#2b90de;
+  }
   &__suffix {
     color: #707070;
   }
