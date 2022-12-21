@@ -7,35 +7,46 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
   }
-  &__title{
+  &__title {
     color: #2699fb;
     font-size: 24px;
   }
-  &__decoration{
+  &__value {
+    width: 175px;
+  }
+  &__suffix,
+  &__leading,
+  &__decoration {
+    align-items: center;
     display: flex;
     flex-direction: row;
     gap: 5px;
   }
-  &__decorate{
+  &__leading {
+    gap: 10px;
+  }
+  &__decorate {
     font-size: 10px;
     color: #fff;
     border-radius: 5px;
+    padding: 5px;
   }
-  &__decorate.green{
-    background-color:#00ce7d;
+  &__decorate.green {
+    background-color: #00ce7d;
   }
-  &__decorate.red{
-    background-color:#d0021b;
+  &__decorate.red {
+    background-color: #d0021b;
   }
-  &__decorate.grey{
-    background-color:#999;
+  &__decorate.grey {
+    background-color: #999;
   }
-  &__decorate.black{
-    background-color:#555;
+  &__decorate.black {
+    background-color: #555;
   }
-  &__decorate.blue{
-    background-color:#2b90de;
+  &__decorate.blue {
+    background-color: #2b90de;
   }
   &__suffix {
     color: #707070;
