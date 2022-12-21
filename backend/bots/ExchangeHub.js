@@ -5540,8 +5540,8 @@ class ExchangeHub extends Bot {
       realValue = removeZeroEnd(v.value);
       realVolume = removeZeroEnd(v.volume);
       if (auditedOrder.type === Database.TYPE.ORDER_BID) {
-        expectVolume = SafeMath.mult(sub, "-1");
-        expectValue = add;
+        expectValue = SafeMath.mult(sub, "-1");
+        expectVolume = add;
       } else {
         expectValue = add;
         expectVolume = SafeMath.mult(sub, "-1");
