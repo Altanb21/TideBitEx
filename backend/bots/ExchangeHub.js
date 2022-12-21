@@ -5466,13 +5466,13 @@ class ExchangeHub extends Bot {
     let fundsReceived = vouchers.reduce((prev, curr) => {
       prev = SafeMath.plus(
         prev,
-        auditedOrder.type === Database.TYPE.ORDER_ASK ? curr.volume : curr.value
+        auditedOrder.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
       );
       return prev;
     }, 0);
     auditedOrder.funds_received = {
-      expect: auditedOrder.funds_received,
-      real: fundsReceived,
+      expect: fundsReceived,
+      real: auditedOrder.funds_received,
       alert: !SafeMath.eq(auditedOrder.funds_received, fundsReceived),
     };
     // 3. getAccountVersions
