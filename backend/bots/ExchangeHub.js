@@ -5676,7 +5676,7 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
-    return {
+    let payload = {
       balanceDiff_records: accVersR.sum_balance,
       balanceDiff_behavior: balanceDiff,
       lockedDiff_records: accVersR.sum_locked,
@@ -5684,7 +5684,13 @@ class ExchangeHub extends Bot {
       depositRecords,
       withdrawRecords,
       auditedOrders,
-    };
+    }
+    return ResponseFormat(
+      {
+        message: "auditMemberBehavior",
+        payload,
+      }
+    );
   }
 
   async _updateOrderDetail(formatOrder) {

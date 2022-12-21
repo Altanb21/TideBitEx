@@ -146,10 +146,6 @@ const MemberBehavior = (props) => {
     )
   );
 
-  const updateDateHandler = useCallback((date) => {
-    setDate(date);
-  }, []);
-
   const searchMemberHandler = useCallback(
     async (email) => {
       setIsLoading(true);
@@ -159,8 +155,6 @@ const MemberBehavior = (props) => {
         memberId: member.id,
       });
       let assets = assetsR.accounts ? Object.values(assetsR.accounts) : [];
-      console.log(`searchMemberHandler assetsR`, assetsR);
-      console.log(`searchMemberHandler assets`, assets);
       setMember(member);
       setAssets(assets);
       setSelectedAsset(assets[0]);
@@ -186,6 +180,25 @@ const MemberBehavior = (props) => {
     }
   }, [member?.id, selectedAsset?.currencyId, date, storeCtx]);
 
+  const updateDateHandler = useCallback(
+    async (date) => {
+      setDate(date);
+      await searchHandler();
+    },
+    [searchHandler]
+  );
+
+  const updateAssetHandler = useCallback(
+    async (currency) => {
+      let asset = assets.find((asset) => asset.currency === currency);
+      if (asset) {
+        setSelectedAsset(asset);
+        await searchHandler();
+      }
+    },
+    [assets, searchHandler]
+  );
+
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
@@ -196,7 +209,7 @@ const MemberBehavior = (props) => {
           <div className="screen__title">{member?.email}</div>
           <TableDropdown
             className="screen__filter"
-            selectHandler={() => {}}
+            selectHandler={updateAssetHandler}
             options={assets.map((a) => a.currency)}
             selected={selectedAsset?.currency}
           />

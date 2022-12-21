@@ -2,8 +2,8 @@ import React, { useState } from "react";
 
 const TableDropdown = (props) => {
   const [openDropDown, setOpenDropDown] = useState(false);
-  const onSelect = (exchange) => {
-    props.selectHandler(exchange);
+  const onSelect = (option) => {
+    props.selectHandler(option);
     setOpenDropDown(false);
   };
   return (
