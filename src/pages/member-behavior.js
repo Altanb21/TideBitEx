@@ -10,14 +10,6 @@ import { dateFormatter } from "../utils/Utils";
 
 let currentDate = new Date();
 
-const getNextDailyDate = (date) => {
-  date.setDate(date.getDate() + 1);
-  return new Date(
-    `${currentDate.getFullYear()}-${
-      currentDate.getMonth() + 1
-    }-${currentDate.getDate()}`
-  );
-};
 
 const AuditOrder = (props) => {
   const { order } = props;
@@ -125,7 +117,7 @@ const AuditOrderList = (props) => {
     <AuditOrder key={`order-${order.id}`} order={order} />
   ));
   return (
-    <tbody className="screen__table-rows members__list">{component}</tbody>
+    <tbody className="screen__table-rows audit-order__list">{component}</tbody>
   );
 };
 
@@ -146,6 +138,16 @@ const MemberBehavior = (props) => {
     )
   );
 
+  const getNextDailyDate = (date) => {
+    let nextDate = date;
+    nextDate.setDate(nextDate.getDate() + 1);
+    return new Date(
+      `${nextDate.getFullYear()}-${
+        nextDate.getMonth() + 1
+      }-${nextDate.getDate()}`
+    );
+  };
+
   const searchMemberHandler = useCallback(
     async (email) => {
       setIsLoading(true);
@@ -165,6 +167,7 @@ const MemberBehavior = (props) => {
 
   const searchHandler = useCallback(async () => {
     if (member?.id && selectedAsset?.currencyId && date) {
+      setIsLoading(true);
       // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
       try {
         let result = await storeCtx.auditorMemberBehavior({
@@ -173,10 +176,12 @@ const MemberBehavior = (props) => {
           start: date.toISOString().substring(0, 10),
           end: getNextDailyDate(date).toISOString().substring(0, 10),
         });
+        console.log(`searchHandler result`, result)
         setBehaviors(result);
       } catch (error) {
         console.error(`error`, error);
       }
+      setIsLoading(false);
     }
   }, [member?.id, selectedAsset?.currencyId, date, storeCtx]);
 

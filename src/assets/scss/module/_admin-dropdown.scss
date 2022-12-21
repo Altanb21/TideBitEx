@@ -17,6 +17,11 @@
     box-shadow: 3px 3px 6px #00000029;
     border: 1px solid #707070;
   }
+  &__options {
+    top: 40px;
+    max-height: 50vh;
+    overflow: auto;
+  }
   &__option {
     padding: 8px 20px;
     border-left: 5px solid transparent;
