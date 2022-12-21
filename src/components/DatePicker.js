@@ -126,7 +126,7 @@ const DatePicker = (props) => {
 
   const selectDate = useCallback(
     (el) => {
-      // console.log(`selectDate time`, el.time);
+      console.log(`selectDate time`, el.time);
       // setSelectedDate(el.date);
       let newDate = new Date(el.time);
       newDate = new Date(
@@ -134,11 +134,11 @@ const DatePicker = (props) => {
           newDate.getMonth() + 1
         }-${newDate.getDate()} 08:00:00`
       );
-      // console.log(
-      //   `selectDate newDate`,
-      //   newDate,
-      //   newDate.toISOString().substring(0, 10)
-      // );
+      console.log(
+        `selectDate newDate`,
+        newDate,
+        newDate.toISOString().substring(0, 10)
+      );
       // if (
       //   (props.minDate && newDate.getTime() >= props.minDate.getDate()) ||
       //   (props.maxDate && newDate.getTime() <= props.maxDate.getDate())
