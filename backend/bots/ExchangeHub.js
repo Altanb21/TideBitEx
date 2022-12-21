@@ -25,6 +25,7 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+const { removeZeroEnd } = require("../libs/Utils");
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};
@@ -55,6 +56,14 @@ class ExchangeHub extends Bot {
         this.tickersSettings = this._getTickersSettings();
         this.adminUsers = this._getAdminUsers();
         this.coinsSettings = this._getCoinsSettings();
+        this.coinsSettingsMap = this.coinsSettings.reduce(
+          (prev, coinSetting) => {
+            if (!prev[coinSetting.id.toString()])
+              prev[coinSetting.id.toString()] = { ...coinSetting };
+            return prev;
+          },
+          {}
+        );
         this.depositsSettings = this._getDepositsSettings();
         this.withdrawsSettings = this._getWithdrawsSettings();
         // this.priceList = await this.getPriceList();
@@ -467,7 +476,6 @@ class ExchangeHub extends Bot {
   async getPlatformAssets({ email, query }) {
     let result = null,
       coins = {},
-      coinsSettings,
       sources = {},
       hasError = false; //,
     const _accounts = await this.database.getTotalAccountsAssets();
@@ -477,11 +485,6 @@ class ExchangeHub extends Bot {
       return prev;
     }, {});
     // this.logger.debug(`_assetBalances`, _assetBalances);
-    coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-      if (!prev[coinSetting.id.toString()])
-        prev[coinSetting.id.toString()] = { ...coinSetting };
-      return prev;
-    }, {});
     for (let exchange of Object.keys(SupportedExchange)) {
       let source = SupportedExchange[exchange];
       switch (source) {
@@ -510,7 +513,7 @@ class ExchangeHub extends Bot {
       try {
         // 需拿交易所所有用戶餘額各幣種的加總
         for (let _account of _accounts) {
-          let coinSetting = coinsSettings[_account.currency.toString()];
+          let coinSetting = this.coinsSettingsMap[_account.currency.toString()];
           if (coinSetting) {
             const sum = SafeMath.plus(
               _account.total_balace,
@@ -5127,7 +5130,6 @@ class ExchangeHub extends Bot {
       auditRecords,
       lastestAuditAccountVersionId,
       lastestAuditRecords,
-      coinsSettings,
       result = {
         memberId,
         accounts: {},
@@ -5149,10 +5151,7 @@ class ExchangeHub extends Bot {
         if (!prev[curr.id]) prev[curr.id] = curr;
         return prev;
       }, {});
-      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
-        return prev;
-      }, {});
+
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
@@ -5166,8 +5165,8 @@ class ExchangeHub extends Bot {
             );
           result.accounts[accountId] = {
             accountId,
-            currency: coinsSettings[account.currency]?.code,
-            currencyId: coinsSettings[account.currency]?.id,
+            currency: this.coinsSettingsMap[account.currency]?.code,
+            currencyId: this.coinsSettingsMap[account.currency]?.id,
             balance: {
               current: Utils.removeZeroEnd(account.balance),
               shouldBe: correctBalance,
@@ -5321,10 +5320,6 @@ class ExchangeHub extends Bot {
       account,
       auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
-      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
-        return prev;
-      }, {}),
       dbTransaction;
     if (!currentUser.roles?.includes("root"))
       result = new ResponseFormat({
@@ -5403,7 +5398,7 @@ class ExchangeHub extends Bot {
             message: "auditorAccounts",
             payload: {
               accountId: params.id,
-              currency: coinsSettings[auditRecord.currency]?.code,
+              currency: this.coinsSettingsMap[auditRecord.currency]?.code,
               balance: {
                 current: Utils.removeZeroEnd(auditRecord.expect_balance),
                 shouldBe: Utils.removeZeroEnd(auditRecord.expect_balance),
@@ -5449,9 +5444,20 @@ class ExchangeHub extends Bot {
       baseUnitBalDiffByAccV = 0,
       baseUnitLocDiffByAccV = 0,
       quoteUnitBalDiffByAccV = 0,
-      quoteUnitLocDiffByAccV = 0;
+      quoteUnitLocDiffByAccV = 0,
+      baseUnit = this.coinsSettingsMap[order.ask.toString()]?.code,
+      quoteUnit = this.coinsSettingsMap[order.bid.toString()]?.code;
     // 1. getVouchers
     vouchers = await this.database.getVouchersByOrderId(order.id);
+    vouchers = vouchers.map((v) => ({
+      ...v,
+      price: removeZeroEnd(v.price),
+      volume: removeZeroEnd(v.volume),
+      value: removeZeroEnd(v.value),
+      ask_fee: removeZeroEnd(v.ask_fee),
+      bid_fee: removeZeroEnd(v.bid_fee),
+      created_at: v.created_at.substring(0, 19).replace("T", " "),
+    }));
     this.logger.debug(`vouchers`, vouchers);
     tradesCounts = vouchers.length;
     fundsReceived = vouchers.reduce((prev, curr) => {
@@ -5529,12 +5535,28 @@ class ExchangeHub extends Bot {
         [order.id],
         Database.MODIFIABLE_TYPE.ORDER
       );
+    accountVersionsByOrder = accountVersionsByOrder.map((v) => ({
+      ...v,
+      currency: this.coinsSettingsMap[v.currency]?.code,
+      balance: removeZeroEnd(v.balance),
+      locked: removeZeroEnd(v.locked),
+      fee: removeZeroEnd(v.fee),
+      created_at: v.created_at.substring(0, 19).replace("T", " "),
+    }));
     this.logger.debug(`accountVersionsByOrder`, accountVersionsByOrder);
     let accountVersionsByTrade =
       await this.database.getAccountVersionsByModifiableIds(
         ids,
         Database.MODIFIABLE_TYPE.TRADE
       );
+    accountVersionsByTrade = accountVersionsByTrade.map((v) => ({
+      ...v,
+      currency: this.coinsSettingsMap[v.currency]?.code,
+      balance: removeZeroEnd(v.balance),
+      locked: removeZeroEnd(v.locked),
+      fee: removeZeroEnd(v.fee),
+      created_at: v.created_at.substring(0, 19).replace("T", " "),
+    }));
     this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
     let accountVersions = accountVersionsByOrder.concat(accountVersionsByTrade);
     for (let accV of accountVersions) {
@@ -5576,9 +5598,15 @@ class ExchangeHub extends Bot {
       quoteUnitLocDiffByAccV,
       tradesCounts,
       fundsReceived,
-      order,
+      order: {
+        baseUnit,
+        quoteUnit,
+        ...order,
+        updated_at: order.updated_at.substring(0, 19).replace("T", " "),
+      },
       vouchers,
-      accountVersions,
+      accountVersionsByOrder,
+      accountVersionsByTrade,
       trades,
     };
   }
@@ -5684,13 +5712,11 @@ class ExchangeHub extends Bot {
       depositRecords,
       withdrawRecords,
       auditedOrders,
-    }
-    return new ResponseFormat(
-      {
-        message: "auditMemberBehavior",
-        payload,
-      }
-    );
+    };
+    return new ResponseFormat({
+      message: "auditMemberBehavior",
+      payload,
+    });
   }
 
   async _updateOrderDetail(formatOrder) {

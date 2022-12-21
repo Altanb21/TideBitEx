@@ -128,7 +128,7 @@ const MemberBehavior = (props) => {
               />
             </div>
           </div>
-          <button className="screen__btn" onClick={searchHandler}>
+          <button className="screen__button" onClick={searchHandler}>
             {t("search")}
           </button>
         </div>

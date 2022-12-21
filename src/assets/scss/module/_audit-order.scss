@@ -1,11 +1,26 @@
-.audit-order{
-    &__rows{
-        border: 1px solid #707070;
-        border-radius: 5px;
+.audit-order {
+  border: 1px solid #707070;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  &__header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  &__suffix {
+    color: #707070;
+  }
+  &__rows {
+    border: 1px solid #707070;
+    border-radius: 5px;
+  }
+  &__row {
+    &--header {
+      border-bottom: 1px solid #707070;
     }
-    &__row{
-        display: flex;
-        flex-direction: row;
-        gap: 10px;
-    }
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+  }
 }
