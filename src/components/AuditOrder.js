@@ -12,7 +12,7 @@ const AuditOrder = (props) => {
           {order.baseUnit}|{order.quoteUnit}
         </div>
         <div div className="audit-order__subheader">
-          {order.updated_at.toISOString()}
+          {order.updated_at}
         </div>
       </div>
       <div div className="audit-order__item">
@@ -55,7 +55,7 @@ const AuditOrder = (props) => {
         {order.vouchers.map((voucher) => (
           <div className="audit-order__row">
             <div className="audit-order__value">
-              {voucher.created_at.toISOString()}
+              {voucher.created_at}
             </div>
             <div className="audit-order__value">{voucher.trend}</div>
             <div className="audit-order__value">{voucher.price}</div>
@@ -85,7 +85,7 @@ const AuditOrder = (props) => {
         {order.accountVersions.map((accountVersion) => (
           <div className="audit-order__row">
             <div className="audit-order__value">
-              {accountVersion.created_at.toISOString()}
+              {accountVersion.created_at}
             </div>
             <div className="audit-order__value">
               {accountVersion.modifiable_type}

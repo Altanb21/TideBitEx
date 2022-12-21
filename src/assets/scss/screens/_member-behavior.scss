@@ -1,0 +1,11 @@
+.member-behavior {
+  & .screen__search-bar {
+    justify-content: space-between;
+  }
+  & .screen__table{
+    border: none;
+  }
+  & .screen__table-rows{
+    border: none;
+  }
+}

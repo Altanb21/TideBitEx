@@ -20,28 +20,26 @@ const EmailSeacrh = (props) => {
     );
   }, [inputRef, validateEmail]);
 
-  const searchMemberHandler= useCallback(() => {
-    props.searchMemberHandler(inputRef.current.value)
+  const searchMemberHandler = useCallback(() => {
+    props.searchMemberHandler(inputRef.current.value);
   }, [props]);
 
   return (
-    <div className="screen__search-bar">
-      <div className="screen__search-box">
-        <input
-          ref={inputRef}
-          type="email"
-          inputMode="search"
-          className="screen__search-input"
-          placeholder={t("search_member_email")} //輸入欲搜尋的關鍵字
-          onInput={inputHandler}
-        />
-        <div
-          className={`screen__search-icon${enableSearchButton}`}
-          onClick={searchMemberHandler}
-        >
-          <div className="screen__search-icon--circle"></div>
-          <div className="screen__search-icon--rectangle"></div>
-        </div>
+    <div className="screen__search-box">
+      <input
+        ref={inputRef}
+        type="email"
+        inputMode="search"
+        className="screen__search-input"
+        placeholder={t("search_member_email")} //輸入欲搜尋的關鍵字
+        onInput={inputHandler}
+      />
+      <div
+        className={`screen__search-icon${enableSearchButton}`}
+        onClick={searchMemberHandler}
+      >
+        <div className="screen__search-icon--circle"></div>
+        <div className="screen__search-icon--rectangle"></div>
       </div>
     </div>
   );

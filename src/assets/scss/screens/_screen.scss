@@ -4,6 +4,14 @@
   flex: auto;
   overflow: hidden;
   margin-top: 70px;
+  &__button {
+    background-color: #2699fb;
+    border: 1px solid #2699fb;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
   &__dialog-content {
     &--title {
       display: flex;
