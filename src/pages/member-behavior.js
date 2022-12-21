@@ -155,9 +155,10 @@ const MemberBehavior = (props) => {
       setIsLoading(true);
       let result = await storeCtx.getMembers({ email });
       let member = result.members.find((m) => m.email === email);
-      let assets = await storeCtx.auditorMemberAccounts({
+      let assetsR = await storeCtx.auditorMemberAccounts({
         memberId: member.id,
       });
+      let assets = assetsR.accounts || [];
       setMember(member);
       setAssets(assets);
       setSelectedAsset(assets[0]);
@@ -187,9 +188,9 @@ const MemberBehavior = (props) => {
     <>
       <LoadingDialog isLoading={isLoading} />
       <section className="screen__section member-behavior">
-        <EmailSeacrh searchMemberHandler={searchMemberHandler} />
         <div className="screen__header">{t("match-behavior")}</div>
         <div className="screen__search-bar">
+          <EmailSeacrh searchMemberHandler={searchMemberHandler} />
           <div className="screen__title">{member?.email}</div>
           <TableDropdown
             className="screen__filter"

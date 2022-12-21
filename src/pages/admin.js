@@ -33,6 +33,7 @@ const Admin = () => {
     history.push({
       hash: `#${section}`,
     });
+    setActivePage("manager");
     setActiveSection(section);
     setOpenSidebar(false);
     setData(data);
