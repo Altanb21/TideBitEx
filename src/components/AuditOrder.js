@@ -54,6 +54,7 @@ const AuditOrder = (props) => {
         </thead>
         <tbody div className="audit-order__body">
           <tr className="audit-order__row audit-order__row--header">
+            <th className="audit-order__value">{t("id")}</th>
             <th className="audit-order__value">{t("type")}</th>
             <th className="audit-order__value">{t("state")}</th>
             <th className="audit-order__value">{t("price")}</th>
@@ -65,6 +66,7 @@ const AuditOrder = (props) => {
             <th className="audit-order__value">{t("trades_count")}</th>
           </tr>
           <tr className="audit-order__row audit-order__row--data">
+            <td className="audit-order__value">{auditOrder.order.id}</td>
             <td className="audit-order__value">{auditOrder.order.type}</td>
             <td className="audit-order__value">{auditOrder.order.state}</td>
             <td className="audit-order__value">{auditOrder.order.price}</td>
