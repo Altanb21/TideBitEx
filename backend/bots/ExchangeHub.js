@@ -5602,16 +5602,16 @@ class ExchangeHub extends Bot {
       order.updated_at
     );
     return {
-      // baseUnitBalDiffByOrder,
-      // baseUnitBalDiffByAccV,
-      // baseUnitLocDiffByOrder,
-      // baseUnitLocDiffByAccV,
-      // quoteUnitBalDiffByOrder,
-      // quoteUnitBalDiffByAccV,
-      // quoteUnitLocDiffByOrder,
-      // quoteUnitLocDiffByAccV,
-      // tradesCounts,
-      // fundsReceived,
+      baseUnitBalDiffByOrder,
+      baseUnitBalDiffByAccV,
+      baseUnitLocDiffByOrder,
+      baseUnitLocDiffByAccV,
+      quoteUnitBalDiffByOrder,
+      quoteUnitBalDiffByAccV,
+      quoteUnitLocDiffByOrder,
+      quoteUnitLocDiffByAccV,
+      tradesCounts,
+      fundsReceived,
       order: {
         baseUnit,
         quoteUnit,
