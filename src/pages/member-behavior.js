@@ -38,7 +38,7 @@ const MemberBehavior = (props) => {
   );
 
   const searchHandler = useCallback(
-    async ({ start, end }) => {
+    async (start, end) => {
       if (member?.id && selectedAsset?.currencyId && dateStart && dateEnd) {
         setIsLoading(true);
         // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
@@ -69,7 +69,7 @@ const MemberBehavior = (props) => {
       setDateStart(date);
       const start = date;
       const end = dateEnd;
-      await searchHandler({ start, end });
+      await searchHandler(start, end);
     },
     [dateEnd, searchHandler]
   );
@@ -78,7 +78,7 @@ const MemberBehavior = (props) => {
       setDateStart(date);
       const end = date;
       const start = dateStart;
-      await searchHandler({ start, end });
+      await searchHandler(start, end);
     },
     [dateStart, searchHandler]
   );

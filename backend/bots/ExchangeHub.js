@@ -5456,7 +5456,7 @@ class ExchangeHub extends Bot {
       value: removeZeroEnd(v.value),
       ask_fee: removeZeroEnd(v.ask_fee),
       bid_fee: removeZeroEnd(v.bid_fee),
-      created_at: v.created_at.substring(0, 19).replace("T", " "),
+      // created_at: v.created_at.substring(0, 19).replace("T", " "),
     }));
     this.logger.debug(`vouchers`, vouchers);
     tradesCounts = vouchers.length;
@@ -5541,7 +5541,7 @@ class ExchangeHub extends Bot {
       balance: removeZeroEnd(v.balance),
       locked: removeZeroEnd(v.locked),
       fee: removeZeroEnd(v.fee),
-      created_at: v.created_at.substring(0, 19).replace("T", " "),
+      // created_at: v.created_at.substring(0, 19).replace("T", " "),
     }));
     this.logger.debug(`accountVersionsByOrder`, accountVersionsByOrder);
     let accountVersionsByTrade =
@@ -5555,7 +5555,7 @@ class ExchangeHub extends Bot {
       balance: removeZeroEnd(v.balance),
       locked: removeZeroEnd(v.locked),
       fee: removeZeroEnd(v.fee),
-      created_at: v.created_at.substring(0, 19).replace("T", " "),
+      // created_at: v.created_at.substring(0, 19).replace("T", " "),
     }));
     this.logger.debug(`accountVersionsByTrade`, accountVersionsByTrade);
     let accountVersions = accountVersionsByOrder.concat(accountVersionsByTrade);
@@ -5587,6 +5587,11 @@ class ExchangeHub extends Bot {
         qAccV.locked
       );
     }
+    this.logger.debug(
+      `typeof order.updated_at`,
+      typeof order.updated_at,
+      order.updated_at
+    );
     return {
       baseUnitBalDiffByOrder,
       baseUnitBalDiffByAccV,
@@ -5602,7 +5607,7 @@ class ExchangeHub extends Bot {
         baseUnit,
         quoteUnit,
         ...order,
-        updated_at: order.updated_at.substring(0, 19).replace("T", " "),
+        // updated_at: order.updated_at.substring(0, 19).replace("T", " "),
       },
       vouchers,
       accountVersionsByOrder,
