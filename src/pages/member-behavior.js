@@ -61,7 +61,7 @@ const MemberBehavior = (props) => {
         setIsLoading(false);
       }
     },
-    [member.id, selectedAsset.currencyId, dateStart, dateEnd, storeCtx]
+    [member?.id, selectedAsset?.currencyId, dateStart, dateEnd, storeCtx]
   );
 
   const dateStartUpdateHandler = useCallback(
