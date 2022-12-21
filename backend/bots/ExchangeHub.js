@@ -5466,7 +5466,7 @@ class ExchangeHub extends Bot {
     let fundsReceived = vouchers.reduce((prev, curr) => {
       prev = SafeMath.plus(
         prev,
-        auditedOrder.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
+        order.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
       );
       return prev;
     }, 0);
@@ -5539,7 +5539,7 @@ class ExchangeHub extends Bot {
       }, 0);
       realValue = removeZeroEnd(v.value);
       realVolume = removeZeroEnd(v.volume);
-      if (auditedOrder.type === Database.TYPE.ORDER_BID) {
+      if (order.type === Database.TYPE.ORDER_BID) {
         this.logger.debug(`accountVersionAdds add${add}`, accountVersionAdds);
         this.logger.debug(`accountVersionSubs sub${sub}`, accountVersionSubs);
         expectVolume = add;
