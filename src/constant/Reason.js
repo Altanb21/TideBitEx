@@ -1,6 +1,7 @@
 const Reason = {
   600: "ORDER_SUBMIT",
   610: "ORDER_CANCEL",
+  620: "ORDER_FULLFILLED",
   100: "STRIKE_FEE",
   110: "STRIKE_ADD",
   120: "STRIKE_SUB",

@@ -5537,16 +5537,14 @@ class ExchangeHub extends Bot {
         prev = SafeMath.plus(prev, accV.locked);
         return prev;
       }, 0);
-      if (auditedOrder.type === Database.TYPE.ORDER_ASK) {
-        realValue = SafeMath.mult(v.value, "-1");
-        expectValue = sub;
-        realVolume = removeZeroEnd(v.volume);
+      realValue = removeZeroEnd(v.value);
+      realVolume = removeZeroEnd(v.volume);
+      if (auditedOrder.type === Database.TYPE.ORDER_BID) {
+        expectValue = SafeMath.mult(sub, "-1");
         expectVolume = add;
       } else {
-        realValue = removeZeroEnd(v.value);
         expectValue = add;
-        realVolume = SafeMath.mult(v.volume, "-1");
-        expectVolume = sub;
+        expectVolume = SafeMath.mult(sub, "-1");
       }
       isValueCorrect = SafeMath.eq(expectValue, realValue);
       isVolumeCorrect = SafeMath.eq(expectVolume, realVolume);

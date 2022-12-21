@@ -18,10 +18,10 @@
   }
   &__value {
     width: 175px;
-    &----error {
+    &--error {
       text-decoration: line-through;
     }
-    &----alert {
+    &--alert {
       color: #d0021b;
     }
   }
@@ -58,10 +58,10 @@
     background-color: #2b90de;
   }
   &__suffix {
-    &----error {
+    &--error {
       text-decoration: line-through;
     }
-    &----alert {
+    &--alert {
       color: #d0021b;
     }
     color: #707070;

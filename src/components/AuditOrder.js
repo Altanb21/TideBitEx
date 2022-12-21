@@ -166,11 +166,11 @@ const AuditOrder = (props) => {
                     : ""
                 }`}
               >
-                {auditOrder.order.trades_count.expect}
+                {auditOrder.order.trades_count.real}
               </span>
               {auditOrder.order.trades_count.alert && (
                 <span className="audit-order__value--alert">
-                  {auditOrder.order.trades_count.real}
+                  {auditOrder.order.trades_count.expect}
                 </span>
               )}
             </td>
