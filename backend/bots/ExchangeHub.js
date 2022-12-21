@@ -5466,7 +5466,7 @@ class ExchangeHub extends Bot {
     let fundsReceived = vouchers.reduce((prev, curr) => {
       prev = SafeMath.plus(
         prev,
-        auditedOrder.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
+        auditedOrder.type === Database.TYPE.ORDER_ASK ? curr.volume : curr.value
       );
       return prev;
     }, 0);
@@ -5487,7 +5487,7 @@ class ExchangeHub extends Bot {
       balance: removeZeroEnd(v.balance),
       locked: removeZeroEnd(v.locked),
       fee: removeZeroEnd(v.fee),
-      created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
+      // created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
     }));
     let accountVersionsByTrade =
       await this.database.getAccountVersionsByModifiableIds(
@@ -5523,10 +5523,10 @@ class ExchangeHub extends Bot {
             balance: removeZeroEnd(v.balance),
             locked: removeZeroEnd(v.locked),
             fee: removeZeroEnd(v.fee),
-            created_at: v.created_at
-              .toString()
-              .substring(0, 19)
-              .replace("T", " "),
+            // created_at: v.created_at
+            //   .toString()
+            //   .substring(0, 19)
+            //   .replace("T", " "),
           };
         });
       add = accountVersionAdds.reduce((prev, accV) => {
@@ -5537,7 +5537,7 @@ class ExchangeHub extends Bot {
         prev = SafeMath.plus(prev, accV.locked);
         return prev;
       }, 0);
-      if (auditedOrder.type === Database.TYPE.ORDER_BID) {
+      if (auditedOrder.type === Database.TYPE.ORDER_ASK) {
         realValue = SafeMath.mult(v.value, "-1");
         expectValue = sub;
         realVolume = removeZeroEnd(v.volume);
@@ -5568,7 +5568,7 @@ class ExchangeHub extends Bot {
         value: { expect: expectValue, real: realValue, alert: !isValueCorrect },
         ask_fee: removeZeroEnd(v.ask_fee),
         bid_fee: removeZeroEnd(v.bid_fee),
-        created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
+        // created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
         accountVersions,
       };
     });
