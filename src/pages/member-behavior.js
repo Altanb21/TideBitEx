@@ -86,7 +86,9 @@ const MemberBehavior = (props) => {
   );
   const updateAssetHandler = useCallback(
     async (currency) => {
-      let asset = assets.find((asset) => asset.currency === currency);
+      let asset = assets.find(
+        (asset) => asset.currency.toUpperCase() === currency.toUpperCase()
+      );
       if (asset) {
         setSelectedAsset(asset);
         await searchHandler();
@@ -105,7 +107,7 @@ const MemberBehavior = (props) => {
             className="screen__filter"
             selectHandler={updateAssetHandler}
             options={assets.map((a) => a.currency.toUpperCase())}
-            selected={selectedAsset?.currency}
+            selected={selectedAsset?.currency.toUpperCase()}
           />
           <EmailSeacrh searchMemberHandler={searchMemberHandler} />
         </div>
