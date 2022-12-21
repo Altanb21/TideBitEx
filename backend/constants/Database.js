@@ -62,6 +62,8 @@ module.exports = {
   ORDER_SIDE: {
     SELL: "sell",
     BUY: "buy",
+    OrderAsk: "sell",
+    OrderBid: "buy",
   },
   ORDER_KIND: {
     ASK: "ask",

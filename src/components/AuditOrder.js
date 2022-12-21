@@ -44,47 +44,77 @@ const AuditOrder = (props) => {
   return (
     <div className="audit-order">
       <table className="audit-order__table">
-        <thead div className="audit-order__header">
-          <div div className="audit-order__leading">
-            {auditOrder.order.baseUnit}|{auditOrder.order.quoteUnit}
+        <thead div className="audit-order__head">
+          <div div className="audit-order__header">
+            <div div className="audit-order__leading">
+              <div div className="audit-order__title">
+                {auditOrder.order.baseUnit.toUpperCase()}|
+                {auditOrder.order.quoteUnit.toUpperCase()}
+              </div>
+              <div div className="audit-order__decoration">
+                <div
+                  className={`audit-order__decorate ${
+                    auditOrder.order.type === "sell" ? "red" : "green"
+                  }`}
+                >
+                  {auditOrder.order.type}
+                </div>
+                <div
+                  div
+                  className={`audit-order__decorate ${
+                    auditOrder.order.state === "wait"
+                      ? "blue"
+                      : auditOrder.order.state === "cancelled"
+                      ? "grey"
+                      : "black"
+                  }`}
+                >
+                  {auditOrder.order.state}
+                </div>
+              </div>
+            </div>
+            <div div className="audit-order__suffix">
+              {auditOrder.order.updated_at}
+            </div>
           </div>
-          <div div className="audit-order__suffix">
-            {auditOrder.order.updated_at}
-          </div>
+          {/* <div div className="audit-order__subheader"></div> */}
         </thead>
         <tbody div className="audit-order__body">
           <tr className="audit-order__row audit-order__row--header">
             <th className="audit-order__value">{t("id")}</th>
-            <th className="audit-order__value">{t("type")}</th>
-            <th className="audit-order__value">{t("state")}</th>
             <th className="audit-order__value">{t("price")}</th>
-            <th className="audit-order__value">{t("volume")}</th>
-            <th className="audit-order__value">{t("acc_fill_vol")}</th>
-            <th className="audit-order__value">{t("origin_locked")}</th>
-            <th className="audit-order__value">{t("locked")}</th>
+            <th className="audit-order__value">
+              {t("filled_and_origin-volume")}
+            </th>
+            <th className="audit-order__value">
+              {t("locked_and-origin-locked")}
+            </th>
             <th className="audit-order__value">{t("funds_received")}</th>
             <th className="audit-order__value">{t("trades_count")}</th>
           </tr>
           <tr className="audit-order__row audit-order__row--data">
             <td className="audit-order__value">{auditOrder.order.id}</td>
-            <td className="audit-order__value">{auditOrder.order.type}</td>
-            <td className="audit-order__value">{auditOrder.order.state}</td>
             <td className="audit-order__value">{auditOrder.order.price}</td>
             <td className="audit-order__value">
-              {auditOrder.order.origin_volume}
-            </td>
-            <td className="audit-order__value">
-              {SafeMath.minus(
+              {`${SafeMath.minus(
                 auditOrder.order.origin_volume,
                 auditOrder.order.volume
-              )}
+              )}/${auditOrder.order.origin_volume}`}
+            </td>
+
+            <td className="audit-order__value">
+              {`${auditOrder.order.locked}/${auditOrder.order.origin_locked} ${
+                auditOrder.order.type === "buy"
+                  ? auditOrder.order.quoteUnit
+                  : auditOrder.order.baseUnit
+              }`}
             </td>
             <td className="audit-order__value">
-              {auditOrder.order.origin_locked}
-            </td>
-            <td className="audit-order__value">{auditOrder.order.locked}</td>
-            <td className="audit-order__value">
-              {auditOrder.order.funds_received}
+              {`${auditOrder.order.funds_received} ${
+                auditOrder.order.type === "sell"
+                  ? auditOrder.order.quoteUnit
+                  : auditOrder.order.baseUnit
+              }`}
             </td>
             <td className="audit-order__value">
               {auditOrder.order.trades_count}

@@ -5590,6 +5590,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `typeof order.updated_at`,
       typeof order.updated_at,
+      order.updated_at.toISOString(),
       order.updated_at
     );
     return {
@@ -5607,6 +5608,14 @@ class ExchangeHub extends Bot {
         baseUnit,
         quoteUnit,
         ...order,
+        type: Database.ORDER_SIDE[order.type],
+        state: Database.DB_STATE_CODE[order.state],
+        price: removeZeroEnd(order.price),
+        volume: removeZeroEnd(order.volume),
+        origin_volume: removeZeroEnd(order.origin_volume),
+        locked: removeZeroEnd(order.locked),
+        origin_locked: removeZeroEnd(order.origin_locked),
+        funds_received: removeZeroEnd(order.funds_received),
         // updated_at: order.updated_at.substring(0, 19).replace("T", " "),
       },
       vouchers,
