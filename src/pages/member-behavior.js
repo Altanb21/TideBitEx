@@ -59,7 +59,7 @@ const MemberBehavior = (props) => {
         setIsLoading(false);
       }
     },
-    [member.id, storeCtx]
+    [member?.id, storeCtx]
   );
 
   const dateStartUpdateHandler = useCallback(
@@ -81,7 +81,7 @@ const MemberBehavior = (props) => {
     },
     [selectedAsset, dateStart, searchHandler]
   );
-  
+
   const updateAssetHandler = useCallback(
     async (currency) => {
       console.log(`currency`, currency);
