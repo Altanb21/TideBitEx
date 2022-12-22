@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import AuditOrder from "./AuditOrder";
 import ScreenDisplayOptions from "./ScreenDisplayOptions";
@@ -9,8 +9,8 @@ const AuditOrderList = (props) => {
   const [state, setState] = useState("all");
   const [orders, setOrders] = useState(props.orders);
 
-  const filterHandler = useMemo(
-    (side, state) => {
+  const filterHandler = useCallback(
+    ({ side, state }) => {
       let orders = props.orders?.filter((o) => {
         let condition = true;
         if (side !== "all") condition = condition && o.side === side;
@@ -25,7 +25,7 @@ const AuditOrderList = (props) => {
   const displaySideHandler = useCallback(
     (option) => {
       setSide(option);
-      filterHandler(option, state);
+      filterHandler({ side: option, state });
     },
     [filterHandler, state]
   );
@@ -33,7 +33,7 @@ const AuditOrderList = (props) => {
   const displayStateHandler = useCallback(
     (option) => {
       setState(option);
-      filterHandler(side, option);
+      filterHandler({ side, state: option });
     },
     [filterHandler, side]
   );
