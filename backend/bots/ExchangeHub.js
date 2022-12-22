@@ -4938,7 +4938,7 @@ class ExchangeHub extends Bot {
               referredByMember: referredByMember,
               memberReferral: memberReferral,
             });
-            this.logger.error(`calculator result`, result);
+            this.logger.debug(`calculator result`, result);
           } catch (error) {
             this.logger.error(`calculator error`, error);
             // if (error.code === Codes.ABNORMAL_ORDER) {
@@ -5021,15 +5021,15 @@ class ExchangeHub extends Bot {
               await dbTransaction.commit();
             } catch (error) {
               this.logger.error(`updater error`, error);
-              if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
-                stop = true;
-                await this.updateOuterTrade({
-                  id: data.tradeId,
-                  status: Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS,
-                  dbTransaction,
-                });
-                await dbTransaction.commit();
-              } else throw error;
+              // if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
+              stop = true;
+              await this.updateOuterTrade({
+                id: data.tradeId,
+                status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+                dbTransaction,
+              });
+              await dbTransaction.commit();
+              // } else throw error;
             }
             // this.logger.debug(`processor complete dbTransaction commit`);
           } else await dbTransaction.rollback();
