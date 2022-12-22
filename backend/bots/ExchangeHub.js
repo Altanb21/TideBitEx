@@ -4795,7 +4795,7 @@ class ExchangeHub extends Bot {
       referredByMember,
       memberReferral,
       dbTransaction = await this.database.transaction();
-    // this.logger.debug(`processor data`, data);
+    this.logger.debug(`processor data`, data);
     if (!stop) {
       try {
         // 1. 判斷收到的資料是否為此系統的資料
@@ -4938,6 +4938,7 @@ class ExchangeHub extends Bot {
               referredByMember: referredByMember,
               memberReferral: memberReferral,
             });
+            this.logger.error(`calculator result`, result);
           } catch (error) {
             this.logger.error(`calculator error`, error);
             // if (error.code === Codes.ABNORMAL_ORDER) {
