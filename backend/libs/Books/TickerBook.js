@@ -223,7 +223,13 @@ class TickerBook extends BookBase {
         }
       }
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: TickerBook] updateByDifference( instId:${instId}) error`,
+        error,
+        ticker
+      );
     }
     return result;
   }

@@ -358,7 +358,7 @@ class OkexConnector extends ConnectorBase {
       url: `${this.domain}${path}${qs}`,
       headers: this.getHeaders(true, { timeString, okAccessSign }),
     });
-    // this.logger.debug(`fetchTradeFillsRecords res`, res);
+
     if (res.success) {
       const data = this.collectTrades(res.payload);
       results = data.concat(results);
@@ -405,7 +405,7 @@ class OkexConnector extends ConnectorBase {
       url: `${this.domain}${path}${qs}`,
       headers: this.getHeaders(true, { timeString, okAccessSign }),
     });
-    // this.logger.debug(`fetchTradeFillsHistoryRecords res`, res);
+
     if (res.success) {
       const data = this.collectTrades(res.payload);
       results = results.concat(data);
@@ -452,7 +452,6 @@ class OkexConnector extends ConnectorBase {
       },
       instId
     );
-    //  this.logger.debug(`[${this.constructor.name}] getOrderDetails res`, res);
     return res;
   }
 
@@ -537,7 +536,7 @@ class OkexConnector extends ConnectorBase {
     } else {
       result = res;
     }
-    // this.logger.debug(`[${this.constructor.name}] getBalance res`, res);
+
     return result;
   }
 
@@ -574,7 +573,7 @@ class OkexConnector extends ConnectorBase {
     } else {
       result = res;
     }
-    // this.logger.debug(`[${this.constructor.name}] getBalances res`, res);
+
     return result;
   }
 
@@ -603,7 +602,7 @@ class OkexConnector extends ConnectorBase {
     } else {
       result = res;
     }
-    // this.logger.debug(`[${this.constructor.name}] getTicker res`, res);
+
     return result;
   }
   // account api end
@@ -637,7 +636,7 @@ class OkexConnector extends ConnectorBase {
     } else {
       result = res;
     }
-    // this.logger.debug(`[${this.constructor.name}] getTickers res`, res);
+
     return result;
   }
 
@@ -774,10 +773,6 @@ class OkexConnector extends ConnectorBase {
     } else {
       result = res;
     }
-    // this.logger.debug(
-    //   `[${this.constructor.name}] getTradingViewHistory res`,
-    //   res
-    // );
     return result;
   }
 
@@ -1175,7 +1170,6 @@ class OkexConnector extends ConnectorBase {
   checkRequestRate(name, now, instId) {
     let keepGO = true;
     let rateLimit = this.rateLimit[name];
-    // this.logger.debug(`test _request rateLimit`, rateLimit);
     if (rateLimit.differByInstId && !instId)
       this.logger.error(`_request error missing instId`, rateLimit);
     if (rateLimit.differByInstId && !rateLimit.count[instId])
@@ -1205,10 +1199,6 @@ class OkexConnector extends ConnectorBase {
       this.rateLimit[name].count = isReset ? 0 : this.rateLimit[name].count + 1;
       this.rateLimit[name].timestamp = now;
     }
-    // this.logger.debug(
-    //   `_request  this.rateLimit[${name}]`,
-    //   this.rateLimit[name]
-    // );
   }
 
   async _request(name, options, instId) {
@@ -1216,9 +1206,7 @@ class OkexConnector extends ConnectorBase {
       now = new Date();
     try {
       let rateLimit = this.rateLimit[name];
-      // this.logger.debug(`test _request rateLimit`, rateLimit);
       if (!this.checkRequestRate(name, now, instId)) {
-        // this.logger.debug(`_request rateLimit`, rateLimit);
         // console.time("wait");
         await wait(rateLimit.restTime);
         // console.timeEnd("wait");
@@ -1379,9 +1367,6 @@ class OkexConnector extends ConnectorBase {
     const formatOrders = [];
     orderData.forEach((data) => {
       if (data.clOrdId.startsWith(this.brokerId)) {
-        // this.logger.debug(
-        //   `_updateOrderDetails data.cTime[${data.cTime}] data.uTime[${data.uTime}] data.fillTime[${data.fillTime}] `
-        // );
         const formatOrder = {
           ...data,
           exchangeCode: Database.EXCHANGE.OKEX,
@@ -1423,7 +1408,6 @@ class OkexConnector extends ConnectorBase {
         market,
         trades: this.tradeBook.getSnapshot(instId),
       });
-      // this.loggers.debug(`_updateTrades[${market}] ${this.registerMarkets.includes(market)}`, this.registerMarkets);
       // if (this.registerMarkets.includes(market)) {
       if (this.instIds.includes(instId)) {
         EventBus.emit(Events.publicTrades, {
@@ -1484,7 +1468,11 @@ class OkexConnector extends ConnectorBase {
     }
     if (action === Events.booksActions.update) {
       try {
-        this.depthBook.updateByDifference(instId, tickerSetting?.lotSz, updateBooks);
+        this.depthBook.updateByDifference(
+          instId,
+          tickerSetting?.lotSz,
+          updateBooks
+        );
       } catch (error) {
         this.logger.error(
           `[${this.constructor.name}]_updateBooks depthBook.updateByDifference error`,
@@ -1556,7 +1544,7 @@ class OkexConnector extends ConnectorBase {
         instId,
       },
     ];
-    // this.logger.debug(`_subscribeTrades instId[${instId}]`, args);
+
     this.websocket.send(
       JSON.stringify({
         op: Events.subscribe,
@@ -1740,13 +1728,8 @@ class OkexConnector extends ConnectorBase {
   }
 
   _registerMarket(market) {
-    // this.logger.debug(`_registerMarket market`, market)
     let tickerSetting = this.tickersSettings[market];
     if (tickerSetting?.source === SupportedExchange.OKEX) {
-      // if (!this.registerMarkets.includes(market)) {
-      //   this._subscribeTrades(tickerSetting?.instId);
-      //   this.registerMarkets = [...this.registerMarkets, market];
-      // }
       if (!this.instIds.includes(tickerSetting?.instId)) {
         this._subscribeTicker(tickerSetting?.instId);
         this._subscribeTrades(tickerSetting?.instId);
@@ -1756,7 +1739,6 @@ class OkexConnector extends ConnectorBase {
   }
 
   registerMarket(market) {
-    // this.logger.debug(`registerMarket market`, market);
     this._registerMarket(market);
   }
 

@@ -87,7 +87,9 @@ class OrderBook extends BookBase {
         ...data,
       }));
       for (let data of difference.add) {
-        let i = updateSnapshot.findIndex((_d) => _d.id.toString() === data.id.toString());
+        let i = updateSnapshot.findIndex(
+          (_d) => _d.id.toString() === data.id.toString()
+        );
         if (i === -1) {
           updateSnapshot.push(data);
           this._difference[memberId][instId].add = [
@@ -97,7 +99,7 @@ class OrderBook extends BookBase {
         } else {
           if (
             // !SafeMath.eq(updateSnapshot[i].price ,data.price) ||
-            !SafeMath.eq(updateSnapshot[i].volume ,data.volume) ||
+            !SafeMath.eq(updateSnapshot[i].volume, data.volume) ||
             updateSnapshot[i].state !== data.state
           ) {
             updateSnapshot[i] = data;
@@ -110,9 +112,12 @@ class OrderBook extends BookBase {
       }
       this._snapshot[memberId][instId] = this._trim(instId, updateSnapshot);
     } catch (error) {
-      this.logger.error(
-        `[${this.constructor.name}] updateByDifference error`,
-        error
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: OrderBook] updateByDifference(memberId:${memberId}, instId:${instId}) error`,
+        error,
+        difference
       );
       return false;
     }
@@ -130,9 +135,12 @@ class OrderBook extends BookBase {
       );
       this._snapshot[memberId][instId] = this._trim(instId, data);
     } catch (error) {
-      this.logger.error(
-        `[${this.constructor.name}] updateAll  this._snapshot[memberId][instId]`,
-        this._snapshot[memberId][instId]
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: OrderBook] updateAll(memberId:${memberId}, instId:${instId}) error`,
+        error,
+        data
       );
       return false;
     }

@@ -62,10 +62,9 @@ class mysql {
       const [accounts] = await this.db.query({
         query,
       });
-      // this.logger.debug(query);
       return accounts;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(`[sql][${new Date().toISOString()} getAccounts`, query);
       return [];
     }
   }
@@ -99,19 +98,15 @@ class mysql {
       GROUP BY account_id
       ;`;
     try {
-      // this.logger.debug(
-      //   "auditAccountBalance",
-      //   query,
-      //   memberId,
-      //   currency,
-      //   startId
-      // );
       const [accountVersions] = await this.db.query({
         query,
       });
       return accountVersions;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} auditAccountBalance`,
+        query
+      );
       return [];
     }
   }
@@ -119,7 +114,7 @@ class mysql {
   async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
     let placeholder = ``,
       limitCondition = limit ? `LIMIT ${limit}` : ``;
-    // this.logger.debug(options);
+
     if (Object.keys(options)?.length > 0) {
       let keys = Object.keys(options);
       let values = Object.values(options);
@@ -128,7 +123,7 @@ class mysql {
           placeholder += ` AND accounts.${keys[index]} = ${values[index]}`;
       }
     }
-    // this.logger.debug(placeholder);
+
     const query = `
     SELECT
 	    accounts.id,
@@ -145,7 +140,7 @@ class mysql {
     ${limitCondition}
     ;`;
     const values = [memberId];
-    // this.logger.debug(query, values);
+
     try {
       let accounts;
       if (dbTransaction) {
@@ -165,10 +160,13 @@ class mysql {
           values,
         });
       }
-      // this.logger.debug(`getAccountsByMemberId`, accounts);
+
       return accounts;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAccountsByMemberId`,
+        query
+      );
       return [];
     }
   }
@@ -199,11 +197,6 @@ class mysql {
     LIMIT 1;
     `;
     try {
-      // this.logger.debug(
-      //   "getAccountByMemberIdAndCurrency",
-      //   query,
-      //   `[${memberId}, ${currencyId}]`
-      // );
       const [[account]] = await this.db.query(
         {
           query,
@@ -216,7 +209,10 @@ class mysql {
       );
       return account;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAccountByMemberIdAndCurrency`,
+        query
+      );
       if (dbTransaction) throw error;
       return [];
     }
@@ -237,13 +233,15 @@ class mysql {
     ;
     `;
     try {
-      // this.logger.debug("getAssetBalances", query);
       const [assetBalances] = await this.db.query({
         query,
       });
       return assetBalances;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAssetBalances`,
+        query
+      );
       return [];
     }
   }
@@ -260,13 +258,15 @@ class mysql {
 	    accounts.currency;
     `;
     try {
-      // this.logger.debug("getTotalAccountsAssets", query);
       const [currencies] = await this.db.query({
         query,
       });
       return currencies;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getTotalAccountsAssets`,
+        query
+      );
       return [];
     }
   }
@@ -288,13 +288,15 @@ class mysql {
     GROUP BY
 	    accounts.currency;`;
     try {
-      // this.logger.debug("getCurrenciesSymbol", query);
       const [currencies] = await this.db.query({
         query,
       });
       return currencies;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[!!! deprecated][sql][${new Date().toISOString()} getCurrenciesSymbol`,
+        query
+      );
       return [];
     }
   }
@@ -307,13 +309,15 @@ class mysql {
   async getCurrencies() {
     const query = "SELECT * FROM `asset_bases`;";
     try {
-      // this.logger.debug("getCurrencies", query);
       const [currencies] = await this.db.query({
         query,
       });
       return currencies;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[!!! deprecated][sql][${new Date().toISOString()} getCurrencies`,
+        query
+      );
       return [];
     }
   }
@@ -325,7 +329,6 @@ class mysql {
   async getCurrency(currencyId) {
     const query = "SELECT * FROM `asset_bases` WHERE `asset_bases`.`id` = ?;";
     try {
-      // this.logger.debug("getCurrency", query, currencyId);
       const [[currency]] = await this.db.query({
         query,
         values: [currencyId],
@@ -333,7 +336,10 @@ class mysql {
 
       return currency;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[!!! deprecated][sql][${new Date().toISOString()} getCurrency`,
+        query
+      );
       return [];
     }
   }
@@ -345,7 +351,6 @@ class mysql {
   async getCurrencyByKey(currencyKey) {
     const query = "SELECT * FROM `asset_bases` WHERE `asset_bases`.`key` = ?;";
     try {
-      // this.logger.debug("getCurrencyByKey", query, currencyKey);
       const [[currency]] = await this.db.query({
         query,
         values: [currencyKey],
@@ -353,7 +358,10 @@ class mysql {
 
       return currency;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[!!! deprecated][sql][${new Date().toISOString()} getCurrencyByKey`,
+        query
+      );
       return [];
     }
   }
@@ -373,16 +381,16 @@ class mysql {
         members
     ${condition}
     ;`;
-
     try {
-      // this.logger.debug("countMembers", query);
       const [[result]] = await this.db.query({
         query,
       });
-      // this.logger.debug(`result`, result, result.counts);
       return result.counts;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countMembers`,
+        query
+      );
       return [];
     }
   }
@@ -404,13 +412,12 @@ class mysql {
     LIMIT ${limit} OFFSET ${offset}
     ;`;
     try {
-      // this.logger.debug("getMembers", query);
       const [members] = await this.db.query({
         query,
       });
       return members;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(`[sql][${new Date().toISOString()} getMembers`, query);
       return [];
     }
   }
@@ -432,13 +439,15 @@ class mysql {
       id
     ;`;
     try {
-      // this.logger.debug("getMembersLatestAuditRecordIds", query);
       const [auditRecordIds] = await this.db.query({
         query,
       });
       return auditRecordIds.map((o) => o.id);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMembersLatestAuditRecordIds`,
+        query
+      );
       return [];
     }
   }
@@ -469,14 +478,17 @@ class mysql {
     LIMIT 1
     ;`;
     try {
-      // this.logger.debug("getAccountLatestAuditRecord", query);
       const [[auditRecord]] = await this.db.query({
         query,
         values: [accountId],
       });
       return auditRecord;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAccountLatestAuditRecord`,
+        query,
+        `accountId: ${accountId}`
+      );
       return [];
     }
   }
@@ -506,13 +518,15 @@ class mysql {
       id
     ;`;
     try {
-      // this.logger.debug("getMembersLatestAuditRecordIds", query);
       const [auditRecords] = await this.db.query({
         query,
       });
       return auditRecords;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMembersAuditRecordByIds`,
+        query
+      );
       return [];
     }
   }
@@ -532,13 +546,15 @@ class mysql {
 	    ${groupBy}
     ;`;
     try {
-      // this.logger.debug("getMembersLatestAccountVersionIds", query);
       const [accountVersionIds] = await this.db.query({
         query,
       });
       return accountVersionIds.map((o) => o.id);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMembersLatestAccountVersionIds`,
+        query
+      );
       return [];
     }
   }
@@ -569,16 +585,15 @@ class mysql {
       id
     ;`;
     try {
-      // this.logger.debug(
-      //   "getMembersAccountVersionByIds",
-      //   query,
-      // );
       const [accountVersions] = await this.db.query({
         query,
       });
       return accountVersions;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMembersAccountVersionByIds`,
+        query
+      );
       return null;
     }
   }
@@ -598,19 +613,16 @@ class mysql {
     LIMIT 1;
     `;
     try {
-      // this.logger.debug(
-      //   "getMemberReferral",
-      //   query,
-      //   `[${referrerId}, ${refereeId}]`
-      // );
       const [[memberReferral]] = await this.db.query({
         query,
         values: [referrerId, refereeId],
       });
-      // this.logger.debug("getMemberReferral memberReferral", memberReferral);
       return memberReferral;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMemberReferral`,
+        query
+      );
       return [];
     }
   }
@@ -630,13 +642,15 @@ class mysql {
     LIMIT 1;
     `;
     try {
-      // this.logger.debug("getDefaultCommissionPlan", query);
       const [[defaultCommissionPlan]] = await this.db.query({
         query,
       });
       return defaultCommissionPlan;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getDefaultCommissionPlan`,
+        query
+      );
       return [];
     }
   }
@@ -655,14 +669,17 @@ class mysql {
     LIMIT 12;
     `;
     try {
-      // this.logger.debug("getCommissionPolicies", query, `[${planId}]`);
       const [commissionPolicies] = await this.db.query({
         query,
         values: [planId],
       });
       return commissionPolicies;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getCommissionPolicies`,
+        query,
+        `planId: ${planId}`
+      );
       return [];
     }
   }
@@ -705,8 +722,11 @@ class mysql {
       });
       return member;
     } catch (error) {
-      this.logger.error(error);
-      this.logger.trace("getMemberByCondition", query, values);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMemberByCondition`,
+        query,
+        values
+      );
       return [];
     }
   }
@@ -769,14 +789,16 @@ class mysql {
     // LIMIT ${limit} OFFSET ${offset};`;
     // ++ TODO 要小心資料量過大的問題
     try {
-      // this.logger.debug("getReferralCommissionsByConditions", query, values);
       const [referralCommissions] = await this.db.query({
         query,
         values,
       });
       return referralCommissions;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getReferralCommissionsByConditions`,
+        query
+      );
       return [];
     }
   }
@@ -788,14 +810,16 @@ class mysql {
   async getMemberByEmail(memberEmail) {
     const query = "SELECT * FROM `members` WHERE `members`.`email` = ?;";
     try {
-      // this.logger.debug("getMemberByEmail", query, `[${memberEmail}]`);
       const [[member]] = await this.db.query({
         query,
         values: [memberEmail],
       });
       return member;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMemberByEmail`,
+        query
+      );
       return [];
     }
   }
@@ -833,14 +857,16 @@ class mysql {
       WHERE
           orders.id = ?;`;
     try {
-      // this.logger.debug("getDoneOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query({
         query,
         values: [orderId],
       });
       return order;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getDoneOrder`,
+        query
+      );
       return [];
     }
   }
@@ -857,7 +883,7 @@ class mysql {
     limit,
   }) {
     if (!orderId && (!quoteCcy || !baseCcy || !memberId || !state || !type)) {
-      this.logger.error("missing params");
+      this.logger.debug("missing params");
       return [];
     }
     let whereCondition = orderId
@@ -905,11 +931,6 @@ class mysql {
       ${limitCondition}
          ;`;
     try {
-      // this.logger.debug(
-      //   "getDoneOrders",
-      //   query,
-      //   orderId ? [orderId] : [memberId, quoteCcy, baseCcy, state, type]
-      // );
       const [orders] = await this.db.query({
         query,
         values: orderId
@@ -918,7 +939,11 @@ class mysql {
       });
       return orders;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getDoneOrder`,
+        query,
+        `orderId:${orderId}, memberId:${memberId}, quoteCcy:${quoteCcy}, baseCcy:${baseCcy}, state:${state}, type:${type},`
+      );
       return [];
     }
   }
@@ -933,7 +958,7 @@ class mysql {
     if (state) placeholder = [...placeholder, `state = ${state}`];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
-      if (!whereCondition) throw Error(`missing where condition`);
+    if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT
@@ -961,13 +986,15 @@ class mysql {
       orders.updated_at ${orderCodition};`;
 
     try {
-      // this.logger.debug("getOrderList", query);
       const [orders] = await this.db.query({
         query,
       });
       return orders;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrderList`,
+        query
+      );
       return [];
     }
   }
@@ -1004,14 +1031,13 @@ class mysql {
       vouchers.created_at ${orderCodition}
     LIMIT ${limit} OFFSET ${offset};`;
     try {
-      // this.logger.debug("getVouchers", query, `[${memberId}, ${ask}, ${bid}]`);
       const [trades] = await this.db.query({
         query,
         values: [memberId, ask, bid],
       });
       return trades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(`[sql][${new Date().toISOString()} getVouchers`, query);
       return [];
     }
   }
@@ -1023,13 +1049,12 @@ class mysql {
   async getOrders() {
     const query = "SELECT * FROM `orders`;";
     try {
-      // this.logger.debug("getOrders", query);
       const [orders] = await this.db.query({
         query,
       });
       return orders;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(`[sql][${new Date().toISOString()} getOrders`, query);
       return [];
     }
   }
@@ -1042,14 +1067,13 @@ class mysql {
     const query =
       "SELECT `trades`.* FROM `trades`, `orders` WHERE `orders`.`id` = `trades`.`ask_id` AND `trades`.`currency` = ? AND `orders`.`ask` = ?;";
     try {
-      // this.logger.debug("getTrades", query, `[${quoteCcy}, ${baseCcy}]`);
       const [trades] = await this.db.query({
         query,
         values: [quoteCcy, baseCcy],
       });
       return trades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(`[sql][${new Date().toISOString()} getTrades`, query);
       return [];
     }
   }
@@ -1067,14 +1091,18 @@ class mysql {
 	     members.id in(${placeholder});
     `;
     try {
-      // this.logger.debug("[mysql] getEmailsByMemberIds", query, memberIds);
       const [emails] = await this.db.query({
         query,
         values: memberIds,
       });
       return emails;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getEmailsByMemberIds`,
+        query,
+        `memberIds`,
+        memberIds
+      );
     }
   }
 
@@ -1096,14 +1124,17 @@ class mysql {
     WHERE
 	    orders.state = ?;`;
     try {
-      // this.logger.debug("getOrdersJoinMemberEmail", query, `[${state}]`);
       const [orders] = await this.db.query({
         query,
         values: [state],
       });
       return orders;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrdersJoinMemberEmail`,
+        query,
+        `state:${state}`
+      );
       return [];
     }
   }
@@ -1131,7 +1162,11 @@ class mysql {
       });
       return outerTrades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAbnormalOuterTrade`,
+        query,
+        `exchangeCode:${exchangeCode}, start:${start}, end:${end},`
+      );
       return [];
     }
   }
@@ -1150,18 +1185,17 @@ class mysql {
      ;`;
 
     try {
-      // this.logger.debug(
-      //   "getOuterTradesByStatus",
-      //   query,
-      //   `[${exchangeCode}, ${status}]`
-      // );
       const [outerTrades] = await this.db.query({
         query,
         values: [exchangeCode, status],
       });
       return outerTrades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOuterTradesByStatus`,
+        query,
+        `exchangeCode:${exchangeCode}, status:${status},`
+      );
       return [];
     }
   }
@@ -1187,18 +1221,17 @@ class mysql {
     ORDER BY
         outer_trades.create_at DESC;`;
     try {
-      // this.logger.debug(
-      //   "getOuterTradesBetweenDayss",
-      //   query,
-      //   `[${exchangeCode}, ${start}, ${end}]`
-      // );
       const [outerTrades] = await this.db.query({
         query,
         values: [exchangeCode, start, end],
       });
       return outerTrades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOuterTradesBetweenDays`,
+        query,
+        `exchangeCode:${exchangeCode}, start:${start}, end:${end},`
+      );
       return [];
     }
   }
@@ -1231,19 +1264,16 @@ class mysql {
         referral_commissions.created_at ${orderCodition}
     LIMIT ${limit} OFFSET ${offset};`;
     try {
-      // this.logger.debug(
-      //   "getReferralCommissions",
-      //   query,
-
-      //   `[${market}, ${start}, ${end}]`
-      // );
       const [outerTrades] = await this.db.query({
         query,
         values: [market, start, end],
       });
       return outerTrades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getReferralCommissions`,
+        query
+      );
       return [];
     }
   }
@@ -1285,7 +1315,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
-      if (!whereCondition) throw Error(`missing where condition`);
+    if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     let limitCondition = limit
       ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
@@ -1321,13 +1351,15 @@ class mysql {
     ${limitCondition}
     ;`;
     try {
-      // this.logger.debug("getOuterTrades", query);
       const [outerTrades] = await this.db.query({
         query,
       });
       return outerTrades;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOuterTrades`,
+        query
+      );
       return [];
     }
   }
@@ -1345,7 +1377,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
-      if (!whereCondition) throw Error(`missing where condition`);
+    if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
@@ -1365,13 +1397,15 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      // this.logger.debug("getDepositRecords", query);
       const [deposits] = await this.db.query({
         query,
       });
       return deposits;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getDepositRecords`,
+        query
+      );
       return [];
     }
   }
@@ -1389,7 +1423,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
-      if (!whereCondition) throw Error(`missing where condition`);
+    if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
@@ -1409,13 +1443,15 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      // this.logger.debug("getWithdrawRecords", query);
       const [withdraws] = await this.db.query({
         query,
       });
       return withdraws;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getWithdrawRecords`,
+        query
+      );
       return [];
     }
   }
@@ -1437,7 +1473,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
-      if (!whereCondition) throw Error(`missing where condition`);
+    if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
@@ -1466,13 +1502,15 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      // this.logger.debug("getOrderRecords", query);
       let [withdraws] = await this.db.query({
         query,
       });
       return withdraws;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrderRecords`,
+        query
+      );
       return [];
     }
   }
@@ -1514,7 +1552,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
-      if (!whereCondition) throw Error(`missing where condition`);
+    if (!whereCondition) throw Error(`missing where condition`);
     const query = `
     SELECT 
         count(*) as counts
@@ -1523,14 +1561,16 @@ class mysql {
     ${whereCondition}
     ;`;
     try {
-      // this.logger.debug("countOuterTrades", query);
       const [[counts]] = await this.db.query({
         query,
       });
-      // this.logger.debug(`counts`, counts);
+
       return counts;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countOuterTrades`,
+        query
+      );
       return [];
     }
   }
@@ -1546,15 +1586,18 @@ class mysql {
       AND orders.state = ?
     ;`;
     try {
-      // this.logger.debug("countOrders", query, `${`[${currency}, ${state}]`}`);
       const [[counts]] = await this.db.query({
         query,
         values: [currency, state],
       });
-      // this.logger.debug(`counts`, counts);
+
       return counts;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countOrders`,
+        query,
+        `currency:${currency}, state:${state},`
+      );
       return [];
     }
   }
@@ -1588,7 +1631,6 @@ class mysql {
           orders.id = ?
       LIMIT 1;`;
     try {
-      // this.logger.debug("getOrder", query, `[${orderId}]`);
       const [[order]] = await this.db.query(
         {
           query,
@@ -1601,7 +1643,11 @@ class mysql {
       );
       return order;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrder`,
+        query,
+        `orderId: ${orderId}`
+      );
       if (dbTransaction) throw error;
       return [];
     }
@@ -1629,19 +1675,21 @@ class mysql {
       vouchers.order_id = ?
     ;`;
     try {
-      // this.logger.debug("getVouchersByOrderId", query, orderId);
       const [vouchers] = await this.db.query({
         query,
         values: [orderId],
       });
       return vouchers;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getVouchersByOrderIds`,
+        query,
+        `orderId: ${orderId}`
+      );
       return [];
     }
   }
 
-  // 不應該超過 3 筆
   async getAccountVersionsByModifiableIds(ids, type) {
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
@@ -1667,14 +1715,17 @@ class mysql {
       AND modifiable_type = ?
     ;`;
     try {
-      // this.logger.debug("getAccountVersionsByModifiableId", query, `[${type}]`);
       const [accountVersions] = await this.db.query({
         query,
         values: [type],
       });
       return accountVersions;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAccountVersionsByModifiableIds`,
+        query,
+        `type: ${type}`
+      );
       return null;
     }
   }
@@ -1705,18 +1756,17 @@ class mysql {
       AND vouchers.trade_id = ?
     LIMIT 1;`;
     try {
-      // this.logger.debug(
-      //   "getVoucherByOrderIdAndTradeId",
-      //   query,
-      //   `[${orderId}, ${tradeId}]`
-      // );
       const [[voucher]] = await this.db.query({
         query,
         values: [orderId, tradeId],
       });
       return voucher;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getVoucherByOrderIdAndTradeId`,
+        query,
+        `orderId:${orderId}, tradeId:${tradeId},`
+      );
       return null;
     }
   }
@@ -1742,15 +1792,18 @@ class mysql {
       trades.trade_fk = ?
     LIMIT 1;`;
     try {
-      // this.logger.debug("getTradeByTradeFk", query, tradeFk);
       const [[trade]] = await this.db.query({
         query,
         values: [tradeFk],
       });
-      // this.logger.debug("getTradeByTradeFk trade", trade);
+
       return trade;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getTradeByTradeFk`,
+        query,
+        `tradeFk: ${tradeFk}`
+      );
       return null;
     }
   }
@@ -1776,14 +1829,18 @@ class mysql {
       orders.id in(${placeholder});
     `;
     try {
-      // this.logger.debug("[mysql] getOrdersByIds", query, ids);
       const [orders] = await this.db.query({
         query,
         values: ids,
       });
       return orders;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrdersByIds`,
+        query,
+        `ids`,
+        ids
+      );
     }
   }
 
@@ -1810,13 +1867,15 @@ class mysql {
       trades.id in(${placeholder});
     `;
     try {
-      // this.logger.debug("[mysql] getTradesByIds", query, ids);
       const [orders] = await this.db.query({
         query,
       });
       return orders;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getTradesByIds`,
+        query
+      );
     }
   }
 
@@ -1839,14 +1898,18 @@ class mysql {
       vouchers.id in(${placeholder});
     `;
     try {
-      // this.logger.debug("[mysql] getVouchersByIds", query, ids);
       const [vouchers] = await this.db.query({
         query,
         values: ids,
       });
       return vouchers;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getVouchersByIds`,
+        query,
+        `ids`,
+        ids
+      );
     }
   }
 
@@ -1862,13 +1925,15 @@ class mysql {
       outer_trades.trade_id in(${placeholder});
     `;
     try {
-      // this.logger.debug("[mysql] getVouchersByIds", query, ids);
       const [vouchers] = await this.db.query({
         query,
       });
       return vouchers;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOuterTradesByTradeIds`,
+        query
+      );
     }
   }
 
@@ -1898,14 +1963,16 @@ class mysql {
     ORDER BY
         referral_commissions.created_at ${orderCodition};`;
     try {
-      // this.logger.debug("getReferralCommissionsByConditions", query, markets);
       const [referralCommissions] = await this.db.query({
         query,
         values: markets,
       });
       return referralCommissions;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getReferralCommissionsByMarkets`,
+        query
+      );
       return [];
     }
   }
@@ -1931,14 +1998,16 @@ class mysql {
     ORDER BY
       id;`;
     try {
-      // this.logger.debug("getAbnormalAccountVersions", query, id);
       const [accountVersions] = await this.db.query({
         query,
         values: [id],
       });
       return accountVersions;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAbnormalAccountVersions`,
+        query
+      );
       return [];
     }
   }
@@ -1974,30 +2043,6 @@ class mysql {
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
 
     try {
-      // this.logger.debug(
-      //   "insertOrder",
-      //   "DEFAULT",
-      //   query,
-      //   bid,
-      //   ask,
-      //   currency,
-      //   price,
-      //   volume,
-      //   origin_volume,
-      //   state,
-      //   done_at,
-      //   type,
-      //   member_id,
-      //   created_at,
-      //   updated_at,
-      //   sn,
-      //   source,
-      //   ord_type,
-      //   locked,
-      //   origin_locked,
-      //   funds_received,
-      //   trades_count
-      // );
       return this.db.query(
         {
           query,
@@ -2029,7 +2074,14 @@ class mysql {
         }
       );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertOrder error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertOrder query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
@@ -2055,24 +2107,6 @@ class mysql {
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      // this.logger.debug(
-      //   "insertAccountVersion",
-      //   query,
-      //   "DEFAULT",
-      //   member_id,
-      //   accountId,
-      //   reason,
-      //   balance,
-      //   locked,
-      //   fee,
-      //   amount,
-      //   modifiable_id,
-      //   modifiable_type,
-      //   created_at,
-      //   updated_at,
-      //   currency,
-      //   fun
-      // );
       result = await this.db.query(
         {
           query,
@@ -2099,7 +2133,14 @@ class mysql {
       );
       accountVersionId = result[0];
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertAccountVersion error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertAccountVersion query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
     return accountVersionId;
@@ -2121,7 +2162,7 @@ class mysql {
         }", "${order.updatedAt}", '${order.data}')`,
       ];
     }
-    // this.logger.debug("[mysql] insertOuterOrders values", values);
+
     placeholder = values.join(`, `);
     query = `
     INSERT INTO outer_orders (id, exchange_code, member_id, market, price, volume, average_filled_price, accumulate_filled_volume, state, created_at, updated_at, data)
@@ -2134,7 +2175,6 @@ class mysql {
     `;
     // let result;
     try {
-      // this.logger.debug("[mysql] insertOuterOrder query", query);
       await this.db.query(
         {
           query,
@@ -2143,9 +2183,15 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      // this.logger.debug(`insertOuterOrders`, result);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertOuterOrders error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertOuterOrders query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
@@ -2168,7 +2214,6 @@ class mysql {
     }
     // let result;
     try {
-      // this.logger.debug("[mysql] insertOuterTrades", query, values);
       await this.db.query(
         {
           query,
@@ -2178,9 +2223,15 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      // this.logger.debug(`insertOuterTrades`, result);
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertOuterTrades error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertOuterTrades query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
@@ -2206,23 +2257,6 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      // this.logger.debug(
-      //   "insertTrades",
-      //   query,
-      //   "DEFAULT",
-      //   price,
-      //   volume,
-      //   ask_id,
-      //   bid_id,
-      //   trend,
-      //   currency,
-      //   created_at,
-      //   updated_at,
-      //   ask_member_id,
-      //   bid_member_id,
-      //   funds,
-      //   trade_fk
-      // );
       result = await this.db.query(
         {
           query,
@@ -2246,10 +2280,17 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      // this.logger.debug(`insertTrades result`, result);
+
       tradeId = result[0];
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertTrades error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertTrades query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
     return tradeId;
@@ -2276,24 +2317,6 @@ class mysql {
       "INSERT INTO `vouchers` (`id`,`member_id`,`order_id`,`trade_id`,`designated_trading_fee_asset_history_id`,`ask`,`bid`,`price`,`volume`,`value`,`trend`,`ask_fee`,`bid_fee`,`created_at`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      // this.logger.debug(
-      //   "insertVouchers",
-      //   query,
-      //   "DEFAULT",
-      //   member_id,
-      //   order_id,
-      //   trade_id,
-      //   designated_trading_fee_asset_history_id,
-      //   ask,
-      //   bid,
-      //   price,
-      //   volume,
-      //   value,
-      //   trend,
-      //   ask_fee,
-      //   bid_fee,
-      //   created_at
-      // );
       result = await this.db.query(
         {
           query,
@@ -2318,10 +2341,17 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      // this.logger.debug(`insertVouchers result`, result);
+
       voucherId = result[0];
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertVouchers error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOrder query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
     return voucherId;
@@ -2351,26 +2381,6 @@ class mysql {
       // " OUTPUT Inserted.ID " +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      // this.logger.debug(
-      //   "insertReferralCommission",
-      //   query,
-      //   "DEFAULT",
-      //   referredByMemberId,
-      //   tradeMemberId,
-      //   voucherId,
-      //   appliedPlanId,
-      //   appliedPolicyId,
-      //   trend,
-      //   market,
-      //   currency,
-      //   refGrossFee,
-      //   refNetFee,
-      //   amount,
-      //   state,
-      //   depositedAt,
-      //   createdAt,
-      //   updatedAt
-      // );
       result = await this.db.query(
         {
           query,
@@ -2397,10 +2407,17 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      // this.logger.debug(`insertReferralCommission result`, result);
+
       referralCommissionId = result[0];
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertReferralCommission error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertReferralCommission query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
     return referralCommissionId;
@@ -2431,24 +2448,6 @@ class mysql {
       expect_locked = ${expect_locked}, 
       updated_at = "${updated_at}";`;
     try {
-      // this.logger.debug(
-      //   "insertAuditAccountRecord",
-      //   query,
-      //   "DEFAULT",
-      //   account_id,
-      //   member_id,
-      //   currency,
-      //   account_version_id_start,
-      //   account_version_id_end,
-      //   balance,
-      //   expect_balance,
-      //   locked,
-      //   expect_locked,
-      //   created_at,
-      //   updated_at,
-      //   fixed_at,
-      //   issued_by
-      // );
       result = await this.db.query(
         {
           query,
@@ -2475,7 +2474,14 @@ class mysql {
       );
       accountVersionId = result[0];
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertAuditAccountRecord error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertAuditAccountRecord query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
     return accountVersionId;
@@ -2500,10 +2506,6 @@ class mysql {
     INSERT INTO fixed_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
     try {
-      // this.logger.debug(
-      //   "insertFixedAccountRecord",
-      //   query,
-      //   "DEFAULT",
       // account_id,
       // member_id,
       // currency,
@@ -2515,7 +2517,6 @@ class mysql {
       // created_at,
       // updated_at,
       // issued_by,
-      // );
       result = await this.db.query(
         {
           query,
@@ -2540,20 +2541,28 @@ class mysql {
       );
       accountVersionId = result[0];
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertFixedAccountRecord error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] insertFixedAccountRecord query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
     return accountVersionId;
   }
 
   async updateAccount(datas, { dbTransaction }) {
+    let query;
     try {
       const id = datas.id;
       const where = "id = " + id;
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
       const placeholder = set.join(", ");
-      let query = `
+      query = `
       UPDATE
       	accounts
       SET
@@ -2562,7 +2571,6 @@ class mysql {
         ${where}
       LIMIT 1;
       `;
-      // this.logger.debug("updateAccount", query);
       if (!id) throw Error(`id is required`);
       await this.db.query(
         {
@@ -2573,7 +2581,14 @@ class mysql {
         }
       );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAccount error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAccount query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
@@ -2582,6 +2597,7 @@ class mysql {
    * [deprecated] 2022-12-06
    */
   async updateAuditAccountRecord(datas, { dbTransaction }) {
+    let query;
     try {
       const id = datas.id;
       if (!id) throw Error(`id is required`);
@@ -2589,7 +2605,7 @@ class mysql {
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
       const placeholder = set.join(", ");
-      let query = `
+      query = `
       UPDATE
       	audit_account_records
       SET
@@ -2597,7 +2613,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      // this.logger.debug("updateAuditAccountRecord", query);
+
       await this.db.query(
         {
           query,
@@ -2607,7 +2623,14 @@ class mysql {
         }
       );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAuditAccountRecord error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAuditAccountRecord query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
@@ -2617,6 +2640,7 @@ class mysql {
    * [deprecated] 2022-11-18
    */
   async updateAccountVersion(datas, { dbTransaction }) {
+    let query;
     try {
       const id = datas.id;
       if (!id) throw Error(`id is required`);
@@ -2624,13 +2648,12 @@ class mysql {
       delete datas.id;
       const set = Object.keys(datas).map((key) => `\`${key}\` = ${datas[key]}`);
       const placeholder = set.join(", ");
-      let query =
+      query =
         "UPDATE `account_versions` SET " +
         placeholder +
         " WHERE " +
         where +
         " LIMIT 1;";
-      // this.logger.debug("updateAccountVersion", query);
       await this.db.query(
         {
           query,
@@ -2640,12 +2663,20 @@ class mysql {
         }
       );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAccountVersion error`,
+        error
+      );
+      this.logger.error(
+        `[!!! deprecated][sql][${new Date().toISOString()}] updateAccountVersion query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
 
   async updateOrder(datas, { dbTransaction }) {
+    let query;
     try {
       const id = datas.id;
       if (!id) throw Error(`id is required`);
@@ -2653,7 +2684,7 @@ class mysql {
       delete datas.id;
       const set = Object.keys(datas).map((key) => `${key} = ${datas[key]}`);
       const placeholder = set.join(", ");
-      let query = `
+      query = `
       UPDATE
         orders
       SET
@@ -2661,7 +2692,6 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      // this.logger.debug("updateOrder", query);
       await this.db.query(
         {
           query,
@@ -2672,12 +2702,20 @@ class mysql {
         }
       );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOrder error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOrder query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
 
   async updateOuterTrade(datas, { dbTransaction }) {
+    let query;
     try {
       const id = datas.id;
       if (!id) throw Error(`id is required`);
@@ -2688,13 +2726,13 @@ class mysql {
           `\`${key}\` = ${key === "email" ? `"${datas[key]}"` : datas[key]}`
       );
       const placeholder = set.join(", ");
-      let query =
+      query =
         "UPDATE `outer_trades` SET " +
         placeholder +
         " WHERE " +
         where +
         " LIMIT 1;";
-      // this.logger.debug("updateOuterTrade", query);
+
       await this.db.query(
         {
           query,
@@ -2705,7 +2743,14 @@ class mysql {
         }
       );
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOuterTrade error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOuterTrade query`,
+        query
+      );
       if (dbTransaction) throw error;
     }
   }
@@ -2724,14 +2769,20 @@ class mysql {
           values,
         }
         // {
-        //   transaction: dbTransaction,
-        //   lock: dbTransaction.LOCK., // ++ TODO verify
+
         // }
       );
-      // this.logger.debug(query, values);
+
       return result;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] deleteOuterTrade error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] deleteOuterTrade query`,
+        query
+      );
       return [];
     }
   }
