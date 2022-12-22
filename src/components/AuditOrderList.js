@@ -10,7 +10,7 @@ const AuditOrderList = (props) => {
   const [orders, setOrders] = useState(props.orders);
 
   const filterHandler = useMemo(
-    ({ side, state }) => {
+    ({ side = "all", state = "all" }) => {
       let orders = props.orders.filter((o) => {
         let condition = true;
         if (side !== "all") condition = condition && o.side === side;
@@ -29,7 +29,7 @@ const AuditOrderList = (props) => {
     },
     [filterHandler, state]
   );
-  
+
   const displayStateHandler = useCallback(
     (option) => {
       setState(option);
