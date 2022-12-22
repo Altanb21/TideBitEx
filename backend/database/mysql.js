@@ -875,6 +875,7 @@ class mysql {
       : limit
       ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
       : ``;
+    if (!whereCondition) throw Error(`missing where condition`);
     const query = `
       SELECT
 	        orders.id,
@@ -932,6 +933,7 @@ class mysql {
     if (state) placeholder = [...placeholder, `state = ${state}`];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT
@@ -1283,6 +1285,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     let limitCondition = limit
       ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
@@ -1342,6 +1345,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
@@ -1385,6 +1389,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
@@ -1432,6 +1437,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT 
@@ -1508,6 +1514,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     const query = `
     SELECT 
         count(*) as counts
