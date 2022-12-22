@@ -5588,8 +5588,7 @@ class ExchangeHub extends Bot {
    */
   async auditMemberBehavior({ query }) {
     let { memberId, currency, start, end } = query;
-    let 
-      auditedOrder,
+    let auditedOrder,
       auditedOrders = [];
     // 1. getDepositRecords
     let depositRecords = await this.database.getDepositRecords({
@@ -5598,6 +5597,10 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
+    depositRecords = depositRecords.map((d) => ({
+      ...d,
+      currency: this.coinsSettingsMap[d.currency]?.code,
+    }));
     // for (let deposit of depositRecords) {
     //   balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
     // }
