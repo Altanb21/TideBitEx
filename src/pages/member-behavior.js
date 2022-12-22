@@ -42,6 +42,8 @@ const MemberBehavior = (props) => {
   const searchHandler = useCallback(
     async ({ asset, start, end }) => {
       if (member?.id && asset?.currencyId && start && end) {
+        console.log(`searchHandler member?.id`, member?.id);
+        console.log(`searchHandler asset?.currencyId`, asset?.currencyId);
         setIsLoading(true);
         // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
         try {
