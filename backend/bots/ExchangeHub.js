@@ -5026,6 +5026,7 @@ class ExchangeHub extends Bot {
               await this.updateOuterTrade({
                 id: data.tradeId,
                 status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+                currency: market.code,
                 dbTransaction,
               });
               await dbTransaction.commit();
