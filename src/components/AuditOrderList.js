@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import AuditOrder from "./AuditOrder";
 import ScreenDisplayOptions from "./ScreenDisplayOptions";
@@ -37,6 +37,11 @@ const AuditOrderList = (props) => {
     },
     [filterHandler, side]
   );
+
+  useEffect(() => {
+    if (props.orders?.length > 0) filterHandler({ side: "all", state: "all" });
+  }, [filterHandler, props.orders?.length]);
+
   const component = orders?.map((order) => (
     <AuditOrder key={`order-${order.id}`} auditOrder={order} />
   ));
