@@ -6143,7 +6143,7 @@ class ExchangeHub extends Bot {
             // ++TODO id should be replaced by exchangeCode + tradeId, current is tradeId (需要避免與其他交易所碰撞)
             await this.exchangeHubService.insertOuterTrades([formatOrder]);
             // 2. 呼叫承辦員處理該筆 outerTrade
-            // this.processorHandler(formatOrder);
+            this.processorHandler(formatOrder);
           } else if (formatOrder.state === Database.ORDER_STATE.CANCEL) {
             let result,
               orderId,

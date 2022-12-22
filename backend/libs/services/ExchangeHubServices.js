@@ -7,7 +7,7 @@ const Utils = require("../Utils");
 class ExchangeHubService {
   _timer;
   _lastSyncTime = 0;
-  _syncInterval = 0.5 * 2 * 60 * 1000; // 30 mins
+  _syncInterval = 0.5 * 60 * 60 * 1000; // 30 mins
   _minInterval = 1 * 24 * 60 * 60 * 1000; // 1天
   _interval = 3 * 24 * 60 * 60 * 1000; // 3天
   _maxInterval = 7 * 24 * 60 * 60 * 1000; // 7天 okex 最長只能問到3個月
