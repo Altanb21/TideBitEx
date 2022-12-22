@@ -228,7 +228,7 @@ class ExchangeHub extends Bot {
       }, []);
       this.adminUsers = adminUsers;
     } catch (error) {
-      this.logger.error(`_getAdminUsers`, error);
+      // this.logger.error(`_getAdminUsers`, error);
       process.exit(1);
     }
     return adminUsers;
@@ -297,7 +297,7 @@ class ExchangeHub extends Bot {
         return prev;
       }, {});
     } catch (error) {
-      this.logger.error(`_getTickersSettings`, error);
+      // this.logger.error(`_getTickersSettings`, error);
       process.exit(1);
     }
     return tickersSettings;
@@ -319,7 +319,7 @@ class ExchangeHub extends Bot {
           disable: coinSetting.disable === true ? true : false, // default: false
         }));
       } catch (error) {
-        this.logger.error(`_getCoinsSettings`, error);
+        // this.logger.error(`_getCoinsSettings`, error);
         process.exit(1);
       }
     }
@@ -352,7 +352,7 @@ class ExchangeHub extends Bot {
         }, {});
         this.depositsSettings = formatDepositsSettings;
       } catch (error) {
-        this.logger.error(`_getDepositsSettings`, error);
+        // this.logger.error(`_getDepositsSettings`, error);
         process.exit(1);
       }
     }
@@ -394,7 +394,7 @@ class ExchangeHub extends Bot {
         }, {});
         this.withdrawsSettings = formatWithdrawsSettings;
       } catch (error) {
-        this.logger.error(`_getWithdrawsSettings`, error);
+        // this.logger.error(`_getWithdrawsSettings`, error);
         process.exit(1);
       }
     }
@@ -595,7 +595,7 @@ class ExchangeHub extends Bot {
         });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
       } catch (error) {
-        this.logger.error(error);
+        // this.logger.error(error);
         let message = error.message;
         result = new ResponseFormat({
           message,
@@ -3025,7 +3025,10 @@ class ExchangeHub extends Bot {
             }
           }
         } catch (error) {
-          this.logger.error(error);
+          this.logger.error(
+            `postPlaceOrder[${new Date().toISOString()}]`,
+            error
+          );
           await t.rollback();
           response = new ResponseFormat({
             message: error.message,
@@ -4795,7 +4798,7 @@ class ExchangeHub extends Bot {
       referredByMember,
       memberReferral,
       dbTransaction = await this.database.transaction();
-    this.logger.debug(`processor data`, data);
+    // this.logger.debug(`processor data`, data);
     if (!stop) {
       try {
         // 1. 判斷收到的資料是否為此系統的資料
@@ -4938,7 +4941,7 @@ class ExchangeHub extends Bot {
               referredByMember: referredByMember,
               memberReferral: memberReferral,
             });
-            this.logger.debug(`calculator result`, result);
+            // this.logger.debug(`calculator result`, result);
           } catch (error) {
             this.logger.error(`calculator error`, error);
             // if (error.code === Codes.ABNORMAL_ORDER) {
