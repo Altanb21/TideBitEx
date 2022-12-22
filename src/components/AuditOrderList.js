@@ -11,7 +11,7 @@ const AuditOrderList = (props) => {
 
   const filterHandler = useMemo(
     (side, state) => {
-      let orders = props.orders.filter((o) => {
+      let orders = props.orders?.filter((o) => {
         let condition = true;
         if (side !== "all") condition = condition && o.side === side;
         if (state !== "all") condition = condition && o.state === state;
