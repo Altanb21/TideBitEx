@@ -5588,8 +5588,7 @@ class ExchangeHub extends Bot {
    */
   async auditMemberBehavior({ query }) {
     let { memberId, currency, start, end } = query;
-    let balanceDiff = 0,
-      lockedDiff = 0,
+    let 
       auditedOrder,
       auditedOrders = [];
     // 1. getDepositRecords
@@ -5599,9 +5598,9 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
-    for (let deposit of depositRecords) {
-      balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
-    }
+    // for (let deposit of depositRecords) {
+    //   balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
+    // }
     // this.logger.debug(`depositRecords`, depositRecords);
     // 2. getWithdrawRecords
     let withdrawRecords = await this.database.getWithdrawRecords({
@@ -5610,9 +5609,9 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
-    for (let withdraw of withdrawRecords) {
-      balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
-    }
+    // for (let withdraw of withdrawRecords) {
+    //   balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
+    // }
     // this.logger.debug(`withdrawRecords`, withdrawRecords);
     // 3. getOrderRecords
     let orderRecords = await this.database.getOrderRecords({
@@ -5621,65 +5620,11 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
-    // this.logger.debug(`orderRecords`, orderRecords);
-    // orderRecords = orderRecords.filter(
-    //   (order) =>
-    //     SafeMath.eq(order.ask, currency) || SafeMath.eq(order.bid, currency)
-    // );
     for (let order of orderRecords) {
       auditedOrder = await this.auditOrder(order);
       auditedOrders = [...auditedOrders, auditedOrder];
-      // if (order.ask === currency) {
-      //   balanceDiff = SafeMath.plus(
-      //     balanceDiff,
-      //     auditedOrder.baseUnitBalDiffByOrder
-      //   );
-      //   lockedDiff = SafeMath.plus(
-      //     lockedDiff,
-      //     auditedOrder.baseUnitLocDiffByOrder
-      //   );
-      // }
-      // if (order.bid === currency) {
-      //   balanceDiff = SafeMath.plus(
-      //     balanceDiff,
-      //     auditedOrder.quoteUnitBalDiffByOrder
-      //   );
-      //   lockedDiff = SafeMath.plus(
-      //     lockedDiff,
-      //     auditedOrder.quoteUnitLocDiffByOrder
-      //   );
-      // }
-      if (
-        (order.ask === currency && order.type === Database.TYPE.ORDER_BID) ||
-        (order.bid === currency && order.type === Database.TYPE.ORDER_ASK)
-      ) {
-        balanceDiff = SafeMath.plus(balanceDiff, order.funds_received);
-      } else if (
-        (order.bid === currency && order.type === Database.TYPE.ORDER_BID) ||
-        (order.ask === currency && order.type === Database.TYPE.ORDER_ASK)
-      ) {
-        // post Order 扣除可用餘額，增加鎖定餘額
-        balanceDiff = SafeMath.minus(balanceDiff, order.origin_locked);
-        lockedDiff = SafeMath.plus(lockedDiff, order.locked);
-        if (order.state !== Database.ORDER_STATE_CODE.WAIT) {
-          // cancel Order 解鎖 order 剩餘鎖定餘額 ||   done Order 返回 order 剩餘鎖定餘額
-          balanceDiff = SafeMath.plus(balanceDiff, order.locked);
-          lockedDiff = SafeMath.minus(lockedDiff, order.locked);
-        }
-      }
     }
-    // 4. 與 accountVersions 比較
-    let accVersR = await this.database.auditAccountBalance({
-      memberId,
-      currency,
-      start,
-      end,
-    });
     let payload = {
-      balanceDiff_records: accVersR.sum_balance,
-      balanceDiff_behavior: balanceDiff,
-      lockedDiff_records: accVersR.sum_locked,
-      lockedDiff_behavior: lockedDiff,
       depositRecords,
       withdrawRecords,
       auditedOrders,

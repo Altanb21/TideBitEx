@@ -9,8 +9,9 @@
   &__header {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    // justify-content: space-between;
     align-items: center;
+    gap: 10px;
   }
   &__title {
     color: #2699fb;
@@ -71,11 +72,13 @@
     border-radius: 5px;
     display: block;
     margin-bottom: 10px;
+    overflow: hidden;
     &--alert {
       border-color: #d0021b;
     }
   }
   &__row {
+    // background-color: #f2f2f2cf;
     &--header {
       border-bottom: 1px solid #707070;
     }
