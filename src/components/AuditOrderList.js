@@ -11,14 +11,16 @@ const AuditOrderList = (props) => {
 
   const filterHandler = useCallback(
     ({ side, state }) => {
-      let orders = props.orders?.filter((o) => {
-        console.log(`side:${side}, $state:{state}`)
-        let condition = true;
-        if (side !== "all") condition = condition && o.order.type === side;
-        if (state !== "all") condition = condition && o.order.state === state;
-        return condition;
-      });
-      setOrders(orders);
+      if (props.orders?.length > 0) {
+        let orders = props.orders?.filter((o) => {
+          // console.log(`side:${side}, $state:{state}`)
+          let condition = true;
+          if (side !== "all") condition = condition && o.order.type === side;
+          if (state !== "all") condition = condition && o.order.state === state;
+          return condition;
+        });
+        setOrders(orders);
+      }
     },
     [props.orders]
   );

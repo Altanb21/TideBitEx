@@ -5599,6 +5599,8 @@ class ExchangeHub extends Bot {
     });
     depositRecords = depositRecords.map((d) => ({
       ...d,
+      amount: removeZeroEnd(d.amount),
+      fee: removeZeroEnd(d.feee),
       currency: this.coinsSettingsMap[d.currency]?.code,
     }));
     // for (let deposit of depositRecords) {
@@ -5612,6 +5614,12 @@ class ExchangeHub extends Bot {
       start,
       end,
     });
+    withdrawRecords = withdrawRecords.map((w) => ({
+      ...w,
+      amount: removeZeroEnd(w.amount),
+      fee: removeZeroEnd(w.feee),
+      currency: this.coinsSettingsMap[w.currency]?.code,
+    }));
     // for (let withdraw of withdrawRecords) {
     //   balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
     // }

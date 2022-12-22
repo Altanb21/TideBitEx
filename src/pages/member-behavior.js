@@ -40,20 +40,16 @@ const MemberBehavior = (props) => {
   );
 
   const searchHandler = useCallback(
-    async (start, end) => {
-      if (member?.id && selectedAsset?.currencyId && dateStart && dateEnd) {
+    async ({ asset, start, end }) => {
+      if (member?.id && asset?.currencyId && start && end) {
         setIsLoading(true);
         // https://www.tidebit.com/api/v1/private/audit-member?memberId=35394&currency=2&start=2022-12-09&end=2022-12-10
         try {
           let result = await storeCtx.auditorMemberBehavior({
             memberId: member.id,
-            currency: selectedAsset.currencyId,
-            start: start
-              ? start.toISOString().substring(0, 10)
-              : dateStart.toISOString().substring(0, 10),
-            end: end
-              ? end.toISOString().substring(0, 10)
-              : dateEnd.toISOString().substring(0, 10),
+            currency: asset.currencyId,
+            start: start.toISOString().substring(0, 10),
+            end: end.toISOString().substring(0, 10),
           });
           console.log(`searchHandler result`, result);
           setBehaviors(result);
@@ -63,7 +59,7 @@ const MemberBehavior = (props) => {
         setIsLoading(false);
       }
     },
-    [member?.id, selectedAsset?.currencyId, dateStart, dateEnd, storeCtx]
+    [member.id, storeCtx]
   );
 
   const dateStartUpdateHandler = useCallback(
@@ -71,30 +67,36 @@ const MemberBehavior = (props) => {
       setDateStart(date);
       const start = date;
       const end = dateEnd;
-      await searchHandler(start, end);
+      await searchHandler({ asset: selectedAsset, start, end });
     },
-    [dateEnd, searchHandler]
+    [selectedAsset, dateEnd, searchHandler]
   );
+
   const dateEndUpdateHandler = useCallback(
     async (date) => {
       setDateStart(date);
       const end = date;
       const start = dateStart;
-      await searchHandler(start, end);
+      await searchHandler({ asset: selectedAsset, start, end });
     },
-    [dateStart, searchHandler]
+    [selectedAsset, dateStart, searchHandler]
   );
+  
   const updateAssetHandler = useCallback(
     async (currency) => {
+      console.log(`currency`, currency);
       let asset = assets.find(
         (asset) => asset.currency.toUpperCase() === currency.toUpperCase()
       );
+      console.log(`asset`, asset);
       if (asset) {
         setSelectedAsset(asset);
-        await searchHandler();
+        const start = dateStart;
+        const end = dateEnd;
+        await searchHandler({ asset, start, end });
       }
     },
-    [assets, searchHandler]
+    [assets, dateEnd, dateStart, searchHandler]
   );
 
   return (
@@ -132,9 +134,9 @@ const MemberBehavior = (props) => {
               />
             </div>
           </div>
-          <button className="screen__button" onClick={searchHandler}>
+          {/* <button className="screen__button" onClick={searchHandler}>
             {t("search")}
-          </button>
+          </button> */}
         </div>
         <div className="screen__container">
           <div className="screen__table-header screen__table-header--em">
