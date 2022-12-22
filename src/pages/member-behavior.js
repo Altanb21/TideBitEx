@@ -76,7 +76,7 @@ const MemberBehavior = (props) => {
 
   const dateEndUpdateHandler = useCallback(
     async (date) => {
-      setDateStart(date);
+      setDateEnd(date);
       const end = date;
       const start = dateStart;
       await searchHandler({ asset: selectedAsset, start, end });
