@@ -2554,6 +2554,52 @@ class mysql {
     return accountVersionId;
   }
 
+  async updateAccountByAccountVersion(accountId, now, { dbTransaction }) {
+    let query;
+    try {
+      query = `
+      UPDATE
+	      accounts
+      SET
+	      balance = (
+		        SELECT
+			        sum(balance)
+		        FROM
+			        account_versions
+		        WHERE
+			        account_versions.account_id = ${accountId}), locked = (
+			      SELECT
+				      sum(locked)
+			      FROM
+				      account_versions
+			      WHERE
+				      account_versions.account_id = ${accountId}), updated_at = "${now}"
+		  WHERE
+			  id = ${accountId}
+		  LIMIT 1;
+      `;
+      if (!accountId) throw Error(`accountId is required`);
+      await this.db.query(
+        {
+          query,
+        },
+        {
+          transaction: dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAccountByAccountVersion error`,
+        error
+      );
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateAccountByAccountVersion query`,
+        query
+      );
+      if (dbTransaction) throw error;
+    }
+  }
+
   async updateAccount(datas, { dbTransaction }) {
     let query;
     try {

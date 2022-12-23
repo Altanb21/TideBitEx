@@ -6189,12 +6189,6 @@ class ExchangeHub extends Bot {
       );
       throw Error("System error.");
     }
-    const newAccount = {
-      id: account.id,
-      balance: newAccBal,
-      locked: newAccLoc,
-      updated_at: `"${accountVersion.created_at}"`,
-    };
     const currency = this.coinsSettings?.find(
       (curr) => curr.id === accountVersion.currency
     )?.code;
@@ -6228,13 +6222,21 @@ class ExchangeHub extends Bot {
       );
       throw error;
     }
+    // const newAccount = {
+    //   id: account.id,
+    //   balance: newAccBal,
+    //   locked: newAccLoc,
+    //   updated_at: `"${accountVersion.created_at}"`,
+    // };
     try {
-      await this.database.updateAccount(newAccount, { dbTransaction });
+      // await this.database.updateAccount(newAccount, { dbTransaction });
+      await this.database.updateAccountByAccountVersion(account.id, accountVersion.created_at,{ dbTransaction });
     } catch (error) {
       this.logger.error(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+      }]!!!ERROR updateAccountByAccountVersion 出錯(_updateAccount)`,
         `accountVersion`,
         accountVersion
       );
