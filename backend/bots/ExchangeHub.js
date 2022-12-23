@@ -2780,6 +2780,12 @@ class ExchangeHub extends Bot {
     // totalCounts,
     // id = query.instId.replace("-", "").toLowerCase(),
     // tickerSetting = this.tickersSettings[id];
+    this.logger.debug(
+      `[${new Date().toLocaleTimeString()}][${
+        this.constructor.name
+      }] getOuterPendingOrders query`,
+      query
+    );
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         // ++ TODO 2022/11/25 (需處理 pendingOrders 超過100筆的情況)
