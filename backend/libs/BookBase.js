@@ -51,9 +51,13 @@ class BookBase {
         add: onlyInB,
       };
     } catch (error) {
-      this.logger.error(
-        `[${this.constructor.name}] _calculateDifference error`,
-        error
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: BaseBook] _calculateDifference error`,
+        error,
+        arrayA,
+        arrayB
       );
       return {
         remove: [],
@@ -124,9 +128,12 @@ class BookBase {
       this._difference[instId] = difference;
       return true;
     } catch (error) {
-      this.logger.error(
-        `[${this.constructor.name}] updateByDifference[${instId}] error`,
-        error
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: BaseBook] updateByDifference(instId:${instId}) error`,
+        error,
+        difference
       );
       return false;
     }
@@ -146,7 +153,13 @@ class BookBase {
       this._snapshot[instId] = this._trim(instId, data);
       return true;
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] updateAll error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: BaseBook] updateAll(instId:${instId}) error`,
+        error,
+        data
+      );
       return false;
     }
   }

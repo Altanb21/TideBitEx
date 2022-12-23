@@ -111,13 +111,13 @@ class DepthBook extends BookBase {
       if (parseFloat(ask[0]) > parseFloat(bid[0])) {
         result = `ask: ${ask}, bid: ${bid}`;
       } else {
-        this.logger.error(new Date().toLocaleTimeString());
         result = `* ask: ${ask}, bid: ${bid}`;
-      }
-
-      if (this.endPriceResult && this.endPriceResult !== result) {
-        if (result.includes("*"))
-          this.logger.error(`cross Price error`, result);
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }: DepthBook] cross Price error`,
+          result
+        );
       }
       this.endPriceResult = result;
     }
@@ -274,7 +274,13 @@ class DepthBook extends BookBase {
       this._snapshot[instId] = data;
       return true;
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] updateAll error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: DepthBook] updateAll(lotSz:${lotSz}, instId:${instId}) error`,
+        error,
+        data
+      );
       return false;
     }
   }

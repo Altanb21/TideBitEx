@@ -84,13 +84,25 @@ const MemberAsset = (props) => {
           {t("fixed")}
         </div>
       </div>
+      <div className="members__item">
+        <div className={`members__button`} onClick={props.switchSectionHandler}>
+          {t("detail")}
+        </div>
+      </div>
     </li>
   );
 };
 const MemberAssets = (props) => {
-  const { assets, fixAccountHandler } = props;
+  const { member, assets, fixAccountHandler, switchSectionHandler } = props;
   const component = assets?.map((asset) => (
-    <MemberAsset asset={asset} fixAccountHandler={fixAccountHandler} />
+    <MemberAsset
+      member={member}
+      asset={asset}
+      fixAccountHandler={fixAccountHandler}
+      switchSectionHandler={() =>
+        switchSectionHandler(`member-behavior`, { member, asset, assets })
+      }
+    />
   ));
   return <ul className="members__values">{component}</ul>;
 };
@@ -190,8 +202,10 @@ const Member = (props) => {
         </div>
         <ul className="members__values">
           <MemberAssets
+            member={props.member}
             assets={assets}
             fixAccountHandler={props.fixAccountHandler}
+            switchSectionHandler={props.switchSectionHandler}
           />
         </ul>
       </div>
@@ -200,12 +214,13 @@ const Member = (props) => {
 };
 
 const MemberList = (props) => {
-  const { members, fixAccountHandler } = props;
+  const { members, fixAccountHandler, switchSectionHandler } = props;
   const component = members?.map((member) => (
     <Member
       key={`member-${member.id}`}
       member={member}
       fixAccountHandler={fixAccountHandler}
+      switchSectionHandler={switchSectionHandler}
     />
   ));
   return (
@@ -213,7 +228,7 @@ const MemberList = (props) => {
   );
 };
 
-const Members = () => {
+const Members = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
   const [isInit, setIsInit] = useState(null);
@@ -358,34 +373,37 @@ const Members = () => {
     t,
   ]);
 
-  const fixAccountHandler = useCallback((confirmText, callback) => {
-    const confirm = window.confirm(confirmText);
-    if (confirm) {
-      setIsLoading(true);
-      callback()
-        .then((result) => {
-          console.log(`result`, result);
-          setIsLoading(false);
-          enqueueSnackbar(`${t("success-update")}`, {
-            variant: "success",
-            anchorOrigin: {
-              vertical: "top",
-              horizontal: "center",
-            },
+  const fixAccountHandler = useCallback(
+    (confirmText, callback) => {
+      const confirm = window.confirm(confirmText);
+      if (confirm) {
+        setIsLoading(true);
+        callback()
+          .then((result) => {
+            console.log(`result`, result);
+            setIsLoading(false);
+            enqueueSnackbar(`${t("success-update")}`, {
+              variant: "success",
+              anchorOrigin: {
+                vertical: "top",
+                horizontal: "center",
+              },
+            });
+          })
+          .catch((error) => {
+            setIsLoading(false);
+            enqueueSnackbar(`${t("error-happen")}`, {
+              variant: "error",
+              anchorOrigin: {
+                vertical: "top",
+                horizontal: "center",
+              },
+            });
           });
-        })
-        .catch((error) => {
-          setIsLoading(false);
-          enqueueSnackbar(`${t("error-happen")}`, {
-            variant: "error",
-            anchorOrigin: {
-              vertical: "top",
-              horizontal: "center",
-            },
-          });
-        });
-    }
-  }, []);
+      }
+    },
+    [enqueueSnackbar, t]
+  );
 
   const init = useCallback(() => {
     setIsInit(async (prev) => {
@@ -470,6 +488,7 @@ const Members = () => {
             <MemberList
               members={members[page]}
               fixAccountHandler={fixAccountHandler}
+              switchSectionHandler={props.switchSectionHandler}
             />
             <tfoot className="screen__table-tools">
               <div

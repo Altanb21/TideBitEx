@@ -504,10 +504,10 @@ class Utils {
   }
 
   static initialLogger({ homeFolder, base }) {
-    const output = fs.createWriteStream(homeFolder + "/stdout.log", {
+    const output = fs.createWriteStream(homeFolder + "/error.log", {
       flags: "a",
     });
-    const errorOutput = fs.createWriteStream(homeFolder + "/stderr.log", {
+    const errorOutput = fs.createWriteStream(homeFolder + "/audit.log", {
       flags: "a",
     });
     _logger = new Console({ stdout: output, stderr: errorOutput });
@@ -836,17 +836,24 @@ class Utils {
     // brokerId = 377bd372412fSCDE
     // memberId = 60976
     // orderId = 247674466
-    let slice1, split1, split2;
+    let slice1, split1, split2, memberId, orderId;
     try {
       slice1 = clOrdId?.slice(16); // slice broker id
       split1 = slice1?.split("m"); // split memberId
-      if (split1?.length > 0) split2 = split1[1]?.split("o"); // split orderId
+      if (split1?.length > 0) {
+        split2 = split1[1]?.split("o"); // split orderId
+        memberId = split1[0];
+      }
+      if (split2.length > 0) orderId = split2[0];
     } catch (error) {
-      this.logger.error(`parseClOrdId error clOrdId`, clOrdId);
+      this.logger.debug(
+        `[${new Date().toLocaleString()}] parseClOrdId error clOrdId return undefined`,
+        clOrdId
+      );
     }
     return {
-      memberId: split1.length > 0 ? split1[0] : null,
-      orderId: split2.length > 0 ? split2[0] : null,
+      memberId,
+      orderId,
     };
   }
 

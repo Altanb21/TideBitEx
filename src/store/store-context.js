@@ -283,6 +283,7 @@ const StoreContext = React.createContext({
   getTradesSnapshot: async (market, length, asc) => {},
   getMembers: async ({ email, offset, limit }) => {},
   auditorMemberAccounts: async ({ memberId, currency }) => {},
+  auditorMemberBehavior: async ({ memberId, currency, start, end }) => {},
   fixAccountHandler: async (accountId) => {},
 });
 

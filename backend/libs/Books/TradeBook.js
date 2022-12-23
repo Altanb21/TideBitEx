@@ -92,10 +92,12 @@ class TradeBook extends BookBase {
       }
       return true;
     } catch (error) {
-      this.logger.error(
-        `[${this.constructor.name}] updateByDifference[${instId}] error`,
-        newTrades,
-        error
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }: OrderBook] updateByDifference(instId:${instId}) error`,
+        error,
+        newTrades
       );
       return false;
     }

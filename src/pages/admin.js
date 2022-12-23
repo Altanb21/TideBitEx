@@ -16,6 +16,7 @@ let defaultSection = "ticker-setting";
 const Admin = () => {
   const storeCtx = useContext(StoreContext);
   const [isInit, setIsInit] = useState(false);
+  const [data, setData] = useState(null);
   const [user, setUser] = useState(null);
   const history = useHistory();
   const [activePage, setActivePage] = useState("manager");
@@ -28,12 +29,14 @@ const Admin = () => {
     setActivePage(page);
     setOpenSidebar(false);
   };
-  const onSelectedSection = (section) => {
+  const onSelectedSection = (section, data) => {
     history.push({
       hash: `#${section}`,
     });
+    setActivePage("manager");
     setActiveSection(section);
     setOpenSidebar(false);
+    setData(data);
   };
 
   const userAbility = (user) => {
@@ -124,7 +127,7 @@ const Admin = () => {
 
   return (
     <>
-      <LoadingDialog isLoading={!isInit}/>
+      <LoadingDialog isLoading={!isInit} />
       <div className="admin">
         <AdminHeader
           activePage={activePage}
@@ -140,7 +143,12 @@ const Admin = () => {
           openSidebar={(open) => setOpenSidebar(open)}
         />
         {user && activePage === "manager" && (
-          <Manager user={user} activeSection={activeSection} />
+          <Manager
+            user={user}
+            activeSection={activeSection}
+            data={data}
+            onSelectedSection={onSelectedSection}
+          />
         )}
         {user && activePage === "dashboard" && <Dashboard user={user} />}
       </div>

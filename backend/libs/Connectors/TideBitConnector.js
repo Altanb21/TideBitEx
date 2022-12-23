@@ -117,8 +117,11 @@ class TibeBitConnector extends ConnectorBase {
           delete this.tidebitWsChannels[channel];
         }
       } else if (data.event === "error") {
-        this.logger.error(
-          `[${this.constructor.name}] _tidebitWsEventListener data.event === "error"`,
+        this.logger.debug(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }] tidebitWsEventListener data.event === error`,
+          `data`,
           data
         );
       }
@@ -168,7 +171,7 @@ class TibeBitConnector extends ConnectorBase {
       }
     }
     this.websocket.heartbeat();
-  }
+  };
 
   async getTicker({ query }) {
     const tBTickerRes = await axios.get(
@@ -282,9 +285,8 @@ class TibeBitConnector extends ConnectorBase {
     });
   }
 
-  /** [deprecated] */
   async getDepthBooks({ query }) {
-    const { instId, market, lotSz } = query;
+    const { market, lotSz } = query;
     try {
       const tbBooksRes = await axios.get(
         `${this.peatio}/api/v2/order_book?market=${market}`
@@ -368,7 +370,12 @@ class TibeBitConnector extends ConnectorBase {
         payload: books,
       });
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] getDepthBooks`, error);
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR getDepthBooks catch Errormarket:[${market}] error`,
+        error
+      );
       const message = error.message;
       return new ResponseFormat({
         message,
@@ -412,7 +419,15 @@ class TibeBitConnector extends ConnectorBase {
         payload: res.headers["set-cookie"],
       });
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] logout`, error);
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR logout catch Error `,
+        `header`,
+        header,
+        `body`,
+        body
+      );
       const message = error.message;
       return new ResponseFormat({
         message,
@@ -459,7 +474,12 @@ class TibeBitConnector extends ConnectorBase {
         );
         this.fetchedTrades[instId] = true;
       } catch (error) {
-        this.logger.error(error);
+        this.logger.debug(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR getTrades catch Error instId:[${instId}] market:[${market}] error`,
+          error
+        );
         const message = error.message;
         return new ResponseFormat({
           message,
@@ -595,7 +615,6 @@ class TibeBitConnector extends ConnectorBase {
         payload: accounts,
       });
     } catch (error) {
-      this.logger.error(error);
       const message = error.message;
       return new ResponseFormat({
         message,
@@ -612,11 +631,6 @@ class TibeBitConnector extends ConnectorBase {
         let coinsSetting = this.coinsSettings.find(
           (curr) => curr.id === account.currency
         );
-        if (!coinsSetting) {
-          this.logger.error(
-            `[${this.constructor.name}] getAccounts coinsSettings[${account?.currency}] is null`
-          );
-        }
         return {
           currency: coinsSetting?.code.toUpperCase(),
           balance: Utils.removeZeroEnd(account.balance),
@@ -627,7 +641,12 @@ class TibeBitConnector extends ConnectorBase {
 
       this.accountBook.updateAll(memberId, accounts);
     } catch (error) {
-      this.logger.error(`[${this.constructor.name}] getAccounts error`, error);
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR getAccounts catch Error memberId:[${memberId}] email:[${email}] token`,
+        token
+      );
       const message = error.message;
       return new ResponseFormat({
         message,
@@ -670,6 +689,12 @@ class TibeBitConnector extends ConnectorBase {
   async tbGetOrderList(query) {
     const { instId, memberId, tickerSetting } = query;
     if (!tickerSetting) {
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 格式出錯(tbGetOrderList) tickersetting not found memberId:[${memberId}] instId:[${instId}] tickerSetting`,
+        tickerSetting
+      );
       throw new Error(`${tickerSetting} is undefined.`);
     }
     const { id: bid } = this.coinsSettings.find(
@@ -679,9 +704,25 @@ class TibeBitConnector extends ConnectorBase {
       (curr) => curr.code === tickerSetting.baseUnit
     );
     if (!bid) {
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 格式出錯(tbGetOrderList) bid(quoteUnit) not found${
+          tickerSetting.quoteUnit
+        } memberId:[${memberId}] instId:[${instId}] tickerSetting`,
+        tickerSetting
+      );
       throw new Error(`bid not found${tickerSetting.quoteUnit}`);
     }
     if (!ask) {
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 格式出錯(tbGetOrderList) ask(baseUnit) not found${
+          tickerSetting.baseUnit
+        } memberId:[${memberId}] instId:[${instId}] tickerSetting`,
+        tickerSetting
+      );
       throw new Error(`ask not found${tickerSetting.baseUnit}`);
     }
     let orderList;
@@ -744,7 +785,6 @@ class TibeBitConnector extends ConnectorBase {
         this.orderBook.updateAll(memberId, instId, orders);
         this.fetchedOrders[memberId][instId] = ts;
       } catch (error) {
-        this.logger.error(error);
         const message = error.message;
         return new ResponseFormat({
           message,
@@ -773,7 +813,6 @@ class TibeBitConnector extends ConnectorBase {
         this.orderBook.updateAll(memberId, instId, orders);
         this.fetchedOrders[memberId][instId] = ts;
       } catch (error) {
-        this.logger.error(error);
         const message = error.message;
         return new ResponseFormat({
           message,
@@ -899,7 +938,17 @@ class TibeBitConnector extends ConnectorBase {
           ],
         });
       } else {
-        this.logger.error(`postPlaceOrder result false`, tbOrdersRes.data);
+        this.logger.error(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] !!! ERROR postPlaceOrder API Failed`,
+          `tbOrdersRes`,
+          tbOrdersRes,
+          `header`,
+          header,
+          `body`,
+          body
+        );
         return new ResponseFormat({
           message: tbOrdersRes.data?.errors
             ? tbOrdersRes.data?.errors
@@ -911,7 +960,17 @@ class TibeBitConnector extends ConnectorBase {
         });
       }
     } catch (error) {
-      this.logger.error(`postPlaceOrder catch Error`, error.response);
+      this.logger.error(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR postPlaceOrder catch Error`,
+        `error`,
+        error,
+        `header`,
+        header,
+        `body`,
+        body
+      );
       // debug for postman so return error
       return new ResponseFormat({
         message: error.response?.data?.errors
@@ -943,7 +1002,17 @@ class TibeBitConnector extends ConnectorBase {
         payload: tbCancelOrderRes.data,
       });
     } catch (error) {
-      this.logger.error(error?.response ? error?.response : error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR postCancelOrder `,
+        `error`,
+        error,
+        `header`,
+        header,
+        `body`,
+        body
+      );
       // debug for postman so return error
       return new ResponseFormat({
         message: "postCancelOrder error",
@@ -971,7 +1040,17 @@ class TibeBitConnector extends ConnectorBase {
         payload: tbCancelOrderRes.data,
       });
     } catch (error) {
-      this.logger.error(`cancelAllAsks error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR cancelAllAsks `,
+        `error`,
+        error,
+        `header`,
+        header,
+        `body`,
+        body
+      );
       return new ResponseFormat({
         message: "cancelAllAsks error",
         code: Codes.UNKNOWN_ERROR,
@@ -998,7 +1077,17 @@ class TibeBitConnector extends ConnectorBase {
         payload: tbCancelOrderRes.data,
       });
     } catch (error) {
-      this.logger.error(`cancelAllBids error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR cancelAllBids `,
+        `error`,
+        error,
+        `header`,
+        header,
+        `body`,
+        body
+      );
       return new ResponseFormat({
         message: "cancelAllBids error",
         code: Codes.UNKNOWN_ERROR,
@@ -1025,7 +1114,17 @@ class TibeBitConnector extends ConnectorBase {
         payload: tbCancelOrderRes.data,
       });
     } catch (error) {
-      this.logger.error(`cancelAllOrders error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR cancelAllOrders `,
+        `error`,
+        error,
+        `header`,
+        header,
+        `body`,
+        body
+      );
       return new ResponseFormat({
         message: "cancelAll error",
         code: Codes.UNKNOWN_ERROR,
@@ -1098,7 +1197,13 @@ class TibeBitConnector extends ConnectorBase {
         payload: bars,
       });
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR getTradingViewHistory (instId:${instId}, resolution:${resolution}, from:${from}, to:${to})`,
+        `error`,
+        error
+      );
       let message = error.message;
       if (error.response && error.response.data)
         message = error.response.data.msg;
@@ -1123,8 +1228,14 @@ class TibeBitConnector extends ConnectorBase {
         })
       );
     } catch (error) {
-      this.logger.error(`private_channel error`, error);
-      throw error;
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR _registerPrivateChannel (memberId:${memberId}, sn:${sn}, auth:${auth})`,
+        `error`,
+        error
+      );
+      // throw error;
     }
     return channel;
   }
@@ -1140,8 +1251,16 @@ class TibeBitConnector extends ConnectorBase {
         })
       );
     } catch (error) {
-      this.logger.error(`_unregisterPrivateChannel error`, error);
-      throw error;
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR _unregisterPrivateChannel`,
+        `error`,
+        error,
+        `client`,
+        client
+      );
+      // throw error;
     }
   }
 
@@ -1162,7 +1281,13 @@ class TibeBitConnector extends ConnectorBase {
         // if (lotSz)
         //   this.market_channel[`market-${market}-global`]["lotSz"] = lotSz;
       } catch (error) {
-        this.logger.error(`_registerMarketChannel error`, error);
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] !!! ERROR _registerMarketChannel market:[${market}]`,
+          `error`,
+          error
+        );
         throw error;
       }
     } else {
@@ -1171,7 +1296,11 @@ class TibeBitConnector extends ConnectorBase {
   }
 
   _unregisterMarketChannel(market, wsId) {
-    if (!this.isStart || !this.market_channel[`market-${market}-global`] || this.registerMarkets.includes(market))
+    if (
+      !this.isStart ||
+      !this.market_channel[`market-${market}-global`] ||
+      this.registerMarkets.includes(market)
+    )
       return;
     try {
       if (
@@ -1202,7 +1331,13 @@ class TibeBitConnector extends ConnectorBase {
         this.isStart = false;
       }
     } catch (error) {
-      this.logger.error(`_unregisterMarketChannel error`, error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR _unregisterMarketChannel market:[${market}]`,
+        `error`,
+        error
+      );
       throw error;
     }
   }
@@ -1218,8 +1353,14 @@ class TibeBitConnector extends ConnectorBase {
         })
       );
     } catch (error) {
-      this.logger.error(`_registerGlobalChannel error`, error);
-      throw error;
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR _registerGlobalChannel`,
+        `error`,
+        error
+      );
+      // throw error;
     }
   }
 
@@ -1235,8 +1376,14 @@ class TibeBitConnector extends ConnectorBase {
         })
       );
     } catch (error) {
-      this.logger.error(`_unregisterGlobalChannel error`, error);
-      throw error;
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR _unregisterGlobalChannel`,
+        `error`,
+        error
+      );
+      // throw error;
     }
   }
 
@@ -1267,26 +1414,14 @@ class TibeBitConnector extends ConnectorBase {
           data,
         });
         auth = authRes.data.auth;
-        if (!auth)
-          this.logger.error(
-            `[${this.constructor.name}](ln:1263) pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}] headers`,
-            headers
-          );
+        // if (!auth)
+        // ++ TODO handle pusher:auth error did not get auth, sn[${sn}], socketId[${this.socketId}]
+        //}
       } catch (error) {
-        this.logger.error(
-          `(ln:1268) request url:${this.peatio}/pusher/auth got error status: ${error?.status} statusText: ${error?.status}`,
-          `headers`,
-          error?.headers,
-          `config`,
-          error?.config,
-          `data`,
-          error?.data
-        );
-
-        // this.logger.error(error?.response)
+        // ++ TODO handle pusher:auth url:${this.peatio}/pusher/auth got error status
       }
     } else {
-      this.logger.error(`pusher:auth error without socketId`);
+      // ++ TODO handle pusher:auth error without socketId
     }
     return auth;
   }
@@ -1335,9 +1470,12 @@ class TibeBitConnector extends ConnectorBase {
         }
       }
     } catch (error) {
-      this.logger.error(
-        `_subscribeUser error`,
-        error?.response ? error?.response : error
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR _subscribeUser`,
+        `credential`,
+        credential
       );
       // throw error;
     }
@@ -1366,8 +1504,14 @@ class TibeBitConnector extends ConnectorBase {
           // this._unregisterPrivateChannel(client);
           delete this.private_client[client.memberId];
         } catch (error) {
-          this.logger.error(`_unsubscribeUser error`, error);
-          throw error;
+          this.logger.debug(
+            `[${new Date().toLocaleTimeString()}][${
+              this.constructor.name
+            }] !!! ERROR _unsubscribeUser[wsId:${wsId}]`,
+            `client`,
+            client
+          );
+          // throw error;
         }
       } else {
       }

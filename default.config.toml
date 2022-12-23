@@ -73,8 +73,6 @@ pathname = [
   # exchange - trade
   "post | /api/v1/trade/order | Bot.ExchangeHub.postPlaceOrder",
   "get | /api/v1/trade/orders | Bot.ExchangeHub.getOrders",
-  "get | /api/v1/trade/orders-pending | Bot.ExchangeHub.getOrderList",
-  "get | /api/v1/trade/orders-history | Bot.ExchangeHub.getOrderHistory",
   "post | /api/v1/trade/cancel-order | Bot.ExchangeHub.postCancelOrder",
   "post | /api/v1/trade/force-cancel-order | Bot.ExchangeHub.forceCancelOrder",
   "post | /api/v1/trade/cancel-orders | Bot.ExchangeHub.cancelOrders",
@@ -127,6 +125,7 @@ pathname = [
 
   "post | /api/v1/logout | Bot.ExchangeHub.logout",
 
+  "get | /api/v1/private/audit-member | Bot.ExchangeHub.auditMemberBehavior",
   "get | /api/v1/private/audit-accounts | Bot.ExchangeHub.auditorMemberAccounts",
   "put | /api/v1/private/audit-accounts/:id | Bot.ExchangeHub.fixAbnormalAccount",
   "get | /api/v1/private/members | Bot.ExchangeHub.getMembers",

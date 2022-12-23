@@ -14,7 +14,12 @@ const ScreenDisplayOptions = (props) => {
     ) : (
       <></>
     );
-  return <ul className="screen__display-options">{component}</ul>;
+  return (
+    <div className="screen__display">
+      <div className="screen__display-title">{`${props.title}:`}</div>
+      <ul className="screen__display-options">{component}</ul>
+    </div>
+  );
 };
 
 export default ScreenDisplayOptions;

@@ -329,14 +329,12 @@ const CurrentOrders = () => {
           </div>
         </div>
         <div className="screen__tool-bar">
-          <div className="screen__display">
-            <div className="screen__display-title">{`${t("show")}:`}</div>
-            <ScreenDisplayOptions
-              options={["all", "buy", "sell"]}
-              selectedOption={filterOption}
-              selectHandler={displayOptionHandler}
-            />
-          </div>
+          <ScreenDisplayOptions
+            title={t("show")}
+            options={["all", "buy", "sell"]}
+            selectedOption={filterOption}
+            selectHandler={displayOptionHandler}
+          />
           {/* <div className="screen__sorting" onClick={sorting}>
           <img src="/img/sorting@2x.png" alt="sorting" />
         </div> */}

@@ -70,7 +70,13 @@ class WSChannel extends Bot {
               op = parsed?.op;
               args = parsed?.args;
             } catch (error) {
-              this.logger.error(`JSON.parse(message) error`, message, error);
+              this.logger.debug(
+                `[${new Date().toISOString()}][${
+                  this.constructor.name
+                }] JSON.parse(message) error`,
+                message,
+                error
+              );
             }
             if (!op || !args) {
               ws.send(
@@ -88,17 +94,9 @@ class WSChannel extends Bot {
                 this._onOpStatusUpdate(req.headers, ws, args, this.redis);
                 break;
               case Events.switchMarket:
-                // this.logger.debug(
-                //   `[${this.constructor.name} _onOpSwitchMarket]`,
-                //   args
-                // );
                 this._onOpSwitchMarket(ws, args);
                 break;
               case Events.registerMarket:
-                // this.logger.debug(
-                //   `[${this.constructor.name} _onOpRegisterMarket]`,
-                //   args
-                // );
                 this._onOpRegisterMarket(ws, args);
                 break;
               default:
@@ -111,27 +109,11 @@ class WSChannel extends Bot {
                   )
                 );
             }
-            // this.logger.debug(
-            //   `*********findClient.channl [channel: ${
-            //     this._client[ws.id].channel
-            //   },isStart: ${this._client[ws.id].isStart}],isPrivate: ${
-            //     this._client[ws.id].isPrivate
-            //   }]*************`
-            // );
-            // this.logger.debug("this._channelClients", this._channelClients);
           });
           ws.on("close", () => {
-            // this.logger.debug(
-            //   `*********disconnected findClient.channel [channel: ${
-            //     this._client[ws.id].channel
-            //   },isStart: ${this._client[ws.id].isStart}]*************`
-            // );
-            // this.logger.debug("this._channelClients", this._channelClients);
             const findClient = this._client[ws.id];
-            // this.logger.debug("findClient", findClient);
             if (findClient.isStart) {
               delete this._channelClients[findClient.channel][ws.id];
-              // this.logger.debug("this._channelClients", this._channelClients);
               if (
                 Object.values(this._channelClients[findClient.channel])
                   .length === 0
@@ -206,7 +188,6 @@ class WSChannel extends Bot {
   }
 
   _onOpRegisterMarket(ws, args) {
-    // this.logger.debug(`[${this.constructor.name}]_onOpRegisterMarket`, args);
     EventBus.emit(Events.registerMarket, args.market);
   }
 
@@ -279,8 +260,16 @@ class WSChannel extends Bot {
       });
     } else
       this.logger.debug(
-        `[${this.constructor.name}] this memberId[${memberId}] is not online`,
-        this._privateClient[memberId]
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }] memberId[${memberId}] is not online. this._privateClient[memberId]:`,
+        this._privateClient[memberId],
+        `market`,
+        market,
+        `type`,
+        type,
+        `data`,
+        data
       );
   }
 
@@ -293,8 +282,15 @@ class WSChannel extends Bot {
       });
     } else
       this.logger.debug(
-        `[${this.constructor.name}] this memberId[${memberId}] is not online`,
-        this._privateClient[memberId]
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }] memberId[${memberId}] is not online. this._privateClient[memberId]`,
+        this._privateClient[memberId],
+        `market`,
+        `type`,
+        type,
+        `data`,
+        data
       );
   }
 }
