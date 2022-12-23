@@ -6132,7 +6132,7 @@ class ExchangeHub extends Bot {
 
   async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
-    let accountVersionId, newAccountVersion;
+    let accountVersionId, newAccountVersion, newAccount;
     const account = await this.database.getAccountsByMemberId(
       accountVersion.member_id,
       {
@@ -6237,17 +6237,10 @@ class ExchangeHub extends Bot {
     // };
     try {
       // await this.database.updateAccount(newAccount, { dbTransaction });
-      const result = await this.database.updateAccountByAccountVersion(
+      await this.database.updateAccountByAccountVersion(
         account.id,
         accountVersion.created_at,
         { dbTransaction }
-      );
-      this.logger.debug(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
-        }]result updateAccountByAccountVersion`,
-        result
       );
     } catch (error) {
       this.logger.error(
@@ -6261,13 +6254,33 @@ class ExchangeHub extends Bot {
       throw error;
     }
     try {
+      newAccount = await this.database.getAccountsByMemberId(
+        accountVersion.member_id,
+        {
+          options: { currency: accountVersion.currency },
+          limit: 1,
+          dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        }]!!!ERROR getAccountsByMemberId 出錯(_updateAccount) memberId[${
+          accountVersion.member_id
+        }] currency[${accountVersion.currency}]`
+      );
+      throw error;
+    }
+    try {
       this._emitUpdateAccount({
         memberId: accountVersion.member_id,
         account: {
-          balance: newAccBal,
-          locked: newAccLoc,
+          balance: newAccount.balance,
+          locked: newAccount.locked,
           currency: currency.toUpperCase(),
-          total: amount,
+          total: SafeMath.plus(newAccount.balance, newAccount.locked),
         },
       });
     } catch (error) {
