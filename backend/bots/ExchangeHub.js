@@ -1761,26 +1761,36 @@ class ExchangeHub extends Bot {
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
+      state: query.state,
     });
     for (let dbOrder of dbOrders) {
       let order,
-        price = dbOrder.price ? Utils.removeZeroEnd(dbOrder.price) : "market";
+        price = dbOrder.price ? Utils.removeZeroEnd(dbOrder.price) : "market",
+        avgFillPrice;
       if (dbOrder.state === Database.ORDER_STATE_CODE.DONE) {
         if (dbOrder.type === Database.TYPE.ORDER_ASK) {
-          price = SafeMath.div(
-            dbOrder.funds_received,
-            SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
-          );
+          avgFillPrice = SafeMath.gt(
+            SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+            0
+          )
+            ? SafeMath.div(
+                dbOrder.funds_received,
+                SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
+              )
+            : null;
         }
         if (dbOrder.type === Database.TYPE.ORDER_BID) {
-          price = SafeMath.div(
-            SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
-            dbOrder.funds_received
-          );
+          avgFillPrice = SafeMath.gt(dbOrder.funds_received, 0)
+            ? SafeMath.div(
+                SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+                dbOrder.funds_received
+              )
+            : null;
         }
       }
       order = {
         id: dbOrder.id,
+        member_id: dbOrder.member_id,
         ts: parseInt(new Date(dbOrder.updated_at).getTime()),
         at: parseInt(
           SafeMath.div(new Date(dbOrder.updated_at).getTime(), "1000")
@@ -1791,16 +1801,14 @@ class ExchangeHub extends Bot {
             ? Database.ORDER_KIND.ASK
             : Database.ORDER_KIND.BID,
         price,
+        avgFillPrice: avgFillPrice,
         origin_volume: Utils.removeZeroEnd(dbOrder.origin_volume),
         volume: Utils.removeZeroEnd(dbOrder.volume),
+        origin_locked: Utils.removeZeroEnd(dbOrder.origin_locked),
+        locked: Utils.removeZeroEnd(dbOrder.locked),
+        funds_received: Utils.removeZeroEnd(dbOrder.funds_received),
         state_code: dbOrder.state,
-        state: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
-          ? Database.ORDER_STATE.CANCEL
-          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
-          ? Database.ORDER_STATE.WAIT
-          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.DONE)
-          ? Database.ORDER_STATE.DONE
-          : Database.ORDER_STATE.UNKNOWN,
+        state: Database.DB_STATE_CODE[dbOrder.state],
         state_text: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
           ? Database.ORDER_STATE_TEXT.CANCEL
           : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
@@ -2770,16 +2778,62 @@ class ExchangeHub extends Bot {
     }
   }
 
+  formatInnerOrder(dbOrder) {
+    let innerOrder = dbOrder
+      ? {
+          orderId: dbOrder.id,
+          exchange: SupportedExchange.TIDEBIT,
+          price: dbOrder.price,
+          avgFillPrice: dbOrder.avgFillPrice,
+          volume: dbOrder.volume,
+          accFillVolume: SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+          state: dbOrder.state,
+          expect:
+            dbOrder.kind === Database.ORDER_KIND.BID
+              ? dbOrder.origin_volume
+              : dbOrder.price
+              ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
+              : null,
+          received: dbOrder.funds_received,
+        }
+      : null;
+    return innerOrder;
+  }
+  formatOkxOrder(order) {
+    let outerOrder = {
+      orderId: order.ordId,
+      exchange: SupportedExchange.OKEX,
+      price: order.px,
+      avgFillPrice: order.avgPx,
+      volume: order.sz,
+      accFillVolume: order.accFillSz,
+      state: Database.OKX_ORDER_STATE[order.state],
+      expect:
+        order.side === Database.ORDER_SIDE.BUY
+          ? order.sz
+          : SafeMath.mult(order.px, order.sz),
+      received:
+        order.side === Database.ORDER_SIDE.BUY
+          ? order.accFillSz
+          : SafeMath.mult(order.avgPx, order.accFillSz),
+    };
+    return outerOrder;
+  }
+
   async getOuterPendingOrders({ query }) {
-    let orders = [],
-      dbOrders = [],
+    let // dbOrders = [],
       orderIds = [],
       emails = [],
       pendingOrders = [],
-      memberIds = {};
-    // totalCounts,
-    // id = query.instId.replace("-", "").toLowerCase(),
-    // tickerSetting = this.tickersSettings[id];
+      memberIds = {},
+      id = query.instId.replace("-", "").toLowerCase(),
+      tickerSetting = this.tickersSettings[id],
+      dbOrders = await this.getOrdersFromDb({
+        ...query,
+        state: Database.OKX_ORDER_STATE_CODE.WAIT,
+        tickerSetting,
+      });
+    // totalCounts;
     this.logger.debug(
       `[${new Date().toLocaleTimeString()}][${
         this.constructor.name
@@ -2792,160 +2846,97 @@ class ExchangeHub extends Bot {
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
-        // let result = await this.database.countOrders({
-        //   currency: tickerSetting.code,
-        //   state: Database.ORDER_STATE_CODE.WAIT,
-        // });
-        // totalCounts = result["counts"];
         if (res.success) {
           for (let order of res.payload) {
-            let parsedClOrdId, memberId, orderId, outerOrder, innerOrder;
-            outerOrder = {
-              orderId: order.ordId,
-              exchange: SupportedExchange.OKEX,
-              price: order.px,
-              avgFillPrice: order.avgPx,
-              volume: order.sz,
-              accFillVolume: order.accFillSz,
-              state: Database.OKX_ORDER_STATE[order.state],
-              expect:
-                order.side === Database.ORDER_SIDE.BUY
-                  ? order.sz
-                  : SafeMath.mult(order.px, order.sz),
-              received:
-                order.side === Database.ORDER_SIDE.BUY
-                  ? order.accFillSz
-                  : SafeMath.mult(order.avgPx, order.accFillSz),
-            };
-            try {
-              parsedClOrdId = Utils.parseClOrdId(order.clOrdId);
-            } catch (error) {
-              this.logger.debug(
-                `[${new Date().toLocaleTimeString()}][${
-                  this.constructor.name
-                }]getOuterPendingOrders OKX order parseClOrdId error ERROR! order.clOrdId${
-                  order.clOrdId
-                }`,
-                `order`,
-                order,
-                `error`,
-                error
-              );
-            }
+            let parsedClOrdId,
+              memberId,
+              orderId,
+              outerOrder,
+              innerOrder,
+              alert = true;
+            outerOrder = this.formatOkxOrder(order);
+            parsedClOrdId = Utils.parseClOrdId(order.clOrdId);
             if (parsedClOrdId) {
               memberId = parsedClOrdId.memberId;
               if (!memberIds[memberId]) memberIds[memberId] = memberId;
               orderId = parsedClOrdId.orderId;
               orderIds = [...orderIds, orderId];
-              innerOrder = {
-                orderId,
-                exchange: SupportedExchange.TIDEBIT,
-              };
+              let index = dbOrders.findIndex(
+                (dbOrder) =>
+                  dbOrder.member_id === memberId && dbOrder.id === orderId
+              );
+              let dbOrder = dbOrders.splice(index, 1).shift();
+              innerOrder = this.innerOrder(dbOrder);
+            }
+            if (
+              !SafeMath.eq(
+                order.outerOrder.accFillVolume,
+                innerOrder.accFillVolume
+              ) ||
+              !SafeMath.eq(order.outerOrder.expect, innerOrder.expect) ||
+              !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
+              order.outerOrder.state !== innerOrder.state
+            ) {
+              alert = true;
             }
             let processedOrder = {
-              id: order.clOrdId,
+              id: innerOrder.id,
+              clOrdId: order.clOrdId,
               instId: order.instId,
               memberId,
               kind: order.ordType,
               side: order.side,
               outerOrder,
               innerOrder,
-              price: order.px,
-              volume: order.sz,
+              price: order.innerOrder.price || order.outerOrder.price,
+              volume: order.innerOrder.volume || order.outerOrder.volume,
               exchange: SupportedExchange.OKEX,
               feeCurrency: order.feeCcy,
               ts: parseInt(order.cTime),
+              alert,
             };
-            orders = [...orders, processedOrder];
-            // if (order.side === Database.ORDER_SIDE.BUY)
-            //   bidOrders = [...bidOrders, processedOrder];
-            // else askOrders = [...askOrders, processedOrder];
+            pendingOrders = [...pendingOrders, processedOrder];
+          }
+          for (let dbOrder of dbOrders) {
+            let innerOrder = this.formatInnerOrder(dbOrder);
+            if (!memberIds[dbOrder.member_id])
+              memberIds[dbOrder.member_id] = dbOrder.member_id;
+            let processedOrder = {
+              id: innerOrder.id,
+              instId: tickerSetting.instId,
+              memberId: dbOrder.member_id,
+              kind: dbOrder.ordType,
+              side: Database.ORDER_SIDE[dbOrder.kind],
+              outerOrder: null,
+              innerOrder,
+              price: innerOrder.price,
+              volume: innerOrder.volume,
+              exchange: SupportedExchange.OKEX,
+              feeCurrency:
+                dbOrder.kind === Database.ORDER_KIND.ASK
+                  ? tickerSetting.quoteUnit
+                  : tickerSetting.baseUnit,
+              ts: new Date(
+                dbOrder.created_at.toString().replace(/[-]/g, "/")
+              ).getTime(),
+              alert: true,
+            };
+            pendingOrders = [...pendingOrders, processedOrder];
           }
           // getOrdersByIds
-          // askOrders.sort((a, b) => a.price - b.price);
-          // bidOrders.sort((a, b) => b.price - a.price);
-          // orders = bidOrders.concat(askOrders);
-          dbOrders = await this.database.getOrdersByIds(orderIds);
+          // dbOrders = await this.database.getOrdersByIds(orderIds);
           emails = await this.database.getEmailsByMemberIds(
             Object.values(memberIds)
           );
-          for (let order of orders) {
-            let dbOrder,
-              innerOrder = { ...order.innerOrder },
-              price,
-              volume,
-              email = emails.find((obj) =>
-                SafeMath.eq(obj.id, order.memberId)
-              )?.email,
-              alert = false;
-            dbOrder = dbOrders.find(
-              (o) =>
-                SafeMath.eq(order.innerOrder.orderId, o.id) &&
-                SafeMath.eq(order.memberId, o.member_id)
-            );
-            if (dbOrder) {
-              price = Utils.removeZeroEnd(dbOrder.price);
-              volume = Utils.removeZeroEnd(dbOrder.origin_volume);
-              innerOrder = {
-                ...innerOrder,
-                price,
-                avgFillPrice:
-                  order.side === Database.ORDER_SIDE.BUY
-                    ? SafeMath.gt(dbOrder.funds_received, 0)
-                      ? SafeMath.div(
-                          SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
-                          dbOrder.funds_received
-                        )
-                      : null
-                    : SafeMath.gt(
-                        SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
-                        0
-                      )
-                    ? SafeMath.div(
-                        dbOrder.funds_received,
-                        SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
-                      )
-                    : null,
-                volume,
-                accFillVolume: SafeMath.minus(
-                  dbOrder.origin_volume,
-                  dbOrder.volume
-                ),
-                state:
-                  dbOrder.state === Database.ORDER_STATE_CODE.CANCEL
-                    ? Database.ORDER_STATE.CANCEL
-                    : dbOrder.state === Database.ORDER_STATE_CODE.DONE
-                    ? Database.ORDER_STATE.DONE
-                    : Database.ORDER_STATE.WAIT,
-                expect:
-                  order.side === Database.ORDER_SIDE.BUY
-                    ? Utils.removeZeroEnd(dbOrder.origin_volume)
-                    : dbOrder.price
-                    ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
-                    : null,
-                received: Utils.removeZeroEnd(dbOrder.funds_received),
-              };
-              if (
-                !SafeMath.eq(
-                  order.outerOrder.accFillVolume,
-                  innerOrder.accFillVolume
-                ) ||
-                !SafeMath.eq(order.outerOrder.expect, innerOrder.expect) ||
-                !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
-                order.outerOrder.state !== innerOrder.state
-              ) {
-                alert = true;
-              }
-            }
+          for (let pendingOrder of pendingOrders) {
+            let email = emails.find((obj) =>
+              SafeMath.eq(obj.id, pendingOrder.memberId)
+            )?.email;
             pendingOrders = [
               ...pendingOrders,
               {
-                ...order,
-                email: dbOrder ? email : null,
-                innerOrder,
-                price: price || order.outerOrder.price,
-                volume: volume || order.outerOrder.volume,
-                alert,
+                ...pendingOrder,
+                email: email,
               },
             ];
           }
@@ -3276,135 +3267,137 @@ class ExchangeHub extends Bot {
       payload: null,
     });
   }
-  // TODO integrate getOrderList and getOrderHistory into one
-  async getOrderList({ query, memberId }) {
-    const tickerSetting = this.tickersSettings[query.id];
-    if (memberId !== -1) {
-      switch (tickerSetting?.source) {
-        case SupportedExchange.OKEX:
-          const res = await this.okexConnector.router("getOrderList", {
-            query: {
-              ...query,
-              instId: tickerSetting?.instId,
-              market: tickerSetting,
-              memberId,
-            },
-          });
-          const list = res.payload;
-          if (Array.isArray(list)) {
-            const newList = list.filter((order) =>
-              order.clOrdId.includes(`${memberId}m`)
-            ); // 可能發生與brokerId, randomId碰撞
-            res.payload = newList;
-          }
-          return res;
-        case SupportedExchange.TIDEBIT:
-          if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
-          let ts = Date.now();
-          if (
-            !this.fetchedOrders[memberId][tickerSetting?.instId] ||
-            SafeMath.gt(
-              SafeMath.minus(
-                ts,
-                this.fetchedOrders[memberId][tickerSetting?.instId]
-              ),
-              this.fetchedOrdersInterval
-            )
-          )
-            try {
-              const orders = await this.getOrdersFromDb({
-                ...query,
-                memberId,
-                instId: tickerSetting?.instId,
-                market: tickerSetting,
-              });
-              this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
-              this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
-            } catch (error) {
-              const message = error.message;
-              return new ResponseFormat({
-                message,
-                code: Codes.API_UNKNOWN_ERROR,
-              });
-            }
-          return new ResponseFormat({
-            message: "getOrderList",
-            payload: this.orderBook.getSnapshot(
-              memberId,
-              tickerSetting?.instId,
-              "pending"
-            ),
-          });
-        default:
-          return new ResponseFormat({
-            message: "getOrderList",
-            payload: null,
-          });
-      }
-    }
-    return new ResponseFormat({
-      message: "getOrderList",
-      payload: null,
-    });
-  }
+  /**
+   * [deprecated] 2022/11/17
+   */
+  // async getOrderList({ query, memberId }) {
+  //   const tickerSetting = this.tickersSettings[query.id];
+  //   if (memberId !== -1) {
+  //     switch (tickerSetting?.source) {
+  //       case SupportedExchange.OKEX:
+  //         const res = await this.okexConnector.router("getOrderList", {
+  //           query: {
+  //             ...query,
+  //             instId: tickerSetting?.instId,
+  //             market: tickerSetting,
+  //             memberId,
+  //           },
+  //         });
+  //         const list = res.payload;
+  //         if (Array.isArray(list)) {
+  //           const newList = list.filter((order) =>
+  //             order.clOrdId.includes(`${memberId}m`)
+  //           ); // 可能發生與brokerId, randomId碰撞
+  //           res.payload = newList;
+  //         }
+  //         return res;
+  //       case SupportedExchange.TIDEBIT:
+  //         if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
+  //         let ts = Date.now();
+  //         if (
+  //           !this.fetchedOrders[memberId][tickerSetting?.instId] ||
+  //           SafeMath.gt(
+  //             SafeMath.minus(
+  //               ts,
+  //               this.fetchedOrders[memberId][tickerSetting?.instId]
+  //             ),
+  //             this.fetchedOrdersInterval
+  //           )
+  //         )
+  //           try {
+  //             const orders = await this.getOrdersFromDb({
+  //               ...query,
+  //               memberId,
+  //               instId: tickerSetting?.instId,
+  //               market: tickerSetting,
+  //             });
+  //             this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+  //             this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
+  //           } catch (error) {
+  //             const message = error.message;
+  //             return new ResponseFormat({
+  //               message,
+  //               code: Codes.API_UNKNOWN_ERROR,
+  //             });
+  //           }
+  //         return new ResponseFormat({
+  //           message: "getOrderList",
+  //           payload: this.orderBook.getSnapshot(
+  //             memberId,
+  //             tickerSetting?.instId,
+  //             "pending"
+  //           ),
+  //         });
+  //       default:
+  //         return new ResponseFormat({
+  //           message: "getOrderList",
+  //           payload: null,
+  //         });
+  //     }
+  //   }
+  //   return new ResponseFormat({
+  //     message: "getOrderList",
+  //     payload: null,
+  //   });
+  // }
 
   /**
    * [deprecated] 2022/11/17
    */
-  async getOrderHistory({ query, memberId }) {
-    const tickerSetting = this.tickersSettings[query.id];
-    if (!memberId || memberId === -1) {
-      return new ResponseFormat({
-        message: "getOrderHistory",
-        payload: null,
-      });
-    }
-    switch (tickerSetting?.source) {
-      case SupportedExchange.OKEX:
-      case SupportedExchange.TIDEBIT:
-        if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
-        let ts = Date.now();
-        if (
-          !this.fetchedOrders[memberId][tickerSetting?.instId] ||
-          SafeMath.gt(
-            SafeMath.minus(
-              ts,
-              this.fetchedOrders[memberId][tickerSetting?.instId]
-            ),
-            this.fetchedOrdersInterval
-          )
-        ) {
-          try {
-            const orders = await this.getOrdersFromDb({
-              ...query,
-              memberId,
-              tickerSetting,
-            });
-            this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
-            this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
-          } catch (error) {
-            const message = error.message;
-            return new ResponseFormat({
-              message,
-              code: Codes.API_UNKNOWN_ERROR,
-            });
-          }
-        }
-        return new ResponseFormat({
-          message: "getOrderHistory",
-          payload: this.orderBook.getSnapshot(
-            memberId,
-            tickerSetting?.instId,
-            "history"
-          ),
-        });
-      default:
-        return new ResponseFormat({
-          message: "getOrderHistory",
-          payload: null,
-        });
-    }
-  }
+  // async getOrderHistory({ query, memberId }) {
+  //   const tickerSetting = this.tickersSettings[query.id];
+  //   if (!memberId || memberId === -1) {
+  //     return new ResponseFormat({
+  //       message: "getOrderHistory",
+  //       payload: null,
+  //     });
+  //   }
+  //   switch (tickerSetting?.source) {
+  //     case SupportedExchange.OKEX:
+  //     case SupportedExchange.TIDEBIT:
+  //       if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
+  //       let ts = Date.now();
+  //       if (
+  //         !this.fetchedOrders[memberId][tickerSetting?.instId] ||
+  //         SafeMath.gt(
+  //           SafeMath.minus(
+  //             ts,
+  //             this.fetchedOrders[memberId][tickerSetting?.instId]
+  //           ),
+  //           this.fetchedOrdersInterval
+  //         )
+  //       ) {
+  //         try {
+  //           const orders = await this.getOrdersFromDb({
+  //             ...query,
+  //             memberId,
+  //             tickerSetting,
+  //           });
+  //           this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+  //           this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
+  //         } catch (error) {
+  //           const message = error.message;
+  //           return new ResponseFormat({
+  //             message,
+  //             code: Codes.API_UNKNOWN_ERROR,
+  //           });
+  //         }
+  //       }
+  //       return new ResponseFormat({
+  //         message: "getOrderHistory",
+  //         payload: this.orderBook.getSnapshot(
+  //           memberId,
+  //           tickerSetting?.instId,
+  //           "history"
+  //         ),
+  //       });
+  //     default:
+  //       return new ResponseFormat({
+  //         message: "getOrderHistory",
+  //         payload: null,
+  //       });
+  //   }
+  // }
 
   async updateOrderStatus({
     transaction,
