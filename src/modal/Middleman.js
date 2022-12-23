@@ -356,37 +356,6 @@ class Middleman {
     }
   }
 
-  async _getOrderList(market, options = {}) {
-    try {
-      const orders = await this.communicator.getOrderList({
-        ...options,
-        market,
-      });
-      if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      // if (!!orders) this.orderBook.updateAll(market, orders);
-    } catch (error) {
-      console.error(`_getOrderList error`, error);
-      // throw error;
-    }
-  }
-
-  /**
-   * [deprecated] 2022/11/17
-   */
-  async _getOrderHistory(market, options = {}) {
-    try {
-      const orders = await this.communicator.getOrderHistory({
-        ...options,
-        market,
-      });
-      if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
-      // if (!!orders) this.orderBook.updateAll(market, orders);
-    } catch (error) {
-      console.error(`_getOrderHistory error`, error);
-      // throw error;
-    }
-  }
-
   getTickersSnapshot() {
     return this.tickerBook.getSnapshot();
   }

@@ -64,6 +64,8 @@ module.exports = {
     BUY: "buy",
     OrderAsk: "sell",
     OrderBid: "buy",
+    ask:"sell",
+    bid:"buy",
   },
   ORDER_KIND: {
     ASK: "ask",

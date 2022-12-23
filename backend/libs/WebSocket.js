@@ -17,7 +17,6 @@ class WebSocket {
   heartbeat() {
     clearTimeout(this.pingTimeout);
     this.pingTimeout = setTimeout(() => {
-      // this.logger.debug("heartbeat");
       this.ws.ping();
     }, this.heartBeatTime);
   }
@@ -26,66 +25,55 @@ class WebSocket {
     this.ws.on("pong", () => this.heartbeat());
     this.ws.on(
       "close",
-      async (code, reason) => await this.clear({ type: "close", code, reason })
+      async (code, reason) =>
+        await this.reInitWs({ type: "close", code, reason })
     );
     this.ws.on(
       "error",
-      async (error) => await this.clear({ type: "error", error })
+      async (error) => await this.reInitWs({ type: "error", error })
     );
   }
 
-  async clear({ type, error, code, reason }) {
+  async reInitWs({ type, error, code, reason }) {
     clearTimeout(this.wsReConnectTimeout);
     if (type === "close")
       this.logger.debug(
-        `Websocket] this.ws.on("close")`,
-        new Date().toLocaleString(),
+        `[${new Date().toLocaleString()}][Websocket] this.ws.on("close")`,
         code,
         reason
       );
     else if (type === "error")
       this.logger.debug(
-        `Websocket] this.ws.on("error")`,
-        new Date().toLocaleString(),
+        `[${new Date().toLocaleString()}][Websocket] this.ws.on("close")`,
         error
       );
-    // -- if type is close params is code and reson instead of event
-    // if (event.wasClean) {
-    //   this.logger.debug(
-    //     `[WebSocket][close] Connection closed cleanly, code=${event.code} reason=${event.reason}`,
-    //     new Date().toLocaleString()
-    //   );
-    //   clearTimeout(this.pingTimeout);
-    // } else {
-    // e.g. server process killed or network down
-    // event.code is usually 1006 in this case
     this.wsReConnectTimeout = setTimeout(async () => {
-      this.logger.debug(`[Websocket] called init`, new Date().toLocaleString());
+      this.logger.debug(
+        `[${new Date().toLocaleString()}][Websocket] called init`
+      );
       await this.init();
     }, 1000);
     // }
   }
 
   send(data, cb) {
-    // this.logger.debug(`webSocket custom send is called`);
     this.connection_resolvers.push({ data, cb });
     this.sendDataFromQueue();
   }
 
   sendDataFromQueue() {
     if (this.ws) {
-      // this.logger.debug(
-      //   `this.connection_resolvers[${this.connection_resolvers.length}]`,
-      //   `this.ws.readyState:[${this.ws.readyState}]`
-      // );
       if (this.ws.readyState === ws.OPEN) {
         const obj = this.connection_resolvers.shift();
         if (obj) {
-          this.logger.debug(`this.ws.send`, obj.data);
           try {
             this.ws.send(obj.data, obj.cb);
           } catch (error) {
-            this.logger.error(`this.ws.send`, error);
+            this.logger.debug(
+              `[${new Date().toLocaleString()}][Websocket] this.ws.send`,
+              obj.data,
+              obj.cb
+            );
           }
           this.sendDataFromQueue();
         }
@@ -97,37 +85,24 @@ class WebSocket {
   }
 
   init({ url, heartBeat = HEART_BEAT_TIME, options, listener }) {
-    // this.logger.debug(
-    //   `init is called url & options`,
-    //   url,
-    //   options,
-    //   new Date().toLocaleString()
-    // );
     try {
-      // ++ TODO #983 2022/12/09 NEW LEAD 👇
       if (!url && !this.url) {
-        // this.logger.debug(`Invalid input`, new Date().toLocaleString());
         throw new Error("Invalid input");
       }
       if (url) this.url = url;
       if (options) this.options = { ...options };
       if (listener) this.listener = listener;
       this.heartBeatTime = heartBeat;
-      if (Math.random() < 0.9) {
-        // this.logger.debug(`create test error`, new Date().toLocaleString());
-        // throw new Error("test");
-      }
       if (!!this.options) this.ws = new ws(this.url, this.options);
       else this.ws = new ws(this.url);
       this.ws.onmessage = this.listener;
       this.eventListener();
-      // this.logger.debug(`[WebSocket] this.ws:`, this.ws);
       return new Promise((resolve) => {
         this.ws.onopen = (r) => {
           this.logger.debug(
-            `[WebSocket] this.ws.onopen:`,
-            this.url,
-            new Date().toLocaleString()
+            `[${new Date().toLocaleString()}][Websocket] this.ws.onopen: this.url${
+              this.url
+            }`
           );
           this.heartbeat();
           this.sendDataFromQueue();
@@ -135,13 +110,12 @@ class WebSocket {
         };
       });
     } catch (e) {
-      this.logger.debug(`[WebSocket] init error:`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleString()}][Websocket] init error:`,
+        e
+      );
       clearTimeout(this.wsReConnectTimeout);
       this.wsReConnectTimeout = setTimeout(async () => {
-        // this.logger.debug(
-        //   `[Websocket] recursive init`,
-        //   new Date().toLocaleString()
-        // );
         await this.init({ url, heartBeat, options, listener });
       }, 1000);
     }

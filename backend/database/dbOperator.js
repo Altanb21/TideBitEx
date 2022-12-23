@@ -652,6 +652,12 @@ class DBOperator {
     return this.database.updateAccount(datas, { dbTransaction });
   }
 
+  async updateAccountByAccountVersion(accountId, now, { dbTransaction }) {
+    return this.database.updateAccountByAccountVersion(accountId, now, {
+      dbTransaction,
+    });
+  }
+
   /**
    * [deprecated] 2022-12-06
    */

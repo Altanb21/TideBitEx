@@ -228,7 +228,6 @@ class ExchangeHub extends Bot {
       }, []);
       this.adminUsers = adminUsers;
     } catch (error) {
-      // this.logger.error(`_getAdminUsers`, error);
       process.exit(1);
     }
     return adminUsers;
@@ -297,7 +296,6 @@ class ExchangeHub extends Bot {
         return prev;
       }, {});
     } catch (error) {
-      // this.logger.error(`_getTickersSettings`, error);
       process.exit(1);
     }
     return tickersSettings;
@@ -319,7 +317,6 @@ class ExchangeHub extends Bot {
           disable: coinSetting.disable === true ? true : false, // default: false
         }));
       } catch (error) {
-        // this.logger.error(`_getCoinsSettings`, error);
         process.exit(1);
       }
     }
@@ -342,29 +339,14 @@ class ExchangeHub extends Bot {
               visible: deposit.visible === false ? false : true, // default: true
               disable: deposit.disable === true ? true : false, // default: false
             };
-          // else
-          //   this.logger.error(
-          //     `[config/deposits.yml] duplicate deposit`,
-          //     prev[deposit.id.toString()],
-          //     deposit
-          //   );
           return prev;
         }, {});
         this.depositsSettings = formatDepositsSettings;
       } catch (error) {
-        // this.logger.error(`_getDepositsSettings`, error);
         process.exit(1);
       }
     }
     return this.depositsSettings;
-    // return Promise.resolve(
-    //   new ResponseFormat({
-    //     message: "getDepositsSettings",
-    //     payload: {
-    //       depositsSettings: this.depositsSettings,
-    //     },
-    //   })
-    // );
   }
 
   // getWithdrawsSettings({ query }) {
@@ -384,29 +366,14 @@ class ExchangeHub extends Bot {
               visible: withdraw.visible === false ? false : true, // default: true
               disable: withdraw.disable === true ? true : false, // default: false
             };
-          // else
-          //   this.logger.error(
-          //     `[config/withdraws.yml] duplicate withdraw`,
-          //     prev[withdraw.id.toString()],
-          //     withdraw
-          //   );
           return prev;
         }, {});
         this.withdrawsSettings = formatWithdrawsSettings;
       } catch (error) {
-        // this.logger.error(`_getWithdrawsSettings`, error);
         process.exit(1);
       }
     }
     return this.withdrawsSettings;
-    // return Promise.resolve(
-    //   new ResponseFormat({
-    //     message: "getWithdrawsSettings",
-    //     payload: {
-    //       withdrawsSettings:  this.withdrawsSettings,
-    //     },
-    //   })
-    // );
   }
 
   formatCoinsSettings() {
@@ -484,7 +451,6 @@ class ExchangeHub extends Bot {
       prev[assetBalance.asset_key] = assetBalance;
       return prev;
     }, {});
-    // this.logger.debug(`_assetBalances`, _assetBalances);
     for (let exchange of Object.keys(SupportedExchange)) {
       let source = SupportedExchange[exchange];
       switch (source) {
@@ -496,7 +462,6 @@ class ExchangeHub extends Bot {
           if (response.success) {
             sources[exchange] = response.payload;
           } else {
-            // this.logger.error(response);
             hasError = true;
             result = new ResponseFormat({
               message: "",
@@ -583,10 +548,7 @@ class ExchangeHub extends Bot {
               }
             }
           } else {
-            // this.logger.error(
-            //   `getPlatformAssets notic accounts.currency did not have correspond id in coins.yml but maybe in DB assets.base table`,
-            //   coins
-            // );
+            //++ TODO 2022/12/22 處理 [coinSetting.code] 不存在的情況
           }
         }
         result = new ResponseFormat({
@@ -595,7 +557,6 @@ class ExchangeHub extends Bot {
         });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
       } catch (error) {
-        // this.logger.error(error);
         let message = error.message;
         result = new ResponseFormat({
           message,
@@ -603,12 +564,6 @@ class ExchangeHub extends Bot {
         });
       }
     }
-    // }else{
-    //   result = new ResponseFormat({
-    //     message: "Current user is not allow to update ticker settings",
-    //     code: Codes.INVALID_INPUT,
-    //   });
-    // }
     return result;
   }
 
@@ -640,9 +595,18 @@ class ExchangeHub extends Bot {
             this.coinsSettings = updatedCoinsSettings;
             result = await this.getPlatformAssets({ query: {} });
           } catch (e) {
-            this.logger.error(
-              `yamlUpdate updatePlatformAsset`,
+            this.logger.debug(
+              `[${new Date().toLocaleTimeString()}][${
+                this.constructor.name
+              }] updatePlatformAsset yamlUpdate ERROR!`,
+              `params`,
+              params,
+              `email:${email}`,
+              `body`,
+              body,
+              `updatedCoinsSettings`,
               updatedCoinsSettings,
+              `error`,
               e
             );
             result = new ResponseFormat({
@@ -663,7 +627,18 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updatePlatformAsset`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updatePlatformAsset ERROR!`,
+        `params`,
+        params,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -844,9 +819,18 @@ class ExchangeHub extends Bot {
               payload: this.tickerBook.getSnapshot(),
             });
           } catch (e) {
-            this.logger.error(
-              `yamlUpdate updateTickerSetting`,
+            this.logger.debug(
+              `[${new Date().toLocaleTimeString()}][${
+                this.constructor.name
+              }] updateTickerSetting yamlUpdate ERROR!`,
+              `params`,
+              params,
+              `email:${email}`,
+              `body`,
+              body,
+              `updatedTickersSettings`,
               updatedTickersSettings,
+              `error`,
               e
             );
             result = new ResponseFormat({
@@ -867,7 +851,18 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateTickerSetting`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updateTickerSetting ERROR!`,
+        `params`,
+        params,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -907,9 +902,18 @@ class ExchangeHub extends Bot {
               },
             });
           } catch (e) {
-            this.logger.error(
-              `yamlUpdate updateCoinSetting`,
+            this.logger.debug(
+              `[${new Date().toLocaleTimeString()}][${
+                this.constructor.name
+              }] updateCoinSetting yamlUpdate ERROR!`,
+              `params`,
+              params,
+              `email:${email}`,
+              `body`,
+              body,
+              `updateCoinSetting`,
               updatedCoinsSettings,
+              `error`,
               e
             );
             result = new ResponseFormat({
@@ -930,7 +934,18 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateCoinSetting`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updateCoinSetting ERROR!`,
+        `params`,
+        params,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -963,9 +978,16 @@ class ExchangeHub extends Bot {
             },
           });
         } catch (e) {
-          this.logger.error(
-            `yamlUpdate updateCoinsSettings`,
+          this.logger.debug(
+            `[${new Date().toLocaleTimeString()}][${
+              this.constructor.name
+            }] updateCoinsSettings yamlUpdate ERROR!`,
+            `email:${email}`,
+            `body`,
+            body,
+            `updatedTickersSettings`,
             updatedCoinsSettings,
+            `error`,
             e
           );
           result = new ResponseFormat({
@@ -980,7 +1002,16 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateCoinsSettings`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updateCoinsSettings ERROR!`,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1035,9 +1066,16 @@ class ExchangeHub extends Bot {
               },
             });
           } catch (e) {
-            this.logger.error(
-              `yamlUpdate updateDepositSetting`,
+            this.logger.debug(
+              `[${new Date().toLocaleTimeString()}][${
+                this.constructor.name
+              }] updateDepositSetting yamlUpdate ERROR!`,
+              `email:${email}`,
+              `body`,
+              body,
+              `updatedDepositsSettings`,
               updatedDepositsSettings,
+              `error`,
               e
             );
             result = new ResponseFormat({
@@ -1058,7 +1096,16 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateDepositSetting`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updateDepositSetting ERROR!`,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1113,9 +1160,18 @@ class ExchangeHub extends Bot {
               },
             });
           } catch (e) {
-            this.logger.error(
-              `yamlUpdate updateWithdrawSetting`,
+            this.logger.debug(
+              `[${new Date().toLocaleTimeString()}][${
+                this.constructor.name
+              }] updateWithdrawSetting yamlUpdate ERROR!`,
+              `params`,
+              params,
+              `email:${email}`,
+              `body`,
+              body,
+              `updatedWithdrawsSettings`,
               updatedWithdrawsSettings,
+              `error`,
               e
             );
             result = new ResponseFormat({
@@ -1136,7 +1192,18 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateWithdrawSetting`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updateWithdrawSetting ERROR!`,
+        `params`,
+        params,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1147,20 +1214,42 @@ class ExchangeHub extends Bot {
 
   async getMemberReferral(member) {
     let referredByMember, memberReferral;
-    referredByMember = await this.database.getMemberByCondition({
-      referCode: member.refer,
-    });
-    if (referredByMember) {
-      memberReferral = await this.database.getMemberReferral({
-        referrerId: referredByMember.id,
-        refereeId: member.id,
+    try {
+      referredByMember = await this.database.getMemberByCondition({
+        referCode: member.refer,
       });
-    } else {
-      this.logger.debug(
-        `getMemberReferral did not get referredByMember with refer_code[${member.refer}]`,
-        member
+      if (referredByMember) {
+        memberReferral = await this.database.getMemberReferral({
+          referrerId: referredByMember.id,
+          refereeId: member.id,
+        });
+      } else {
+        this.logger.error(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] !!! ERROR getMemberReferral did not get referredByMember with refer_code[${
+            member.refer
+          }]`,
+          `member`,
+          member
+        );
+        throw Error(
+          `member[${member.id}]did not get referredByMember with refer_code[${member.refer}]`
+        );
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR getMemberReferral 出錯`,
+        `member`,
+        member,
+        `error`,
+        error
       );
+      throw error;
     }
+
     return { referredByMember, memberReferral };
   }
 
@@ -1170,7 +1259,6 @@ class ExchangeHub extends Bot {
     //   Referral::CommissionService.get_default_commission_plan(member: member),
     //   { enabled_policies_only: true }
     // )
-    // this.logger.debug(`getReferrerCommissionPlan referral`, referral);
     let plan,
       planId = referral.commission_plan_id;
     if (!planId) {
@@ -1263,9 +1351,16 @@ class ExchangeHub extends Bot {
                   })
                 );
               } catch (e) {
-                this.logger.error(
-                  `yamlUpdate addAdminUser`,
+                this.logger.debug(
+                  `[${new Date().toLocaleTimeString()}][${
+                    this.constructor.name
+                  }] addAdminUser yamlUpdate ERROR!`,
+                  `email:${email}`,
+                  `body`,
+                  body,
+                  `updateAdminUsers`,
                   updateAdminUsers,
+                  `error`,
                   e
                 );
                 result = new ResponseFormat({
@@ -1293,7 +1388,16 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`addAdminUser`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] addAdminUser ERROR!`,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1339,9 +1443,16 @@ class ExchangeHub extends Bot {
                 },
               });
             } catch (e) {
-              this.logger.error(
-                `yamlUpdate updateAdminUser`,
+              this.logger.debug(
+                `[${new Date().toLocaleTimeString()}][${
+                  this.constructor.name
+                }] updateAdminUser yamlUpdate ERROR!`,
+                `email:${email}`,
+                `body`,
+                body,
+                `updateAdminUsers`,
                 updateAdminUsers,
+                `error`,
                 e
               );
               result = new ResponseFormat({
@@ -1363,7 +1474,16 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`updateAdminUser`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] updateAdminUser ERROR!`,
+        `email:${email}`,
+        `body`,
+        body,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1402,9 +1522,16 @@ class ExchangeHub extends Bot {
               },
             });
           } catch (e) {
-            this.logger.error(
-              `yamlUpdate deleteAdminUser`,
+            this.logger.debug(
+              `[${new Date().toLocaleTimeString()}][${
+                this.constructor.name
+              }] deleteAdminUser yamlUpdate ERROR!`,
+              `email:${email}`,
+              `params`,
+              params,
+              `updateAdminUsers`,
               updateAdminUsers,
+              `error`,
               e
             );
             result = new ResponseFormat({
@@ -1425,7 +1552,16 @@ class ExchangeHub extends Bot {
         });
       }
     } catch (e) {
-      this.logger.error(`deleteAdminUser`, e);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] deleteAdminUser yamlUpdate ERROR!`,
+        `email:${email}`,
+        `params`,
+        params,
+        `error`,
+        e
+      );
       result = new ResponseFormat({
         message: "Internal server error",
         code: Codes.UNKNOWN_ERROR,
@@ -1593,7 +1729,12 @@ class ExchangeHub extends Bot {
         });
       return formatMarket;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] getTidebitMarkets from "config/markets/markets.yml" ERROR!`,
+        error
+      );
       process.exit(1);
     }
   }
@@ -1620,26 +1761,36 @@ class ExchangeHub extends Bot {
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
+      state: query.state,
     });
     for (let dbOrder of dbOrders) {
       let order,
-        price = dbOrder.price ? Utils.removeZeroEnd(dbOrder.price) : "market";
+        price = dbOrder.price ? Utils.removeZeroEnd(dbOrder.price) : "market",
+        avgFillPrice;
       if (dbOrder.state === Database.ORDER_STATE_CODE.DONE) {
         if (dbOrder.type === Database.TYPE.ORDER_ASK) {
-          price = SafeMath.div(
-            dbOrder.funds_received,
-            SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
-          );
+          avgFillPrice = SafeMath.gt(
+            SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+            0
+          )
+            ? SafeMath.div(
+                dbOrder.funds_received,
+                SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
+              )
+            : null;
         }
         if (dbOrder.type === Database.TYPE.ORDER_BID) {
-          price = SafeMath.div(
-            SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
-            dbOrder.funds_received
-          );
+          avgFillPrice = SafeMath.gt(dbOrder.funds_received, 0)
+            ? SafeMath.div(
+                SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+                dbOrder.funds_received
+              )
+            : null;
         }
       }
       order = {
         id: dbOrder.id,
+        member_id: dbOrder.member_id,
         ts: parseInt(new Date(dbOrder.updated_at).getTime()),
         at: parseInt(
           SafeMath.div(new Date(dbOrder.updated_at).getTime(), "1000")
@@ -1650,16 +1801,14 @@ class ExchangeHub extends Bot {
             ? Database.ORDER_KIND.ASK
             : Database.ORDER_KIND.BID,
         price,
+        avgFillPrice: avgFillPrice,
         origin_volume: Utils.removeZeroEnd(dbOrder.origin_volume),
         volume: Utils.removeZeroEnd(dbOrder.volume),
+        origin_locked: Utils.removeZeroEnd(dbOrder.origin_locked),
+        locked: Utils.removeZeroEnd(dbOrder.locked),
+        funds_received: Utils.removeZeroEnd(dbOrder.funds_received),
         state_code: dbOrder.state,
-        state: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
-          ? Database.ORDER_STATE.CANCEL
-          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
-          ? Database.ORDER_STATE.WAIT
-          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.DONE)
-          ? Database.ORDER_STATE.DONE
-          : Database.ORDER_STATE.UNKNOWN,
+        state: Database.DB_STATE_CODE[dbOrder.state],
         state_text: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
           ? Database.ORDER_STATE_TEXT.CANCEL
           : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
@@ -1671,6 +1820,8 @@ class ExchangeHub extends Bot {
         instId: query.tickerSetting?.instId,
         ordType: dbOrder.ord_type,
         filled: dbOrder.volume !== dbOrder.origin_volume,
+        created_at: dbOrder.created_at,
+        updated_at: dbOrder.updated_at,
       };
       orders = [...orders, order];
     }
@@ -1696,13 +1847,9 @@ class ExchangeHub extends Bot {
   //     });
   //     if (res.data && res.status !== 200) {
   //       const message = JSON.stringify(res.data);
-  //       this.logger.trace(message);
   //     }
-  //     // this.logger.debug(`getPriceList res`, res);
   //     return res.data;
-  //   } catch (e) {
-  //     this.logger.error(`getPriceList e`, e);
-  //   }
+  //   } catch (e) {}
   // }
 
   /**
@@ -1776,14 +1923,12 @@ class ExchangeHub extends Bot {
         if (okexRes.success) {
           okexTickers = okexRes.payload;
         } else {
-          this.logger.error(okexRes);
           return new ResponseFormat({
             message: "",
             code: Codes.API_UNKNOWN_ERROR,
           });
         }
       } catch (error) {
-        this.logger.error(error);
         return new ResponseFormat({
           message: error.stack,
           code: Codes.API_UNKNOWN_ERROR,
@@ -1797,7 +1942,6 @@ class ExchangeHub extends Bot {
         if (tBTickersRes.success) {
           tidebitTickers = tBTickersRes.payload;
         } else {
-          this.logger.error(tBTickersRes);
           return new ResponseFormat({
             message: "",
             code: Codes.API_UNKNOWN_ERROR,
@@ -1805,7 +1949,6 @@ class ExchangeHub extends Bot {
         }
         this.tickerBook.updateAll(okexTickers, tidebitTickers);
       } catch (error) {
-        this.logger.error(error);
         return new ResponseFormat({
           message: error.stack,
           code: Codes.API_UNKNOWN_ERROR,
@@ -1832,14 +1975,12 @@ class ExchangeHub extends Bot {
         if (okexRes.success) {
           okexTickers = okexRes.payload;
         } else {
-          this.logger.error(okexRes);
           return new ResponseFormat({
             message: "",
             code: Codes.API_UNKNOWN_ERROR,
           });
         }
       } catch (error) {
-        this.logger.error(error);
         return new ResponseFormat({
           message: error.stack,
           code: Codes.API_UNKNOWN_ERROR,
@@ -1853,7 +1994,6 @@ class ExchangeHub extends Bot {
         if (tBTickersRes.success) {
           tidebitTickers = tBTickersRes.payload;
         } else {
-          this.logger.error(tBTickersRes);
           return new ResponseFormat({
             message: "",
             code: Codes.API_UNKNOWN_ERROR,
@@ -1861,7 +2001,6 @@ class ExchangeHub extends Bot {
         }
         this.tickerBook.updateAll(okexTickers, tidebitTickers);
       } catch (error) {
-        this.logger.error(error);
         return new ResponseFormat({
           message: error.stack,
           code: Codes.API_UNKNOWN_ERROR,
@@ -1987,10 +2126,6 @@ class ExchangeHub extends Bot {
   }
 
   // async countOuterTradeFills({ query }) {
-  //   this.logger.debug(
-  //     `*********** [${this.name}] countOuterTradeFills ************`,
-  //     query
-  //   );
   //   let { exchange, start, end } = query;
   //   let startDate = `${start} 00:00:00`,
   //     endtDate = `${end} 23:59:59`,
@@ -2014,10 +2149,6 @@ class ExchangeHub extends Bot {
   // }
 
   formateDailyProfitChart = (dbOuterTrades) => {
-    // this.logger.debug(
-    //   `dbOuterTrades[0]${dbOuterTrades[0].create_at.toISOString()}`,
-    //   dbOuterTrades[0]
-    // );
     let chartData = { data: {}, xaxisType: "string" },
       data = {},
       profits = {},
@@ -2041,7 +2172,6 @@ class ExchangeHub extends Bot {
           Math.abs(dbOuterTrade.referral)
         );
       if (profit) {
-        // this.logger.debug(`formateDailyProfitChart profit`, profit);
         if (!profits[dbOuterTrade.voucher_fee_currency]) {
           profits[dbOuterTrade.voucher_fee_currency] = {
             sum: 0,
@@ -2062,7 +2192,6 @@ class ExchangeHub extends Bot {
             date: lastDailyBar,
           };
         let time = outerTradeData.ts || outerTradeData.cTime;
-        // this.logger.debug(`formateDailyProfitChart time`, time);
         while (nextDailyBarTime <= time) {
           lastDailyBar = new Date(nextDailyBarTime);
           nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
@@ -2080,7 +2209,6 @@ class ExchangeHub extends Bot {
           lastDailyBar.getMonth() + 1
         }-${lastDailyBar.getDate()}`;
         let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
-        // this.logger.debug(`formateDailyProfitChart price`, price);
         if (!data[key])
           data[key] = {
             y: SafeMath.mult(profit, price),
@@ -2137,7 +2265,6 @@ class ExchangeHub extends Bot {
           Math.abs(dbOuterTrade.referral)
         );
       if (profit) {
-        // this.logger.debug(`formateMonthlyProfitChart profit`, profit);
         if (!profits[dbOuterTrade.voucher_fee_currency]) {
           profits[dbOuterTrade.voucher_fee_currency] = {
             sum: 0,
@@ -2653,166 +2780,160 @@ class ExchangeHub extends Bot {
     }
   }
 
+  formatInnerOrder(dbOrder) {
+    let innerOrder = dbOrder
+      ? {
+          orderId: dbOrder.id,
+          exchange: SupportedExchange.TIDEBIT,
+          price: dbOrder.price,
+          avgFillPrice: dbOrder.avgFillPrice,
+          volume: dbOrder.volume,
+          accFillVolume: SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+          state: dbOrder.state,
+          expect:
+            dbOrder.kind === Database.ORDER_KIND.BID
+              ? dbOrder.origin_volume
+              : dbOrder.price
+              ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
+              : null,
+          received: dbOrder.funds_received,
+        }
+      : null;
+    return innerOrder;
+  }
+  formatOkxOrder(order) {
+    let outerOrder = {
+      orderId: order.ordId,
+      exchange: SupportedExchange.OKEX,
+      price: order.px,
+      avgFillPrice: order.avgPx,
+      volume: order.sz,
+      accFillVolume: order.accFillSz,
+      state: Database.OKX_ORDER_STATE[order.state],
+      expect:
+        order.side === Database.ORDER_SIDE.BUY
+          ? order.sz
+          : SafeMath.mult(order.px, order.sz),
+      received:
+        order.side === Database.ORDER_SIDE.BUY
+          ? order.accFillSz
+          : SafeMath.mult(order.avgPx, order.accFillSz),
+    };
+    return outerOrder;
+  }
+
   async getOuterPendingOrders({ query }) {
-    let orders = [],
-      dbOrders = [],
+    let // dbOrders = [],
+      orders = [],
       orderIds = [],
       emails = [],
       pendingOrders = [],
-      memberIds = {};
-    // totalCounts,
-    // id = query.instId.replace("-", "").toLowerCase(),
-    // tickerSetting = this.tickersSettings[id];
+      memberIds = {},
+      id = query.instId.replace("-", "").toLowerCase(),
+      tickerSetting = this.tickersSettings[id],
+      dbOrders = await this.getOrdersFromDb({
+        ...query,
+        state: Database.ORDER_STATE_CODE.WAIT,
+        tickerSetting,
+      });
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         // ++ TODO 2022/11/25 (需處理 pendingOrders 超過100筆的情況)
         const res = await this.okexConnector.router("getAllOrders", {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
-        // let result = await this.database.countOrders({
-        //   currency: tickerSetting.code,
-        //   state: Database.ORDER_STATE_CODE.WAIT,
-        // });
-        // totalCounts = result["counts"];
         if (res.success) {
           for (let order of res.payload) {
-            let parsedClOrdId, memberId, orderId, outerOrder, innerOrder;
-            outerOrder = {
-              orderId: order.ordId,
-              exchange: SupportedExchange.OKEX,
-              price: order.px,
-              avgFillPrice: order.avgPx,
-              volume: order.sz,
-              accFillVolume: order.accFillSz,
-              state: Database.OKX_ORDER_STATE[order.state],
-              expect:
-                order.side === Database.ORDER_SIDE.BUY
-                  ? order.sz
-                  : SafeMath.mult(order.px, order.sz),
-              received:
-                order.side === Database.ORDER_SIDE.BUY
-                  ? order.accFillSz
-                  : SafeMath.mult(order.avgPx, order.accFillSz),
-            };
-            try {
-              parsedClOrdId = Utils.parseClOrdId(order.clOrdId);
-            } catch (error) {
-              this.logger.error(`OKX order parseClOrdId error`, order, error);
-            }
+            let parsedClOrdId,
+              memberId,
+              orderId,
+              outerOrder,
+              innerOrder,
+              alert = false;
+            outerOrder = this.formatOkxOrder(order);
+            parsedClOrdId = Utils.parseClOrdId(order.clOrdId);
             if (parsedClOrdId) {
               memberId = parsedClOrdId.memberId;
               if (!memberIds[memberId]) memberIds[memberId] = memberId;
               orderId = parsedClOrdId.orderId;
               orderIds = [...orderIds, orderId];
-              innerOrder = {
-                orderId,
-                exchange: SupportedExchange.TIDEBIT,
-              };
+              let index = dbOrders.findIndex(
+                (dbOrder) =>
+                  SafeMath.eq(dbOrder.member_id, memberId) &&
+                  SafeMath.eq(dbOrder.id, orderId)
+              );
+              let dbOrder = dbOrders.splice(index, 1).shift();
+              innerOrder = this.formatInnerOrder(dbOrder);
+            }
+            if (
+              !SafeMath.eq(
+                outerOrder.accFillVolume,
+                innerOrder.accFillVolume
+              ) ||
+              !SafeMath.eq(outerOrder.expect, innerOrder.expect) ||
+              !SafeMath.eq(outerOrder.received, innerOrder.received) ||
+              outerOrder.state !== innerOrder.state
+            ) {
+              alert = true;
             }
             let processedOrder = {
-              id: order.clOrdId,
+              id: (innerOrder.orderId || outerOrder.outerOrder).toString(),
+              clOrdId: order.clOrdId,
               instId: order.instId,
               memberId,
               kind: order.ordType,
               side: order.side,
               outerOrder,
               innerOrder,
-              price: order.px,
-              volume: order.sz,
+              price: innerOrder.price || outerOrder.price,
+              volume: innerOrder.volume || outerOrder.volume,
               exchange: SupportedExchange.OKEX,
               feeCurrency: order.feeCcy,
               ts: parseInt(order.cTime),
+              alert,
             };
             orders = [...orders, processedOrder];
-            // if (order.side === Database.ORDER_SIDE.BUY)
-            //   bidOrders = [...bidOrders, processedOrder];
-            // else askOrders = [...askOrders, processedOrder];
+          }
+          for (let dbOrder of dbOrders) {
+            let innerOrder = this.formatInnerOrder(dbOrder);
+            if (!memberIds[dbOrder.member_id])
+              memberIds[dbOrder.member_id] = dbOrder.member_id;
+            let processedOrder = {
+              id: innerOrder.orderId.toString(),
+              instId: tickerSetting.instId,
+              memberId: dbOrder.member_id,
+              kind: dbOrder.ordType,
+              side: Database.ORDER_SIDE[dbOrder.kind],
+              outerOrder: null,
+              innerOrder,
+              price: innerOrder.price,
+              volume: innerOrder.volume,
+              exchange: SupportedExchange.OKEX,
+              feeCurrency:
+                dbOrder.kind === Database.ORDER_KIND.ASK
+                  ? tickerSetting.quoteUnit
+                  : tickerSetting.baseUnit,
+              ts: new Date(
+                dbOrder.created_at.toString().replace(/[-]/g, "/")
+              ).getTime(),
+              alert: true,
+            };
+            orders = [...orders, processedOrder];
           }
           // getOrdersByIds
-          // askOrders.sort((a, b) => a.price - b.price);
-          // bidOrders.sort((a, b) => b.price - a.price);
-          // orders = bidOrders.concat(askOrders);
-          dbOrders = await this.database.getOrdersByIds(orderIds);
+          // dbOrders = await this.database.getOrdersByIds(orderIds);
           emails = await this.database.getEmailsByMemberIds(
             Object.values(memberIds)
           );
           for (let order of orders) {
-            let dbOrder,
-              innerOrder = { ...order.innerOrder },
-              price,
-              volume,
-              email = emails.find((obj) =>
-                SafeMath.eq(obj.id, order.memberId)
-              )?.email,
-              alert = false;
-            dbOrder = dbOrders.find(
-              (o) =>
-                SafeMath.eq(order.innerOrder.orderId, o.id) &&
-                SafeMath.eq(order.memberId, o.member_id)
-            );
-            if (dbOrder) {
-              price = Utils.removeZeroEnd(dbOrder.price);
-              volume = Utils.removeZeroEnd(dbOrder.origin_volume);
-              innerOrder = {
-                ...innerOrder,
-                price,
-                avgFillPrice:
-                  order.side === Database.ORDER_SIDE.BUY
-                    ? SafeMath.gt(dbOrder.funds_received, 0)
-                      ? SafeMath.div(
-                          SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
-                          dbOrder.funds_received
-                        )
-                      : null
-                    : SafeMath.gt(
-                        SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
-                        0
-                      )
-                    ? SafeMath.div(
-                        dbOrder.funds_received,
-                        SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
-                      )
-                    : null,
-                volume,
-                accFillVolume: SafeMath.minus(
-                  dbOrder.origin_volume,
-                  dbOrder.volume
-                ),
-                state:
-                  dbOrder.state === Database.ORDER_STATE_CODE.CANCEL
-                    ? Database.ORDER_STATE.CANCEL
-                    : dbOrder.state === Database.ORDER_STATE_CODE.DONE
-                    ? Database.ORDER_STATE.DONE
-                    : Database.ORDER_STATE.WAIT,
-                expect:
-                  order.side === Database.ORDER_SIDE.BUY
-                    ? Utils.removeZeroEnd(dbOrder.origin_volume)
-                    : dbOrder.price
-                    ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
-                    : null,
-                received: Utils.removeZeroEnd(dbOrder.funds_received),
-              };
-              if (
-                !SafeMath.eq(
-                  order.outerOrder.accFillVolume,
-                  innerOrder.accFillVolume
-                ) ||
-                !SafeMath.eq(order.outerOrder.expect, innerOrder.expect) ||
-                !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
-                order.outerOrder.state !== innerOrder.state
-              ) {
-                alert = true;
-              }
-            }
+            let email = emails.find((obj) =>
+              SafeMath.eq(obj.id, order.memberId)
+            )?.email;
             pendingOrders = [
               ...pendingOrders,
               {
                 ...order,
-                email: dbOrder ? email : null,
-                innerOrder,
-                price: price || order.outerOrder.price,
-                volume: volume || order.outerOrder.volume,
-                alert,
+                email: email,
               },
             ];
           }
@@ -2849,7 +2970,7 @@ class ExchangeHub extends Bot {
    * 6.2.4 更新 order 為 cancel 狀態
    * 6.2.5 commit transaction
    */
-  async postPlaceOrder({ header, params, query, body, memberId }) {
+  async postPlaceOrder({ header, body, memberId }) {
     if (!memberId || memberId === -1) {
       return new ResponseFormat({
         message: "member_id not found",
@@ -2877,6 +2998,7 @@ class ExchangeHub extends Bot {
           response,
           updateOrder,
           accountVersion,
+          formatedBody,
           // * 1. DB transaction
           t = await this.database.transaction();
         try {
@@ -2896,17 +3018,28 @@ class ExchangeHub extends Bot {
             body,
             tickerSetting
           );
-          order = await this.database.insertOrder({
-            ...orderData,
-            dbTransaction: t,
-          });
+          try {
+            order = await this.database.insertOrder({
+              ...orderData,
+              dbTransaction: t,
+            });
+          } catch (error) {
+            this.logger.error(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]!!!ERROR postPlaceOrder OKEX ticker insertOrder 出錯, memberId:[${memberId}] body`,
+              body,
+              `orderData`,
+              orderData
+            );
+            throw error;
+          }
           orderId = order[0];
           clOrdId = `${this.okexBrokerId}${memberId}m${orderId}o`.slice(0, 32);
           // clOrdId = 377bd372412fSCDE60977m247674466o
           // brokerId = 377bd372412fSCDE
           // memberId = 60976
           // orderId = 247674466
-          // this.logger.error(`clOrdId`, clOrdId);
           // * ~2.~ 3. 根據 order 單內容更新 account locked 與 balance
           // * ~3.~ 4. 新增 account version
           currencyId =
@@ -2926,32 +3059,51 @@ class ExchangeHub extends Bot {
             locked: orderData.locked,
             fee: 0,
           };
-          await this._updateAccount(accountVersion, t);
+          try {
+            this.logger.debug(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]_updateAccount`,
+              accountVersion,
+              `accountVersion`
+            );
+            await this._updateAccount(accountVersion, t);
+          } catch (error) {
+            this.logger.error(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]!!!ERROR postPlaceOrder OKEX ticker _updateAccount 出錯, memberId:[${memberId}] body`,
+              body,
+              `orderData`,
+              orderData
+            );
+            throw error;
+          }
           //   * 5. commit transaction
           await t.commit();
           //   * 6. 建立 OKX order 單
+          formatedBody = {
+            instId: body.instId,
+            tdMode: body.tdMode,
+            // ccy: body.ccy,
+            clOrdId,
+            tag: this.brokerId,
+            side:
+              body.kind === Database.ORDER_KIND.BID
+                ? Database.ORDER_SIDE.BUY
+                : Database.ORDER_SIDE.SELL,
+            // posSide: body.posSide,
+            ordType: orderData.ordType,
+            sz: body.volume,
+            px: orderData.price,
+            // reduceOnly: body.reduceOnly,
+            // tgtCcy: body.tgtCcy,
+          };
           response = await this.okexConnector.router("postPlaceOrder", {
             memberId,
             orderId,
-            body: {
-              instId: body.instId,
-              tdMode: body.tdMode,
-              // ccy: body.ccy,
-              clOrdId,
-              tag: this.brokerId,
-              side:
-                body.kind === Database.ORDER_KIND.BID
-                  ? Database.ORDER_SIDE.BUY
-                  : Database.ORDER_SIDE.SELL,
-              // posSide: body.posSide,
-              ordType: orderData.ordType,
-              sz: body.volume,
-              px: orderData.price,
-              // reduceOnly: body.reduceOnly,
-              // tgtCcy: body.tgtCcy,
-            },
+            body: formatedBody,
           });
-          // this.logger.debug("[RESPONSE]", response);
           updateOrder = {
             instId: body.instId,
             ordType:
@@ -2984,23 +3136,15 @@ class ExchangeHub extends Bot {
                 market: body.market,
                 order: updateOrder,
               });
-              // let _updateAccount = {
-              //   balance: SafeMath.plus(account.balance, orderData.balance),
-              //   locked: SafeMath.plus(account.locked, orderData.locked),
-              //   currency: this.coinsSettings.find(
-              //     (curr) => curr.id === account.currency
-              //   )?.symbol,
-              //   total: SafeMath.plus(
-              //     SafeMath.plus(account.balance, orderData.balance),
-              //     SafeMath.plus(account.locked, orderData.locked)
-              //   ),
-              // };
-              // this._emitUpdateAccount({
-              //   memberId,
-              //   account: _updateAccount,
-              // });
             }
           } else {
+            this.logger.error(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]!!!ERROR postPlaceOrder this.okexConnector.router("postPlaceOrder") 出錯 (memberId[${memberId}]`,
+              `formatedBody`,
+              formatedBody
+            );
             //  * 6.2 掛單失敗
             //  * 6.2.1 DB transaction
             t = await this.database.transaction();
@@ -3018,6 +3162,13 @@ class ExchangeHub extends Bot {
               await t.commit();
             } else {
               await t.rollback();
+              this.logger.error(
+                `[${new Date().toISOString()}][${
+                  this.constructor.name
+                }]!!!ERROR postPlaceOrder this.okexConnector.router("postPlaceOrder") 出錯後更新 order 狀態為 "canceled" 失敗 (memberId[${memberId}]`,
+                `updateOrder`,
+                updateOrder
+              );
               response = new ResponseFormat({
                 message: "DB ERROR",
                 code: Codes.DB_OPERATION_ERROR,
@@ -3026,7 +3177,12 @@ class ExchangeHub extends Bot {
           }
         } catch (error) {
           this.logger.error(
-            `postPlaceOrder[${new Date().toISOString()}]`,
+            `[${new Date().toISOString()}][${
+              this.constructor.name
+            }]!!!ERROR postPlaceOrder SupportedExchange.OKEX 出錯 (memberId[${memberId}]`,
+            `body`,
+            body,
+            `error`,
             error
           );
           await t.rollback();
@@ -3115,137 +3271,137 @@ class ExchangeHub extends Bot {
       payload: null,
     });
   }
-  // TODO integrate getOrderList and getOrderHistory into one
-  async getOrderList({ query, memberId }) {
-    const tickerSetting = this.tickersSettings[query.id];
-    if (memberId !== -1) {
-      switch (tickerSetting?.source) {
-        case SupportedExchange.OKEX:
-          const res = await this.okexConnector.router("getOrderList", {
-            query: {
-              ...query,
-              instId: tickerSetting?.instId,
-              market: tickerSetting,
-              memberId,
-            },
-          });
-          const list = res.payload;
-          if (Array.isArray(list)) {
-            const newList = list.filter((order) =>
-              order.clOrdId.includes(`${memberId}m`)
-            ); // 可能發生與brokerId, randomId碰撞
-            res.payload = newList;
-          }
-          return res;
-        case SupportedExchange.TIDEBIT:
-          if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
-          let ts = Date.now();
-          if (
-            !this.fetchedOrders[memberId][tickerSetting?.instId] ||
-            SafeMath.gt(
-              SafeMath.minus(
-                ts,
-                this.fetchedOrders[memberId][tickerSetting?.instId]
-              ),
-              this.fetchedOrdersInterval
-            )
-          )
-            try {
-              const orders = await this.getOrdersFromDb({
-                ...query,
-                memberId,
-                instId: tickerSetting?.instId,
-                market: tickerSetting,
-              });
-              this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
-              this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
-            } catch (error) {
-              this.logger.error(error);
-              const message = error.message;
-              return new ResponseFormat({
-                message,
-                code: Codes.API_UNKNOWN_ERROR,
-              });
-            }
-          return new ResponseFormat({
-            message: "getOrderList",
-            payload: this.orderBook.getSnapshot(
-              memberId,
-              tickerSetting?.instId,
-              "pending"
-            ),
-          });
-        default:
-          return new ResponseFormat({
-            message: "getOrderList",
-            payload: null,
-          });
-      }
-    }
-    return new ResponseFormat({
-      message: "getOrderList",
-      payload: null,
-    });
-  }
+  /**
+   * [deprecated] 2022/11/17
+   */
+  // async getOrderList({ query, memberId }) {
+  //   const tickerSetting = this.tickersSettings[query.id];
+  //   if (memberId !== -1) {
+  //     switch (tickerSetting?.source) {
+  //       case SupportedExchange.OKEX:
+  //         const res = await this.okexConnector.router("getOrderList", {
+  //           query: {
+  //             ...query,
+  //             instId: tickerSetting?.instId,
+  //             market: tickerSetting,
+  //             memberId,
+  //           },
+  //         });
+  //         const list = res.payload;
+  //         if (Array.isArray(list)) {
+  //           const newList = list.filter((order) =>
+  //             order.clOrdId.includes(`${memberId}m`)
+  //           ); // 可能發生與brokerId, randomId碰撞
+  //           res.payload = newList;
+  //         }
+  //         return res;
+  //       case SupportedExchange.TIDEBIT:
+  //         if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
+  //         let ts = Date.now();
+  //         if (
+  //           !this.fetchedOrders[memberId][tickerSetting?.instId] ||
+  //           SafeMath.gt(
+  //             SafeMath.minus(
+  //               ts,
+  //               this.fetchedOrders[memberId][tickerSetting?.instId]
+  //             ),
+  //             this.fetchedOrdersInterval
+  //           )
+  //         )
+  //           try {
+  //             const orders = await this.getOrdersFromDb({
+  //               ...query,
+  //               memberId,
+  //               instId: tickerSetting?.instId,
+  //               market: tickerSetting,
+  //             });
+  //             this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+  //             this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
+  //           } catch (error) {
+  //             const message = error.message;
+  //             return new ResponseFormat({
+  //               message,
+  //               code: Codes.API_UNKNOWN_ERROR,
+  //             });
+  //           }
+  //         return new ResponseFormat({
+  //           message: "getOrderList",
+  //           payload: this.orderBook.getSnapshot(
+  //             memberId,
+  //             tickerSetting?.instId,
+  //             "pending"
+  //           ),
+  //         });
+  //       default:
+  //         return new ResponseFormat({
+  //           message: "getOrderList",
+  //           payload: null,
+  //         });
+  //     }
+  //   }
+  //   return new ResponseFormat({
+  //     message: "getOrderList",
+  //     payload: null,
+  //   });
+  // }
 
   /**
    * [deprecated] 2022/11/17
    */
-  async getOrderHistory({ query, memberId }) {
-    const tickerSetting = this.tickersSettings[query.id];
-    if (!memberId || memberId === -1) {
-      return new ResponseFormat({
-        message: "getOrderHistory",
-        payload: null,
-      });
-    }
-    switch (tickerSetting?.source) {
-      case SupportedExchange.OKEX:
-      case SupportedExchange.TIDEBIT:
-        if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
-        let ts = Date.now();
-        if (
-          !this.fetchedOrders[memberId][tickerSetting?.instId] ||
-          SafeMath.gt(
-            SafeMath.minus(
-              ts,
-              this.fetchedOrders[memberId][tickerSetting?.instId]
-            ),
-            this.fetchedOrdersInterval
-          )
-        ) {
-          try {
-            const orders = await this.getOrdersFromDb({
-              ...query,
-              memberId,
-              tickerSetting,
-            });
-            this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
-            this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
-          } catch (error) {
-            this.logger.error(error);
-            const message = error.message;
-            return new ResponseFormat({
-              message,
-              code: Codes.API_UNKNOWN_ERROR,
-            });
-          }
-        }
-        return new ResponseFormat({
-          message: "getOrderHistory",
-          payload: this.orderBook.getSnapshot(
-            memberId,
-            tickerSetting?.instId,
-            "history"
-          ),
-        });
-      default:
-        return new ResponseFormat({
-          message: "getOrderHistory",
-          payload: null,
-        });
-    }
-  }
+  // async getOrderHistory({ query, memberId }) {
+  //   const tickerSetting = this.tickersSettings[query.id];
+  //   if (!memberId || memberId === -1) {
+  //     return new ResponseFormat({
+  //       message: "getOrderHistory",
+  //       payload: null,
+  //     });
+  //   }
+  //   switch (tickerSetting?.source) {
+  //     case SupportedExchange.OKEX:
+  //     case SupportedExchange.TIDEBIT:
+  //       if (!this.fetchedOrders[memberId]) this.fetchedOrders[memberId] = {};
+  //       let ts = Date.now();
+  //       if (
+  //         !this.fetchedOrders[memberId][tickerSetting?.instId] ||
+  //         SafeMath.gt(
+  //           SafeMath.minus(
+  //             ts,
+  //             this.fetchedOrders[memberId][tickerSetting?.instId]
+  //           ),
+  //           this.fetchedOrdersInterval
+  //         )
+  //       ) {
+  //         try {
+  //           const orders = await this.getOrdersFromDb({
+  //             ...query,
+  //             memberId,
+  //             tickerSetting,
+  //           });
+  //           this.orderBook.updateAll(memberId, tickerSetting?.instId, orders);
+  //           this.fetchedOrders[memberId][tickerSetting?.instId] = ts;
+  //         } catch (error) {
+  //           const message = error.message;
+  //           return new ResponseFormat({
+  //             message,
+  //             code: Codes.API_UNKNOWN_ERROR,
+  //           });
+  //         }
+  //       }
+  //       return new ResponseFormat({
+  //         message: "getOrderHistory",
+  //         payload: this.orderBook.getSnapshot(
+  //           memberId,
+  //           tickerSetting?.instId,
+  //           "history"
+  //         ),
+  //       });
+  //     default:
+  //       return new ResponseFormat({
+  //         message: "getOrderHistory",
+  //         payload: null,
+  //       });
+  //   }
+  // }
 
   async updateOrderStatus({
     transaction,
@@ -3304,10 +3460,26 @@ class ExchangeHub extends Bot {
           state: Database.ORDER_STATE_CODE.CANCEL,
           updated_at: `"${createdAt}"`,
         };
-        await this.database.updateOrder(newOrder, {
-          dbTransaction: transaction,
-        });
-        this.logger.debug(`被取消訂單的狀態更新了`);
+        try {
+          await this.database.updateOrder(newOrder, {
+            dbTransaction: transaction,
+          });
+        } catch (error) {
+          this.logger.error(
+            `[${new Date().toISOString()}][${
+              this.constructor.name
+            }]!!!ERROR updateOrderStatus 將 order(orderId:${orderId}, memberId:${memberId}) 狀態改成 canceled 出錯 => this.database.updateOrder`,
+            `orderData`,
+            orderData,
+            `dbOrder`,
+            dbOrder,
+            `newOrder`,
+            newOrder,
+            `tickerSetting`,
+            tickerSetting
+          );
+          throw error;
+        }
         accountVersion = {
           member_id: memberId,
           currency: currencyId,
@@ -3321,8 +3493,26 @@ class ExchangeHub extends Bot {
           locked,
           fee,
         };
-        await this._updateAccount(accountVersion, transaction);
-        this.logger.debug(`被取消訂單對應的用戶帳號更新了`);
+        try {
+          await this._updateAccount(accountVersion, transaction);
+        } catch (error) {
+          this.logger.error(
+            `[${new Date().toISOString()}][${
+              this.constructor.name
+            }]!!!ERROR updateOrderStatus 將 order(orderId:${orderId}, memberId:${memberId}) 狀態改成 canceled 出錯 => this.database.updateOrder`,
+            `orderData`,
+            orderData,
+            `dbOrder`,
+            dbOrder,
+            `newOrder`,
+            newOrder,
+            `accountVersion`,
+            accountVersion,
+            `tickerSetting`,
+            tickerSetting
+          );
+          throw error;
+        }
         updatedOrder = {
           ...order,
           clOrdId: orderData.clOrdId,
@@ -3332,14 +3522,20 @@ class ExchangeHub extends Bot {
           at: parseInt(SafeMath.div(Date.now(), "1000")),
           ts: Date.now(),
         };
-        this.logger.debug(`回傳更新後的 order snapshot`, updatedOrder);
         success = true;
       }
     } catch (error) {
       success = false;
       this.logger.error(
-        `[${this.constructor.name} updateOrderStatus] error`,
-        error
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR updateOrderStatus 將 order(orderId:${orderId}, memberId:${memberId}) 狀態改成 canceled 出錯 => this.database.updateOrder`,
+        `orderData`,
+        orderData,
+        `dbOrder`,
+        dbOrder,
+        `tickerSetting`,
+        tickerSetting
       );
     }
     return { success, updatedOrder };
@@ -3358,28 +3554,39 @@ class ExchangeHub extends Bot {
       dbOrder = await this.database.getOrder(orderId, {
         dbTransaction: transaction,
       });
-      this.logger.debug(
-        `postCancelOrder dbOrder[memberId:${memberId}](SafeMath.eq(dbOrder.member_id, memberId):${SafeMath.eq(
-          dbOrder.member_id,
-          memberId
-        )})`,
-        dbOrder
-      );
-      if (!SafeMath.eq(dbOrder.member_id, memberId))
+      if (!dbOrder || !SafeMath.eq(dbOrder?.member_id, memberId)) {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR postCancelOrder dbOrder(orderId:${orderId}) 的 dbOrder.member_id:${
+            dbOrder.member_id
+          }) 與 call postCancelOrder 的 memberId(${memberId}) 不匹配`,
+          `body`,
+          body,
+          `dbOrder`,
+          dbOrder
+        );
         throw Error("Order not found");
+      }
       tickerSetting = Object.values(this.tickersSettings).find((ts) =>
         SafeMath.eq(ts.code, dbOrder.currency)
       );
-      // this.logger.debug(`postCancelOrder tickerSetting`, tickerSetting);
-      if (!tickerSetting) throw Error("Can't find ticker");
+      if (!tickerSetting) {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR postCancelOrder Can't find ticker [memberId(${memberId})]`,
+          `body`,
+          body,
+          `dbOrder`,
+          dbOrder
+        );
+        throw Error("Can't find ticker");
+      }
       switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           // 1. updateDB
           /* !!! HIGH RISK (start) !!! */
-
-          this.logger.debug(
-            `準備呼叫 DB 更新被取消訂單的狀態及更新對應用戶帳號 orderId:[${orderId}] clOrdId:[${clOrdId}]`
-          );
           dbUpdateR = await this.updateOrderStatus({
             transaction,
             orderId,
@@ -3398,11 +3605,17 @@ class ExchangeHub extends Bot {
               message: "DB ERROR",
               code: Codes.CANCEL_ORDER_FAIL,
             });
-            this.logger.debug(`DB 更新失敗 rollback`);
+            this.logger.error(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]!!!ERROR postCancelOrder [memberId(${memberId})] updateOrderStatus出錯`,
+              `body`,
+              body,
+              `dbOrder`,
+              dbOrder
+            );
           } else {
             // 2. performTask (Task: cancel)
-            this.logger.debug(`準備呼叫 API 執行取消訂單`);
-            this.logger.debug(`postCancelOrder`, body);
             apiR = await this.okexConnector.router("postCancelOrder", {
               params,
               query,
@@ -3412,17 +3625,22 @@ class ExchangeHub extends Bot {
                 clOrdId,
               },
             });
-            this.logger.debug(`okexCancelOrderRes`, apiR);
           }
           if (!result) {
             if (!apiR?.success) {
+              this.logger.error(
+                `[${new Date().toISOString()}][${
+                  this.constructor.name
+                }]!!!ERROR postCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
+                  tickerSetting.instId
+                }])`,
+                `clOrdId`,
+                clOrdId
+              );
               await transaction.rollback();
-              this.logger.debug(`API 取消訂單失敗 rollback`);
             } else {
               await transaction.commit();
-              this.logger.debug(`API 取消訂單成功了`);
               // 3. informFrontEnd
-              this.logger.debug(`準備通知前端更新頁面`);
               this._emitUpdateOrder({
                 memberId,
                 instId: tickerSetting.instId,
@@ -3432,11 +3650,6 @@ class ExchangeHub extends Bot {
                   ordId: apiR.payload[0].ordId,
                 },
               });
-              // this._emitUpdateAccount({
-              //   memberId,
-              //   account: dbUpdateR.updateAccount,
-              // });
-              this.logger.debug(`通知前端成功了`);
             }
           }
           result = apiR;
@@ -3456,7 +3669,15 @@ class ExchangeHub extends Bot {
           break;
       }
     } catch (error) {
-      this.logger.error(`取消訂單失敗了`, error);
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR postCancelOrder [memberId(${memberId})]取消訂單失敗了`,
+        `body`,
+        body,
+        `dbOrder`,
+        dbOrder
+      );
       result = new ResponseFormat({
         message: error.message,
         code: Codes.CANCEL_ORDER_FAIL,
@@ -3466,7 +3687,6 @@ class ExchangeHub extends Bot {
   }
 
   async forceCancelOrder({ body, email }) {
-    this.logger.debug(`forceCancelOrder email, body`, email, body);
     let memberId = body.memberId;
     let orderId = body.orderId;
     let orderExchange = body.orderExchange;
@@ -3488,7 +3708,6 @@ class ExchangeHub extends Bot {
         dbOrder = await this.database.getOrder(orderId, {
           dbTransaction,
         });
-        this.logger.debug(`forceCancelOrder dbOrder`, dbOrder);
         if (
           dbOrder &&
           SafeMath.eq(dbOrder.member_id, memberId) &&
@@ -3522,26 +3741,38 @@ class ExchangeHub extends Bot {
                     message: "DB ERROR",
                     code: Codes.CANCEL_ORDER_FAIL,
                   });
-                  this.logger.debug(`DB 更新失敗 rollback`);
+                  this.logger.error(
+                    `[${new Date().toISOString()}][${
+                      this.constructor.name
+                    }]!!!ERROR forceCancelOrder [memberId(${memberId})] updateOrderStatus出錯`,
+                    `body`,
+                    body,
+                    `dbOrder`,
+                    dbOrder
+                  );
                 }
               }
               if (!result) {
                 // 2. performTask (Task: cancel)
-                this.logger.debug(`準備呼叫 API 執行取消訂單`);
-                this.logger.debug(`postCancelOrder`, body);
                 apiR = await this.okexConnector.router("postCancelOrder", {
                   body: {
                     instId: tickerSetting.instId,
                     clOrdId,
                   },
                 });
-                this.logger.debug(`okexCancelOrderRes`, apiR);
                 if (!apiR?.success) {
+                  this.logger.error(
+                    `[${new Date().toISOString()}][${
+                      this.constructor.name
+                    }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
+                      tickerSetting.instId
+                    }])`,
+                    `clOrdId`,
+                    clOrdId
+                  );
                   await dbTransaction.rollback();
-                  this.logger.debug(`API 取消訂單失敗 rollback`);
                 } else {
                   await dbTransaction.commit();
-                  this.logger.debug(`API 取消訂單成功了`);
                 }
               }
               result = apiR;
@@ -3560,7 +3791,15 @@ class ExchangeHub extends Bot {
           });
         }
       } catch (error) {
-        this.logger.error(`取消訂單失敗了`, error);
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR forceCancelOrder [memberId(${memberId})]取消訂單失敗了`,
+          `body`,
+          body,
+          `dbOrder`,
+          dbOrder
+        );
         result = new ResponseFormat({
           message: error.message,
           code: Codes.CANCEL_ORDER_FAIL,
@@ -3616,8 +3855,6 @@ class ExchangeHub extends Bot {
               "postCancelOrder",
               { body }
             );
-            // this.logger.debug(`postCancelOrder`, body);
-            // this.logger.debug(`okexCancelOrderRes`, okexCancelOrderRes);
             if (!okexCancelOrderRes.success) {
               err.push(okexCancelOrderRes);
               await t.rollback();
@@ -3694,7 +3931,6 @@ class ExchangeHub extends Bot {
         return okexRes;
       }
     } catch (error) {
-      this.logger.error(error);
       return new ResponseFormat({
         message: error.stack,
         code: Codes.API_UNKNOWN_ERROR,
@@ -3710,7 +3946,6 @@ class ExchangeHub extends Bot {
       ); // default visible is true, so if visible is undefined still need to show on list.
       list.push(...isVisibles);
     } catch (error) {
-      this.logger.error(error);
       return new ResponseFormat({
         message: error.stack,
         code: Codes.API_UNKNOWN_ERROR,
@@ -3738,7 +3973,6 @@ class ExchangeHub extends Bot {
           });
           return okexRes;
         } catch (error) {
-          this.logger.error(error);
           return new ResponseFormat({
             message: error.stack,
             code: Codes.API_UNKNOWN_ERROR,
@@ -3810,7 +4044,7 @@ class ExchangeHub extends Bot {
 
   getMemberFeeRate(memberTag, market) {
     let askFeeRate, bidFeeRate;
-    // this.logger.debug(`memberTag`, memberTag); // 1 是 vip， 2 是 hero
+    // memberTag // 1 是 vip， 2 是 hero
     if (memberTag) {
       if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
         askFeeRate = market.ask.vip_fee;
@@ -3846,102 +4080,105 @@ class ExchangeHub extends Bot {
     orderFullFilledAccountVersion,
     dbTransaction,
   }) {
-    if (!instId || !market || !memberId) this.logger.error("missing arguments");
-    try {
-      if (updatedOrder) {
-        let time = updatedOrder.updated_at.replace(/['"]+/g, "");
-        let order = {
-          ...updatedOrder,
-          at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
-          ts: new Date(time).getTime(),
-          market: market.id,
-          filled: updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
-          state_text:
-            updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-              ? Database.ORDER_STATE_TEXT.DONE
-              : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-              ? Database.ORDER_STATE_TEXT.CANCEL
-              : Database.ORDER_STATE_TEXT.WAIT,
-          state:
-            updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-              ? Database.ORDER_STATE.DONE
-              : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-              ? Database.ORDER_STATE.CANCEL
-              : Database.ORDER_STATE.WAIT,
-          state_code:
-            updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-              ? Database.ORDER_STATE_CODE.DONE
-              : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-              ? Database.ORDER_STATE_CODE.CANCEL
-              : Database.ORDER_STATE_CODE.WAIT,
-        };
-        this._emitUpdateOrder({
-          memberId,
-          instId,
-          market: market.id,
-          order,
-        });
-      }
-      let tmp = this.accountBook.getSnapshot(memberId, instId);
-      if (!tmp) {
-        tmp = [];
-        tmp[0] = await this.database.getAccountsByMemberId(
-          askAccountVersion.member_id,
-          {
-            options: { currency: askAccountVersion.currency },
-            limit: 1,
-            dbTransaction,
-          }
-        );
-      }
-      let balance, locked, total;
-      if (askAccountVersion) {
-        let askAccount = tmp ? tmp[0] : null;
-        balance = SafeMath.plus(askAccount.balance, askAccountVersion.balance);
-        locked = SafeMath.plus(askAccount.locked, askAccountVersion.locked);
-        total = SafeMath.plus(balance, locked);
-        this._emitUpdateAccount({
-          memberId,
-          account: {
-            balance,
-            locked,
-            currency: market.ask.currency.toUpperCase(),
-            total,
-          },
-        });
-      }
-      if (bidAccountVersion) {
-        let bidAccount = tmp ? tmp[1] : null;
-        balance = SafeMath.plus(bidAccount.balance, askAccountVersion.balance);
-        locked = SafeMath.plus(bidAccount.locked, askAccountVersion.locked);
-        total = SafeMath.plus(balance, locked);
-        if (orderFullFilledAccountVersion) {
-          balance = SafeMath.plus(
-            balance,
-            orderFullFilledAccountVersion.balance
-          );
-          locked = SafeMath.plus(locked, orderFullFilledAccountVersion.locked);
-          total = SafeMath.plus(balance, locked);
-        }
-        this._emitUpdateAccount({
-          memberId,
-          account: {
-            balance,
-            locked,
-            currency: market.ask.currency.toUpperCase(),
-            total,
-          },
-        });
-      }
-    } catch (error) {
-      this.logger.error("Fail to inform frontend", error);
-    }
+    this.logger.debug(
+      `[!!! deprecated][${new Date().toLocaleTimeString()}][${
+        this.constructor.name
+      }] emitter return!`
+    );
+    return;
+    // if (!instId || !market || !memberId) throw Error("missing arguments");
+    // try {
+    //   if (updatedOrder) {
+    //     let time = updatedOrder.updated_at.replace(/['"]+/g, "");
+    //     let order = {
+    //       ...updatedOrder,
+    //       at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
+    //       ts: new Date(time).getTime(),
+    //       market: market.id,
+    //       filled: updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
+    //       state_text:
+    //         updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+    //           ? Database.ORDER_STATE_TEXT.DONE
+    //           : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+    //           ? Database.ORDER_STATE_TEXT.CANCEL
+    //           : Database.ORDER_STATE_TEXT.WAIT,
+    //       state:
+    //         updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+    //           ? Database.ORDER_STATE.DONE
+    //           : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+    //           ? Database.ORDER_STATE.CANCEL
+    //           : Database.ORDER_STATE.WAIT,
+    //       state_code:
+    //         updatedOrder.state === Database.ORDER_STATE_CODE.DONE
+    //           ? Database.ORDER_STATE_CODE.DONE
+    //           : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+    //           ? Database.ORDER_STATE_CODE.CANCEL
+    //           : Database.ORDER_STATE_CODE.WAIT,
+    //     };
+    //     this._emitUpdateOrder({
+    //       memberId,
+    //       instId,
+    //       market: market.id,
+    //       order,
+    //     });
+    //   }
+    //   let tmp = this.accountBook.getSnapshot(memberId, instId);
+    //   if (!tmp) {
+    //     tmp = [];
+    //     tmp[0] = await this.database.getAccountsByMemberId(
+    //       askAccountVersion.member_id,
+    //       {
+    //         options: { currency: askAccountVersion.currency },
+    //         limit: 1,
+    //         dbTransaction,
+    //       }
+    //     );
+    //   }
+    //   let balance, locked, total;
+    //   if (askAccountVersion) {
+    //     let askAccount = tmp ? tmp[0] : null;
+    //     balance = SafeMath.plus(askAccount.balance, askAccountVersion.balance);
+    //     locked = SafeMath.plus(askAccount.locked, askAccountVersion.locked);
+    //     total = SafeMath.plus(balance, locked);
+    //     this._emitUpdateAccount({
+    //       memberId,
+    //       account: {
+    //         balance,
+    //         locked,
+    //         currency: market.ask.currency.toUpperCase(),
+    //         total,
+    //       },
+    //     });
+    //   }
+    //   if (bidAccountVersion) {
+    //     let bidAccount = tmp ? tmp[1] : null;
+    //     balance = SafeMath.plus(bidAccount.balance, askAccountVersion.balance);
+    //     locked = SafeMath.plus(bidAccount.locked, askAccountVersion.locked);
+    //     total = SafeMath.plus(balance, locked);
+    //     if (orderFullFilledAccountVersion) {
+    //       balance = SafeMath.plus(
+    //         balance,
+    //         orderFullFilledAccountVersion.balance
+    //       );
+    //       locked = SafeMath.plus(locked, orderFullFilledAccountVersion.locked);
+    //       total = SafeMath.plus(balance, locked);
+    //     }
+    //     this._emitUpdateAccount({
+    //       memberId,
+    //       account: {
+    //         balance,
+    //         locked,
+    //         currency: market.ask.currency.toUpperCase(),
+    //         total,
+    //       },
+    //     });
+    //   }
+    // } catch (error) {
+    //   ++ TODO "Fail to inform frontend"
+    // }
   }
 
-  async abnormalOrderHandler({ dbOrder, apiOrder, dbTransaction }) {
-    // ++ TODO high priority !!!
-    // this.logger.debug(`abnormalOrderHandler dbOrder`, dbOrder);
-    // this.logger.debug(`abnormalOrderHandler apiOrder`, apiOrder);
+  async abnormalOrderHandler({ dbOrder, apiOrder }) {
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOrder,
       orderState,
@@ -3950,55 +4187,75 @@ class ExchangeHub extends Bot {
       orderVolume,
       orderTradesCount,
       doneAt = null;
-    switch (apiOrder.state) {
-      case Database.ORDER_STATE.CANCEL:
-        orderState = Database.ORDER_STATE_CODE.CANCEL;
-        break;
-      case Database.ORDER_STATE.FILLED:
-        orderState = Database.ORDER_STATE_CODE.DONE;
-        doneAt = `${new Date(parseInt(apiOrder.fillTime))
-          .toISOString()
-          .slice(0, 19)
-          .replace("T", " ")}`;
-        break;
-      default:
-        orderState = Database.ORDER_STATE_CODE.WAIT;
-        break;
+    try {
+      switch (apiOrder.state) {
+        case Database.ORDER_STATE.CANCEL:
+          orderState = Database.ORDER_STATE_CODE.CANCEL;
+          break;
+        case Database.ORDER_STATE.FILLED:
+          orderState = Database.ORDER_STATE_CODE.DONE;
+          doneAt = `${new Date(parseInt(apiOrder.fillTime))
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}`;
+          break;
+        default:
+          orderState = Database.ORDER_STATE_CODE.WAIT;
+          break;
+      }
+      orderVolume = SafeMath.minus(dbOrder.origin_volume, apiOrder.accFillSz);
+      orderLocked =
+        apiOrder.side === Database.ORDER_SIDE.BUY
+          ? SafeMath.minus(
+              dbOrder.origin_locked,
+              SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz)
+            )
+          : SafeMath.minus(dbOrder.origin_locked, apiOrder.accFillSz);
+      orderFundsReceived =
+        apiOrder.side === Database.ORDER_SIDE.BUY
+          ? apiOrder.accFillSz
+          : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
+      let count = await this.database.countOuterTrades({
+        exchangeCode: Database.EXCHANGE.OKEX,
+        id: apiOrder.tradeId,
+      });
+      orderTradesCount = count["counts"];
+      updatedOrder = {
+        id: dbOrder.id,
+        volume: orderVolume,
+        state: orderState,
+        locked: orderLocked,
+        funds_received: orderFundsReceived,
+        trades_count: orderTradesCount,
+        updated_at: `"${now}"`,
+        done_at: `"${doneAt}"`,
+      };
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!! NOTICE abnormalOrderHandler updatedOrder`,
+        `dbOrder`,
+        dbOrder,
+        `apiOrder`,
+        apiOrder,
+        `updatedOrder`,
+        updatedOrder
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR abnormalOrderHandler 出錯`,
+        `dbOrder`,
+        dbOrder,
+        `apiOrder`,
+        apiOrder,
+        `error`,
+        error
+      );
+      throw error;
     }
-    orderVolume = SafeMath.minus(dbOrder.origin_volume, apiOrder.accFillSz);
-    orderLocked =
-      apiOrder.side === Database.ORDER_SIDE.BUY
-        ? SafeMath.minus(
-            dbOrder.origin_locked,
-            SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz)
-          )
-        : SafeMath.minus(dbOrder.origin_locked, apiOrder.accFillSz);
-    orderFundsReceived =
-      apiOrder.side === Database.ORDER_SIDE.BUY
-        ? apiOrder.accFillSz
-        : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
-    let count = await this.database.countOuterTrades({
-      exchangeCode: Database.EXCHANGE.OKEX,
-      id: apiOrder.tradeId,
-    });
-    orderTradesCount = count["counts"];
-    updatedOrder = {
-      id: dbOrder.id,
-      volume: orderVolume,
-      state: orderState,
-      locked: orderLocked,
-      funds_received: orderFundsReceived,
-      trades_count: orderTradesCount,
-      updated_at: `"${now}"`,
-      done_at: `"${doneAt}"`,
-    };
-    // ++ TODO high priority !!!
-    // this.logger.debug(
-    //   `abnormalOrderHandler combined dbOrder & apiOrder get updatedOrder`,
-    //   updatedOrder
-    // );
     return updatedOrder;
-    // await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
   /**
@@ -4044,7 +4301,6 @@ class ExchangeHub extends Bot {
     referredByMember,
     memberReferral,
   }) {
-    // this.logger.debug(`calculator `);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       value = SafeMath.mult(data.fillPx, data.fillSz),
       tmp = this.getMemberFeeRate(member.member_tag, market),
@@ -4102,17 +4358,12 @@ class ExchangeHub extends Bot {
       // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
       // 4.1 更新 order doneAt
       // 4.2 更新 order state
-      // this.logger.debug(`calculator orderVolume`, orderVolume);
       if (SafeMath.eq(orderVolume, "0")) {
         orderState = Database.ORDER_STATE_CODE.DONE;
         doneAt = now;
         // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
         // if (SafeMath.gt(orderLocked, 0)) {
         // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
-        // this.logger.debug(
-        //   `calculator orderFullFilledAccountVersion`,
-        //   orderFullFilledAccountVersion
-        // );
         // }
       } else if (SafeMath.gt(orderVolume, "0")) {
         orderState = Database.ORDER_STATE_CODE.WAIT;
@@ -4232,8 +4483,6 @@ class ExchangeHub extends Bot {
           fun: Database.FUNC.PLUS_FUNDS,
         };
       }
-      // this.logger.debug(`calculator askAccountVersion`, askAccountVersion);
-      // this.logger.debug(`calculator bidAccountVersion`, bidAccountVersion);
       voucher = {
         // id: "", // -- filled by DB insert
         member_id: member.id,
@@ -4250,7 +4499,7 @@ class ExchangeHub extends Bot {
         bid_fee: bidFee,
         created_at: now,
       };
-      // this.logger.debug(`calculator voucher`, voucher);
+
       trade = {
         price: data.fillPx,
         volume: data.fillSz,
@@ -4271,10 +4520,8 @@ class ExchangeHub extends Bot {
         funds: value,
         // trade_fk: data?.tradeId, ++ TODO
       };
-      // this.logger.debug(`calculator trade`, trade);
+
       if (referredByMember) {
-        // this.logger.debug(`calculator referredByMember`, referredByMember);
-        // this.logger.debug(`calculator memberReferral`, memberReferral);
         /**
          * referred_by_member: @referred_by_member => referredByMember.id
          * trade_member: @trade_member => member.id
@@ -4312,21 +4559,41 @@ class ExchangeHub extends Bot {
             createdAt: now,
             updatedAt: now,
           };
-          // this.logger.debug(`calculator referralCommission`, referralCommission);
         }
       }
+      result = {
+        updatedOrder,
+        voucher,
+        trade,
+        askAccountVersion,
+        bidAccountVersion,
+        orderFullFilledAccountVersion,
+        referralCommission,
+      };
     } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR calculator 出錯`,
+        `market`,
+        market,
+        `member`,
+        member,
+        `dbOrder`,
+        dbOrder,
+        `orderDetail`,
+        orderDetail,
+        `data`,
+        data,
+        `referredByMember`,
+        referredByMember,
+        `memberReferral`,
+        memberReferral,
+        `error`,
+        error
+      );
       throw error;
     }
-    result = {
-      updatedOrder,
-      voucher,
-      trade,
-      askAccountVersion,
-      bidAccountVersion,
-      orderFullFilledAccountVersion,
-      referralCommission,
-    };
     return result;
   }
 
@@ -4361,7 +4628,6 @@ class ExchangeHub extends Bot {
     referralCommission,
     dbTransaction,
   }) {
-    // this.logger.log(`updateOuterTrade status`, status);
     let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
     try {
       switch (status) {
@@ -4428,7 +4694,6 @@ class ExchangeHub extends Bot {
           await this.database.updateOrder(updatedOrder, {
             dbTransaction,
           });
-          this.logger.debug(`updateOuterTrade updateOrder`, updatedOrder);
           break;
         case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
           await this.database.updateOuterTrade(
@@ -4453,23 +4718,6 @@ class ExchangeHub extends Bot {
             !askAccountVersion?.id ||
             !bidAccountVersion?.id
           ) {
-            // this.logger.debug(`updateOuterTrade id`, id);
-            // this.logger.debug(`updateOuterTrade dbOrder`, dbOrder);
-            // this.logger.debug(`updateOuterTrade trade`, trade);
-            // this.logger.debug(`updateOuterTrade voucher`, voucher);
-            // this.logger.debug(`updateOuterTrade member`, member);
-            // this.logger.debug(
-            //   `updateOuterTrade askAccountVersion`,
-            //   askAccountVersion
-            // );
-            // this.logger.debug(
-            //   `updateOuterTrade bidAccountVersion`,
-            //   bidAccountVersion
-            // );
-            // this.logger.debug(
-            //   `updateOuterTrade orderFullFilledAccountVersions`,
-            //   orderFullFilledAccountVersion
-            // );
             throw Error("missing params");
           }
           await this.database.updateOuterTrade(
@@ -4508,6 +4756,35 @@ class ExchangeHub extends Bot {
           break;
       }
     } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR updateOuterTrade 出錯`,
+        `error`,
+        error,
+        `member`,
+        member,
+        `status`,
+        status,
+        `id`,
+        id,
+        `currency`,
+        currency,
+        `trade`,
+        trade,
+        `dbOrder`,
+        dbOrder,
+        `voucher`,
+        voucher,
+        `askAccountVersion`,
+        askAccountVersion,
+        `bidAccountVersion`,
+        bidAccountVersion,
+        `orderFullFilledAccountVersion`,
+        orderFullFilledAccountVersion,
+        `referralCommission`,
+        referralCommission
+      );
       throw error;
     }
   }
@@ -4545,15 +4822,9 @@ class ExchangeHub extends Bot {
       dbVoucher,
       dbAccountVersions,
       dbReferrerCommission;
-    // this.logger.debug(`updater`);
     try {
       if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT) {
         throw Error(`orderState is not wait`);
-        // throw Error({
-        //   message: `orderState is not wait`,
-        //   code: Codes.ABNORMAL_ORDER,
-        //   data: { dbOrder },
-        // });
       }
       await this.database.updateOrder(updatedOrder, { dbTransaction });
       dbTrade = await this.database.getTradeByTradeFk(tradeFk);
@@ -4598,13 +4869,6 @@ class ExchangeHub extends Bot {
         market: market.id,
         trade: newTrade,
       });
-      // this.logger.debug(`updater insertTrades success tradeId`, tradeId);
-      // }
-      // if (dbVoucher) {
-      //   voucherId = dbVoucher.id;
-      //   // this.logger.error("voucher exist voucher", voucher);
-      //   // this.logger.error("voucher exist dbVoucher", dbVoucher);
-      // } else {
       voucherId = await this.database.insertVouchers(
         {
           ...voucher,
@@ -4612,106 +4876,19 @@ class ExchangeHub extends Bot {
         },
         { dbTransaction }
       );
-      // this.logger.debug(
-      //   `updater insertVouchers success voucherId`,
-      //   voucherId
-      // );
-      // }
-      // let dbAskAccountVersion =
-      //   dbAccountVersions?.length > 0
-      //     ? dbAccountVersions.find(
-      //         (dbAccV) =>
-      //           dbAccV.currency.toString() ===
-      //           askAccountVersion.currency.toString()
-      //       )
-      //     : null;
-      // if (dbAskAccountVersion) {
-      // this.logger.error(`askAccountVersion exist`);
-      // if (this.accountVersionVerifier(askAccountVersion, dbAskAccountVersion))
-      //   newAskAccountVersion = dbAskAccountVersion;
-      // else {
-      //   // this.logger.error(`askAccountVersion`, askAccountVersion);
-      //   // this.logger.error(`dbAskAccountVersion`, dbAskAccountVersion);
-      //   throw Error(`db update amount is different from outer data`);
-      // }
-      // } else {
       newAskAccountVersion = await this._updateAccount(
         { ...askAccountVersion, modifiable_id: tradeId },
         dbTransaction
       );
-      // this.logger.debug(
-      //   `updater _updateAccount success askAccountVersion id`,
-      //   newAskAccountVersion.id
-      // );
-      // }
-      // let dbBidAccountVersion =
-      //   dbAccountVersions?.length > 0
-      //     ? dbAccountVersions.find(
-      //         (dbAccV) =>
-      //           dbAccV.currency.toString() ===
-      //             bidAccountVersion.currency.toString() &&
-      //           dbAccV.reason !== Database.REASON.ORDER_FULLFILLED
-      //       )
-      //     : null;
-      // if (dbBidAccountVersion) {
-      //   // this.logger.error(`bidAccountVersion exist`);
-      //   if (this.accountVersionVerifier(bidAccountVersion, dbBidAccountVersion))
-      //     newBidAccountVersion = dbBidAccountVersion;
-      //   else {
-      //     // this.logger.error(`newBidAccountVersion`, newBidAccountVersion);
-      //     // this.logger.error(`dbBidAccountVersion`, dbBidAccountVersion);
-      //     throw Error(`db update amount is different from outer data`);
-      //   }
-      // } else {
       newBidAccountVersion = await this._updateAccount(
         { ...bidAccountVersion, modifiable_id: tradeId },
         dbTransaction
       );
-      // this.logger.debug(
-      //   `updater _updateAccount success bidAccountVersion id`,
-      //   newBidAccountVersion.id
-      // );
-      // }
       if (orderFullFilledAccountVersion) {
-        // let dbOrderFullFilledAccountVersion =
-        //   dbAccountVersions?.length > 0
-        //     ? dbAccountVersions.find(
-        //         (dbAccV) =>
-        //           dbAccV.currency.toString() ===
-        //             orderFullFilledAccountVersion.currency.toString() &&
-        //           dbAccV.reason === Database.REASON.ORDER_FULLFILLED
-        //       )
-        //     : null;
-        // if (dbOrderFullFilledAccountVersion) {
-        //   // this.logger.error(`orderFullFilledAccountVersion exist`);
-        //   if (
-        //     this.accountVersionVerifier(
-        //       orderFullFilledAccountVersion,
-        //       dbOrderFullFilledAccountVersion
-        //     )
-        //   )
-        //     newOrderFullFilledAccountVersion = dbOrderFullFilledAccountVersion;
-        //   else {
-        //     // this.logger.error(
-        //     //   `newOrderFullFilledAccountVersion`,
-        //     //   newOrderFullFilledAccountVersion
-        //     // );
-        //     // this.logger.error(
-        //     //   `dbOrderFullFilledAccountVersion`,
-        //     //   dbOrderFullFilledAccountVersion
-        //     // );
-        //     throw Error(`db update amount is different from outer data`);
-        //   }
-        // } else {
         newOrderFullFilledAccountVersion = await this._updateAccount(
           { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
           dbTransaction
         );
-        // this.logger.debug(
-        //   `updater _updateAccount success orderFullFilledAccountVersion id`,
-        //   newOrderFullFilledAccountVersion.id
-        // );
-        // }
       }
       if (referralCommission) {
         let rcs = await this.database.getReferralCommissionsByConditions({
@@ -4721,11 +4898,8 @@ class ExchangeHub extends Bot {
             tradeMemberId: member.id,
           },
         });
-        // this.logger.log(`updater rcs`, rcs);
         dbReferrerCommission = rcs[0];
-        // this.logger.log(`updater dbReferrerCommission`, dbReferrerCommission);
         if (dbReferrerCommission) {
-          // this.logger.error(`referralCommission exist`);
           if (
             !SafeMath.eq(
               dbReferrerCommission.referred_by_member_id,
@@ -4736,8 +4910,6 @@ class ExchangeHub extends Bot {
               referralCommission.refNetFee
             )
           ) {
-            // this.logger.error(`referralCommission`, referralCommission);
-            // this.logger.error(`dbReferrerCommission`, dbReferrerCommission);
             throw Error(
               `db update referralCommission is different from outer data`
             );
@@ -4776,6 +4948,37 @@ class ExchangeHub extends Bot {
         dbTransaction,
       });
     } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR updater 出錯`,
+        `dbOrder`,
+        dbOrder,
+        `updatedOrder`,
+        updatedOrder,
+        `voucher`,
+        voucher,
+        `trade`,
+        trade,
+        `tradeFk`,
+        tradeFk,
+        `member`,
+        member,
+        `market`,
+        market,
+        `instId`,
+        instId,
+        `askAccountVersion`,
+        askAccountVersion,
+        `bidAccountVersion`,
+        bidAccountVersion,
+        `orderFullFilledAccountVersion`,
+        orderFullFilledAccountVersion,
+        `referralCommission`,
+        referralCommission,
+        `error`,
+        error
+      );
       throw error;
     }
     /* !!! HIGH RISK (end) !!! */
@@ -4798,7 +5001,6 @@ class ExchangeHub extends Bot {
       referredByMember,
       memberReferral,
       dbTransaction = await this.database.transaction();
-    // this.logger.debug(`processor data`, data);
     if (!stop) {
       try {
         // 1. 判斷收到的資料是否為此系統的資料
@@ -4876,10 +5078,6 @@ class ExchangeHub extends Bot {
             await dbTransaction.commit();
           } else await dbTransaction.rollback();
           stop = true;
-          // this.logger.error(
-          //   `!!! dbOrder.state 為 0[state: ${order.state}](stop:${stop})`,
-          //   order
-          // );
         }
         // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
         if (!stop) {
@@ -4898,7 +5096,6 @@ class ExchangeHub extends Bot {
           }
           if (apiResonse.success) {
             orderDetail = apiResonse.payload.shift();
-            // this.logger.debug(`getOrderDetails orderDetail`, orderDetail);
             if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
               if (data.tradeId) {
                 await this.updateOuterTrade({
@@ -4929,7 +5126,6 @@ class ExchangeHub extends Bot {
             let tmp = await this.getMemberReferral(member);
             referredByMember = tmp.referredByMember;
             memberReferral = tmp.memberReferral;
-            // this.logger.debug(`updater getMemberReferral`, tmp);
           }
           try {
             result = await this.calculator({
@@ -4941,9 +5137,16 @@ class ExchangeHub extends Bot {
               referredByMember: referredByMember,
               memberReferral: memberReferral,
             });
-            // this.logger.debug(`calculator result`, result);
           } catch (error) {
-            this.logger.error(`calculator error`, error);
+            this.logger.error(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]!!!ERROR processor => calculator 出錯`,
+              `data`,
+              data,
+              `error`,
+              error
+            );
             // if (error.code === Codes.ABNORMAL_ORDER) {
             stop = true;
             try {
@@ -5023,7 +5226,15 @@ class ExchangeHub extends Bot {
               });
               await dbTransaction.commit();
             } catch (error) {
-              this.logger.error(`updater error`, error);
+              this.logger.error(
+                `[${new Date().toISOString()}][${
+                  this.constructor.name
+                }]!!!ERROR processor => updater 出錯`,
+                `data`,
+                data,
+                `error`,
+                error
+              );
               // if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
               stop = true;
               await this.updateOuterTrade({
@@ -5035,12 +5246,19 @@ class ExchangeHub extends Bot {
               await dbTransaction.commit();
               // } else throw error;
             }
-            // this.logger.debug(`processor complete dbTransaction commit`);
           } else await dbTransaction.rollback();
         }
       } catch (error) {
         await dbTransaction.rollback();
-        this.logger.error(`processor dbTransaction rollback`, error);
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR processor 出錯`,
+          `data`,
+          data,
+          `error`,
+          error
+        );
       }
     }
   }
@@ -5250,21 +5468,17 @@ class ExchangeHub extends Bot {
     try {
       if (offset == 0 || email) counts = await this.database.countMembers();
       if (email) {
-        // this.logger.debug("email", email);
         const member = await this.database.getMemberByCondition({
           email: email,
         });
-        // this.logger.debug("member", member);
+
         if (member) {
           number = await this.database.countMembers({ before: member.id });
           page = Math.floor(number / limit) + 1;
           offset = (page - 1) * limit;
-          // this.logger.debug("number", number);
-          // this.logger.debug("page", page);
-          // this.logger.debug("offset", offset);
         }
       }
-      // this.logger.debug("offset == 0 || !!offset", offset == 0 || !!offset);
+
       if (offset == 0 || !!offset) {
         result = await this.database.getMembers({ limit, offset });
         members = result.map((r) => {
@@ -5276,7 +5490,7 @@ class ExchangeHub extends Bot {
           return member;
         });
         let tmp = await this.getMembersLatestAuditRecords(memberIds);
-        // this.logger.debug(`tmp`, tmp);
+
         auditRecords = tmp.auditRecords;
         accountVersions = await this.getMembersLatestAccountVersions(memberIds);
         members = members.map((m) => {
@@ -5320,7 +5534,6 @@ class ExchangeHub extends Bot {
   }
 
   async fixAbnormalAccount({ params, email }) {
-    // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
       account,
       auditRecord,
@@ -5365,7 +5578,7 @@ class ExchangeHub extends Bot {
             dbTransaction,
           }
         );
-        // this.logger.debug(`fixAbnormalAccount auditRecord`, auditRecord);
+
         if (auditRecord) {
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
           // 2. update account
@@ -5389,9 +5602,6 @@ class ExchangeHub extends Bot {
             updated_at: now,
             issued_by: currentUser.email,
           };
-          // this.logger.debug(`fixAbnormalAccount updateAccount`, updateAccount);
-          // this.logger.debug(`fixAbnormalAccount fixedAuditRecord`, fixedAuditRecord);
-          //
           await this.database.insertFixedAccountRecord(fixedAuditRecord, {
             dbTransaction,
           });
@@ -5428,7 +5638,6 @@ class ExchangeHub extends Bot {
         });
       }
     }
-    // this.logger.debug(`fixAbnormalAccount result`, result);
     return result;
   }
 
@@ -5545,12 +5754,8 @@ class ExchangeHub extends Bot {
       realValue = removeZeroEnd(v.value);
       realVolume = removeZeroEnd(v.volume);
       if (order.type === Database.TYPE.ORDER_BID) {
-        // this.logger.debug(`accountVersionAdds add${add}`, accountVersionAdds);
-        // this.logger.debug(`accountVersionSubs sub${sub}`, accountVersionSubs);
         expectVolume = add;
         expectValue = SafeMath.mult(sub, "-1");
-        // this.logger.debug(`expectVolume`, expectVolume);
-        // this.logger.debug(`expectValue`, expectValue);
       } else {
         expectVolume = SafeMath.mult(sub, "-1");
         expectValue = add;
@@ -5611,7 +5816,6 @@ class ExchangeHub extends Bot {
     // for (let deposit of depositRecords) {
     //   balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
     // }
-    // this.logger.debug(`depositRecords`, depositRecords);
     // 2. getWithdrawRecords
     let withdrawRecords = await this.database.getWithdrawRecords({
       memberId,
@@ -5628,7 +5832,6 @@ class ExchangeHub extends Bot {
     // for (let withdraw of withdrawRecords) {
     //   balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
     // }
-    // this.logger.debug(`withdrawRecords`, withdrawRecords);
     // 3. getOrderRecords
     let orderRecords = await this.database.getOrderRecords({
       currency,
@@ -5652,10 +5855,6 @@ class ExchangeHub extends Bot {
   }
 
   async _updateOrderDetail(formatOrder) {
-    // this.logger.debug(
-    //   ` ------------- [${this.constructor.name}] _updateOrderDetail [START]---------------`
-    // );
-    // this.logger.debug(`formatOrder`, formatOrder);
     let member,
       memberTag,
       askFeeRate,
@@ -5682,12 +5881,7 @@ class ExchangeHub extends Bot {
       ),
       updateBaseAccount = updateAccounts ? updateAccounts[0] : null,
       updateQuoteAccount = updateAccounts ? updateAccounts[1] : null;
-    // this.logger.debug(`memberId: ${memberId}, orderId: ${orderId}`);
-    // this.logger.debug(`volume`, volume);
-    // this.logger.debug(`filled`, filled);
-    // this.logger.debug(`tickerSetting`, tickerSetting);
-    // this.logger.debug(`updateBaseAccount`, updateBaseAccount);
-    // this.logger.debug(`updateQuoteAccount`, updateQuoteAccount);
+
     if (orderId && tickerSetting && memberId) {
       updateOrder = {
         instId: formatOrder.instId,
@@ -5722,7 +5916,7 @@ class ExchangeHub extends Bot {
           ? Database.ORDER_STATE_CODE.CANCEL
           : Database.ORDER_STATE_CODE.WAIT,
       };
-      // this.logger.debug(`updateOrder`, updateOrder);
+
       this._emitUpdateOrder({
         memberId,
         instId: tickerSetting.instId,
@@ -5734,7 +5928,7 @@ class ExchangeHub extends Bot {
       member = await this.database.getMemberByCondition({ id: memberId });
       if (member) {
         memberTag = member.member_tag;
-        // this.logger.debug(`member.member_tag`, member.member_tag); // 1 是 vip， 2 是 hero
+
         if (memberTag) {
           if (memberTag.toString() === Database.MEMBER_TAG.VIP_FEE.toString()) {
             askFeeRate = tickerSetting.ask.vip_fee;
@@ -5756,9 +5950,9 @@ class ExchangeHub extends Bot {
             formatOrder.fillSz,
             SafeMath.mult(formatOrder.fillSz, bidFeeRate)
           );
-          // this.logger.debug(`baseAccBalDiff`, baseAccBalDiff);
+
           baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
-          // this.logger.debug(`baseAccBal`, baseAccBal);
+
           baseLocDiff = 0;
           baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
           updateBaseAccount = {
@@ -5776,7 +5970,7 @@ class ExchangeHub extends Bot {
             SafeMath.mult(formatOrder.px, formatOrder.fillSz),
             "-1"
           );
-          // this.logger.debug(`quoteLocDiff`, quoteLocDiff);
+
           quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
           updateQuoteAccount = {
             balance: quoteAccBal,
@@ -5788,7 +5982,7 @@ class ExchangeHub extends Bot {
           baseAccBalDiff = 0;
           baseAccBal = SafeMath.plus(updateBaseAccount.balance, baseAccBalDiff);
           baseLocDiff = SafeMath.mult(formatOrder.fillSz, "-1");
-          // this.logger.debug(`baseLocDiff`, baseLocDiff);
+
           baseLoc = SafeMath.plus(updateBaseAccount.locked, baseLocDiff);
           updateBaseAccount = {
             balance: baseAccBal,
@@ -5803,12 +5997,12 @@ class ExchangeHub extends Bot {
               askFeeRate
             )
           );
-          // this.logger.debug(`quoteAccBalDiff`, quoteAccBalDiff);
+
           quoteAccBal = SafeMath.plus(
             updateQuoteAccount.balance,
             quoteAccBalDiff
           );
-          // this.logger.debug(`quoteAccBal`, quoteAccBal);
+
           quoteLocDiff = 0;
           quoteLoc = SafeMath.plus(updateQuoteAccount.locked, quoteLocDiff);
           updateQuoteAccount = {
@@ -5828,83 +6022,117 @@ class ExchangeHub extends Bot {
         });
       }
     }
-    // this.logger.debug(
-    //   ` ------------- [${this.constructor.name}] _updateOrderDetail [END]---------------`
-    // );
   }
 
   async _getPlaceOrderData(memberId, body, tickerSetting) {
-    if (!tickerSetting) {
-      throw new Error(`this ticker ${body.instId} can be found.`);
-    }
-    const { id: bid } = this.coinsSettings.find(
-      (curr) => curr.code === tickerSetting.quoteUnit
-    );
-    const { id: ask } = this.coinsSettings.find(
-      (curr) => curr.code === tickerSetting.baseUnit
-    );
-    if (!bid) {
-      throw new Error(`bid not found`);
-    }
-    if (!ask) {
-      throw new Error(`ask not found`);
-    }
-    const currency = tickerSetting.code;
-    const type =
-      body.kind === Database.ORDER_KIND.BID
-        ? Database.TYPE.ORDER_BID
-        : Database.TYPE.ORDER_ASK;
-    const ordType =
-      body.ordType === Database.ORD_TYPE.MARKET
-        ? Database.ORD_TYPE.IOC
-        : body.ordType;
-    const price =
-      ordType === Database.ORD_TYPE.IOC
-        ? type === Database.TYPE.ORDER_BID
-          ? body.price
-            ? // ? (parseFloat(body.price) * 1.05).toString()
+    let orderData;
+    try {
+      if (!tickerSetting) {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) tickersetting not found memberId:[${memberId}] body`,
+          body
+        );
+        throw new Error(`this ticker ${body.instId} can be found.`);
+      }
+      const { id: bid } = this.coinsSettings.find(
+        (curr) => curr.code === tickerSetting.quoteUnit
+      );
+      const { id: ask } = this.coinsSettings.find(
+        (curr) => curr.code === tickerSetting.baseUnit
+      );
+      if (!bid) {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) bid[tickerSetting.quoteUnit:${
+            tickerSetting.quoteUnit
+          }] not found memberId:[${memberId}] body`,
+          body,
+          `tickerSetting`,
+          tickerSetting
+        );
+        throw new Error(`bid not found`);
+      }
+      if (!ask) {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) ask[tickerSetting.baseUnit:${
+            tickerSetting.baseUnit
+          }] not found memberId:[${memberId}] body`,
+          body,
+          `tickerSetting`,
+          tickerSetting
+        );
+        throw new Error(`ask not found`);
+      }
+      const currency = tickerSetting.code;
+      const type =
+        body.kind === Database.ORDER_KIND.BID
+          ? Database.TYPE.ORDER_BID
+          : Database.TYPE.ORDER_ASK;
+      const ordType =
+        body.ordType === Database.ORD_TYPE.MARKET
+          ? Database.ORD_TYPE.IOC
+          : body.ordType;
+      const price =
+        ordType === Database.ORD_TYPE.IOC
+          ? type === Database.TYPE.ORDER_BID
+            ? body.price
+              ? // ? (parseFloat(body.price) * 1.05).toString()
+                body.price
+              : null
+            : body.price
+            ? // ? (parseFloat(body.price) * 0.95).toString()
               body.price
             : null
-          : body.price
-          ? // ? (parseFloat(body.price) * 0.95).toString()
-            body.price
-          : null
-        : body.price || null;
-    const locked =
-      type === Database.TYPE.ORDER_BID
-        ? SafeMath.mult(price, body.volume)
-        : body.volume;
-    const balance = SafeMath.mult(locked, "-1"); // balanceDiff
-    const createdAt = new Date().toISOString();
-    const orderData = {
-      bid,
-      ask,
-      currency,
-      price,
-      volume: body.volume,
-      originVolume: body.volume,
-      state: Database.ORDER_STATE_CODE.WAIT,
-      doneAt: null,
-      type,
-      memberId,
-      createdAt,
-      updatedAt: createdAt,
-      sn: null,
-      source: "Web",
-      ordType,
-      locked,
-      originLocked: locked,
-      fundsReceived: 0,
-      tradesCount: 0,
-      balance,
-    };
+          : body.price || null;
+      const locked =
+        type === Database.TYPE.ORDER_BID
+          ? SafeMath.mult(price, body.volume)
+          : body.volume;
+      const balance = SafeMath.mult(locked, "-1"); // balanceDiff
+      const createdAt = new Date().toISOString();
+      orderData = {
+        bid,
+        ask,
+        currency,
+        price,
+        volume: body.volume,
+        originVolume: body.volume,
+        state: Database.ORDER_STATE_CODE.WAIT,
+        doneAt: null,
+        type,
+        memberId,
+        createdAt,
+        updatedAt: createdAt,
+        sn: null,
+        source: "Web",
+        ordType,
+        locked,
+        originLocked: locked,
+        fundsReceived: 0,
+        tradesCount: 0,
+        balance,
+      };
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) memberId:[${memberId}] body`,
+        body,
+        `tickerSetting`,
+        tickerSetting
+      );
+    }
     return orderData;
   }
 
   async _updateAccount(accountVersion, dbTransaction) {
     /* !!! HIGH RISK (start) !!! */
-    // this.logger.debug(`_updateAccount accountVersion`, accountVersion)
-    let accountVersionId, newAccountVersion;
+    let accountVersionId, newAccountVersion, newAccount;
     const account = await this.database.getAccountsByMemberId(
       accountVersion.member_id,
       {
@@ -5913,23 +6141,62 @@ class ExchangeHub extends Bot {
         dbTransaction,
       }
     );
-    if (SafeMath.lt(account.balance, accountVersion.locked))
+    if (!account) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 更新餘額出錯(_updateAccount) Account not found`,
+        `accountVersion`,
+        accountVersion
+      );
+      throw Error("Account not found.");
+    }
+    if (SafeMath.lt(account.balance, accountVersion.locked)) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 更新餘額出錯(_updateAccount) => account.balance[:${
+          account.balance
+        }] < accountVersion.locked[:${accountVersion.locked}] `,
+        `account`,
+        account,
+        `accountVersion`,
+        accountVersion
+      );
       throw Error("Available balance is not enough.");
+    }
     const oriAccBal = account.balance;
     const oriAccLoc = account.locked;
     const newAccBal = SafeMath.plus(oriAccBal, accountVersion.balance);
-    if (SafeMath.lt(newAccBal, "0"))
+    if (SafeMath.lt(newAccBal, "0")) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 更新餘額出錯(_updateAccount) => SafeMath.plus(oriAccBal[:${oriAccBal}], accountVersion.balance[:${
+          accountVersion.balance
+        }]) = newAccBal[:${newAccBal}] < "0"`,
+        `account`,
+        account,
+        `accountVersion`,
+        accountVersion
+      );
       throw Error("Available balance is not enough.");
+    }
     const newAccLoc = SafeMath.plus(oriAccLoc, accountVersion.locked);
     const amount = SafeMath.plus(newAccBal, newAccLoc);
-    if (SafeMath.lt(amount, "0")) throw Error("System error.");
-    const newAccount = {
-      id: account.id,
-      balance: newAccBal,
-      locked: newAccLoc,
-      updated_at: `"${accountVersion.created_at}"`,
-    };
-    const currency = this.coinsSettings.find(
+    if (SafeMath.lt(amount, "0")) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 更新餘額出錯(_updateAccount) => SafeMath.plus(newAccBal[:${newAccBal}], newAccLoc[:${newAccLoc}]) = amount[:${amount}] < "0"`,
+        `account`,
+        account,
+        `accountVersion`,
+        accountVersion
+      );
+      throw Error("System error.");
+    }
+    const currency = this.coinsSettings?.find(
       (curr) => curr.id === accountVersion.currency
     )?.code;
     newAccountVersion = {
@@ -5947,20 +6214,87 @@ class ExchangeHub extends Bot {
       currency: account.currency,
       fun: accountVersion.fun,
     };
-    accountVersionId = await this.database.insertAccountVersion(
-      newAccountVersion,
-      { dbTransaction }
-    );
-    await this.database.updateAccount(newAccount, { dbTransaction });
-    this._emitUpdateAccount({
-      memberId: accountVersion.member_id,
-      account: {
-        balance: newAccBal,
-        locked: newAccLoc,
-        currency: currency.toUpperCase(),
-        total: amount,
-      },
-    });
+    try {
+      accountVersionId = await this.database.insertAccountVersion(
+        newAccountVersion,
+        { dbTransaction }
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR insertAccountVersion 出錯(_updateAccount)`,
+        `accountVersion`,
+        accountVersion
+      );
+      throw error;
+    }
+    // const newAccount = {
+    //   id: account.id,
+    //   balance: newAccBal,
+    //   locked: newAccLoc,
+    //   updated_at: `"${accountVersion.created_at}"`,
+    // };
+    try {
+      // await this.database.updateAccount(newAccount, { dbTransaction });
+      await this.database.updateAccountByAccountVersion(
+        account.id,
+        accountVersion.created_at,
+        { dbTransaction }
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        }]!!!ERROR updateAccountByAccountVersion 出錯(_updateAccount)`,
+        `accountVersion`,
+        accountVersion
+      );
+      throw error;
+    }
+    try {
+      newAccount = await this.database.getAccountsByMemberId(
+        accountVersion.member_id,
+        {
+          options: { currency: accountVersion.currency },
+          limit: 1,
+          dbTransaction,
+        }
+      );
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        }]!!!ERROR getAccountsByMemberId 出錯(_updateAccount) memberId[${
+          accountVersion.member_id
+        }] currency[${accountVersion.currency}]`
+      );
+      throw error;
+    }
+    try {
+      this._emitUpdateAccount({
+        memberId: accountVersion.member_id,
+        account: {
+          balance: newAccount.balance,
+          locked: newAccount.locked,
+          currency: currency.toUpperCase(),
+          total: SafeMath.plus(newAccount.balance, newAccount.locked),
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR 前端通知出錯(_updateAccount) => _emitUpdateAccount (memberId[${
+          accountVersion.member_id
+        }], currency[${currency}], newAccBal[${newAccBal}], newAccLoc[${newAccLoc}], amount[${amount}])`,
+        `accountVersion`,
+        accountVersion
+      );
+      throw error;
+    }
     return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
   }
@@ -5973,7 +6307,6 @@ class ExchangeHub extends Bot {
    * @param {Object} order
    */
   _emitUpdateOrder({ memberId, instId, market, order }) {
-    // this.logger.debug(`_emitUpdateOrder difference`, order);
     this.orderBook.updateByDifference(memberId, instId, {
       add: [order],
     });
@@ -5981,10 +6314,6 @@ class ExchangeHub extends Bot {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    // this.logger.debug(
-    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.order}] _emitUpdateOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
-    //   this.orderBook.getDifference(memberId, instId)
-    // );
   }
   /**
    *
@@ -6001,11 +6330,6 @@ class ExchangeHub extends Bot {
       market: market,
       difference: this.orderBook.getDifference(memberId, instId),
     });
-    // this.logger.debug(`difference`, order);
-    // this.logger.debug(
-    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.marketOrder}] _emitUpdateMarketOrder[market:${market}][memberId:${memberId}][instId:${instId}]`,
-    //   this.orderBook.getDifference(memberId, instId)
-    // );
   }
 
   _emitNewTrade({ memberId, instId, market, trade }) {
@@ -6019,11 +6343,6 @@ class ExchangeHub extends Bot {
       market,
       difference: this.tradeBook.getDifference(instId),
     });
-    // this.logger.debug(`difference`, trade);
-    // this.logger.debug(
-    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.trade}] _emitNewTrade[market:${market}][memberId:${memberId}][instId:${instId}]`,
-    //   this.tradeBook.getDifference(instId)
-    // );
   }
 
   _emitUpdateAccount({ memberId, account }) {
@@ -6033,20 +6352,10 @@ class ExchangeHub extends Bot {
       memberId,
       this.accountBook.getDifference(memberId)
     );
-    // this.logger.debug(`difference`, account);
-    // this.logger.debug(
-    //   `[TO FRONTEND][${this.constructor.name}][EventBus.emit: ${Events.account}] _emitUpdateAccount[memberId:${memberId}]`,
-    //   this.accountBook.getDifference(memberId)
-    // );
   }
 
   async _eventListener() {
     EventBus.on(Events.account, (memberId, account) => {
-      // this.logger.debug(
-      //   `[${this.constructor.name}] EventBus.on(Events.account)`,
-      //   memberId,
-      //   account
-      // );
       this.broadcastAllPrivateClient(memberId, {
         type: Events.account,
         data: account,
@@ -6054,12 +6363,6 @@ class ExchangeHub extends Bot {
     });
 
     EventBus.on(Events.order, (memberId, market, order) => {
-      // this.logger.debug(
-      //   `[${this.constructor.name}] EventBus.on(Events.order)`,
-      //   memberId,
-      //   market,
-      //   order
-      // );
       this.broadcastPrivateClient(memberId, {
         market,
         type: Events.order,
@@ -6068,11 +6371,6 @@ class ExchangeHub extends Bot {
     });
 
     EventBus.on(Events.userStatusUpdate, (memberId, userStatus) => {
-      // this.logger.debug(
-      //   `[${this.constructor.name}] EventBus.on(Events.userStatusUpdate)`,
-      //   memberId,
-      //   userStatus
-      // );
       this.broadcastAllPrivateClient(memberId, {
         type: Events.userStatusUpdate,
         data: userStatus,
@@ -6081,12 +6379,6 @@ class ExchangeHub extends Bot {
 
     EventBus.on(Events.trade, (memberId, market, tradeData) => {
       if (this._isIncludeTideBitMarket(market)) {
-        // this.logger.debug(
-        //   `[${this.constructor.name}] EventBus.on(Events.trade)`,
-        //   memberId,
-        //   market,
-        //   tradeData
-        // );
         this.broadcastPrivateClient(memberId, {
           market,
           type: Events.trade,
@@ -6132,9 +6424,6 @@ class ExchangeHub extends Bot {
 
     EventBus.on(Events.orderDetailUpdate, async (instType, formatOrders) => {
       if (instType === Database.INST_TYPE.SPOT) {
-        // this.logger.debug(
-        //   ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [START]---------------`
-        // );
         // TODO: using message queue
         for (const formatOrder of formatOrders) {
           if (
@@ -6189,9 +6478,6 @@ class ExchangeHub extends Bot {
             }
           }
         }
-        // this.logger.debug(
-        //   ` ------------- [${this.constructor.name}] EventBus.on(Events.orderDetailUpdate [END]---------------`
-        // );
       }
     });
   }

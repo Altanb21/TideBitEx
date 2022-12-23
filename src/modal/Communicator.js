@@ -265,60 +265,6 @@ class Communicator {
     }
   }
 
-  async getOrderList(options) {
-    try {
-      const url = `/trade/orders-pending?${
-        options?.market ? `&market=${options.market}` : ""
-      }${options?.instId ? `&instId=${options.instId}` : ""}${
-        options?.instType ? `&instType=${options.instType}` : ""
-      }${options?.ordType ? `&ordType=${options.ordType}` : ""}${
-        options?.state ? `&state=${options.state}` : ""
-      }${options?.after ? `&after=${options.after}` : ""}${
-        options?.before ? `&before=${options.before}` : ""
-      }${options?.limit ? `&limit=${options.limit}` : ""}`;
-      // const res = await this._get(url);
-      const res = await this._request({
-        method: "GET",
-        url,
-      });
-      if (res.success) {
-        return res.data;
-      }
-      return Promise.reject({ message: res.message, code: res.code });
-    } catch (error) {
-      return Promise.reject({ ...error });
-    }
-  }
-
-  // Trade
-  /**
-   * [deprecated] 2022/11/17
-   */
-  async getOrderHistory(options) {
-    try {
-      const url = `/trade/orders-history?${
-        options?.market ? `&market=${options.market}` : ""
-      }${options?.instId ? `&instId=${options.instId}` : ""}${
-        options?.instType ? `&instType=${options.instType}` : "&instType=SPOT"
-      }${options?.ordType ? `&ordType=${options.ordType}` : ""}${
-        options?.state ? `&state=${options.state}` : ""
-      }${options?.after ? `&after=${options.after}` : ""}${
-        options?.before ? `&before=${options.before}` : ""
-      }${options?.limit ? `&limit=${options.limit}` : ""}`;
-      // const res = await this._get(url);
-      const res = await this._request({
-        method: "GET",
-        url,
-      });
-      if (res.success) {
-        return res.data;
-      }
-      return Promise.reject({ message: res.message, code: res.code });
-    } catch (error) {
-      return Promise.reject({ ...error });
-    }
-  }
-
   // Account
   async getAccounts(ccy) {
     try {
