@@ -3060,6 +3060,13 @@ class ExchangeHub extends Bot {
             fee: 0,
           };
           try {
+            this.logger.debug(
+              `[${new Date().toISOString()}][${
+                this.constructor.name
+              }]_updateAccount`,
+              accountVersion,
+              `accountVersion`
+            );
             await this._updateAccount(accountVersion, t);
           } catch (error) {
             this.logger.error(
@@ -6229,6 +6236,14 @@ class ExchangeHub extends Bot {
     //   updated_at: `"${accountVersion.created_at}"`,
     // };
     try {
+      this.logger.debug(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+      }] updateAccountByAccountVersion`,
+        `accountVersion`,
+        accountVersion
+      );
       // await this.database.updateAccount(newAccount, { dbTransaction });
       await this.database.updateAccountByAccountVersion(account.id, accountVersion.created_at,{ dbTransaction });
     } catch (error) {
