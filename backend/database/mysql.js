@@ -949,7 +949,7 @@ class mysql {
   }
 
   async getOrderList({ quoteCcy, baseCcy, memberId, orderType, state, asc }) {
-    if (!memberId || !quoteCcy || !baseCcy) throw Error(`missing params`);
+    if (!quoteCcy || !baseCcy) throw Error(`missing params`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
     if (quoteCcy) placeholder = [...placeholder, `bid = ${quoteCcy}`];

@@ -1820,6 +1820,8 @@ class ExchangeHub extends Bot {
         instId: query.tickerSetting?.instId,
         ordType: dbOrder.ord_type,
         filled: dbOrder.volume !== dbOrder.origin_volume,
+        created_at: dbOrder.created_at,
+        updated_at: dbOrder.updated_at,
       };
       orders = [...orders, order];
     }
@@ -2822,6 +2824,7 @@ class ExchangeHub extends Bot {
 
   async getOuterPendingOrders({ query }) {
     let // dbOrders = [],
+    orders=[],
       orderIds = [],
       emails = [],
       pendingOrders = [],
@@ -2830,16 +2833,9 @@ class ExchangeHub extends Bot {
       tickerSetting = this.tickersSettings[id],
       dbOrders = await this.getOrdersFromDb({
         ...query,
-        state: Database.OKX_ORDER_STATE_CODE.WAIT,
+        state: Database.ORDER_STATE_CODE.WAIT,
         tickerSetting,
       });
-    // totalCounts;
-    this.logger.debug(
-      `[${new Date().toLocaleTimeString()}][${
-        this.constructor.name
-      }] getOuterPendingOrders query`,
-      query
-    );
     switch (query.exchange) {
       case SupportedExchange.OKEX:
         // ++ TODO 2022/11/25 (需處理 pendingOrders 超過100筆的情況)
@@ -2847,13 +2843,21 @@ class ExchangeHub extends Bot {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
         if (res.success) {
+          this.logger.debug(
+            `[${new Date().toLocaleTimeString()}][${
+              this.constructor.name
+            }] getOuterPendingOrders okexConnector getAllOrders res.payload`,
+            res.payload,
+            `dbOrders`,
+            dbOrders
+          );
           for (let order of res.payload) {
             let parsedClOrdId,
               memberId,
               orderId,
               outerOrder,
               innerOrder,
-              alert = true;
+              alert = false;
             outerOrder = this.formatOkxOrder(order);
             parsedClOrdId = Utils.parseClOrdId(order.clOrdId);
             if (parsedClOrdId) {
@@ -2863,24 +2867,25 @@ class ExchangeHub extends Bot {
               orderIds = [...orderIds, orderId];
               let index = dbOrders.findIndex(
                 (dbOrder) =>
-                  dbOrder.member_id === memberId && dbOrder.id === orderId
+                  SafeMath.eq(dbOrder.member_id, memberId) &&
+                  SafeMath.eq(dbOrder.id, orderId)
               );
               let dbOrder = dbOrders.splice(index, 1).shift();
-              innerOrder = this.innerOrder(dbOrder);
+              innerOrder = this.formatInnerOrder(dbOrder);
             }
             if (
               !SafeMath.eq(
-                order.outerOrder.accFillVolume,
+                outerOrder.accFillVolume,
                 innerOrder.accFillVolume
               ) ||
-              !SafeMath.eq(order.outerOrder.expect, innerOrder.expect) ||
-              !SafeMath.eq(order.outerOrder.received, innerOrder.received) ||
-              order.outerOrder.state !== innerOrder.state
+              !SafeMath.eq(outerOrder.expect, innerOrder.expect) ||
+              !SafeMath.eq(outerOrder.received, innerOrder.received) ||
+              outerOrder.state !== innerOrder.state
             ) {
               alert = true;
             }
             let processedOrder = {
-              id: innerOrder.id,
+              id: (innerOrder.orderId || outerOrder.outerOrder).toString(),
               clOrdId: order.clOrdId,
               instId: order.instId,
               memberId,
@@ -2888,21 +2893,21 @@ class ExchangeHub extends Bot {
               side: order.side,
               outerOrder,
               innerOrder,
-              price: order.innerOrder.price || order.outerOrder.price,
-              volume: order.innerOrder.volume || order.outerOrder.volume,
+              price: innerOrder.price || outerOrder.price,
+              volume: innerOrder.volume || outerOrder.volume,
               exchange: SupportedExchange.OKEX,
               feeCurrency: order.feeCcy,
               ts: parseInt(order.cTime),
               alert,
             };
-            pendingOrders = [...pendingOrders, processedOrder];
+            orders = [...orders, processedOrder];
           }
           for (let dbOrder of dbOrders) {
             let innerOrder = this.formatInnerOrder(dbOrder);
             if (!memberIds[dbOrder.member_id])
               memberIds[dbOrder.member_id] = dbOrder.member_id;
             let processedOrder = {
-              id: innerOrder.id,
+              id: innerOrder.orderId.toString(),
               instId: tickerSetting.instId,
               memberId: dbOrder.member_id,
               kind: dbOrder.ordType,
@@ -2921,21 +2926,21 @@ class ExchangeHub extends Bot {
               ).getTime(),
               alert: true,
             };
-            pendingOrders = [...pendingOrders, processedOrder];
+            orders = [...orders, processedOrder];
           }
           // getOrdersByIds
           // dbOrders = await this.database.getOrdersByIds(orderIds);
           emails = await this.database.getEmailsByMemberIds(
             Object.values(memberIds)
           );
-          for (let pendingOrder of pendingOrders) {
+          for (let order of orders) {
             let email = emails.find((obj) =>
-              SafeMath.eq(obj.id, pendingOrder.memberId)
+              SafeMath.eq(obj.id, order.memberId)
             )?.email;
             pendingOrders = [
               ...pendingOrders,
               {
-                ...pendingOrder,
+                ...order,
                 email: email,
               },
             ];
