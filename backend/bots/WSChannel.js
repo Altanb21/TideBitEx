@@ -71,7 +71,9 @@ class WSChannel extends Bot {
               args = parsed?.args;
             } catch (error) {
               this.logger.debug(
-                `[${new Date().toISOString()}] JSON.parse(message) error`,
+                `[${new Date().toISOString()}][${
+                  this.constructor.name
+                }] JSON.parse(message) error`,
                 message,
                 error
               );

@@ -1224,10 +1224,10 @@ class ExchangeHub extends Bot {
           refereeId: member.id,
         });
       } else {
-        this.logger.debug(
+        this.logger.error(
           `[${new Date().toLocaleTimeString()}][${
             this.constructor.name
-          }] !!! ERROR getMemberReferral getMemberReferral did not get referredByMember with refer_code[${
+          }] !!! ERROR getMemberReferral did not get referredByMember with refer_code[${
             member.refer
           }]`,
           `member`,
@@ -1238,7 +1238,7 @@ class ExchangeHub extends Bot {
         );
       }
     } catch (error) {
-      this.logger.debug(
+      this.logger.error(
         `[${new Date().toLocaleTimeString()}][${
           this.constructor.name
         }] !!! ERROR getMemberReferral 出錯`,

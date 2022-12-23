@@ -504,10 +504,10 @@ class Utils {
   }
 
   static initialLogger({ homeFolder, base }) {
-    const output = fs.createWriteStream(homeFolder + "/stdout.log", {
+    const output = fs.createWriteStream(homeFolder + "/error.log", {
       flags: "a",
     });
-    const errorOutput = fs.createWriteStream(homeFolder + "/stderr.log", {
+    const errorOutput = fs.createWriteStream(homeFolder + "/audit.log", {
       flags: "a",
     });
     _logger = new Console({ stdout: output, stderr: errorOutput });
