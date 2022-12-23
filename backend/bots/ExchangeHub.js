@@ -25,6 +25,7 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+const { removeZeroEnd } = require("../libs/Utils");
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};
@@ -55,6 +56,14 @@ class ExchangeHub extends Bot {
         this.tickersSettings = this._getTickersSettings();
         this.adminUsers = this._getAdminUsers();
         this.coinsSettings = this._getCoinsSettings();
+        this.coinsSettingsMap = this.coinsSettings.reduce(
+          (prev, coinSetting) => {
+            if (!prev[coinSetting.id.toString()])
+              prev[coinSetting.id.toString()] = { ...coinSetting };
+            return prev;
+          },
+          {}
+        );
         this.depositsSettings = this._getDepositsSettings();
         this.withdrawsSettings = this._getWithdrawsSettings();
         // this.priceList = await this.getPriceList();
@@ -219,7 +228,7 @@ class ExchangeHub extends Bot {
       }, []);
       this.adminUsers = adminUsers;
     } catch (error) {
-      this.logger.error(`_getAdminUsers`, error);
+      // this.logger.error(`_getAdminUsers`, error);
       process.exit(1);
     }
     return adminUsers;
@@ -288,7 +297,7 @@ class ExchangeHub extends Bot {
         return prev;
       }, {});
     } catch (error) {
-      this.logger.error(`_getTickersSettings`, error);
+      // this.logger.error(`_getTickersSettings`, error);
       process.exit(1);
     }
     return tickersSettings;
@@ -310,7 +319,7 @@ class ExchangeHub extends Bot {
           disable: coinSetting.disable === true ? true : false, // default: false
         }));
       } catch (error) {
-        this.logger.error(`_getCoinsSettings`, error);
+        // this.logger.error(`_getCoinsSettings`, error);
         process.exit(1);
       }
     }
@@ -343,7 +352,7 @@ class ExchangeHub extends Bot {
         }, {});
         this.depositsSettings = formatDepositsSettings;
       } catch (error) {
-        this.logger.error(`_getDepositsSettings`, error);
+        // this.logger.error(`_getDepositsSettings`, error);
         process.exit(1);
       }
     }
@@ -385,7 +394,7 @@ class ExchangeHub extends Bot {
         }, {});
         this.withdrawsSettings = formatWithdrawsSettings;
       } catch (error) {
-        this.logger.error(`_getWithdrawsSettings`, error);
+        // this.logger.error(`_getWithdrawsSettings`, error);
         process.exit(1);
       }
     }
@@ -467,7 +476,6 @@ class ExchangeHub extends Bot {
   async getPlatformAssets({ email, query }) {
     let result = null,
       coins = {},
-      coinsSettings,
       sources = {},
       hasError = false; //,
     const _accounts = await this.database.getTotalAccountsAssets();
@@ -477,11 +485,6 @@ class ExchangeHub extends Bot {
       return prev;
     }, {});
     // this.logger.debug(`_assetBalances`, _assetBalances);
-    coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-      if (!prev[coinSetting.id.toString()])
-        prev[coinSetting.id.toString()] = { ...coinSetting };
-      return prev;
-    }, {});
     for (let exchange of Object.keys(SupportedExchange)) {
       let source = SupportedExchange[exchange];
       switch (source) {
@@ -510,7 +513,7 @@ class ExchangeHub extends Bot {
       try {
         // 需拿交易所所有用戶餘額各幣種的加總
         for (let _account of _accounts) {
-          let coinSetting = coinsSettings[_account.currency.toString()];
+          let coinSetting = this.coinsSettingsMap[_account.currency.toString()];
           if (coinSetting) {
             const sum = SafeMath.plus(
               _account.total_balace,
@@ -592,7 +595,7 @@ class ExchangeHub extends Bot {
         });
         // 需要有紀錄水位限制的檔案，預計加在 coins.yml
       } catch (error) {
-        this.logger.error(error);
+        // this.logger.error(error);
         let message = error.message;
         result = new ResponseFormat({
           message,
@@ -3022,7 +3025,10 @@ class ExchangeHub extends Bot {
             }
           }
         } catch (error) {
-          this.logger.error(error);
+          this.logger.error(
+            `postPlaceOrder[${new Date().toISOString()}]`,
+            error
+          );
           await t.rollback();
           response = new ResponseFormat({
             message: error.message,
@@ -3973,7 +3979,7 @@ class ExchangeHub extends Bot {
         : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
     let count = await this.database.countOuterTrades({
       exchangeCode: Database.EXCHANGE.OKEX,
-      orderId: dbOrder.id,
+      id: apiOrder.tradeId,
     });
     orderTradesCount = count["counts"];
     updatedOrder = {
@@ -3988,10 +3994,11 @@ class ExchangeHub extends Bot {
     };
     // ++ TODO high priority !!!
     // this.logger.debug(
-    //   `abnormalOrderHandler calculator updatedOrder`,
+    //   `abnormalOrderHandler combined dbOrder & apiOrder get updatedOrder`,
     //   updatedOrder
     // );
-    await this.database.updateOrder(updatedOrder, { dbTransaction });
+    return updatedOrder;
+    // await this.database.updateOrder(updatedOrder, { dbTransaction });
   }
 
   /**
@@ -4079,6 +4086,48 @@ class ExchangeHub extends Bot {
     try {
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
       orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
+      orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
+      // 3. 根據 data side （BUY，SELL）需要分別計算
+      // 3.1 order 新的鎖定金額
+      // 3.2 order 新的 fund receiced
+      if (data.side === Database.ORDER_SIDE.BUY) {
+        orderLocked = SafeMath.minus(dbOrder.locked, value);
+        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
+      }
+      if (data.side === Database.ORDER_SIDE.SELL) {
+        orderLocked = SafeMath.minus(dbOrder.locked, data.fillSz);
+        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
+      }
+      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
+      // 4.1 更新 order doneAt
+      // 4.2 更新 order state
+      // this.logger.debug(`calculator orderVolume`, orderVolume);
+      if (SafeMath.eq(orderVolume, "0")) {
+        orderState = Database.ORDER_STATE_CODE.DONE;
+        doneAt = now;
+        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+        // if (SafeMath.gt(orderLocked, 0)) {
+        // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
+        // this.logger.debug(
+        //   `calculator orderFullFilledAccountVersion`,
+        //   orderFullFilledAccountVersion
+        // );
+        // }
+      } else if (SafeMath.gt(orderVolume, "0")) {
+        orderState = Database.ORDER_STATE_CODE.WAIT;
+      }
+      // 根據前 5 點 可以得到最終需要更新的 order
+      updatedOrder = {
+        id: dbOrder.id,
+        volume: orderVolume,
+        state: orderState,
+        locked: orderLocked,
+        funds_received: orderFundsReceived,
+        trades_count: orderTradesCount,
+        updated_at: `"${now}"`,
+        done_at: `"${doneAt}"`,
+      };
       if (
         SafeMath.lt(orderVolume, 0) ||
         SafeMath.lt(
@@ -4089,40 +4138,51 @@ class ExchangeHub extends Bot {
         /**
          * ALERT: handle abnormal order
          */
-        throw Error(
-          `abnormal order:update orderVolume less than 0(${SafeMath.lt(
+        this.logger.debug(
+          // throw Error(
+          `!!! ERROR !!!, abnormal order:update orderVolume:[${orderVolume}] less than 0(${SafeMath.lt(
             orderVolume,
             0
-          )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
+          )}) or orderVolume less than orderDetail(sz:[${
+            orderDetail.sz
+          }] - accFillSz:[${orderDetail.accFillSz}]) remain size( ${SafeMath.lt(
             orderVolume,
             SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
           )})`
         );
-        // throw OuterTradeError({
-        //   message: `abnormal order:update orderVolume less than 0(${SafeMath.lt(
-        //     orderVolume,
-        //     0
-        //   )}) or orderVolume less than orderDetail remain size( ${SafeMath.lt(
-        //     orderVolume,
-        //     SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
-        //   )})`,
-        //   code: Codes.ABNORMAL_ORDER,
-        //   data: {
-        //     dbOrder,
-        //     orderDetail,
-        //   },
-        // });
+        try {
+          updatedOrder = await this.abnormalOrderHandler({
+            dbOrder,
+            apiOrder: orderDetail,
+          });
+        } catch (error) {
+          throw error;
+        }
       }
-      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
-      orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
+
+      if (SafeMath.eq(updatedOrder.orderVolume, "0")) {
+        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+        if (SafeMath.gt(updatedOrder.orderLocked, 0)) {
+          orderFullFilledAccountVersion = {
+            member_id: member.id,
+            currency: dbOrder.bid,
+            created_at: now,
+            updated_at: now,
+            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+            reason: Database.REASON.ORDER_FULLFILLED,
+            fun: Database.FUNC.UNLOCK_FUNDS,
+            fee: 0,
+            balance: updatedOrder.orderLocked,
+            locked: SafeMath.mult(updatedOrder.orderLocked, "-1"),
+            // ++TODO modifiable_id
+          };
+        }
+      }
+
       // 3. 根據 data side （BUY，SELL）需要分別計算
-      // 3.1 order 新的鎖定金額
-      // 3.2 order 新的 fund receiced
       // 3.3 voucher 及 account version 的手需費
       // 3.4 voucher 與 account version 裡面的手續費是對應的
       if (data.side === Database.ORDER_SIDE.BUY) {
-        orderLocked = SafeMath.minus(dbOrder.locked, value);
-        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
         trend = Database.ORDER_KIND.BID;
         askFee = 0;
         bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
@@ -4148,8 +4208,6 @@ class ExchangeHub extends Bot {
         };
       }
       if (data.side === Database.ORDER_SIDE.SELL) {
-        orderLocked = SafeMath.minus(dbOrder.locked, data.fillSz);
-        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
         trend = Database.ORDER_KIND.ASK;
         askFee = SafeMath.mult(value, askFeeRate);
         refGrossFee = askFee;
@@ -4214,49 +4272,6 @@ class ExchangeHub extends Bot {
         // trade_fk: data?.tradeId, ++ TODO
       };
       // this.logger.debug(`calculator trade`, trade);
-
-      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
-      // 4.1 更新 order doneAt
-      // 4.2 更新 order state
-      // this.logger.debug(`calculator orderVolume`, orderVolume);
-      if (SafeMath.eq(orderVolume, "0")) {
-        orderState = Database.ORDER_STATE_CODE.DONE;
-        doneAt = now;
-        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
-        if (SafeMath.gt(orderLocked, 0)) {
-          orderFullFilledAccountVersion = {
-            member_id: member.id,
-            currency: dbOrder.bid,
-            created_at: now,
-            updated_at: now,
-            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
-            reason: Database.REASON.ORDER_FULLFILLED,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-            fee: 0,
-            balance: orderLocked,
-            locked: SafeMath.mult(orderLocked, "-1"),
-            // ++TODO modifiable_id
-          };
-          // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
-          // this.logger.debug(
-          //   `calculator orderFullFilledAccountVersion`,
-          //   orderFullFilledAccountVersion
-          // );
-        }
-      } else if (SafeMath.gt(orderVolume, "0")) {
-        orderState = Database.ORDER_STATE_CODE.WAIT;
-      }
-      // 根據前 5 點 可以得到最終需要更新的 order
-      updatedOrder = {
-        id: dbOrder.id,
-        volume: orderVolume,
-        state: orderState,
-        locked: orderLocked,
-        funds_received: orderFundsReceived,
-        trades_count: orderTradesCount,
-        updated_at: `"${now}"`,
-        done_at: `"${doneAt}"`,
-      };
       if (referredByMember) {
         // this.logger.debug(`calculator referredByMember`, referredByMember);
         // this.logger.debug(`calculator memberReferral`, memberReferral);
@@ -4377,8 +4392,8 @@ class ExchangeHub extends Bot {
         case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
           // 確保 cancel order 的 locked 金額有還給用戶
           let dbCancelOrderAccountVersions =
-            await this.database.getAccountVersionsByModifiableId(
-              dbOrder.id,
+            await this.database.getAccountVersionsByModifiableIds(
+              [dbOrder.id],
               Database.MODIFIABLE_TYPE.ORDER
             );
           let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
@@ -4549,8 +4564,8 @@ class ExchangeHub extends Bot {
           tradeId
         );
         dbAccountVersions =
-          await this.database.getAccountVersionsByModifiableId(
-            tradeId,
+          await this.database.getAccountVersionsByModifiableIds(
+            [tradeId],
             Database.MODIFIABLE_TYPE.TRADE
           );
         throw Error(
@@ -4926,14 +4941,18 @@ class ExchangeHub extends Bot {
               referredByMember: referredByMember,
               memberReferral: memberReferral,
             });
+            // this.logger.debug(`calculator result`, result);
           } catch (error) {
             this.logger.error(`calculator error`, error);
             // if (error.code === Codes.ABNORMAL_ORDER) {
             stop = true;
             try {
-              await this.abnormalOrderHandler({
+              await this.updateOuterTrade({
+                id: data.tradeId,
+                currency: market.code,
+                status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
                 dbOrder: order,
-                apiOrder: orderDetail,
+                member,
                 dbTransaction,
               });
               await dbTransaction.commit();
@@ -5005,15 +5024,16 @@ class ExchangeHub extends Bot {
               await dbTransaction.commit();
             } catch (error) {
               this.logger.error(`updater error`, error);
-              if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
-                stop = true;
-                await this.updateOuterTrade({
-                  id: data.tradeId,
-                  status: Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS,
-                  dbTransaction,
-                });
-                await dbTransaction.commit();
-              } else throw error;
+              // if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
+              stop = true;
+              await this.updateOuterTrade({
+                id: data.tradeId,
+                status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+                currency: market.code,
+                dbTransaction,
+              });
+              await dbTransaction.commit();
+              // } else throw error;
             }
             // this.logger.debug(`processor complete dbTransaction commit`);
           } else await dbTransaction.rollback();
@@ -5115,7 +5135,6 @@ class ExchangeHub extends Bot {
       auditRecords,
       lastestAuditAccountVersionId,
       lastestAuditRecords,
-      coinsSettings,
       result = {
         memberId,
         accounts: {},
@@ -5137,10 +5156,7 @@ class ExchangeHub extends Bot {
         if (!prev[curr.id]) prev[curr.id] = curr;
         return prev;
       }, {});
-      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
-        return prev;
-      }, {});
+
       if (Object.keys(accounts).length > 0) {
         for (let accountId of Object.keys(accounts)) {
           let account = accounts[accountId],
@@ -5154,7 +5170,8 @@ class ExchangeHub extends Bot {
             );
           result.accounts[accountId] = {
             accountId,
-            currency: coinsSettings[account.currency]?.code,
+            currency: this.coinsSettingsMap[account.currency]?.code,
+            currencyId: this.coinsSettingsMap[account.currency]?.id,
             balance: {
               current: Utils.removeZeroEnd(account.balance),
               shouldBe: correctBalance,
@@ -5302,21 +5319,12 @@ class ExchangeHub extends Bot {
     }
   }
 
-  /**
-   * ++ TODO test is required
-   * 還沒有在 default.config.toml 上註冊，所以目前是無法呼叫的
-   * audit_records table 還沒有建立
-   */
   async fixAbnormalAccount({ params, email }) {
     // this.logger.debug(`fixAbnormalAccount email`, email, `params`, params);
     let result,
       account,
       auditRecord,
       currentUser = this.adminUsers.find((user) => user.email === email),
-      coinsSettings = this.coinsSettings.reduce((prev, coinSetting) => {
-        if (!prev[coinSetting.id]) prev[coinSetting.id] = { ...coinSetting };
-        return prev;
-      }, {}),
       dbTransaction;
     if (!currentUser.roles?.includes("root"))
       result = new ResponseFormat({
@@ -5395,7 +5403,7 @@ class ExchangeHub extends Bot {
             message: "auditorAccounts",
             payload: {
               accountId: params.id,
-              currency: coinsSettings[auditRecord.currency]?.code,
+              currency: this.coinsSettingsMap[auditRecord.currency]?.code,
               balance: {
                 current: Utils.removeZeroEnd(auditRecord.expect_balance),
                 shouldBe: Utils.removeZeroEnd(auditRecord.expect_balance),
@@ -5422,6 +5430,225 @@ class ExchangeHub extends Bot {
     }
     // this.logger.debug(`fixAbnormalAccount result`, result);
     return result;
+  }
+
+  async auditOrder(order) {
+    let alert = false,
+      trades = [],
+      vouchers = [],
+      baseUnit = this.coinsSettingsMap[order.ask.toString()]?.code,
+      quoteUnit = this.coinsSettingsMap[order.bid.toString()]?.code,
+      auditedOrder = {
+        baseUnit,
+        quoteUnit,
+        ...order,
+        type: Database.ORDER_SIDE[order.type],
+        state: Database.DB_STATE_CODE[order.state],
+        price: removeZeroEnd(order.price),
+        volume: removeZeroEnd(order.volume),
+        origin_volume: removeZeroEnd(order.origin_volume),
+        locked: removeZeroEnd(order.locked),
+        origin_locked: removeZeroEnd(order.origin_locked),
+        funds_received: removeZeroEnd(order.funds_received),
+        updated_at: order.updated_at
+          .toString()
+          .substring(0, 19)
+          .replace("T", " "),
+        // accountVersions: accountVersionsByOrder,
+      };
+    // 1. getVouchers
+    vouchers = await this.database.getVouchersByOrderId(order.id);
+    // 2. getTrades
+    let ids = vouchers.map((v) => v.trade_id);
+    trades = await this.database.getTradesByIds(ids);
+    auditedOrder.trades_count = {
+      expect: auditedOrder.trades_count,
+      real: vouchers.length,
+      alert:
+        !SafeMath.eq(auditedOrder.trades_count, vouchers.length) ||
+        trades.length !== vouchers.length,
+    };
+    let fundsReceived = vouchers.reduce((prev, curr) => {
+      prev = SafeMath.plus(
+        prev,
+        order.type === Database.TYPE.ORDER_BID ? curr.volume : curr.value
+      );
+      return prev;
+    }, 0);
+    auditedOrder.funds_received = {
+      expect: fundsReceived,
+      real: auditedOrder.funds_received,
+      alert: !SafeMath.eq(auditedOrder.funds_received, fundsReceived),
+    };
+    // 3. getAccountVersions
+    let accountVersionsByOrder =
+      await this.database.getAccountVersionsByModifiableIds(
+        [auditedOrder.id],
+        Database.MODIFIABLE_TYPE.ORDER
+      );
+    auditedOrder.accountVersions = accountVersionsByOrder.map((v) => ({
+      ...v,
+      currency: this.coinsSettingsMap[v.currency]?.code,
+      balance: removeZeroEnd(v.balance),
+      locked: removeZeroEnd(v.locked),
+      fee: removeZeroEnd(v.fee),
+      // created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
+    }));
+    let accountVersionsByTrade =
+      await this.database.getAccountVersionsByModifiableIds(
+        ids,
+        Database.MODIFIABLE_TYPE.TRADE
+      );
+    vouchers = vouchers.map((v) => {
+      let add,
+        sub,
+        expectValue,
+        realValue,
+        expectVolume,
+        realVolume,
+        isValueCorrect,
+        isVolumeCorrect,
+        accountVersions,
+        accountVersionAdds = [],
+        accountVersionSubs = [];
+      accountVersions = accountVersionsByTrade
+        .filter(
+          (acc) =>
+            SafeMath.eq(acc.member_id, auditedOrder.member_id) &&
+            SafeMath.eq(acc.modifiable_id, v.trade_id)
+        )
+        .map((v) => {
+          if (v.reason === Database.REASON.STRIKE_ADD)
+            accountVersionAdds = [...accountVersionAdds, v];
+          if (v.reason === Database.REASON.STRIKE_SUB)
+            accountVersionSubs = [...accountVersionSubs, v];
+          return {
+            ...v,
+            currency: this.coinsSettingsMap[v.currency]?.code,
+            balance: removeZeroEnd(v.balance),
+            locked: removeZeroEnd(v.locked),
+            fee: removeZeroEnd(v.fee),
+            // created_at: v.created_at
+            //   .toString()
+            //   .substring(0, 19)
+            //   .replace("T", " "),
+          };
+        });
+      add = accountVersionAdds.reduce((prev, accV) => {
+        prev = SafeMath.plus(prev, SafeMath.plus(accV.balance, accV.fee));
+        return prev;
+      }, 0);
+      sub = accountVersionSubs.reduce((prev, accV) => {
+        prev = SafeMath.plus(prev, accV.locked);
+        return prev;
+      }, 0);
+      realValue = removeZeroEnd(v.value);
+      realVolume = removeZeroEnd(v.volume);
+      if (order.type === Database.TYPE.ORDER_BID) {
+        // this.logger.debug(`accountVersionAdds add${add}`, accountVersionAdds);
+        // this.logger.debug(`accountVersionSubs sub${sub}`, accountVersionSubs);
+        expectVolume = add;
+        expectValue = SafeMath.mult(sub, "-1");
+        // this.logger.debug(`expectVolume`, expectVolume);
+        // this.logger.debug(`expectValue`, expectValue);
+      } else {
+        expectVolume = SafeMath.mult(sub, "-1");
+        expectValue = add;
+      }
+      isValueCorrect = SafeMath.eq(expectValue, realValue);
+      isVolumeCorrect = SafeMath.eq(expectVolume, realVolume);
+      if (
+        auditedOrder.trades_count.alert ||
+        auditedOrder.funds_received.alert ||
+        !isValueCorrect ||
+        !isVolumeCorrect
+      )
+        alert = true;
+      return {
+        ...v,
+        price: removeZeroEnd(v.price),
+        volume: {
+          expect: expectVolume,
+          real: realVolume,
+          alert: !isVolumeCorrect,
+        },
+        value: { expect: expectValue, real: realValue, alert: !isValueCorrect },
+        ask_fee: removeZeroEnd(v.ask_fee),
+        bid_fee: removeZeroEnd(v.bid_fee),
+        // created_at: v.created_at.toString().substring(0, 19).replace("T", " "),
+        accountVersions,
+      };
+    });
+    return {
+      alert,
+      order: auditedOrder,
+      vouchers,
+      trades,
+    };
+  }
+
+  /**
+   * Audit
+   * MemberBehavior: Deposit, Withdraw, Order(post or cancel)
+   */
+  async auditMemberBehavior({ query }) {
+    let { memberId, currency, start, end } = query;
+    let auditedOrder,
+      auditedOrders = [];
+    // 1. getDepositRecords
+    let depositRecords = await this.database.getDepositRecords({
+      memberId,
+      currency,
+      start,
+      end,
+    });
+    depositRecords = depositRecords.map((d) => ({
+      ...d,
+      amount: removeZeroEnd(d.amount),
+      fee: removeZeroEnd(d.fee),
+      currency: this.coinsSettingsMap[d.currency]?.code,
+    }));
+    // for (let deposit of depositRecords) {
+    //   balanceDiff = SafeMath.plus(balanceDiff, deposit.amount);
+    // }
+    // this.logger.debug(`depositRecords`, depositRecords);
+    // 2. getWithdrawRecords
+    let withdrawRecords = await this.database.getWithdrawRecords({
+      memberId,
+      currency,
+      start,
+      end,
+    });
+    withdrawRecords = withdrawRecords.map((w) => ({
+      ...w,
+      amount: removeZeroEnd(w.amount),
+      fee: removeZeroEnd(w.fee),
+      currency: this.coinsSettingsMap[w.currency]?.code,
+    }));
+    // for (let withdraw of withdrawRecords) {
+    //   balanceDiff = SafeMath.minus(balanceDiff, withdraw.amount);
+    // }
+    // this.logger.debug(`withdrawRecords`, withdrawRecords);
+    // 3. getOrderRecords
+    let orderRecords = await this.database.getOrderRecords({
+      currency,
+      memberId,
+      start,
+      end,
+    });
+    for (let order of orderRecords) {
+      auditedOrder = await this.auditOrder(order);
+      auditedOrders = [...auditedOrders, auditedOrder];
+    }
+    let payload = {
+      depositRecords,
+      withdrawRecords,
+      auditedOrders,
+    };
+    return new ResponseFormat({
+      message: "auditMemberBehavior",
+      payload,
+    });
   }
 
   async _updateOrderDetail(formatOrder) {
@@ -5738,30 +5965,6 @@ class ExchangeHub extends Bot {
     /* !!! HIGH RISK (end) !!! */
   }
 
-  /**
-   * [deprecated] 2022/10/19
-   * 沒有地方呼叫
-   */
-  async _calculateFee(orderId, trend, totalFee, dbTransaction) {
-    const vouchers = await this.database.getVouchersByOrderId(orderId, {
-      dbTransaction,
-    });
-    let totalVfee = "0";
-    for (const voucher of vouchers) {
-      if (voucher.trend === trend) {
-        switch (trend) {
-          case Database.ORDER_KIND.ASK:
-            totalVfee = SafeMath.plus(totalVfee, voucher.ask_fee);
-            break;
-          case Database.ORDER_KIND.BID:
-            totalVfee = SafeMath.plus(totalVfee, voucher.bid_fee);
-            break;
-          default:
-        }
-      }
-    }
-    return SafeMath.minus(totalFee, totalVfee);
-  }
   /**
    *
    * @param {String} memberId

@@ -38,8 +38,14 @@ class DBOperator {
     return this.database.getTotalAccountsAssets();
   }
 
-  async auditAccountBalance({ memberId, currency, startId }) {
-    return this.database.auditAccountBalance({ memberId, currency, startId });
+  async auditAccountBalance({ memberId, currency, startId, start, end }) {
+    return this.database.auditAccountBalance({
+      memberId,
+      currency,
+      startId,
+      start,
+      end,
+    });
   }
 
   async getAccountsByMemberId(
@@ -226,16 +232,16 @@ class DBOperator {
     });
   }
 
-  async getVouchersByOrderId(orderId, { dbTransaction }) {
-    return this.database.getVouchersByOrderId(orderId, { dbTransaction });
+  async getVouchersByOrderId(orderId) {
+    return this.database.getVouchersByOrderId(orderId);
   }
 
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
     return this.database.getVoucherByOrderIdAndTradeId(orderId, tradeId);
   }
 
-  async getAccountVersionsByModifiableId(id, type) {
-    return this.database.getAccountVersionsByModifiableId(id, type);
+  async getAccountVersionsByModifiableIds(ids, type) {
+    return this.database.getAccountVersionsByModifiableIds(ids, type);
   }
 
   async getTradeByTradeFk(tradeFk) {
@@ -355,6 +361,36 @@ class DBOperator {
       end,
       limit,
       offset,
+      asc,
+    });
+  }
+
+  async getDepositRecords({ memberId, currency, start, end, asc = true }) {
+    return this.database.getDepositRecords({
+      memberId,
+      currency,
+      start,
+      end,
+      asc,
+    });
+  }
+
+  async getWithdrawRecords({ memberId, currency, start, end, asc = true }) {
+    return this.database.getWithdrawRecords({
+      memberId,
+      currency,
+      start,
+      end,
+      asc,
+    });
+  }
+
+  async getOrderRecords({ memberId, currency, start, end, asc = true }) {
+    return this.database.getOrderRecords({
+      memberId,
+      currency,
+      start,
+      end,
       asc,
     });
   }

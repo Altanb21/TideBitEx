@@ -62,6 +62,8 @@ module.exports = {
   ORDER_SIDE: {
     SELL: "sell",
     BUY: "buy",
+    OrderAsk: "sell",
+    OrderBid: "buy",
   },
   ORDER_KIND: {
     ASK: "ask",
@@ -97,6 +99,7 @@ module.exports = {
     API_ORDER_CANCEL: 6,
     DB_ORDER_CANCEL: 5,
     DUPLICATE_PROCESS: 4,
+    CALCULATOR_ERROR: 3,
     // DB_ORDER_DONE: 4,
   },
   STATE: {

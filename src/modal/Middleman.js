@@ -258,6 +258,19 @@ class Middleman {
     }
   }
 
+  async auditorMemberBehavior({ memberId, currency, start, end }) {
+    try {
+      return await this.communicator.auditorMemberBehavior({
+        memberId,
+        currency,
+        start,
+        end,
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async fixAccountHandler(accountId) {
     try {
       return await this.communicator.fixAccountHandler(accountId);

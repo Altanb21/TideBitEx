@@ -100,6 +100,10 @@ const Sidebar = (props) => {
             page: "members",
             text: "用戶資產總覽",
           },
+          {
+            page: "member-behavior",
+            text: "用戶行為總覽",
+          },
         ]}
       />
       <DropDownMenu

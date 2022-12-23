@@ -1,0 +1,16 @@
+.member-behavior {
+  & .screen__search-bar {
+    justify-content: space-between;
+  }
+  & .screen__table{
+    border: none;
+  }
+  & .screen__table-rows{
+    border: none;
+  }
+  .withdraw__list,
+  .deposit__list{
+    border: 1px solid #707070;
+    border-radius: 5px;
+  }
+}

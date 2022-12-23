@@ -70,12 +70,18 @@ class mysql {
     }
   }
 
-  async auditAccountBalance({ memberId, currency, startId }) {
+  async auditAccountBalance({ memberId, currency, startId, start, end }) {
     if (!memberId) throw Error(`memberId is required`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
     if (currency) placeholder = [...placeholder, `currency = ${currency}`];
     if (startId) placeholder = [...placeholder, `id > ${startId}`];
+    if (start && end)
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
+      AND "${end}"`,
+      ];
     let condition = placeholder.join(` AND `);
     const query = `
       SELECT
@@ -869,6 +875,7 @@ class mysql {
       : limit
       ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
       : ``;
+    if (!whereCondition) throw Error(`missing where condition`);
     const query = `
       SELECT
 	        orders.id,
@@ -926,6 +933,7 @@ class mysql {
     if (state) placeholder = [...placeholder, `state = ${state}`];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
     SELECT
@@ -1277,6 +1285,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     let orderCodition = asc ? "ASC" : "DESC";
     let limitCondition = limit
       ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
@@ -1323,7 +1332,153 @@ class mysql {
     }
   }
 
+  async getDepositRecords({ memberId, currency, start, end, asc }) {
+    if (!memberId || !currency || !start || !end) throw Error(`missing params`);
+    let placeholder = [`aasm_state = 'accepted'`];
+    if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (start && end)
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
+    let orderCodition = asc ? "ASC" : "DESC";
+    const query = `
+    SELECT 
+        id,
+        account_id,
+        member_id,
+        currency,
+        amount,
+        fee,
+        aasm_state,
+        created_at,
+        updated_at
+    FROM 
+        deposits
+    ${whereCondition}
+    ORDER BY
+        created_at ${orderCodition}
+    ;`;
+    try {
+      // this.logger.debug("getDepositRecords", query);
+      const [deposits] = await this.db.query({
+        query,
+      });
+      return deposits;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getWithdrawRecords({ memberId, currency, start, end, asc }) {
+    if (!memberId || !currency || !start || !end) throw Error(`missing params`);
+    let placeholder = [`aasm_state = 'done'`];
+    if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (start && end)
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
+    let orderCodition = asc ? "ASC" : "DESC";
+    const query = `
+    SELECT 
+        id,
+        account_id,
+        member_id,
+        currency,
+        amount,
+        fee,
+        aasm_state,
+        created_at,
+        updated_at
+    FROM 
+        withdraws
+    ${whereCondition}
+    ORDER BY
+        created_at ${orderCodition}
+    ;`;
+    try {
+      // this.logger.debug("getWithdrawRecords", query);
+      const [withdraws] = await this.db.query({
+        query,
+      });
+      return withdraws;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
+  async getOrderRecords({ memberId, currency, start, end, asc }) {
+    if (!memberId || !start || !end) throw Error(`missing params`);
+    let placeholder = [];
+    if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
+    if (currency)
+      placeholder = [
+        ...placeholder,
+        `(ask = ${currency} OR bid = ${currency})`,
+      ];
+    if (start && end)
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
+    let orderCodition = asc ? "ASC" : "DESC";
+    const query = `
+    SELECT 
+        id,
+        bid,
+        ask,
+        currency,
+        price,
+        volume,
+        origin_volume,
+        state,
+        done_at,
+        type,
+        member_id,
+        created_at,
+        updated_at,
+        ord_type,
+        locked,
+        origin_locked,
+        funds_received,
+        trades_count
+    FROM 
+        orders
+    ${whereCondition}
+    ORDER BY
+        created_at ${orderCodition}
+    ;`;
+    try {
+      // this.logger.debug("getOrderRecords", query);
+      let [withdraws] = await this.db.query({
+        query,
+      });
+      return withdraws;
+    } catch (error) {
+      this.logger.error(error);
+      return [];
+    }
+  }
+
   async countOuterTrades({
+    id,
     exchangeCode,
     currency,
     type,
@@ -1340,6 +1495,7 @@ class mysql {
     )
       throw Error(`missing params`);
     let placeholder = [];
+    if (id) placeholder = [...id, `id = ${id}`];
     if (exchangeCode)
       placeholder = [...placeholder, `exchange_code = ${exchangeCode}`];
     if (orderId) placeholder = [...placeholder, `order_id = ${orderId}`];
@@ -1358,6 +1514,7 @@ class mysql {
       ];
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+      if (!whereCondition) throw Error(`missing where condition`);
     const query = `
     SELECT 
         count(*) as counts
@@ -1450,7 +1607,7 @@ class mysql {
     }
   }
 
-  async getVouchersByOrderId(orderId, { dbTransaction }) {
+  async getVouchersByOrderId(orderId) {
     const query = `
     SELECT
       vouchers.id,
@@ -1470,58 +1627,50 @@ class mysql {
       vouchers
     WHERE
       vouchers.order_id = ?
-    LIMIT 1;`;
+    ;`;
     try {
       // this.logger.debug("getVouchersByOrderId", query, orderId);
-      const [vouchers] = await this.db.query(
-        {
-          query,
-          values: [orderId],
-        },
-        {
-          transaction: dbTransaction,
-        }
-      );
+      const [vouchers] = await this.db.query({
+        query,
+        values: [orderId],
+      });
       return vouchers;
     } catch (error) {
       this.logger.error(error);
-      if (dbTransaction) throw error;
       return [];
     }
   }
 
   // 不應該超過 3 筆
-  async getAccountVersionsByModifiableId(id, type) {
+  async getAccountVersionsByModifiableIds(ids, type) {
+    if (!ids.length > 0) return [];
+    let placeholder = ids.join(`,`);
     const query = `
     SELECT
-      account_versions.id,
-      account_versions.member_id,
-      account_versions.account_id,
-      account_versions.reason,
-      account_versions.balance,
-      account_versions.locked,
-      account_versions.fee,
-      account_versions.amount,
-      account_versions.modifiable_id,
-      account_versions.modifiable_type,
-      account_versions.created_at,
-      account_versions.currency,
-      account_versions.fun
+      id,
+      member_id,
+      account_id,
+      reason,
+      balance,
+      locked,
+      fee,
+      amount,
+      modifiable_id,
+      modifiable_type,
+      created_at,
+      currency,
+      fun
     FROM
 	    account_versions
     WHERE
-	    account_versions.modifiable_id = ?
-      AND account_versions.modifiable_type = ?
-    LIMIT 10;`;
+	    modifiable_id in(${placeholder})
+      AND modifiable_type = ?
+    ;`;
     try {
-      // this.logger.debug(
-      //   "getAccountVersionsByModifiableId",
-      //   query,
-      //   `[${id}, ${type}]`
-      // );
+      // this.logger.debug("getAccountVersionsByModifiableId", query, `[${type}]`);
       const [accountVersions] = await this.db.query({
         query,
-        values: [id, type],
+        values: [type],
       });
       return accountVersions;
     } catch (error) {
@@ -1963,13 +2112,13 @@ class mysql {
     for (let order of orders) {
       values = [
         ...values,
-        `(${order.id}, ${order.exchangeCode}, ${order.memberId}, ${order.market}, ${
-          order.price
-        }, ${order.volume}, ${!!order.averageFilledPrice?order.averageFilledPrice:null}, ${
-          order.accumulateFilledvolume
-        }, "${order.state}", "${order.createdAt}", "${order.updatedAt}", '${
-          order.data
-        }')`,
+        `(${order.id}, ${order.exchangeCode}, ${order.memberId}, ${
+          order.market
+        }, ${order.price}, ${order.volume}, ${
+          !!order.averageFilledPrice ? order.averageFilledPrice : null
+        }, ${order.accumulateFilledvolume}, "${order.state}", "${
+          order.createdAt
+        }", "${order.updatedAt}", '${order.data}')`,
       ];
     }
     // this.logger.debug("[mysql] insertOuterOrders values", values);
@@ -2448,7 +2597,7 @@ class mysql {
       WHERE
         ${where}
       LIMIT 1;`;
-      this.logger.debug("updateAuditAccountRecord", query);
+      // this.logger.debug("updateAuditAccountRecord", query);
       await this.db.query(
         {
           query,
