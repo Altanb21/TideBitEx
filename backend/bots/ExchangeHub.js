@@ -2843,14 +2843,6 @@ class ExchangeHub extends Bot {
           query: { ...query, instType: Database.INST_TYPE.SPOT },
         });
         if (res.success) {
-          this.logger.debug(
-            `[${new Date().toLocaleTimeString()}][${
-              this.constructor.name
-            }] getOuterPendingOrders okexConnector getAllOrders res.payload`,
-            res.payload,
-            `dbOrders`,
-            dbOrders
-          );
           for (let order of res.payload) {
             let parsedClOrdId,
               memberId,
