@@ -2824,7 +2824,7 @@ class ExchangeHub extends Bot {
 
   async getOuterPendingOrders({ query }) {
     let // dbOrders = [],
-    orders=[],
+      orders = [],
       orderIds = [],
       emails = [],
       pendingOrders = [],
@@ -6236,22 +6236,25 @@ class ExchangeHub extends Bot {
     //   updated_at: `"${accountVersion.created_at}"`,
     // };
     try {
+      // await this.database.updateAccount(newAccount, { dbTransaction });
+      const result = await this.database.updateAccountByAccountVersion(
+        account.id,
+        accountVersion.created_at,
+        { dbTransaction }
+      );
       this.logger.debug(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
-      }] updateAccountByAccountVersion`,
-        `accountVersion`,
-        accountVersion
+          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        }]result updateAccountByAccountVersion`,
+        result
       );
-      // await this.database.updateAccount(newAccount, { dbTransaction });
-      await this.database.updateAccountByAccountVersion(account.id, accountVersion.created_at,{ dbTransaction });
     } catch (error) {
       this.logger.error(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
-      }]!!!ERROR updateAccountByAccountVersion 出錯(_updateAccount)`,
+          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        }]!!!ERROR updateAccountByAccountVersion 出錯(_updateAccount)`,
         `accountVersion`,
         accountVersion
       );

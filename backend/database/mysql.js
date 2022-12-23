@@ -2583,7 +2583,7 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateAccountByAccountVersion query`,
         query
       );
-      await this.db.query(
+      let result = await this.db.query(
         {
           query,
         },
@@ -2591,6 +2591,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      return result;
     } catch (error) {
       this.logger.error(
         `[sql][${new Date().toISOString()}] updateAccountByAccountVersion error`,
