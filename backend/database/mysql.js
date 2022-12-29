@@ -1322,10 +1322,11 @@ class mysql {
         trades
     ${whereCondition}
     ORDER BY
-        trades.created_at ${orderCodition}
+        created_at ${orderCodition}
     ${limitCondition}
     ;`;
     try {
+      this.logger.debug(`[sql][${new Date().toISOString()} getTrades`, query);
       const [outerTrades] = await this.db.query({
         query,
       });

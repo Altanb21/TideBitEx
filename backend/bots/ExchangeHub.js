@@ -2826,100 +2826,111 @@ class ExchangeHub extends Bot {
           payload: { totalCounts: counts, trades: processTrades },
         });
       case SupportedExchange.TIDEBIT:
-        let countTrades = await this.database.countTrades({
-          currency: tickerSetting.code,
-          type: Database.TIME_RANGE_TYPE.BETWEEN,
-          start: startDate,
-          end: endtDate,
-        });
-        counts = countTrades["counts"];
-        if (counts > 0) {
-          let rawTrades = await this.database.getTrades({
+        try{
+          let countTrades = await this.database.countTrades({
             currency: tickerSetting.code,
             type: Database.TIME_RANGE_TYPE.BETWEEN,
             start: startDate,
             end: endtDate,
-            limit,
-            offset,
           });
-          trades = [];
-          orderIds = {};
-          for (let rawTrade of rawTrades) {
-            if (!orderIds[rawTrade.ask_id])
-              orderIds = { ...orderIds, [rawTrade.ask_id]: rawTrade.ask_id };
-            if (!orderIds[rawTrade.bid_id])
-              orderIds = { ...orderIds, [rawTrade.bid_id]: rawTrade.bid_id };
-            if (!memberIds[rawTrade.ask_member_id])
-              memberIds = {
-                ...memberIds,
-                [rawTrade.ask_member_id]: rawTrade.ask_member_id,
-              };
-            if (!memberIds[rawTrade.bid_member_id])
-              memberIds = {
-                ...memberIds,
-                [rawTrade.bid_member_id]: rawTrade.bid_member_id,
-              };
-            let askTrade = this.formateTrade(
-              rawTrade,
-              tickerSetting,
-              Database.ORDER_KIND.ASK
-            );
-            let bidTrade = this.formateTrade(
-              rawTrade,
-              tickerSetting,
-              Database.ORDER_KIND.BID
-            );
-            trades = [...trades, askTrade, bidTrade];
+          counts = countTrades["counts"];
+          if (counts > 0) {
+            let rawTrades = await this.database.getTrades({
+              currency: tickerSetting.code,
+              type: Database.TIME_RANGE_TYPE.BETWEEN,
+              start: startDate,
+              end: endtDate,
+              limit,
+              offset,
+            });
+            this.logger.debug(`getOuterTradeFills rawTrades`, rawTrades)
+            trades = [];
+            orderIds = {};
+            for (let rawTrade of rawTrades) {
+              if (!orderIds[rawTrade.ask_id])
+                orderIds = { ...orderIds, [rawTrade.ask_id]: rawTrade.ask_id };
+              if (!orderIds[rawTrade.bid_id])
+                orderIds = { ...orderIds, [rawTrade.bid_id]: rawTrade.bid_id };
+              if (!memberIds[rawTrade.ask_member_id])
+                memberIds = {
+                  ...memberIds,
+                  [rawTrade.ask_member_id]: rawTrade.ask_member_id,
+                };
+              if (!memberIds[rawTrade.bid_member_id])
+                memberIds = {
+                  ...memberIds,
+                  [rawTrade.bid_member_id]: rawTrade.bid_member_id,
+                };
+              let askTrade = this.formateTrade(
+                rawTrade,
+                tickerSetting,
+                Database.ORDER_KIND.ASK
+              );
+              let bidTrade = this.formateTrade(
+                rawTrade,
+                tickerSetting,
+                Database.ORDER_KIND.BID
+              );
+              trades = [...trades, askTrade, bidTrade];
+            }
+            this.logger.debug(`getOuterTradeFills trades`, trades)
           }
-        }
-        // getOrdersByIds
-        orders = await this.database.getOrdersByIds(Object.values(orderIds));
-        orders = orders.reduce(
-          (acc, curr) => ({ ...acc, [curr.id]: curr }),
-          {}
-        );
-        emails = await this.database.getEmailsByMemberIds(
-          Object.values(memberIds)
-        );
-        emails = emails.reduce(
-          (acc, curr) => ({ ...acc, [curr.memberId]: curr }),
-          {}
-        );
-        // getVouchersByOrderIds
-        vouchers = await this.database.getVouchersByOrderIds(
-          Object.values(orderIds)
-        );
-        // getReferralCommissionsByMarkets
-        referralCommissions =
-          await this.database.getReferralCommissionsByMarkets({
-            markets: [tickerSetting.code],
-            start,
-            end,
-          });
-        processTrades = [];
-        for (let trade of trades) {
-          let order = orders[trade.orderId];
-          let voucher = vouchers.find(
-            (v) =>
-              SafeMath.eq(v.order_id, trade.orderId) &&
-              SafeMath.eq(v.trade_id, trade.id)
+          this.logger.debug(`getOuterTradeFills Object.values(orderIds)`, Object.values(orderIds))
+          // getOrdersByIds
+          orders = await this.database.getOrdersByIds(Object.values(orderIds));
+          orders = orders.reduce(
+            (acc, curr) => ({ ...acc, [curr.id]: curr }),
+            {}
           );
-          processTrades = [
-            ...processTrades,
-            {
-              ...trade,
-              email: emails[order.member_id],
-              voucherId: voucher.id,
-              innerTrade: {
-                ...trade.innerTrade,
-                price: Utils.removeZeroEnd(order.price),
-                volume: Utils.removeZeroEnd(order.volume),
+          emails = await this.database.getEmailsByMemberIds(
+            Object.values(memberIds)
+          );
+          this.logger.debug(`getOuterTradeFills emails`, emails)
+          emails = emails.reduce(
+            (acc, curr) => ({ ...acc, [curr.memberId]: curr }),
+            {}
+          );
+          this.logger.debug(`getOuterTradeFills emails`, emails)
+          // getVouchersByOrderIds
+          vouchers = await this.database.getVouchersByOrderIds(
+            Object.values(orderIds)
+          );
+          this.logger.debug(`getOuterTradeFills vouchers`, vouchers)
+          // getReferralCommissionsByMarkets
+          referralCommissions =
+            await this.database.getReferralCommissionsByMarkets({
+              markets: [tickerSetting.code],
+              start,
+              end,
+            });
+          processTrades = [];
+          for (let trade of trades) {
+            let order = orders[trade.orderId];
+            let voucher = vouchers.find(
+              (v) =>
+                SafeMath.eq(v.order_id, trade.orderId) &&
+                SafeMath.eq(v.trade_id, trade.id)
+            );
+            processTrades = [
+              ...processTrades,
+              {
+                ...trade,
+                email: emails[order.member_id],
+                voucherId: voucher.id,
+                innerTrade: {
+                  ...trade.innerTrade,
+                  price: Utils.removeZeroEnd(order.price),
+                  volume: Utils.removeZeroEnd(order.volume),
+                  fee: Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`]),
+                  state: Database.DB_STATE_CODE[order.state],
+                },
                 fee: Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`]),
-                state: Database.DB_STATE_CODE[order.state],
               },
-              fee: Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`]),
-            },
-          ];
+            ];
+          }
+          this.logger.debug(`getOuterTradeFills processTrades`, processTrades)
+        }catch(error){
+          this.logger.debug(`getOuterTradeFills`, error)
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
