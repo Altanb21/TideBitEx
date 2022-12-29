@@ -8,6 +8,7 @@ import DatePicker from "../components/DatePicker";
 import LoadingDialog from "../components/LoadingDialog";
 import ProfitTrendingChart from "../components/ProfitTrendingChart";
 import VoucherTile from "../components/VoucherTile";
+import SupportedExchange from "../constant/SupportedExchange";
 
 export const TableHeader = (props) => {
   const [ascending, setAscending] = useState(null);
@@ -177,14 +178,20 @@ const Vouchers = () => {
         }-${startTime.getDate()} 08:00:00`
       );
       let tickerSetting = tickersSettings[filterExchange][filterTicker];
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
-        exchange: tickerSetting.source,
-        start: start.toISOString().substring(0, 10),
-        end: end.toISOString().substring(0, 10),
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      if (tickerSetting.source === SupportedExchange.OKEX) {
+        const result = await storeCtx.getOuterTradesProfits({
+          ticker: filterTicker,
+          exchange: tickerSetting.source,
+          start: start.toISOString().substring(0, 10),
+          end: end.toISOString().substring(0, 10),
+        });
+        setChartData(
+          result.chartData
+            ? result.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(result.profits);
+      }
       const trades = await getVouchers({
         ticker: filterTicker,
         exchange: tickerSetting.source,
@@ -193,6 +200,14 @@ const Vouchers = () => {
         limit: limit,
         offset: 0,
       });
+      if (tickerSetting.source === SupportedExchange.TIDEBIT) {
+        setChartData(
+          trades.chartData
+            ? trades.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(trades.profits);
+      }
       filter(trades, {});
       setFilterOption(option);
       setIsLoading(false);
@@ -217,14 +232,20 @@ const Vouchers = () => {
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
       let tickerSetting = tickersSettings[filterExchange][filterTicker];
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
-        exchange: tickerSetting.source,
-        start,
-        end,
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      if (tickerSetting.source === SupportedExchange.OKEX) {
+        const result = await storeCtx.getOuterTradesProfits({
+          ticker: filterTicker,
+          exchange: tickerSetting.source,
+          start,
+          end,
+        });
+        setChartData(
+          result.chartData
+            ? result.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(result.profits);
+      }
       const trades = await getVouchers({
         ticker: filterTicker,
         exchange: tickerSetting.source,
@@ -233,6 +254,14 @@ const Vouchers = () => {
         offset: 0,
         limit: limit,
       });
+      if (tickerSetting.source === SupportedExchange.TIDEBIT) {
+        setChartData(
+          trades.chartData
+            ? trades.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(trades.profits);
+      }
       filter(trades, {});
       setIsLoading(false);
     },
@@ -257,14 +286,20 @@ const Vouchers = () => {
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
       let tickerSetting = tickersSettings[filterExchange][filterTicker];
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
-        exchange: tickerSetting.source,
-        start,
-        end,
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      if (tickerSetting.source === SupportedExchange.OKEX) {
+        const result = await storeCtx.getOuterTradesProfits({
+          ticker: filterTicker,
+          exchange: tickerSetting.source,
+          start,
+          end,
+        });
+        setChartData(
+          result.chartData
+            ? result.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(result.profits);
+      }
       const trades = await getVouchers({
         ticker: filterTicker,
         exchange: tickerSetting.source,
@@ -273,6 +308,14 @@ const Vouchers = () => {
         offset: 0,
         limit: limit,
       });
+      if (tickerSetting.source === SupportedExchange.TIDEBIT) {
+        setChartData(
+          trades.chartData
+            ? trades.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(trades.profits);
+      }
       filter(trades, {});
       setIsLoading(false);
     },
@@ -298,22 +341,30 @@ const Vouchers = () => {
       let tickers = Object.keys(tickersSettings[exchange]);
       setTickers(tickers);
       setFilterTicker(tickers[0]);
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: tickers[0],
-        exchange: exchange,
-        start: startDate,
-        end: endDate,
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      if (exchange === SupportedExchange.OKEX) {
+        const result = await storeCtx.getOuterTradesProfits({
+          ticker: tickers[0],
+          exchange: exchange,
+          start: startDate,
+          end: endDate,
+        });
+        setChartData(
+          result.chartData
+            ? result.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(result.profits);
+      }
       newTrades = await getVouchers({
         ticker: tickers[0],
         exchange: exchange,
         offset: (newPage - 1) * limit,
         limit: limit,
       });
-      // console.log(`newTrades`, newTrades);
-      // }
+      if (exchange === SupportedExchange.TIDEBIT) {
+        setChartData(newTrades.chartData);
+        setProfits(newTrades.profits);
+      }
       filter(newTrades, { exchange });
       setIsLoading(false);
     },
@@ -328,20 +379,30 @@ const Vouchers = () => {
       setIsLoading(true);
       setFilterTicker(ticker);
       let tickerSetting = tickersSettings[filterExchange][ticker];
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: ticker,
-        exchange: tickerSetting.source,
-        start: startDate,
-        end: endDate,
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      if (tickerSetting.source === SupportedExchange.OKEX) {
+        const result = await storeCtx.getOuterTradesProfits({
+          ticker: ticker,
+          exchange: tickerSetting.source,
+          start: startDate,
+          end: endDate,
+        });
+        setChartData(
+          result.chartData
+            ? result.chartData
+            : { data: {}, xaxisType: "string" }
+        );
+        setProfits(result.profits);
+      }
       newTrades = await getVouchers({
         ticker,
         exchange: tickerSetting.source,
         offset: (newPage - 1) * limit,
         limit: limit,
       });
+      if (tickerSetting.source === SupportedExchange.TIDEBIT) {
+        setChartData(newTrades.chartData);
+        setProfits(newTrades.profits);
+      }
       filter(newTrades, { ticker });
       setIsLoading(false);
     },
@@ -379,6 +440,14 @@ const Vouchers = () => {
           offset: (newPage - 1) * limit,
           limit: limit,
         });
+        if (tickerSetting.source === SupportedExchange.TIDEBIT) {
+          setChartData(
+            newTrades.chartData
+              ? newTrades.chartData
+              : { data: {}, xaxisType: "string" }
+          );
+          setProfits(newTrades.profits);
+        }
         // console.log(`newTrades`, newTrades);
       }
       filter(newTrades, {});
@@ -471,14 +540,20 @@ const Vouchers = () => {
             startTime.getMonth() + 1
           }-${startTime.getDate()} 08:00:00`
         );
-        const result = await storeCtx.getOuterTradesProfits({
-          ticker,
-          exchange,
-          start: start.toISOString().substring(0, 10),
-          end: end.toISOString().substring(0, 10),
-        });
-        setChartData(result.chartData);
-        setProfits(result.profits);
+        if (exchange === SupportedExchange.OKEX) {
+          const result = await storeCtx.getOuterTradesProfits({
+            ticker,
+            exchange,
+            start: start.toISOString().substring(0, 10),
+            end: end.toISOString().substring(0, 10),
+          });
+          setChartData(
+            result.chartData
+              ? result.chartData
+              : { data: {}, xaxisType: "string" }
+          );
+          setProfits(result.profits);
+        }
         const trades = await getVouchers({
           exchange,
           ticker,
@@ -487,6 +562,14 @@ const Vouchers = () => {
           offset: 0,
           limit,
         });
+        if (exchange === SupportedExchange.TIDEBIT) {
+          setChartData(
+            trades.chartData
+              ? trades.chartData
+              : { data: {}, xaxisType: "string" }
+          );
+          setProfits(trades.profits);
+        }
         filter(trades, { exchange });
         // console.log(trades);
         setIsLoading(false);
@@ -512,10 +595,10 @@ const Vouchers = () => {
           options={exchanges ? exchanges : []}
           selected={filterExchange}
         />
-        {/* <ProfitTrendingChart
+        <ProfitTrendingChart
           data={chartData.data ? Object.values(chartData.data) : []}
           xaxisType={chartData.xaxisType}
-        /> */}
+        />
         <div className="screen__search-bar">
           <TableDropdown
             className="screen__filter"
