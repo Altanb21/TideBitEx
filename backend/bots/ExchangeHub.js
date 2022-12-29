@@ -2834,6 +2834,7 @@ class ExchangeHub extends Bot {
             start: startDate,
             end: endtDate,
           });
+          this.logger.debug(`getOuterTradeFills countTrades`, countTrades);
           counts = countTrades["counts"];
           if (counts > 0) {
             let rawTrades = await this.database.getTrades({

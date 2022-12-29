@@ -1627,7 +1627,11 @@ class mysql {
       const [[counts]] = await this.db.query({
         query,
       });
-
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countTrades`,
+        query,
+        counts
+      );
       return counts;
     } catch (error) {
       this.logger.debug(
