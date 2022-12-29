@@ -45,7 +45,7 @@ const VoucherTile = (props) => {
           {trade.innerTrade?.state ? t(trade.innerTrade?.state) : "-"}
         </div>
         <div className="vouchers__text">
-          {trade.outerTrade.state ? t(trade.outerTrade.state) : "-"}
+          {trade.outerTrade?.state ? t(trade.outerTrade?.state) : "-"}
         </div>
       </td>
       <td className="screen__box screen__table-item screen__expand">
@@ -103,7 +103,7 @@ const VoucherTile = (props) => {
         {trade.outerTrade && (
           <div className={`vouchers__text`}>
             {trade.outerTrade?.fee
-              ? `${convertExponentialToDecimal(trade.outerTrade.fee)} ${
+              ? `${convertExponentialToDecimal(trade.outerTrade?.fee)} ${
                   trade.feeCurrency
                 }`
               : "-"}
