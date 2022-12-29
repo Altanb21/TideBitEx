@@ -298,7 +298,7 @@ const Vouchers = () => {
       let tickers = Object.keys(tickersSettings[exchange]);
       setTickers(tickers);
       setFilterTicker(tickers[0]);
-      // let tickerSetting = tickersSettings[exchange][filterTicker];
+      // let tickerSetting = tickersSettings[exchange][tickers[0]];
       const result = await storeCtx.getOuterTradesProfits({
         ticker: tickers[0],
         exchange: exchange,
@@ -508,8 +508,8 @@ const Vouchers = () => {
           offset: 0,
           limit,
         });
-        filter(trades, {});
-        console.log(trades)
+        filter(trades, { exchange });
+        console.log(trades);
         setIsLoading(false);
         return !prev;
       } else return prev;

@@ -26,6 +26,7 @@ const {
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
 const { removeZeroEnd } = require("../libs/Utils");
+const { trade } = require("../constants/Events");
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
   fetchedOrders = {};
@@ -2328,6 +2329,10 @@ class ExchangeHub extends Bot {
     return { chartData, profits };
   };
 
+  getTsfromDBDate(dbTime) {
+    return new Date(`${dbTime.toISOString().substring(0, 10)} 00:00:00`);
+  }
+
   /**  !!! Heavy Loading*/
   async getOuterTradesProfits({ query }) {
     // const pad = (n) => {
@@ -2345,98 +2350,97 @@ class ExchangeHub extends Bot {
       result,
       chartData,
       profits,
-      dbOuterTrades,
+      dbTrades,
       mDBOTrades;
-    if (!this.dbOuterTradesData[instId]) {
-      this.dbOuterTradesData[instId] = {
+    if (!this.dbTradesData[instId]) {
+      this.dbTradesData[instId] = {
         startTime: null,
         endTime: null,
         data: [],
       };
       // getOuterTradesWithFee asce
-      dbOuterTrades = await this.database.getOuterTrades({
-        type: Database.TIME_RANGE_TYPE.BETWEEN,
-        exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
-        status: Database.OUTERTRADE_STATUS.DONE,
-        currency: tickerSetting.code,
-        start: startDate,
-        end: endtDate,
-        asc: true,
-      });
-      this.dbOuterTradesData[instId].startTime = startTime;
-      this.dbOuterTradesData[instId].endTime = endTime;
-      this.dbOuterTradesData[instId].data = dbOuterTrades.map(
-        (dbOuterTrade) => ({
-          ...dbOuterTrade,
-        })
-      );
+      dbTrades =
+        exchange === SupportedExchange.TIDEBIT
+          ? await this.database.getTrades({
+              type: Database.TIME_RANGE_TYPE.BETWEEN,
+              currency: tickerSetting.code,
+              start: startDate,
+              end: endtDate,
+              asc: true,
+            })
+          : await this.database.getOuterTrades({
+              type: Database.TIME_RANGE_TYPE.BETWEEN,
+              exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+              status: Database.OUTERTRADE_STATUS.DONE,
+              currency: tickerSetting.code,
+              start: startDate,
+              end: endtDate,
+              asc: true,
+            });
+      this.dbTradesData[instId].startTime = startTime;
+      this.dbTradesData[instId].endTime = endTime;
+      this.dbTradesData[instId].data = dbTrades.map((dbOuterTrade) => ({
+        ...dbOuterTrade,
+      }));
     } else {
       if (
-        startTime >= this.dbOuterTradesData[instId].startTime &&
-        endTime <= this.dbOuterTradesData[instId].endTime
+        startTime >= this.dbTradesData[instId].startTime &&
+        endTime <= this.dbTradesData[instId].endTime
       ) {
-        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
-            let ts = new Date(
-              `${dbOuterTrades.create_at
-                .toISOString()
-                .substring(0, 10)} 00:00:00`
-            );
-            return ts >= startTime && ts <= endTime;
-          }
-        );
+        dbTrades = this.dbTradesData[instId].data.filter((dbTrades) => {
+          let ts = this.getTsfromDBDate(
+            exchange === SupportedExchange.TIDEBIT
+              ? dbTrades.created_at
+              : dbTrades.create_at
+          );
+          return ts >= startTime && ts <= endTime;
+        });
       }
       if (
-        startTime >= this.dbOuterTradesData[instId].startTime &&
-        endTime > this.dbOuterTradesData[instId].endTime
+        startTime >= this.dbTradesData[instId].startTime &&
+        endTime > this.dbTradesData[instId].endTime
       ) {
-        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
-            let ts = new Date(
-              `${dbOuterTrades.create_at
-                .toISOString()
-                .substring(0, 10)} 00:00:00`
-            );
-            return ts >= startTime && ts <= endTime;
-          }
-        );
+        dbTrades = this.dbTradesData[instId].data.filter((dbTrades) => {
+          let ts = this.getTsfromDBDate(
+            exchange === SupportedExchange.TIDEBIT
+              ? dbTrades.created_at
+              : dbTrades.create_at
+          );
+          return ts >= startTime && ts <= endTime;
+        });
         mDBOTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           status: Database.OUTERTRADE_STATUS.DONE,
           currency: tickerSetting.code,
           start: `${new Date(
-            this.dbOuterTradesData[instId].endTime
+            this.dbTradesData[instId].endTime
           ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
+            new Date(this.dbTradesData[instId].endTime).getMonth() + 1
           }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
+            new Date(this.dbTradesData[instId].endTime).getDate() + 1
           )} 23:59:59`,
           end: endtDate,
           asc: true,
         });
-        dbOuterTrades = dbOuterTrades.concat(mDBOTrades.map((t) => ({ ...t })));
-        this.dbOuterTradesData[instId].data = dbOuterTrades.map(
-          (dbOuterTrade) => ({
-            ...dbOuterTrade,
-          })
-        );
-        this.dbOuterTradesData[instId].endTime = endTime;
+        dbTrades = dbTrades.concat(mDBOTrades.map((t) => ({ ...t })));
+        this.dbTradesData[instId].data = dbTrades.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        this.dbTradesData[instId].endTime = endTime;
       }
       if (
-        startTime < this.dbOuterTradesData[instId].startTime &&
-        endTime <= this.dbOuterTradesData[instId].endTime
+        startTime < this.dbTradesData[instId].startTime &&
+        endTime <= this.dbTradesData[instId].endTime
       ) {
-        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
-            let ts = new Date(
-              `${dbOuterTrades.create_at
-                .toISOString()
-                .substring(0, 10)} 00:00:00`
-            );
-            return ts >= startTime && ts <= endTime;
-          }
-        );
+        dbTrades = this.dbTradesData[instId].data.filter((dbTrades) => {
+          let ts = this.getTsfromDBDate(
+            exchange === SupportedExchange.TIDEBIT
+              ? dbTrades.created_at
+              : dbTrades.create_at
+          );
+          return ts >= startTime && ts <= endTime;
+        });
         mDBOTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
@@ -2444,79 +2448,87 @@ class ExchangeHub extends Bot {
           currency: tickerSetting.code,
           start: startDate,
           end: `${new Date(
-            this.dbOuterTradesData[instId].startTime
+            this.dbTradesData[instId].startTime
           ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
+            new Date(this.dbTradesData[instId].startTime).getMonth() + 1
           }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
+            new Date(this.dbTradesData[instId].startTime).getDate() - 1
           )} 23:59:59`,
           asc: true,
         });
-        dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
-        this.dbOuterTradesData[instId].data = dbOuterTrades.map(
-          (dbOuterTrade) => ({
-            ...dbOuterTrade,
-          })
-        );
-        this.dbOuterTradesData[instId].startTime = startTime;
+        dbTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbTrades);
+        this.dbTradesData[instId].data = dbTrades.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        this.dbTradesData[instId].startTime = startTime;
       }
       if (
-        startTime < this.dbOuterTradesData[instId].startTime &&
-        endTime > this.dbOuterTradesData[instId].endTime
+        startTime < this.dbTradesData[instId].startTime &&
+        endTime > this.dbTradesData[instId].endTime
       ) {
-        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
-            let ts = new Date(
-              `${dbOuterTrades.create_at
-                .toISOString()
-                .substring(0, 10)} 00:00:00`
-            );
-            return ts >= startTime && ts <= endTime;
-          }
-        );
+        dbTrades = this.dbTradesData[instId].data.filter((dbTrades) => {
+          let ts = this.getTsfromDBDate(
+            exchange === SupportedExchange.TIDEBIT
+              ? dbTrades.created_at
+              : dbTrades.create_at
+          );
+          return ts >= startTime && ts <= endTime;
+        });
         mDBOTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           status: Database.OUTERTRADE_STATUS.DONE,
           currency: tickerSetting.code,
           start: `${new Date(
-            this.dbOuterTradesData[instId].endTime
+            this.dbTradesData[instId].endTime
           ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
+            new Date(this.dbTradesData[instId].endTime).getMonth() + 1
           }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
+            new Date(this.dbTradesData[instId].endTime).getDate() + 1
           )} 23:59:59`,
           end: endtDate,
           asc: true,
         });
-        dbOuterTrades = dbOuterTrades.concat(mDBOTrades.map((t) => ({ ...t })));
-        this.dbOuterTradesData[instId].endTime = endTime;
-        mDBOTrades = await this.database.getOuterTrades({
+        dbTrades = dbTrades.concat(mDBOTrades.map((t) => ({ ...t })));
+        this.dbTradesData[instId].endTime = endTime;
+        mDBOTrades =exchange === SupportedExchange.TIDEBIT
+        ? await this.database.getTrades({
+            type: Database.TIME_RANGE_TYPE.BETWEEN,
+            currency: tickerSetting.code,
+            start: startDate,
+            end: `${new Date(
+              this.dbTradesData[instId].startTime
+            ).getFullYear()}-${
+              new Date(this.dbTradesData[instId].startTime).getMonth() + 1
+            }-${Utils.pad(
+              new Date(this.dbTradesData[instId].startTime).getDate() - 1
+            )} 23:59:59`,
+            asc: true,
+          })
+        :  await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           status: Database.OUTERTRADE_STATUS.DONE,
           currency: tickerSetting.code,
           start: startDate,
           end: `${new Date(
-            this.dbOuterTradesData[instId].startTime
+            this.dbTradesData[instId].startTime
           ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
+            new Date(this.dbTradesData[instId].startTime).getMonth() + 1
           }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
+            new Date(this.dbTradesData[instId].startTime).getDate() - 1
           )} 23:59:59`,
           asc: true,
         });
-        dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
-        this.dbOuterTradesData[instId].data = dbOuterTrades.map(
-          (dbOuterTrade) => ({
-            ...dbOuterTrade,
-          })
-        );
-        this.dbOuterTradesData[instId].startTime = startTime;
+        dbTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbTrades);
+        this.dbTradesData[instId].data = dbTrades.map((dbOuterTrade) => ({
+          ...dbOuterTrade,
+        }));
+        this.dbTradesData[instId].startTime = startTime;
       }
     }
     // if (endTime - startTime < 3 * monthInterval) {
-    result = this.formateDailyProfitChart(dbOuterTrades);
+    result = this.formateDailyProfitChart(dbTrades);
     chartData = result.chartData;
     profits = result.profits;
     // } else {
@@ -2530,6 +2542,88 @@ class ExchangeHub extends Bot {
     });
   }
 
+  formateOuterTrade(dbOuterTrade) {
+    let outerTradeData = JSON.parse(dbOuterTrade.data),
+      outerTrade = {
+        orderId: outerTradeData.ordId,
+        exchange: SupportedExchange.OKEX,
+        price: outerTradeData.px, // if outer_trade data type is trade, this value will be null
+        volume: outerTradeData.sz, // if outer_trade data type is trade, this value will be null
+        fillPrice: outerTradeData.fillPx,
+        fillVolume: outerTradeData.fillSz,
+        fee: outerTradeData.avgPx
+          ? outerTradeData.fillFee // data source is OKx order
+          : outerTradeData.fee, // data source is Okx trade
+        state: Database.OKX_ORDER_STATE[outerTradeData.state],
+      },
+      tickerSetting =
+        this.tickersSettings[
+          outerTradeData.instId.toLowerCase().replace("-", "")
+        ],
+      innerTrade = {
+        orderId: dbOuterTrade.order_id,
+        exchange: SupportedExchange.TIDEBIT,
+      };
+
+    let trade = {
+      id: dbOuterTrade.id,
+      instId: outerTradeData.instId,
+      memberId: dbOuterTrade.memberId,
+      email: dbOuterTrade.email,
+      status: dbOuterTrade.status,
+      orderId: dbOuterTrade.order_id,
+      voucherId: dbOuterTrade.voucher_id,
+      marketCode: tickerSetting.code,
+      // kind: dbOuterTrade?.kind,
+      outerTrade,
+      innerTrade,
+      fillPrice: dbOuterTrade.voucher_price || outerTradeData.fillPx,
+      fillVolume: dbOuterTrade.voucher_volume || outerTradeData.fillSz,
+      fee: dbOuterTrade.voucher_fee
+        ? SafeMath.plus(dbOuterTrade.voucher_fee, outerTradeData.fee)
+        : dbOuterTrade.voucher_fee,
+      side: outerTradeData.side,
+      exchange: SupportedExchange.OKEX,
+      feeCurrency: outerTradeData.feeCcy || dbOuterTrade.voucher_fee_currency,
+      ts: new Date(dbOuterTrade.create_at).getTime(),
+      alert: false,
+    };
+    return trade;
+  }
+
+  formateTrade(rawTrade, tickerSetting, side) {
+    let trade = {
+      id: rawTrade.id,
+      instId: tickerSetting.instId,
+      memberId: rawTrade[`${side}_member_id`],
+      email: null,
+      orderId: rawTrade[`${side}_id`],
+      voucherId: null,
+      marketCode: tickerSetting.code,
+      // kind: dbOuterTrade?.kind,
+      outerTrade: null,
+      innerTrade: {
+        orderId: rawTrade[`${side}_id`],
+        exchange: SupportedExchange.TIDEBIT,
+        price: null,
+        volume: null,
+        fillPrice: Utils.removeZeroEnd(rawTrade.price),
+        fillVolume: Utils.removeZeroEnd(rawTrade.volume),
+        fee: null,
+        state: null, //Database.DB_STATE_CODE[order.state],
+      },
+      fillPrice: Utils.removeZeroEnd(rawTrade.price),
+      fillVolume: Utils.removeZeroEnd(rawTrade.volume),
+      fee: null,
+      side: Database.ORDER_SIDE[side],
+      exchange: SupportedExchange.TIDEBIT,
+      feeCurrency: tickerSetting.quoteUnit,
+      ts: new Date(rawTrade.created_at).getTime(),
+      alert: false,
+    };
+    return trade;
+  }
+
   async getOuterTradeFills({ query }) {
     let { exchange, start, end, limit, offset, instId } = query;
     let startDate = `${start} 00:00:00`;
@@ -2541,6 +2635,8 @@ class ExchangeHub extends Bot {
       processTrades = [],
       orderIds = [],
       voucherIds = [],
+      memberIds = [],
+      emails,
       orders = [],
       vouchers = [],
       counts;
@@ -2565,77 +2661,12 @@ class ExchangeHub extends Bot {
             offset,
           });
           for (let dbOuterTrade of dbOuterTrades) {
-            let outerTradeData = JSON.parse(dbOuterTrade.data),
-              outerTrade = {
-                orderId: outerTradeData.ordId,
-                exchange: SupportedExchange.OKEX,
-                price: outerTradeData.px, // if outer_trade data type is trade, this value will be null
-                volume: outerTradeData.sz, // if outer_trade data type is trade, this value will be null
-                fillPrice: outerTradeData.fillPx,
-                fillVolume: outerTradeData.fillSz,
-                fee: outerTradeData.avgPx
-                  ? outerTradeData.fillFee // data source is OKx order
-                  : outerTradeData.fee, // data source is Okx trade
-                state: Database.OKX_ORDER_STATE[outerTradeData.state],
-              },
-              tickerSetting =
-                this.tickersSettings[
-                  outerTradeData.instId.toLowerCase().replace("-", "")
-                ],
-              innerTrade = {
-                orderId: dbOuterTrade.order_id,
-                exchange: SupportedExchange.TIDEBIT,
-              };
+            let trade = this.formateOuterTrade(dbOuterTrade);
             if (dbOuterTrade.order_id && dbOuterTrade.voucher_id) {
               orderIds = [...orderIds, dbOuterTrade.order_id];
               voucherIds = [...voucherIds, dbOuterTrade.voucher_id];
-              // innerTrade = {
-              //   orderId: dbOuterTrade.order_id,
-              //   exchange: SupportedExchange.TIDEBIT,
-              // price: dbOuterTrade.order_price
-              //   ? Utils.removeZeroEnd(dbOuterTrade.order_price)
-              //   : null,
-              // volume: dbOuterTrade.order_origin_volume
-              //   ? Utils.removeZeroEnd(dbOuterTrade.order_origin_volume)
-              //   : null,
-              // fillPrice: dbOuterTrade.voucher_price
-              //   ? Utils.removeZeroEnd(dbOuterTrade.voucher_price)
-              //   : null,
-              // fillVolume: dbOuterTrade.voucher_volume
-              //   ? Utils.removeZeroEnd(dbOuterTrade.voucher_volume)
-              //   : null,
-              // fee: dbOuterTrade.voucher_fee
-              //   ? Utils.removeZeroEnd(dbOuterTrade.voucher_fee)
-              //   : null,
-              // };
             }
-            trades = [
-              ...trades,
-              {
-                id: dbOuterTrade.id,
-                instId: outerTradeData.instId,
-                memberId: dbOuterTrade.memberId,
-                email: dbOuterTrade.email,
-                status: dbOuterTrade.status,
-                voucherId: dbOuterTrade.voucher_id,
-                marketCode: tickerSetting.code,
-                // kind: dbOuterTrade?.kind,
-                outerTrade,
-                innerTrade,
-                fillPrice: dbOuterTrade.voucher_price || outerTradeData.fillPx,
-                fillVolume:
-                  dbOuterTrade.voucher_volume || outerTradeData.fillSz,
-                fee: dbOuterTrade.voucher_fee
-                  ? SafeMath.plus(dbOuterTrade.voucher_fee, outerTradeData.fee)
-                  : dbOuterTrade.voucher_fee,
-                side: outerTradeData.side,
-                exchange: SupportedExchange.OKEX,
-                feeCurrency:
-                  outerTradeData.feeCcy || dbOuterTrade.voucher_fee_currency,
-                ts: new Date(dbOuterTrade.create_at).getTime(),
-                alert: false,
-              },
-            ];
+            trades = [...trades, trade];
           }
           // getOrdersByIds
           orders = await this.database.getOrdersByIds(orderIds);
@@ -2767,6 +2798,106 @@ class ExchangeHub extends Bot {
               },
             ];
           }
+        }
+        return new ResponseFormat({
+          message: "getOuterTradeFills",
+          payload: { totalCounts: counts, trades: processTrades },
+        });
+      case SupportedExchange.TIDEBIT:
+        let countTrades = await this.database.countTrades({
+          currency: tickerSetting.code,
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          start: startDate,
+          end: endtDate,
+        });
+        counts = countTrades["counts"];
+        if (counts > 0) {
+          let rawTrades = await this.database.getTrades({
+            currency: tickerSetting.code,
+            type: Database.TIME_RANGE_TYPE.BETWEEN,
+            start: startDate,
+            end: endtDate,
+            limit,
+            offset,
+          });
+          trades = [];
+          orderIds = {};
+          for (let rawTrade of rawTrades) {
+            if (!orderIds[rawTrade.ask_id])
+              orderIds = { ...orderIds, [rawTrade.ask_id]: rawTrade.ask_id };
+            if (!orderIds[rawTrade.bid_id])
+              orderIds = { ...orderIds, [rawTrade.bid_id]: rawTrade.bid_id };
+            if (!memberIds[rawTrade.ask_member_id])
+              memberIds = {
+                ...memberIds,
+                [rawTrade.ask_member_id]: rawTrade.ask_member_id,
+              };
+            if (!memberIds[rawTrade.bid_member_id])
+              memberIds = {
+                ...memberIds,
+                [rawTrade.bid_member_id]: rawTrade.bid_member_id,
+              };
+            let askTrade = this.formateTrade(
+              rawTrade,
+              tickerSetting,
+              Database.ORDER_KIND.ASK
+            );
+            let bidTrade = this.formateTrade(
+              rawTrade,
+              tickerSetting,
+              Database.ORDER_KIND.BID
+            );
+            trades = [...trades, askTrade, bidTrade];
+          }
+        }
+        // getOrdersByIds
+        orders = await this.database.getOrdersByIds(Object.values(orderIds));
+        orders = orders.reduce(
+          (acc, curr) => ({ ...acc, [curr.id]: curr }),
+          {}
+        );
+        emails = await this.database.getEmailsByMemberIds(
+          Object.values(memberIds)
+        );
+        emails = emails.reduce(
+          (acc, curr) => ({ ...acc, [curr.memberId]: curr }),
+          {}
+        );
+        // getVouchersByOrderIds
+        vouchers = await this.database.getVouchersByOrderIds(
+          Object.values(orderIds)
+        );
+        // getReferralCommissionsByMarkets
+        referralCommissions =
+          await this.database.getReferralCommissionsByMarkets({
+            markets: [tickerSetting.code],
+            start,
+            end,
+          });
+        processTrades = [];
+        for (let trade of trades) {
+          let order = orders[trade.orderId];
+          let voucher = vouchers.find(
+            (v) =>
+              SafeMath.eq(v.order_id, trade.orderId) &&
+              SafeMath.eq(v.trade_id, trade.id)
+          );
+          processTrades = [
+            ...processTrades,
+            {
+              ...trade,
+              email: emails[order.member_id],
+              voucherId: voucher.id,
+              innerTrade: {
+                ...trade.innerTrade,
+                price: Utils.removeZeroEnd(order.price),
+                volume: Utils.removeZeroEnd(order.volume),
+                fee: Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`]),
+                state: Database.DB_STATE_CODE[order.state],
+              },
+              fee: Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`]),
+            },
+          ];
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
@@ -5666,7 +5797,7 @@ class ExchangeHub extends Bot {
         // accountVersions: accountVersionsByOrder,
       };
     // 1. getVouchers
-    vouchers = await this.database.getVouchersByOrderId(order.id);
+    vouchers = await this.database.getVouchersByOrderIds(order.id);
     // 2. getTrades
     let ids = vouchers.map((v) => v.trade_id);
     trades = await this.database.getTradesByIds(ids);
