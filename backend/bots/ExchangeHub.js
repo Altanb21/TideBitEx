@@ -2988,7 +2988,8 @@ class ExchangeHub extends Bot {
             };
             this.dbTradesData[instId].startTime = startTime;
             this.dbTradesData[instId].endTime = endTime;
-            this.dbTradesData[instId].data = processTrades;
+            dbTrades = processTrades.map((pt) => ({ ...pt }));
+            this.dbTradesData[instId].data = dbTrades;
           } else {
             if (
               startTime >= this.dbTradesData[instId].startTime &&
