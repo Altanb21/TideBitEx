@@ -295,6 +295,7 @@ const Vouchers = () => {
       setPage(newPage);
       setIsLoading(true);
       setFilterExchange(exchange);
+      setTickers(tickersSettings[exchange])
       // let tickerSetting = tickersSettings[exchange][filterTicker];
       const result = await storeCtx.getOuterTradesProfits({
         ticker: filterTicker,
@@ -526,7 +527,7 @@ const Vouchers = () => {
           className="screen__filter"
           selectHandler={(exchange) => selectExchangeHandler(exchange)}
           options={exchanges ? exchanges : []}
-          selected={filterTicker}
+          selected={filterExchange}
         />
         <ProfitTrendingChart
           data={chartData.data ? Object.values(chartData.data) : []}
