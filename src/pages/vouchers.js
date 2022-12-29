@@ -9,12 +9,6 @@ import LoadingDialog from "../components/LoadingDialog";
 import ProfitTrendingChart from "../components/ProfitTrendingChart";
 import VoucherTile from "../components/VoucherTile";
 
-const exchanges = ["OKEx"];
-const tickers = {
-  "BTC-USDT": "BTC-USDT",
-  "ETH-USDT": "ETH-USDT",
-};
-
 export const TableHeader = (props) => {
   const [ascending, setAscending] = useState(null);
   return (
@@ -76,8 +70,11 @@ const Vouchers = () => {
   const [filterTrades, setFilterTrades] = useState(null);
   const [filterOption, setFilterOption] = useState(30); // 30, 365
   const [filterKey, setFilterKey] = useState("");
-  const [filterExchange, setFilterExchange] = useState(exchanges[0]);
-  const [filterTicker, setFilterTicker] = useState(Object.values(tickers)[0]);
+  const [filterExchange, setFilterExchange] = useState(null);
+  const [exchanges, setExchanges] = useState(null);
+  const [tickersSettings, setTickersSettings] = useState(null);
+  const [tickers, setTickers] = useState(null);
+  const [filterTicker, setFilterTicker] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [chartData, setChartData] = useState({ data: {}, xaxisType: "string" });
   const [startDate, setStartDate] = useState(null);
@@ -179,9 +176,10 @@ const Vouchers = () => {
           startTime.getMonth() + 1
         }-${startTime.getDate()} 08:00:00`
       );
+      let tickerSetting = tickersSettings[filterExchange][filterTicker];
       const result = await storeCtx.getOuterTradesProfits({
         ticker: filterTicker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start: start.toISOString().substring(0, 10),
         end: end.toISOString().substring(0, 10),
       });
@@ -189,7 +187,7 @@ const Vouchers = () => {
       setProfits(result.profits);
       const trades = await getVouchers({
         ticker: filterTicker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start: start.toISOString().substring(0, 10),
         end: end.toISOString().substring(0, 10),
         limit: limit,
@@ -199,7 +197,15 @@ const Vouchers = () => {
       setFilterOption(option);
       setIsLoading(false);
     },
-    [filter, filterTicker, getVouchers, limit, storeCtx]
+    [
+      filter,
+      filterExchange,
+      filterTicker,
+      getVouchers,
+      limit,
+      storeCtx,
+      tickersSettings,
+    ]
   );
 
   const dateStartUpdateHandler = useCallback(
@@ -210,9 +216,10 @@ const Vouchers = () => {
       setDateStart(date);
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
+      let tickerSetting = tickersSettings[filterExchange][filterTicker];
       const result = await storeCtx.getOuterTradesProfits({
         ticker: filterTicker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start,
         end,
       });
@@ -220,7 +227,7 @@ const Vouchers = () => {
       setProfits(result.profits);
       const trades = await getVouchers({
         ticker: filterTicker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start,
         end,
         offset: 0,
@@ -229,7 +236,16 @@ const Vouchers = () => {
       filter(trades, {});
       setIsLoading(false);
     },
-    [dateEnd, filter, filterTicker, getVouchers, limit, storeCtx]
+    [
+      dateEnd,
+      filter,
+      filterExchange,
+      filterTicker,
+      getVouchers,
+      limit,
+      storeCtx,
+      tickersSettings,
+    ]
   );
 
   const dateEndUpdateHandler = useCallback(
@@ -240,9 +256,10 @@ const Vouchers = () => {
       setDateEnd(date);
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
+      let tickerSetting = tickersSettings[filterExchange][filterTicker];
       const result = await storeCtx.getOuterTradesProfits({
         ticker: filterTicker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start,
         end,
       });
@@ -250,7 +267,7 @@ const Vouchers = () => {
       setProfits(result.profits);
       const trades = await getVouchers({
         ticker: filterTicker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start,
         end,
         offset: 0,
@@ -259,7 +276,16 @@ const Vouchers = () => {
       filter(trades, {});
       setIsLoading(false);
     },
-    [dateStart, filter, filterTicker, getVouchers, limit, storeCtx]
+    [
+      dateStart,
+      filter,
+      filterExchange,
+      filterTicker,
+      getVouchers,
+      limit,
+      storeCtx,
+      tickersSettings,
+    ]
   );
 
   const selectTickerHandler = useCallback(
@@ -269,9 +295,10 @@ const Vouchers = () => {
       setPage(newPage);
       setIsLoading(true);
       setFilterTicker(ticker);
+      let tickerSetting = tickersSettings[filterExchange][ticker];
       const result = await storeCtx.getOuterTradesProfits({
         ticker: ticker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         start: startDate,
         end: endDate,
       });
@@ -297,7 +324,17 @@ const Vouchers = () => {
       filter(newTrades, { ticker });
       setIsLoading(false);
     },
-    [storeCtx, startDate, endDate, filter, getVouchers, limit]
+    [
+      tickersSettings,
+      filterExchange,
+      storeCtx,
+      startDate,
+      endDate,
+      getVouchers,
+      exchanges,
+      limit,
+      filter,
+    ]
   );
 
   const nextPageHandler = useCallback(async () => {
@@ -327,14 +364,15 @@ const Vouchers = () => {
       setIsLoading(false);
     }
   }, [
-    getVouchers,
-    filter,
-    filterExchange,
-    filterTicker,
-    limit,
     page,
     totalCounts,
+    limit,
     trades,
+    filterExchange,
+    filterTicker,
+    filter,
+    getVouchers,
+    exchanges,
   ]);
 
   const prevPageHandler = useCallback(async () => {
@@ -379,6 +417,26 @@ const Vouchers = () => {
     setIsInit(async (prev) => {
       if (!prev) {
         setIsLoading(true);
+        let tickersSettings = await storeCtx.getTickersSettings();
+        tickersSettings = tickersSettings.reduce((acc, curr) => {
+          if (curr.visible) {
+            if (!acc[curr.source]) acc[curr.source] = {};
+            acc[curr.source] = {
+              ...acc[curr.source],
+              [curr.instId]: curr,
+            };
+          }
+          return acc;
+        }, {});
+        setTickersSettings(tickersSettings);
+        let exchanges = Object.keys(tickersSettings);
+        let exchange = exchanges[0];
+        let tickers = Object.keys(tickersSettings[exchanges[0]]);
+        let ticker = tickers[0];
+        setExchanges(exchanges);
+        setFilterExchange(exchange);
+        setTickers(tickers);
+        setFilterTicker(ticker);
         const now = new Date();
         const end = new Date(
           `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()} 08:00:00`
@@ -392,16 +450,16 @@ const Vouchers = () => {
           }-${startTime.getDate()} 08:00:00`
         );
         const result = await storeCtx.getOuterTradesProfits({
-          ticker: filterTicker,
-          exchange: exchanges[0],
+          ticker,
+          exchange,
           start: start.toISOString().substring(0, 10),
           end: end.toISOString().substring(0, 10),
         });
         setChartData(result.chartData);
         setProfits(result.profits);
         const trades = await getVouchers({
-          exchange: exchanges[0],
-          ticker: filterTicker,
+          exchange,
+          ticker,
           start: start.toISOString().substring(0, 10),
           end: end.toISOString().substring(0, 10),
           offset: 0,
@@ -412,7 +470,7 @@ const Vouchers = () => {
         return !prev;
       } else return prev;
     });
-  }, [filterOption, storeCtx, filterTicker, getVouchers, limit, filter]);
+  }, [filterOption, storeCtx, getVouchers, limit, filter]);
 
   useEffect(() => {
     if (!isInit) {
