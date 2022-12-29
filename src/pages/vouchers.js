@@ -113,8 +113,8 @@ const Vouchers = () => {
         limit,
         offset,
       });
-      totalCounts = res.totalCounts;
-      newTrades = res.trades;
+      totalCounts = res?.totalCounts;
+      newTrades = res?.trades;
       // console.log(`newTrades`, newTrades);
       setTotalCounts(totalCounts);
       setTrades((prev) => {
@@ -155,7 +155,7 @@ const Vouchers = () => {
         if (_ticker) condition = condition && trade.instId === _ticker;
         return condition;
       });
-      // console.log(`after filter _trades[:${_trades.length}]`);
+      console.log(`after filter _trades[:${_trades.length}]`, _trades);
       setFilterTrades(_trades);
     },
     [filterExchange, filterKey, filterTicker]
@@ -295,10 +295,12 @@ const Vouchers = () => {
       setPage(newPage);
       setIsLoading(true);
       setFilterExchange(exchange);
-      setTickers(tickersSettings[exchange])
+      let tickers = Object.keys(tickersSettings[exchange]);
+      setTickers(tickers);
+      setFilterTicker(tickers[0]);
       // let tickerSetting = tickersSettings[exchange][filterTicker];
       const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
+        ticker: tickers[0],
         exchange: exchange,
         start: startDate,
         end: endDate,
@@ -315,7 +317,7 @@ const Vouchers = () => {
       //   console.log(`newTrades`, newTrades);
       // } else {
       newTrades = await getVouchers({
-        ticker: filterTicker,
+        ticker: tickers[0],
         exchange: exchange,
         offset: (newPage - 1) * limit,
         limit: limit,
@@ -325,7 +327,7 @@ const Vouchers = () => {
       filter(newTrades, { exchange });
       setIsLoading(false);
     },
-    [storeCtx, filterTicker, startDate, endDate, getVouchers, limit, filter]
+    [tickersSettings, storeCtx, startDate, endDate, getVouchers, limit, filter]
   );
 
   const selectTickerHandler = useCallback(
@@ -470,6 +472,7 @@ const Vouchers = () => {
         }, {});
         setTickersSettings(tickersSettings);
         let exchanges = Object.keys(tickersSettings);
+        console.log(exchanges);
         let exchange = exchanges[0];
         let tickers = Object.keys(tickersSettings[exchanges[0]]);
         let ticker = tickers[0];
@@ -506,6 +509,7 @@ const Vouchers = () => {
           limit,
         });
         filter(trades, {});
+        console.log(trades)
         setIsLoading(false);
         return !prev;
       } else return prev;
