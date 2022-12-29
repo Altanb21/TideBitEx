@@ -2146,7 +2146,7 @@ class ExchangeHub extends Bot {
   //   });
   // }
 
-  formateDailyProfitChart = (dbOuterTrades) => {
+  formateDailyProfitChart = (exchange, dbOuterTrades) => {
     let chartData = { data: {}, xaxisType: "string" },
       data = {},
       profits = {},
@@ -2161,63 +2161,74 @@ class ExchangeHub extends Bot {
         ? Utils.getNextDailyBarTime(lastDailyBar.getTime())
         : null;
     for (let dbOuterTrade of dbOuterTrades) {
-      let outerTradeData = JSON.parse(dbOuterTrade.data),
-        outerFee = outerTradeData.avgPx
-          ? outerTradeData.fillFee // data source is OKx order
-          : outerTradeData.fee,
-        profit = SafeMath.minus(
-          SafeMath.minus(dbOuterTrade.voucher_fee, Math.abs(outerFee)),
-          Math.abs(dbOuterTrade.referral)
-        );
-      if (profit) {
-        if (!profits[dbOuterTrade.voucher_fee_currency]) {
-          profits[dbOuterTrade.voucher_fee_currency] = {
-            sum: 0,
-            currency: dbOuterTrade.voucher_fee_currency.toUpperCase(),
-          };
-        }
-        profits[dbOuterTrade.voucher_fee_currency].sum = SafeMath.plus(
-          profits[dbOuterTrade.voucher_fee_currency].sum,
-          profit
-        );
-        let key = `${lastDailyBar.getFullYear()}-${
-          lastDailyBar.getMonth() + 1
-        }-${lastDailyBar.getDate()}`;
-        if (!data[key])
-          data[key] = {
-            y: "0",
-            x: key,
-            date: lastDailyBar,
-          };
-        let time = outerTradeData.ts || outerTradeData.cTime;
-        while (nextDailyBarTime <= time) {
-          lastDailyBar = new Date(nextDailyBarTime);
-          nextDailyBarTime = Utils.getNextDailyBarTime(lastDailyBar.getTime());
-          key = `${lastDailyBar.getFullYear()}-${
-            lastDailyBar.getMonth() + 1
-          }-${lastDailyBar.getDate()}`;
-          if (!data[key])
-            data[key] = {
-              y: "0",
-              x: key,
-              date: lastDailyBar,
-            };
-        }
-        key = `${lastDailyBar.getFullYear()}-${
-          lastDailyBar.getMonth() + 1
-        }-${lastDailyBar.getDate()}`;
-        let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
-        if (!data[key])
-          data[key] = {
-            y: SafeMath.mult(profit, price),
-            x: key,
-            date: lastDailyBar,
-          };
-        else
-          data[key] = {
-            ...data[key],
-            y: SafeMath.plus(data[key].y, SafeMath.mult(profit, price)),
-          };
+      switch (exchange) {
+        case SupportedExchange.OKEX:
+          let outerTradeData = JSON.parse(dbOuterTrade.data),
+            outerFee = outerTradeData.avgPx
+              ? outerTradeData.fillFee // data source is OKx order
+              : outerTradeData.fee,
+            profit = SafeMath.minus(
+              SafeMath.minus(dbOuterTrade.voucher_fee, Math.abs(outerFee)),
+              Math.abs(dbOuterTrade.referral)
+            );
+          if (profit) {
+            if (!profits[dbOuterTrade.voucher_fee_currency]) {
+              profits[dbOuterTrade.voucher_fee_currency] = {
+                sum: 0,
+                currency: dbOuterTrade.voucher_fee_currency.toUpperCase(),
+              };
+            }
+            profits[dbOuterTrade.voucher_fee_currency].sum = SafeMath.plus(
+              profits[dbOuterTrade.voucher_fee_currency].sum,
+              profit
+            );
+            let key = `${lastDailyBar.getFullYear()}-${
+              lastDailyBar.getMonth() + 1
+            }-${lastDailyBar.getDate()}`;
+            if (!data[key])
+              data[key] = {
+                y: "0",
+                x: key,
+                date: lastDailyBar,
+              };
+            let time = outerTradeData.ts || outerTradeData.cTime;
+            while (nextDailyBarTime <= time) {
+              lastDailyBar = new Date(nextDailyBarTime);
+              nextDailyBarTime = Utils.getNextDailyBarTime(
+                lastDailyBar.getTime()
+              );
+              key = `${lastDailyBar.getFullYear()}-${
+                lastDailyBar.getMonth() + 1
+              }-${lastDailyBar.getDate()}`;
+              if (!data[key])
+                data[key] = {
+                  y: "0",
+                  x: key,
+                  date: lastDailyBar,
+                };
+            }
+            key = `${lastDailyBar.getFullYear()}-${
+              lastDailyBar.getMonth() + 1
+            }-${lastDailyBar.getDate()}`;
+            let price = this.tickerBook.getPrice(
+              dbOuterTrade.voucher_fee_currency
+            );
+            if (!data[key])
+              data[key] = {
+                y: SafeMath.mult(profit, price),
+                x: key,
+                date: lastDailyBar,
+              };
+            else
+              data[key] = {
+                ...data[key],
+                y: SafeMath.plus(data[key].y, SafeMath.mult(profit, price)),
+              };
+          }
+          break;
+        case SupportedExchange.TIDEBIT:
+        default:
+          break;
       }
     }
     chartData.data = data;
@@ -2356,15 +2367,24 @@ class ExchangeHub extends Bot {
         data: [],
       };
       // getOuterTradesWithFee asce
-      dbOuterTrades = await this.database.getOuterTrades({
-        type: Database.TIME_RANGE_TYPE.BETWEEN,
-        exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
-        status: Database.OUTERTRADE_STATUS.DONE,
-        currency: tickerSetting.code,
-        start: startDate,
-        end: endtDate,
-        asc: true,
-      });
+      dbOuterTrades =
+        exchange === SupportedExchange.TIDEBIT
+          ? await this.database.getTrades({
+              type: Database.TIME_RANGE_TYPE.BETWEEN,
+              currency: tickerSetting.code,
+              start: startDate,
+              end: endtDate,
+              asc: true,
+            })
+          : await this.database.getOuterTrades({
+              type: Database.TIME_RANGE_TYPE.BETWEEN,
+              exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+              status: Database.OUTERTRADE_STATUS.DONE,
+              currency: tickerSetting.code,
+              start: startDate,
+              end: endtDate,
+              asc: true,
+            });
       this.dbOuterTradesData[instId].startTime = startTime;
       this.dbOuterTradesData[instId].endTime = endTime;
       this.dbOuterTradesData[instId].data = dbOuterTrades.map(
@@ -2378,9 +2398,12 @@ class ExchangeHub extends Bot {
         endTime <= this.dbOuterTradesData[instId].endTime
       ) {
         dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
+          (dbOuterTrade) => {
             let ts = new Date(
-              `${dbOuterTrades.create_at
+              `${(exchange === SupportedExchange.TIDEBIT
+                ? dbOuterTrade.created_at
+                : dbOuterTrade.create_at
+              )
                 .toISOString()
                 .substring(0, 10)} 00:00:00`
             );
@@ -2393,9 +2416,12 @@ class ExchangeHub extends Bot {
         endTime > this.dbOuterTradesData[instId].endTime
       ) {
         dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
+          (dbOuterTrade) => {
             let ts = new Date(
-              `${dbOuterTrades.create_at
+              `${(exchange === SupportedExchange.TIDEBIT
+                ? dbOuterTrade.created_at
+                : dbOuterTrade.create_at
+              )
                 .toISOString()
                 .substring(0, 10)} 00:00:00`
             );
@@ -2430,9 +2456,12 @@ class ExchangeHub extends Bot {
         endTime <= this.dbOuterTradesData[instId].endTime
       ) {
         dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
+          (dbOuterTrade) => {
             let ts = new Date(
-              `${dbOuterTrades.create_at
+              `${(exchange === SupportedExchange.TIDEBIT
+                ? dbOuterTrade.created_at
+                : dbOuterTrade.create_at
+              )
                 .toISOString()
                 .substring(0, 10)} 00:00:00`
             );
@@ -2467,9 +2496,12 @@ class ExchangeHub extends Bot {
         endTime > this.dbOuterTradesData[instId].endTime
       ) {
         dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
-          (dbOuterTrades) => {
+          (dbOuterTrade) => {
             let ts = new Date(
-              `${dbOuterTrades.create_at
+              `${(exchange === SupportedExchange.TIDEBIT
+                ? dbOuterTrade.created_at
+                : dbOuterTrade.create_at
+              )
                 .toISOString()
                 .substring(0, 10)} 00:00:00`
             );
@@ -2518,7 +2550,7 @@ class ExchangeHub extends Bot {
       }
     }
     // if (endTime - startTime < 3 * monthInterval) {
-    result = this.formateDailyProfitChart(dbOuterTrades);
+    result = this.formateDailyProfitChart(exchange, dbOuterTrades);
     chartData = result.chartData;
     profits = result.profits;
     // } else {
@@ -2531,7 +2563,6 @@ class ExchangeHub extends Bot {
       payload: { chartData: chartData, profits: profits },
     });
   }
-
 
   formateOuterTrade(dbOuterTrade) {
     let outerTradeData = JSON.parse(dbOuterTrade.data),
