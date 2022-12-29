@@ -217,14 +217,14 @@ const Vouchers = () => {
       const end = dateEnd.toISOString().substring(0, 10);
       const start = date.toISOString().substring(0, 10);
       let tickerSetting = tickersSettings[filterExchange][filterTicker];
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
-        exchange: tickerSetting.source,
-        start,
-        end,
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      // const result = await storeCtx.getOuterTradesProfits({
+      //   ticker: filterTicker,
+      //   exchange: tickerSetting.source,
+      //   start,
+      //   end,
+      // });
+      // setChartData(result.chartData);
+      // setProfits(result.profits);
       const trades = await getVouchers({
         ticker: filterTicker,
         exchange: tickerSetting.source,
@@ -257,14 +257,14 @@ const Vouchers = () => {
       const end = date.toISOString().substring(0, 10);
       const start = dateStart.toISOString().substring(0, 10);
       let tickerSetting = tickersSettings[filterExchange][filterTicker];
-      const result = await storeCtx.getOuterTradesProfits({
-        ticker: filterTicker,
-        exchange: tickerSetting.source,
-        start,
-        end,
-      });
-      setChartData(result.chartData);
-      setProfits(result.profits);
+      // const result = await storeCtx.getOuterTradesProfits({
+      //   ticker: filterTicker,
+      //   exchange: tickerSetting.source,
+      //   start,
+      //   end,
+      // });
+      // setChartData(result.chartData);
+      // setProfits(result.profits);
       const trades = await getVouchers({
         ticker: filterTicker,
         exchange: tickerSetting.source,

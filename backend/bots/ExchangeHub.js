@@ -2551,8 +2551,9 @@ class ExchangeHub extends Bot {
     }
     // if (endTime - startTime < 3 * monthInterval) {
     result = this.formateDailyProfitChart(exchange, dbOuterTrades);
-    chartData = result.chartData;
-    profits = result.profits;
+    console.log(`formateDailyProfitChart result`, result);
+    chartData = result?.chartData;
+    profits = result?.profits;
     // } else {
     //   result = this.formateMonthlyProfitChart(dbOuterTrades);
     //   chartData = result.chartData;
@@ -2826,7 +2827,7 @@ class ExchangeHub extends Bot {
           payload: { totalCounts: counts, trades: processTrades },
         });
       case SupportedExchange.TIDEBIT:
-        try{
+        try {
           let countTrades = await this.database.countTrades({
             currency: tickerSetting.code,
             type: Database.TIME_RANGE_TYPE.BETWEEN,
@@ -2843,7 +2844,7 @@ class ExchangeHub extends Bot {
               limit,
               offset,
             });
-            this.logger.debug(`getOuterTradeFills rawTrades`, rawTrades)
+            this.logger.debug(`getOuterTradeFills rawTrades`, rawTrades);
             trades = [];
             orderIds = {};
             for (let rawTrade of rawTrades) {
@@ -2873,9 +2874,12 @@ class ExchangeHub extends Bot {
               );
               trades = [...trades, askTrade, bidTrade];
             }
-            this.logger.debug(`getOuterTradeFills trades`, trades)
+            this.logger.debug(`getOuterTradeFills trades`, trades);
           }
-          this.logger.debug(`getOuterTradeFills Object.values(orderIds)`, Object.values(orderIds))
+          this.logger.debug(
+            `getOuterTradeFills Object.values(orderIds)`,
+            Object.values(orderIds)
+          );
           // getOrdersByIds
           orders = await this.database.getOrdersByIds(Object.values(orderIds));
           orders = orders.reduce(
@@ -2885,17 +2889,17 @@ class ExchangeHub extends Bot {
           emails = await this.database.getEmailsByMemberIds(
             Object.values(memberIds)
           );
-          this.logger.debug(`getOuterTradeFills emails`, emails)
+          this.logger.debug(`getOuterTradeFills emails`, emails);
           emails = emails.reduce(
             (acc, curr) => ({ ...acc, [curr.memberId]: curr }),
             {}
           );
-          this.logger.debug(`getOuterTradeFills emails`, emails)
+          this.logger.debug(`getOuterTradeFills emails`, emails);
           // getVouchersByOrderIds
           vouchers = await this.database.getVouchersByOrderIds(
             Object.values(orderIds)
           );
-          this.logger.debug(`getOuterTradeFills vouchers`, vouchers)
+          this.logger.debug(`getOuterTradeFills vouchers`, vouchers);
           // getReferralCommissionsByMarkets
           referralCommissions =
             await this.database.getReferralCommissionsByMarkets({
@@ -2928,9 +2932,9 @@ class ExchangeHub extends Bot {
               },
             ];
           }
-          this.logger.debug(`getOuterTradeFills processTrades`, processTrades)
-        }catch(error){
-          this.logger.debug(`getOuterTradeFills`, error)
+          this.logger.debug(`getOuterTradeFills processTrades`, processTrades);
+        } catch (error) {
+          this.logger.debug(`getOuterTradeFills`, error);
         }
         return new ResponseFormat({
           message: "getOuterTradeFills",
