@@ -2892,7 +2892,7 @@ class ExchangeHub extends Bot {
           );
           this.logger.debug(`getOuterTradeFills emails`, emails);
           emails = emails.reduce(
-            (acc, curr) => ({ ...acc, [curr.memberId]: curr }),
+            (acc, curr) => ({ ...acc, [curr.id]: curr }),
             {}
           );
           this.logger.debug(`getOuterTradeFills emails`, emails);
