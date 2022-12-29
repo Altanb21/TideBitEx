@@ -185,11 +185,7 @@ const Vouchers = () => {
           start: start.toISOString().substring(0, 10),
           end: end.toISOString().substring(0, 10),
         });
-        setChartData(
-          result.chartData
-            ? result.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(result.chartData);
         setProfits(result.profits);
       }
       const trades = await getVouchers({
@@ -201,11 +197,7 @@ const Vouchers = () => {
         offset: 0,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(
-          trades.chartData
-            ? trades.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(trades.chartData);
         setProfits(trades.profits);
       }
       filter(trades, {});
@@ -239,11 +231,7 @@ const Vouchers = () => {
           start,
           end,
         });
-        setChartData(
-          result.chartData
-            ? result.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(result.chartData);
         setProfits(result.profits);
       }
       const trades = await getVouchers({
@@ -255,11 +243,7 @@ const Vouchers = () => {
         limit: limit,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(
-          trades.chartData
-            ? trades.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(trades.chartData);
         setProfits(trades.profits);
       }
       filter(trades, {});
@@ -293,11 +277,7 @@ const Vouchers = () => {
           start,
           end,
         });
-        setChartData(
-          result.chartData
-            ? result.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(result.chartData);
         setProfits(result.profits);
       }
       const trades = await getVouchers({
@@ -309,11 +289,7 @@ const Vouchers = () => {
         limit: limit,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(
-          trades.chartData
-            ? trades.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(trades.chartData);
         setProfits(trades.profits);
       }
       filter(trades, {});
@@ -348,11 +324,7 @@ const Vouchers = () => {
           start: startDate,
           end: endDate,
         });
-        setChartData(
-          result.chartData
-            ? result.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(result.chartData);
         setProfits(result.profits);
       }
       newTrades = await getVouchers({
@@ -368,7 +340,7 @@ const Vouchers = () => {
       filter(newTrades, { exchange });
       setIsLoading(false);
     },
-    [tickersSettings, storeCtx, startDate, endDate, getVouchers, limit, filter]
+    [tickersSettings, getVouchers, limit, filter, storeCtx, startDate, endDate]
   );
 
   const selectTickerHandler = useCallback(
@@ -386,11 +358,7 @@ const Vouchers = () => {
           start: startDate,
           end: endDate,
         });
-        setChartData(
-          result.chartData
-            ? result.chartData
-            : { data: {}, xaxisType: "string" }
-        );
+        setChartData(result.chartData);
         setProfits(result.profits);
       }
       newTrades = await getVouchers({
@@ -441,11 +409,7 @@ const Vouchers = () => {
           limit: limit,
         });
         if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-          setChartData(
-            newTrades.chartData
-              ? newTrades.chartData
-              : { data: {}, xaxisType: "string" }
-          );
+          setChartData(newTrades.chartData);
           setProfits(newTrades.profits);
         }
         // console.log(`newTrades`, newTrades);
@@ -547,11 +511,7 @@ const Vouchers = () => {
             start: start.toISOString().substring(0, 10),
             end: end.toISOString().substring(0, 10),
           });
-          setChartData(
-            result.chartData
-              ? result.chartData
-              : { data: {}, xaxisType: "string" }
-          );
+          setChartData(result.chartData);
           setProfits(result.profits);
         }
         const trades = await getVouchers({
@@ -563,11 +523,7 @@ const Vouchers = () => {
           limit,
         });
         if (exchange === SupportedExchange.TIDEBIT) {
-          setChartData(
-            trades.chartData
-              ? trades.chartData
-              : { data: {}, xaxisType: "string" }
-          );
+          setChartData(trades.chartData);
           setProfits(trades.profits);
         }
         filter(trades, { exchange });
