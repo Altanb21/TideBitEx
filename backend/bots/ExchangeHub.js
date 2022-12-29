@@ -2703,10 +2703,11 @@ class ExchangeHub extends Bot {
       vouchers = [],
       counts,
       dbTrades,
-      mDBOTrades;
+      mDBOTrades,
+      result;
     switch (exchange) {
       case SupportedExchange.OKEX:
-        let result = await this.database.countOuterTrades({
+        result = await this.database.countOuterTrades({
           currency: tickerSetting.code,
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
