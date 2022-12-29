@@ -44,9 +44,9 @@ const VoucherTile = (props) => {
         <div className="vouchers__text">
           {trade.innerTrade?.state ? t(trade.innerTrade?.state) : "-"}
         </div>
-        <div className="vouchers__text">
-          {trade.outerTrade?.state ? t(trade.outerTrade?.state) : "-"}
-        </div>
+        {trade.outerTrade && (
+          <div className="vouchers__text">{trade.outerTrade?.state || "-"}</div>
+        )}
       </td>
       <td className="screen__box screen__table-item screen__expand">
         <div

@@ -2640,7 +2640,10 @@ class ExchangeHub extends Bot {
       fee: null,
       side: Database.ORDER_SIDE[side],
       exchange: SupportedExchange.TIDEBIT,
-      feeCurrency: side === Database.ORDER_KIND.ASK?  tickerSetting.quoteUnit:tickerSetting.baseUnit,
+      feeCurrency:
+        side === Database.ORDER_KIND.ASK
+          ? tickerSetting.quoteUnit
+          : tickerSetting.baseUnit,
       ts: new Date(rawTrade.created_at).getTime(),
       alert: false,
     };
@@ -2874,12 +2877,7 @@ class ExchangeHub extends Bot {
               );
               trades = [...trades, askTrade, bidTrade];
             }
-            this.logger.debug(`getOuterTradeFills trades`, trades);
           }
-          this.logger.debug(
-            `getOuterTradeFills Object.values(orderIds)`,
-            Object.values(orderIds)
-          );
           // getOrdersByIds
           orders = await this.database.getOrdersByIds(Object.values(orderIds));
           orders = orders.reduce(
@@ -2889,17 +2887,14 @@ class ExchangeHub extends Bot {
           emails = await this.database.getEmailsByMemberIds(
             Object.values(memberIds)
           );
-          this.logger.debug(`getOuterTradeFills emails`, emails);
           emails = emails.reduce(
             (acc, curr) => ({ ...acc, [curr.id]: curr.email }),
             {}
           );
-          this.logger.debug(`getOuterTradeFills emails`, emails);
           // getVouchersByOrderIds
           vouchers = await this.database.getVouchersByOrderIds(
             Object.values(orderIds)
           );
-          this.logger.debug(`getOuterTradeFills vouchers`, vouchers);
           // getReferralCommissionsByMarkets
           referralCommissions =
             await this.database.getReferralCommissionsByMarkets({
@@ -2915,10 +2910,22 @@ class ExchangeHub extends Bot {
                 SafeMath.eq(v.order_id, trade.orderId) &&
                 SafeMath.eq(v.trade_id, trade.id)
             );
+            let referralCommission = referralCommissions.find(
+              (rc) =>
+                SafeMath.eq(rc.market, trade.marketCode) &&
+                SafeMath.eq(rc.voucher_id, trade.voucherId)
+            );
+            let referral = referralCommission?.amount
+              ? Utils.removeZeroEnd(referralCommission?.amount)
+              : null;
+            let profit = referral
+              ? SafeMath.minus(trade.innerTrade.fee, Math.abs(referral))
+              : trade.innerTrade.fee;
             processTrades = [
               ...processTrades,
               {
                 ...trade,
+                kind: order.ord_type,
                 email: emails[order.member_id],
                 voucherId: voucher.id,
                 innerTrade: {
@@ -2929,6 +2936,8 @@ class ExchangeHub extends Bot {
                   state: Database.DB_STATE_CODE[order.state],
                 },
                 fee: Utils.removeZeroEnd(voucher[`${voucher.trend}_fee`]),
+                referral,
+                profit,
               },
             ];
           }
