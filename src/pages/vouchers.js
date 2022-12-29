@@ -338,7 +338,7 @@ const Vouchers = () => {
       // setProfits(result.profits);
       newTrades = await getVouchers({
         ticker,
-        exchange: exchanges[0],
+        exchange: tickerSetting.source,
         offset: (newPage - 1) * limit,
         limit: limit,
       });
@@ -373,9 +373,10 @@ const Vouchers = () => {
         newTrades = trades[filterExchange][filterTicker][newPage];
         // console.log(`newTrades`, newTrades);
       } else {
+        let tickerSetting = tickersSettings[filterExchange][filterTicker];
         newTrades = await getVouchers({
           ticker: filterTicker,
-          exchange: exchanges[0],
+          exchange: tickerSetting.source,
           offset: (newPage - 1) * limit,
           limit: limit,
         });
@@ -392,8 +393,8 @@ const Vouchers = () => {
     filterExchange,
     filterTicker,
     filter,
+    tickersSettings,
     getVouchers,
-    exchanges,
   ]);
 
   const prevPageHandler = useCallback(async () => {
@@ -487,8 +488,8 @@ const Vouchers = () => {
           offset: 0,
           limit,
         });
-        filter(trades, {exchange});
-        console.log(trades)
+        filter(trades, { exchange });
+        console.log(trades);
         setIsLoading(false);
         return !prev;
       } else return prev;
