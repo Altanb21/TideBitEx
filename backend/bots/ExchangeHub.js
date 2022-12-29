@@ -2446,88 +2446,79 @@ class ExchangeHub extends Bot {
           currency: tickerSetting.code,
           start: startDate,
           end: `${new Date(
-            this.dbTradesData[instId].startTime
+            this.dbOuterTradesData[instId].startTime
           ).getFullYear()}-${
-            new Date(this.dbTradesData[instId].startTime).getMonth() + 1
+            new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
           }-${Utils.pad(
-            new Date(this.dbTradesData[instId].startTime).getDate() - 1
+            new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
           )} 23:59:59`,
           asc: true,
         });
-        dbOuterTradesData = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTradesData);
-        this.dbOuterTradesDataData[instId].data = dbOuterTradesData.map((dbOuterTrade) => ({
-          ...dbOuterTrade,
-        }));
-        this.dbOuterTradesDataData[instId].startTime = startTime;
+        dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
+        this.dbOuterTradesData[instId].data = dbOuterTrades.map(
+          (dbOuterTrade) => ({
+            ...dbOuterTrade,
+          })
+        );
+        this.dbOuterTradesData[instId].startTime = startTime;
       }
       if (
-        startTime < this.dbOuterTradesDataData[instId].startTime &&
-        endTime > this.dbOuterTradesDataData[instId].endTime
+        startTime < this.dbOuterTradesData[instId].startTime &&
+        endTime > this.dbOuterTradesData[instId].endTime
       ) {
-        dbOuterTradesData = this.dbOuterTradesDataData[instId].data.filter((dbOuterTradesData) => {
-          let ts = this.getTsfromDBDate(
-            exchange === SupportedExchange.TIDEBIT
-              ? dbOuterTradesData.created_at
-              : dbOuterTradesData.create_at
-          );
-          return ts >= startTime && ts <= endTime;
-        });
+        dbOuterTrades = this.dbOuterTradesData[instId].data.filter(
+          (dbOuterTrades) => {
+            let ts = new Date(
+              `${dbOuterTrades.create_at
+                .toISOString()
+                .substring(0, 10)} 00:00:00`
+            );
+            return ts >= startTime && ts <= endTime;
+          }
+        );
         mDBOTrades = await this.database.getOuterTrades({
           type: Database.TIME_RANGE_TYPE.BETWEEN,
           exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
           status: Database.OUTERTRADE_STATUS.DONE,
           currency: tickerSetting.code,
           start: `${new Date(
-            this.dbOuterTradesDataData[instId].endTime
+            this.dbOuterTradesData[instId].endTime
           ).getFullYear()}-${
-            new Date(this.dbOuterTradesDataData[instId].endTime).getMonth() + 1
+            new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
           }-${Utils.pad(
-            new Date(this.dbOuterTradesDataData[instId].endTime).getDate() + 1
+            new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
           )} 23:59:59`,
           end: endtDate,
           asc: true,
         });
-        dbOuterTradesData = dbOuterTradesData.concat(mDBOTrades.map((t) => ({ ...t })));
-        this.dbOuterTradesDataData[instId].endTime = endTime;
-        mDBOTrades =
-          exchange === SupportedExchange.TIDEBIT
-            ? await this.database.getTrades({
-                type: Database.TIME_RANGE_TYPE.BETWEEN,
-                currency: tickerSetting.code,
-                start: startDate,
-                end: `${new Date(
-                  this.dbOuterTradesDataData[instId].startTime
-                ).getFullYear()}-${
-                  new Date(this.dbOuterTradesDataData[instId].startTime).getMonth() + 1
-                }-${Utils.pad(
-                  new Date(this.dbOuterTradesDataData[instId].startTime).getDate() - 1
-                )} 23:59:59`,
-                asc: true,
-              })
-            : await this.database.getOuterTrades({
-                type: Database.TIME_RANGE_TYPE.BETWEEN,
-                exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
-                status: Database.OUTERTRADE_STATUS.DONE,
-                currency: tickerSetting.code,
-                start: startDate,
-                end: `${new Date(
-                  this.dbOuterTradesDataData[instId].startTime
-                ).getFullYear()}-${
-                  new Date(this.dbOuterTradesDataData[instId].startTime).getMonth() + 1
-                }-${Utils.pad(
-                  new Date(this.dbOuterTradesDataData[instId].startTime).getDate() - 1
-                )} 23:59:59`,
-                asc: true,
-              });
-        dbOuterTradesData = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTradesData);
-        this.dbOuterTradesDataData[instId].data = dbOuterTradesData.map((dbOuterTrade) => ({
-          ...dbOuterTrade,
-        }));
-        this.dbOuterTradesDataData[instId].startTime = startTime;
+        dbOuterTrades = dbOuterTrades.concat(mDBOTrades.map((t) => ({ ...t })));
+        this.dbOuterTradesData[instId].endTime = endTime;
+        mDBOTrades = await this.database.getOuterTrades({
+          type: Database.TIME_RANGE_TYPE.BETWEEN,
+          exchangeCode: Database.EXCHANGE[exchange.toUpperCase()],
+          status: Database.OUTERTRADE_STATUS.DONE,
+          currency: tickerSetting.code,
+          start: startDate,
+          end: `${new Date(
+            this.dbOuterTradesData[instId].startTime
+          ).getFullYear()}-${
+            new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
+          }-${Utils.pad(
+            new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
+          )} 23:59:59`,
+          asc: true,
+        });
+        dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
+        this.dbOuterTradesData[instId].data = dbOuterTrades.map(
+          (dbOuterTrade) => ({
+            ...dbOuterTrade,
+          })
+        );
+        this.dbOuterTradesData[instId].startTime = startTime;
       }
     }
     // if (endTime - startTime < 3 * monthInterval) {
-    result = this.formateDailyProfitChart(dbOuterTradesData);
+    result = this.formateDailyProfitChart(dbOuterTrades);
     chartData = result.chartData;
     profits = result.profits;
     // } else {
@@ -2540,6 +2531,7 @@ class ExchangeHub extends Bot {
       payload: { chartData: chartData, profits: profits },
     });
   }
+
 
   formateOuterTrade(dbOuterTrade) {
     let outerTradeData = JSON.parse(dbOuterTrade.data),
