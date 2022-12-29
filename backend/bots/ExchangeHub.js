@@ -26,6 +26,7 @@ const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
 
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
+  dbTradesData = {};
   fetchedOrders = {};
   fetchedOrdersInterval = 1 * 60 * 1000;
   systemMemberId;
@@ -2266,9 +2267,7 @@ class ExchangeHub extends Bot {
             key = `${lastDailyBar.getFullYear()}-${
               lastDailyBar.getMonth() + 1
             }-${lastDailyBar.getDate()}`;
-            let price = this.tickerBook.getPrice(
-              processedTrade.feeCurrency
-            );
+            let price = this.tickerBook.getPrice(processedTrade.feeCurrency);
             if (!data[key])
               data[key] = {
                 y: SafeMath.mult(processedTrade.profit, price),
@@ -2278,7 +2277,10 @@ class ExchangeHub extends Bot {
             else
               data[key] = {
                 ...data[key],
-                y: SafeMath.plus(data[key].y, SafeMath.mult(processedTrade.profit, price)),
+                y: SafeMath.plus(
+                  data[key].y,
+                  SafeMath.mult(processedTrade.profit, price)
+                ),
               };
           }
         }
