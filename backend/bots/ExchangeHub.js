@@ -2640,7 +2640,7 @@ class ExchangeHub extends Bot {
       fee: null,
       side: Database.ORDER_SIDE[side],
       exchange: SupportedExchange.TIDEBIT,
-      feeCurrency: tickerSetting.quoteUnit,
+      feeCurrency: side === Database.ORDER_KIND.ASK?  tickerSetting.quoteUnit:tickerSetting.baseUnit,
       ts: new Date(rawTrade.created_at).getTime(),
       alert: false,
     };
@@ -2834,7 +2834,6 @@ class ExchangeHub extends Bot {
             start: startDate,
             end: endtDate,
           });
-          this.logger.debug(`getOuterTradeFills countTrades`, countTrades);
           counts = countTrades["counts"];
           if (counts > 0) {
             let rawTrades = await this.database.getTrades({
@@ -2892,7 +2891,7 @@ class ExchangeHub extends Bot {
           );
           this.logger.debug(`getOuterTradeFills emails`, emails);
           emails = emails.reduce(
-            (acc, curr) => ({ ...acc, [curr.id]: curr }),
+            (acc, curr) => ({ ...acc, [curr.id]: curr.email }),
             {}
           );
           this.logger.debug(`getOuterTradeFills emails`, emails);
