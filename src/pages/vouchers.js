@@ -288,6 +288,45 @@ const Vouchers = () => {
     ]
   );
 
+  const selectExchangeHandler = useCallback(
+    async (exchange) => {
+      let newTrades,
+        newPage = 1;
+      setPage(newPage);
+      setIsLoading(true);
+      setFilterExchange(exchange);
+      // let tickerSetting = tickersSettings[exchange][filterTicker];
+      const result = await storeCtx.getOuterTradesProfits({
+        ticker: filterTicker,
+        exchange: exchange,
+        start: startDate,
+        end: endDate,
+      });
+      setChartData(result.chartData);
+      setProfits(result.profits);
+      // if (
+      //   trades &&
+      //   trades[filterExchange] &&
+      //   trades[filterExchange][ticker] &&
+      //   trades[filterExchange][ticker][newPage]
+      // ) {
+      //   newTrades = trades[filterExchange][ticker][newPage];
+      //   console.log(`newTrades`, newTrades);
+      // } else {
+      newTrades = await getVouchers({
+        ticker: filterTicker,
+        exchange: exchange,
+        offset: (newPage - 1) * limit,
+        limit: limit,
+      });
+      // console.log(`newTrades`, newTrades);
+      // }
+      filter(newTrades, { exchange });
+      setIsLoading(false);
+    },
+    [storeCtx, filterTicker, startDate, endDate, getVouchers, limit, filter]
+  );
+
   const selectTickerHandler = useCallback(
     async (ticker) => {
       let newTrades,
@@ -418,7 +457,7 @@ const Vouchers = () => {
       if (!prev) {
         setIsLoading(true);
         let tickersSettings = await storeCtx.getTickersSettings();
-        tickersSettings = tickersSettings.reduce((acc, curr) => {
+        tickersSettings = Object.values(tickersSettings).reduce((acc, curr) => {
           if (curr.visible) {
             if (!acc[curr.source]) acc[curr.source] = {};
             acc[curr.source] = {
@@ -483,6 +522,12 @@ const Vouchers = () => {
       <LoadingDialog isLoading={isLoading} />
       <section className="screen__section vouchers">
         <div className="screen__header">{t("match-orders")}</div>
+        <TableDropdown
+          className="screen__filter"
+          selectHandler={(exchange) => selectExchangeHandler(exchange)}
+          options={exchanges ? exchanges : []}
+          selected={filterTicker}
+        />
         <ProfitTrendingChart
           data={chartData.data ? Object.values(chartData.data) : []}
           xaxisType={chartData.xaxisType}
@@ -491,7 +536,7 @@ const Vouchers = () => {
           <TableDropdown
             className="screen__filter"
             selectHandler={(ticker) => selectTickerHandler(ticker)}
-            options={tickers ? Object.values(tickers) : []}
+            options={tickers ? tickers : []}
             selected={filterTicker}
           />
           <div className="screen__search-box">
