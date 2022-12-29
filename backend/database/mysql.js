@@ -64,7 +64,11 @@ class mysql {
       });
       return accounts;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getAccounts`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAccounts`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -417,7 +421,11 @@ class mysql {
       });
       return members;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getMembers`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMembers`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -1037,7 +1045,11 @@ class mysql {
       });
       return trades;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getVouchers`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getVouchers`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -1054,7 +1066,11 @@ class mysql {
       });
       return orders;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getOrders`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrders`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -1289,12 +1305,12 @@ class mysql {
     if (type === Database.TIME_RANGE_TYPE.DAY_AFTER && days)
       placeholder = [
         ...placeholder,
-        `create_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)`,
+        `created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)`,
       ];
     if (type === Database.TIME_RANGE_TYPE.BETWEEN && start && end)
       placeholder = [
         ...placeholder,
-        `create_at BETWEEN "${start}"
+        `created_at BETWEEN "${start}"
         AND "${end}"`,
       ];
     let whereCondition =
@@ -1332,7 +1348,11 @@ class mysql {
       });
       return outerTrades;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getTrades`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getTrades`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -1610,7 +1630,11 @@ class mysql {
 
       return counts;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} countTrades`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countTrades`,
+        query,
+        error
+      );
       return [];
     }
   }
