@@ -1263,19 +1263,19 @@ class ExchangeHub extends Bot {
       planId = referral.commission_plan_id;
     if (!planId) {
       plan = await this.database.getDefaultCommissionPlan();
-      planId = plan.id;
+      planId = plan?.id;
     }
     return planId;
   }
 
-  async getReferrerCommissionPolicy(referral, voucher) {
+  async getReferrerCommissionPolicy(planId, referral, voucher) {
     // commission_plan.policies.sort_by{ |policy| policy.referred_months }.detect do |policy|
     // policy.is_enabled? && (@referral.created_at + policy.referred_months.month >= @voucher.created_at)
     let policy;
-    if (referral.is_enabled) {
-      let commissionPlanId = await this.getReferrerCommissionPlan(referral);
+    if (!!planId && SafeMath.eq(referral.is_enabled, 1)) {
+      // let commissionPlanId = await this.getReferrerCommissionPlan(referral);
       let commissionPolicies = await this.database.getCommissionPolicies(
-        commissionPlanId
+        planId
       );
       let days = Math.ceil(
         (new Date(`${voucher.created_at}`).getTime() -
@@ -4062,200 +4062,302 @@ class ExchangeHub extends Bot {
   }
 
   /**
-   * [deprecated] 2022/11/18
-   * (
-   *   原本是想用在 processor 流程但後來沒有用，因為怕 DB 更新跟通知前端更新分開來數值會有錯誤，
-   *   所以此function _emitUpdateOrder 的部份寫在 processor 裡面 calculator 之後 updater 之前，
-   *   _emitUpdateAccount 寫在 updater 裡面的 _updateAccount
-   * )
+   * [deprecated] 2022/01/05
+   * 在updatedOuterTrade 紀錄成 CALCULATOR_ERROR
+   * ++ 額外處理 CALCULATOR_ERROR
    */
-  async emitter({
-    memberId,
-    market,
-    instId,
-    updatedOrder,
-    trade,
-    askAccountVersion,
-    bidAccountVersion,
-    orderFullFilledAccountVersion,
-    dbTransaction,
-  }) {
-    this.logger.debug(
-      `[!!! deprecated][${new Date().toLocaleTimeString()}][${
-        this.constructor.name
-      }] emitter return!`
-    );
-    return;
-    // if (!instId || !market || !memberId) throw Error("missing arguments");
-    // try {
-    //   if (updatedOrder) {
-    //     let time = updatedOrder.updated_at.replace(/['"]+/g, "");
-    //     let order = {
-    //       ...updatedOrder,
-    //       at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
-    //       ts: new Date(time).getTime(),
-    //       market: market.id,
-    //       filled: updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
-    //       state_text:
-    //         updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-    //           ? Database.ORDER_STATE_TEXT.DONE
-    //           : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-    //           ? Database.ORDER_STATE_TEXT.CANCEL
-    //           : Database.ORDER_STATE_TEXT.WAIT,
-    //       state:
-    //         updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-    //           ? Database.ORDER_STATE.DONE
-    //           : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-    //           ? Database.ORDER_STATE.CANCEL
-    //           : Database.ORDER_STATE.WAIT,
-    //       state_code:
-    //         updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-    //           ? Database.ORDER_STATE_CODE.DONE
-    //           : updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-    //           ? Database.ORDER_STATE_CODE.CANCEL
-    //           : Database.ORDER_STATE_CODE.WAIT,
-    //     };
-    //     this._emitUpdateOrder({
-    //       memberId,
-    //       instId,
-    //       market: market.id,
-    //       order,
-    //     });
-    //   }
-    //   let tmp = this.accountBook.getSnapshot(memberId, instId);
-    //   if (!tmp) {
-    //     tmp = [];
-    //     tmp[0] = await this.database.getAccountsByMemberId(
-    //       askAccountVersion.member_id,
-    //       {
-    //         options: { currency: askAccountVersion.currency },
-    //         limit: 1,
-    //         dbTransaction,
-    //       }
-    //     );
-    //   }
-    //   let balance, locked, total;
-    //   if (askAccountVersion) {
-    //     let askAccount = tmp ? tmp[0] : null;
-    //     balance = SafeMath.plus(askAccount.balance, askAccountVersion.balance);
-    //     locked = SafeMath.plus(askAccount.locked, askAccountVersion.locked);
-    //     total = SafeMath.plus(balance, locked);
-    //     this._emitUpdateAccount({
-    //       memberId,
-    //       account: {
-    //         balance,
-    //         locked,
-    //         currency: market.ask.currency.toUpperCase(),
-    //         total,
-    //       },
-    //     });
-    //   }
-    //   if (bidAccountVersion) {
-    //     let bidAccount = tmp ? tmp[1] : null;
-    //     balance = SafeMath.plus(bidAccount.balance, askAccountVersion.balance);
-    //     locked = SafeMath.plus(bidAccount.locked, askAccountVersion.locked);
-    //     total = SafeMath.plus(balance, locked);
-    //     if (orderFullFilledAccountVersion) {
-    //       balance = SafeMath.plus(
-    //         balance,
-    //         orderFullFilledAccountVersion.balance
-    //       );
-    //       locked = SafeMath.plus(locked, orderFullFilledAccountVersion.locked);
-    //       total = SafeMath.plus(balance, locked);
-    //     }
-    //     this._emitUpdateAccount({
-    //       memberId,
-    //       account: {
-    //         balance,
-    //         locked,
-    //         currency: market.ask.currency.toUpperCase(),
-    //         total,
-    //       },
-    //     });
-    //   }
-    // } catch (error) {
-    //   ++ TODO "Fail to inform frontend"
-    // }
-  }
+  // async abnormalOrderHandler({ dbOrder, apiOrder }) {
+  //   let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
+  //     updatedOrder,
+  //     orderState,
+  //     orderLocked,
+  //     orderFundsReceived,
+  //     orderVolume,
+  //     orderTradesCount,
+  //     doneAt = null;
+  //   try {
+  //     switch (apiOrder.state) {
+  //       case Database.ORDER_STATE.CANCEL:
+  //         orderState = Database.ORDER_STATE_CODE.CANCEL;
+  //         break;
+  //       case Database.ORDER_STATE.FILLED:
+  //         orderState = Database.ORDER_STATE_CODE.DONE;
+  //         doneAt = `${new Date(parseInt(apiOrder.fillTime))
+  //           .toISOString()
+  //           .slice(0, 19)
+  //           .replace("T", " ")}`;
+  //         break;
+  //       default:
+  //         orderState = Database.ORDER_STATE_CODE.WAIT;
+  //         break;
+  //     }
+  //     orderVolume = SafeMath.minus(dbOrder.origin_volume, apiOrder.accFillSz);
+  //     orderLocked =
+  //       apiOrder.side === Database.ORDER_SIDE.BUY
+  //         ? SafeMath.minus(
+  //             dbOrder.origin_locked,
+  //             SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz)
+  //           )
+  //         : SafeMath.minus(dbOrder.origin_locked, apiOrder.accFillSz);
+  //     orderFundsReceived =
+  //       apiOrder.side === Database.ORDER_SIDE.BUY
+  //         ? apiOrder.accFillSz
+  //         : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
+  //     let count = await this.database.countOuterTrades({
+  //       exchangeCode: Database.EXCHANGE.OKEX,
+  //       id: apiOrder.tradeId,
+  //     });
+  //     orderTradesCount = count["counts"];
+  //     updatedOrder = {
+  //       id: dbOrder.id,
+  //       volume: orderVolume,
+  //       state: orderState,
+  //       locked: orderLocked,
+  //       funds_received: orderFundsReceived,
+  //       trades_count: orderTradesCount,
+  //       updated_at: `"${now}"`,
+  //       done_at: `"${doneAt}"`,
+  //     };
+  //     this.logger.debug(
+  //       `[${new Date().toISOString()}][${
+  //         this.constructor.name
+  //       }]!!! NOTICE abnormalOrderHandler updatedOrder`,
+  //       `dbOrder`,
+  //       dbOrder,
+  //       `apiOrder`,
+  //       apiOrder,
+  //       `updatedOrder`,
+  //       updatedOrder
+  //     );
+  //   } catch (error) {
+  //     this.logger.error(
+  //       `[${new Date().toISOString()}][${
+  //         this.constructor.name
+  //       }]!!!ERROR abnormalOrderHandler 出錯`,
+  //       `dbOrder`,
+  //       dbOrder,
+  //       `apiOrder`,
+  //       apiOrder,
+  //       `error`,
+  //       error
+  //     );
+  //     throw error;
+  //   }
+  //   return updatedOrder;
+  // }
 
-  async abnormalOrderHandler({ dbOrder, apiOrder }) {
-    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
-      updatedOrder,
-      orderState,
-      orderLocked,
-      orderFundsReceived,
-      orderVolume,
-      orderTradesCount,
-      doneAt = null;
+  calculateOrder({ data, dbOrder, updatedOuterTrade }) {
+    let isSuccessCalcalatedOrder = true,
+      value = SafeMath.mult(data.fillPx, data.fillSz),
+      updatedOrder = {};
     try {
-      switch (apiOrder.state) {
-        case Database.ORDER_STATE.CANCEL:
-          orderState = Database.ORDER_STATE_CODE.CANCEL;
-          break;
-        case Database.ORDER_STATE.FILLED:
-          orderState = Database.ORDER_STATE_CODE.DONE;
-          doneAt = `${new Date(parseInt(apiOrder.fillTime))
-            .toISOString()
-            .slice(0, 19)
-            .replace("T", " ")}`;
-          break;
-        default:
-          orderState = Database.ORDER_STATE_CODE.WAIT;
-          break;
-      }
-      orderVolume = SafeMath.minus(dbOrder.origin_volume, apiOrder.accFillSz);
-      orderLocked =
-        apiOrder.side === Database.ORDER_SIDE.BUY
-          ? SafeMath.minus(
-              dbOrder.origin_locked,
-              SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz)
-            )
-          : SafeMath.minus(dbOrder.origin_locked, apiOrder.accFillSz);
-      orderFundsReceived =
-        apiOrder.side === Database.ORDER_SIDE.BUY
-          ? apiOrder.accFillSz
-          : SafeMath.mult(apiOrder.avgPx, apiOrder.accFillSz);
+      updatedOrder.updated_at =
+        data.utime || data.ts
+          ? `${new Date(parseInt(data.utime || data.ts))
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`
+          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+      // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
+      updatedOrder.volume = SafeMath.minus(dbOrder.volume, data.fillSz);
+      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
+      // 4.1 更新 order doneAt
+      // 4.2 更新 order state
+      if (SafeMath.gte(updatedOrder.volume, "0")) {
+        // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
+        /** Way to Verify Counts
       let count = await this.database.countOuterTrades({
         exchangeCode: Database.EXCHANGE.OKEX,
         id: apiOrder.tradeId,
       });
-      orderTradesCount = count["counts"];
-      updatedOrder = {
-        id: dbOrder.id,
-        volume: orderVolume,
-        state: orderState,
-        locked: orderLocked,
-        funds_received: orderFundsReceived,
-        trades_count: orderTradesCount,
-        updated_at: `"${now}"`,
-        done_at: `"${doneAt}"`,
-      };
-      this.logger.debug(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-        }]!!! NOTICE abnormalOrderHandler updatedOrder`,
-        `dbOrder`,
-        dbOrder,
-        `apiOrder`,
-        apiOrder,
-        `updatedOrder`,
-        updatedOrder
-      );
+       updatedOrder.trades_count = count["counts"];
+       */
+        updatedOrder.trades_count = SafeMath.plus(dbOrder.trades_count, "1");
+        // 3. 根據 data side （BUY，SELL）需要分別計算
+        // 3.1 order 新的鎖定金額
+        // 3.2 order 新的 fund receiced
+        if (data.side === Database.ORDER_SIDE.BUY) {
+          updatedOrder.locked = SafeMath.minus(dbOrder.locked, value);
+          updatedOrder.funds_received = SafeMath.plus(
+            dbOrder.funds_received,
+            data.fillSz
+          );
+        }
+        if (data.side === Database.ORDER_SIDE.SELL) {
+          updatedOrder.locked = SafeMath.minus(dbOrder.locked, data.fillSz);
+          updatedOrder.funds_received = SafeMath.plus(
+            dbOrder.funds_received,
+            value
+          );
+        }
+        if (
+          SafeMath.eq(updatedOrder.volume, "0")
+          // && orderDetail.state === Database.ORDER_STATE.FILLED &&
+          // dbOrder.origin_volume === orderDetail.accFillSz
+        ) {
+          // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+          // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
+          updatedOrder.state = Database.ORDER_STATE_CODE.DONE;
+          updatedOrder.done_at = updatedOrder.updated_at;
+        } else updatedOrder.state = Database.ORDER_STATE_CODE.WAIT;
+      } else {
+        isSuccessCalcalatedOrder = false;
+        updatedOrder = null;
+        updatedOuterTrade = {
+          ...updatedOuterTrade,
+          status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
+        };
+      }
+      // 根據前 5 點 可以得到最終需要更新的 order
     } catch (error) {
-      this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-        }]!!!ERROR abnormalOrderHandler 出錯`,
-        `dbOrder`,
-        dbOrder,
-        `apiOrder`,
-        apiOrder,
-        `error`,
-        error
-      );
-      throw error;
+      isSuccessCalcalatedOrder = false;
+      updatedOrder = null;
+      updatedOuterTrade = {
+        ...updatedOuterTrade,
+        status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
+      };
     }
-    return updatedOrder;
+    updatedOuterTrade = {
+      ...updatedOuterTrade,
+    };
+    return { isSuccessCalcalatedOrder, updatedOuterTrade, updatedOrder };
+  }
+
+  calculateFee({ memberTag, market, data }) {
+    let value = SafeMath.mult(data.fillPx, data.fillSz),
+      tmp = this.getMemberFeeRate(memberTag, market),
+      askFeeRate = tmp.askFeeRate,
+      bidFeeRate = tmp.bidFeeRate,
+      askFee,
+      bidFee,
+      refGrossFee;
+    if (data.side === Database.ORDER_SIDE.BUY) {
+      askFee = 0;
+      bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
+      refGrossFee = bidFee;
+    } else {
+      bidFee = 0;
+      askFee = SafeMath.mult(value, askFeeRate);
+      refGrossFee = askFee;
+    }
+    return {
+      askFee,
+      bidFee,
+      refGrossFee,
+    };
+  }
+
+  /**
+   * @typedef {Object} AccountVersion
+   * @property {int} id
+   * @property {int} member_id
+   * @property {int} account_id
+   * @property {int} reason
+   * @property {decimal} balance
+   * @property {decimal} locked
+   * @property {decimal} fee
+   * @property {decimal} amount
+   * @property {int} modifiable_id
+   * @property {String} modifiable_type
+   * @property {int} currency
+   * @property {int} fun
+   * @property {Date} created_at
+   * @property {Date} updated_at
+   */
+  createAccountVersions({
+    memberId,
+    askCurrency,
+    bidCurrency,
+    updatedOrder,
+    data,
+    askFee,
+    bidFee,
+  }) {
+    let value = SafeMath.mult(data.fillPx, data.fillSz),
+      time =
+        data.utime || data.ts
+          ? `${new Date(parseInt(data.utime || data.ts))
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`
+          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
+      askAccountVersion = {
+        member_id: memberId,
+        currency: askCurrency,
+        created_at: time,
+        updated_at: time,
+        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+        // modifiable_id: "",//++TODO
+      },
+      bidAccountVersion = {
+        member_id: memberId,
+        currency: bidCurrency,
+        created_at: time,
+        updated_at: time,
+        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+        // modifiable_id: "",//++TODO
+      },
+      orderFullFilledAccountVersion = null;
+    if (data.side === Database.ORDER_SIDE.BUY) {
+      askAccountVersion = {
+        ...askAccountVersion,
+        balance: SafeMath.minus(data.fillSz, bidFee),
+        locked: 0,
+        fee: bidFee,
+        reason: Database.REASON.STRIKE_ADD,
+        fun: Database.FUNC.PLUS_FUNDS,
+      };
+      bidAccountVersion = {
+        ...bidAccountVersion,
+        balance: 0,
+        locked: SafeMath.mult(value, "-1"),
+        fee: 0,
+        reason: Database.REASON.STRIKE_SUB,
+        fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
+      };
+    }
+    if (data.side === Database.ORDER_SIDE.SELL) {
+      askAccountVersion = {
+        ...askAccountVersion,
+        balance: 0,
+        locked: SafeMath.mult(data.fillSz, "-1"),
+        fee: 0,
+        reason: Database.REASON.STRIKE_SUB,
+        fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
+      };
+      bidAccountVersion = {
+        ...bidAccountVersion,
+        balance: SafeMath.minus(value, askFee),
+        locked: 0,
+        fee: askFee,
+        reason: Database.REASON.STRIKE_ADD,
+        fun: Database.FUNC.PLUS_FUNDS,
+      };
+    }
+    if (
+      SafeMath.eq(updatedOrder.volume, 0) &&
+      SafeMath.gt(updatedOrder.locked, 0)
+    ) {
+      // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
+      orderFullFilledAccountVersion = {
+        member_id: memberId,
+        currency: bidCurrency,
+        created_at: time,
+        updated_at: time,
+        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
+        reason: Database.REASON.ORDER_FULLFILLED,
+        fun: Database.FUNC.UNLOCK_FUNDS,
+        fee: 0,
+        balance: updatedOrder.locked,
+        locked: SafeMath.mult(updatedOrder.locked, "-1"),
+        // ++TODO modifiable_id
+      };
+    }
+    return {
+      askAccountVersion,
+      bidAccountVersion,
+      orderFullFilledAccountVersion,
+    };
   }
 
   /**
@@ -4274,487 +4376,310 @@ class ExchangeHub extends Bot {
    * @property {decimal} bid_fee
    * @property {date} created_at
    */
-  /**
-   * @typedef {Object} AccountVersion
-   * @property {int} id
-   * @property {int} member_id
-   * @property {int} account_id
-   * @property {int} reason
-   * @property {decimal} balance
-   * @property {decimal} locked
-   * @property {decimal} fee
-   * @property {decimal} amount
-   * @property {int} modifiable_id
-   * @property {String} modifiable_type
-   * @property {int} currency
-   * @property {int} fun
-   * @property {Date} created_at
-   * @property {Date} updated_at
-   */
+  createVoucher({ data, ask, bid, memberId, dbOrderId, askFee, bidFee }) {
+    let trend,
+      value = SafeMath.mult(data.fillPx, data.fillSz),
+      time =
+        data.utime || data.ts
+          ? `${new Date(parseInt(data.utime || data.ts))
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`
+          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+    if (data.side === Database.ORDER_SIDE.BUY) {
+      trend = Database.ORDER_KIND.BID;
+    }
+    if (data.side === Database.ORDER_SIDE.SELL) {
+      trend = Database.ORDER_KIND.ASK;
+    }
+    let voucher = {
+      // id: "", // -- filled by DB insert
+      member_id: memberId,
+      order_id: dbOrderId,
+      // trade_id: "", //++ trade insert 到 DB 之後才會得到
+      designated_trading_fee_asset_history_id: null,
+      ask: ask,
+      bid: bid,
+      price: data.fillPx,
+      volume: data.fillSz,
+      value,
+      trend,
+      ask_fee: askFee,
+      bid_fee: bidFee,
+      created_at: time,
+    };
+    return voucher;
+  }
+
+  createTrade({ data, currency, memberId, dbOrderId }) {
+    let value = SafeMath.mult(data.fillPx, data.fillSz),
+      time =
+        data.utime || data.ts
+          ? `${new Date(parseInt(data.utime || data.ts))
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`
+          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+
+    let trade = {
+      price: data.fillPx,
+      volume: data.fillSz,
+      ask_id: data.side === Database.ORDER_SIDE.SELL ? dbOrderId : null,
+      bid_id: data.side === Database.ORDER_SIDE.BUY ? dbOrderId : null,
+      trend: null,
+      currency: currency,
+      created_at: time,
+      updated_at: time,
+      ask_member_id:
+        data.side === Database.ORDER_SIDE.SELL ? memberId : this.systemMemberId,
+      bid_member_id:
+        data.side === Database.ORDER_SIDE.BUY ? memberId : this.systemMemberId,
+      funds: value,
+      // trade_fk: data?.tradeId, ++ TODO
+    };
+    return trade;
+  }
+
+  async createReferralCommission({
+    market,
+    data,
+    member,
+    voucher,
+    refGrossFee,
+  }) {
+    let referredByMember, memberReferral, referralCommission;
+    try {
+      let tmp = await this.getMemberReferral(member);
+      referredByMember = tmp.referredByMember;
+      memberReferral = tmp.memberReferral;
+      let trend,
+        currency,
+        time =
+          data.utime || data.ts
+            ? `${new Date(parseInt(data.utime || data.ts))
+                .toISOString()
+                .slice(0, 19)
+                .replace("T", " ")}`
+            : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+      /**
+       * referred_by_member: @referred_by_member => referredByMember.id
+       * trade_member: @trade_member => member.id
+       * voucher: @voucher => vouucher.id
+       * applied_plan: plan => getReferrerCommissionPlan(memberReferral)
+       * applied_policy: policy => getReferrerCommissionPolicy(memberReferral, voucher)
+       * trend: @trend,
+       * market: @market_code,
+       * currency: @currency_id,
+       * ref_gross_fee: @fee,
+       * ref_net_fee: @fee - eligible_commission,
+       * amount: eligible_commission
+       */
+      if (data.side === Database.ORDER_SIDE.BUY) {
+        trend = Database.ORDER_KIND.BID;
+        currency = this.coinsSettings.find(
+          (coinSetting) => coinSetting.code === market.bid.currency
+        )?.id;
+      }
+      if (data.side === Database.ORDER_SIDE.SELL) {
+        trend = Database.ORDER_KIND.ASK;
+        currency = this.coinsSettings.find(
+          (coinSetting) => coinSetting.code === market.ask.currency
+        )?.id;
+      }
+      let planId = await this.getReferrerCommissionPlan(memberReferral);
+      let policy = await this.getReferrerCommissionPolicy(
+        planId,
+        memberReferral,
+        voucher
+      );
+      if (policy) {
+        let eligibleCommission = SafeMath.mult(refGrossFee, policy.rate);
+        referralCommission = {
+          referredByMemberId: referredByMember.id,
+          tradeMemberId: member.id,
+          // voucherId: voucher.id, // ++ after insert voucherId
+          appliedPlanId: planId,
+          appliedPolicyId: policy.id,
+          trend,
+          market: market.code,
+          currency,
+          refGrossFee,
+          refNetFee: SafeMath.minus(refGrossFee, eligibleCommission),
+          amount: eligibleCommission,
+          state: "submitted",
+          depositedAt: null,
+          createdAt: time,
+          updatedAt: time,
+        };
+      }
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR calculator 出錯 referredByMember`,
+        referredByMember
+      );
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR calculator 出錯 memberReferral`,
+        memberReferral
+      );
+    }
+    return referralCommission;
+  }
+
   // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
   async calculator({
     market,
     member,
     dbOrder,
-    orderDetail,
     data,
-    referredByMember,
-    memberReferral,
+    // orderDetail,
+    // referredByMember,
+    // memberReferral,
+    updatedOuterTrade,
   }) {
-    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
-      value = SafeMath.mult(data.fillPx, data.fillSz),
-      tmp = this.getMemberFeeRate(member.member_tag, market),
-      askFeeRate = tmp.askFeeRate,
-      bidFeeRate = tmp.bidFeeRate,
-      trend,
+    let isSuccessCalcalatedOrder,
+      updatedOrder,
       askFee,
       bidFee,
+      askAccountVersion,
+      bidAccountVersion,
+      orderFullFilledAccountVersion,
       voucher,
       trade,
-      updatedOrder,
-      orderState,
-      orderLocked,
-      orderFundsReceived,
-      orderVolume,
-      orderTradesCount,
-      doneAt = null,
-      askAccountVersion = {
-        member_id: member.id,
-        currency: dbOrder.ask,
-        created_at: now,
-        updated_at: now,
-        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
-        // modifiable_id: "",//++TODO
-      },
-      bidAccountVersion = {
-        member_id: member.id,
-        currency: dbOrder.bid,
-        created_at: now,
-        updated_at: now,
-        modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
-        // modifiable_id: "",//++TODO
-      },
-      orderFullFilledAccountVersion,
-      currency,
       refGrossFee,
       referralCommission,
+      isDBUpdateNeed = true,
       result;
     try {
-      // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
-      orderVolume = SafeMath.minus(dbOrder.volume, data.fillSz);
-      // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
-      orderTradesCount = SafeMath.plus(dbOrder.trades_count, "1");
-      // 3. 根據 data side （BUY，SELL）需要分別計算
-      // 3.1 order 新的鎖定金額
-      // 3.2 order 新的 fund receiced
-      if (data.side === Database.ORDER_SIDE.BUY) {
-        orderLocked = SafeMath.minus(dbOrder.locked, value);
-        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, data.fillSz);
-      }
-      if (data.side === Database.ORDER_SIDE.SELL) {
-        orderLocked = SafeMath.minus(dbOrder.locked, data.fillSz);
-        orderFundsReceived = SafeMath.plus(dbOrder.funds_received, value);
-      }
-      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
-      // 4.1 更新 order doneAt
-      // 4.2 更新 order state
-      if (SafeMath.eq(orderVolume, "0")) {
-        orderState = Database.ORDER_STATE_CODE.DONE;
-        doneAt = now;
-        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
-        // if (SafeMath.gt(orderLocked, 0)) {
-        // orderLocked = "0"; // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
-        // }
-      } else if (SafeMath.gt(orderVolume, "0")) {
-        orderState = Database.ORDER_STATE_CODE.WAIT;
-      }
-      // 根據前 5 點 可以得到最終需要更新的 order
-      updatedOrder = {
-        id: dbOrder.id,
-        volume: orderVolume,
-        state: orderState,
-        locked: orderLocked,
-        funds_received: orderFundsReceived,
-        trades_count: orderTradesCount,
-        updated_at: `"${now}"`,
-        done_at: `"${doneAt}"`,
-      };
-      if (
-        SafeMath.lt(orderVolume, 0) ||
-        SafeMath.lt(
-          orderVolume,
-          SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
-        )
-      ) {
-        /**
-         * ALERT: handle abnormal order
-         */
-        this.logger.debug(
-          // throw Error(
-          `!!! ERROR !!!, abnormal order:update orderVolume:[${orderVolume}] less than 0(${SafeMath.lt(
-            orderVolume,
-            0
-          )}) or orderVolume less than orderDetail(sz:[${
-            orderDetail.sz
-          }] - accFillSz:[${orderDetail.accFillSz}]) remain size( ${SafeMath.lt(
-            orderVolume,
-            SafeMath.minus(orderDetail.sz, orderDetail.accFillSz)
-          )})`
-        );
-        try {
-          updatedOrder = await this.abnormalOrderHandler({
-            dbOrder,
-            apiOrder: orderDetail,
-          });
-        } catch (error) {
-          throw error;
-        }
-      }
-
-      if (SafeMath.eq(updatedOrder.orderVolume, "0")) {
-        // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
-        if (SafeMath.gt(updatedOrder.orderLocked, 0)) {
-          orderFullFilledAccountVersion = {
-            member_id: member.id,
-            currency: dbOrder.bid,
-            created_at: now,
-            updated_at: now,
-            modifiable_type: Database.MODIFIABLE_TYPE.TRADE,
-            reason: Database.REASON.ORDER_FULLFILLED,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-            fee: 0,
-            balance: updatedOrder.orderLocked,
-            locked: SafeMath.mult(updatedOrder.orderLocked, "-1"),
-            // ++TODO modifiable_id
-          };
-        }
-      }
-
-      // 3. 根據 data side （BUY，SELL）需要分別計算
-      // 3.3 voucher 及 account version 的手需費
-      // 3.4 voucher 與 account version 裡面的手續費是對應的
-      if (data.side === Database.ORDER_SIDE.BUY) {
-        trend = Database.ORDER_KIND.BID;
-        askFee = 0;
-        bidFee = SafeMath.mult(data.fillSz, bidFeeRate);
-        refGrossFee = bidFee;
-        currency = this.coinsSettings.find(
-          (coinSetting) => coinSetting.code === market.bid.currency
-        )?.id;
-        askAccountVersion = {
-          ...askAccountVersion,
-          balance: SafeMath.minus(data.fillSz, bidFee),
-          locked: 0,
-          fee: bidFee,
-          reason: Database.REASON.STRIKE_ADD,
-          fun: Database.FUNC.PLUS_FUNDS,
-        };
-        bidAccountVersion = {
-          ...bidAccountVersion,
-          balance: 0,
-          locked: SafeMath.mult(value, "-1"),
-          fee: 0,
-          reason: Database.REASON.STRIKE_SUB,
-          fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
-        };
-      }
-      if (data.side === Database.ORDER_SIDE.SELL) {
-        trend = Database.ORDER_KIND.ASK;
-        askFee = SafeMath.mult(value, askFeeRate);
-        refGrossFee = askFee;
-        currency = this.coinsSettings.find(
-          (coinSetting) => coinSetting.code === market.ask.currency
-        )?.id;
-        bidFee = 0;
-        askAccountVersion = {
-          ...askAccountVersion,
-          balance: 0,
-          locked: SafeMath.mult(data.fillSz, "-1"),
-          fee: 0,
-          reason: Database.REASON.STRIKE_SUB,
-          fun: Database.FUNC.UNLOCK_AND_SUB_FUNDS,
-        };
-        bidAccountVersion = {
-          ...bidAccountVersion,
-          balance: SafeMath.minus(value, askFee),
-          locked: 0,
-          fee: askFee,
-          reason: Database.REASON.STRIKE_ADD,
-          fun: Database.FUNC.PLUS_FUNDS,
-        };
-      }
-      voucher = {
-        // id: "", // -- filled by DB insert
-        member_id: member.id,
-        order_id: dbOrder.id,
-        // trade_id: "", //++ trade insert 到 DB 之後才會得到
-        designated_trading_fee_asset_history_id: null,
-        ask: market.ask.currency,
-        bid: market.bid.currency,
-        price: data.fillPx,
-        volume: data.fillSz,
-        value,
-        trend,
-        ask_fee: askFee,
-        bid_fee: bidFee,
-        created_at: now,
-      };
-
-      trade = {
-        price: data.fillPx,
-        volume: data.fillSz,
-        ask_id: data.side === Database.ORDER_SIDE.SELL ? dbOrder.id : null,
-        bid_id: data.side === Database.ORDER_SIDE.BUY ? dbOrder.id : null,
-        trend: null,
-        currency: market.code,
-        created_at: now,
-        updated_at: now,
-        ask_member_id:
-          data.side === Database.ORDER_SIDE.SELL
-            ? member.id
-            : this.systemMemberId,
-        bid_member_id:
-          data.side === Database.ORDER_SIDE.BUY
-            ? member.id
-            : this.systemMemberId,
-        funds: value,
-        // trade_fk: data?.tradeId, ++ TODO
-      };
-
-      if (referredByMember) {
-        /**
-         * referred_by_member: @referred_by_member => referredByMember.id
-         * trade_member: @trade_member => member.id
-         * voucher: @voucher => vouucher.id
-         * applied_plan: plan => getReferrerCommissionPlan(memberReferral)
-         * applied_policy: policy => getReferrerCommissionPolicy(memberReferral, voucher)
-         * trend: @trend,
-         * market: @market_code,
-         * currency: @currency_id,
-         * ref_gross_fee: @fee,
-         * ref_net_fee: @fee - eligible_commission,
-         * amount: eligible_commission
-         */
-        let plan = await this.getReferrerCommissionPlan(memberReferral);
-        let policy = await this.getReferrerCommissionPolicy(
-          memberReferral,
-          voucher
-        );
-        if (policy) {
-          let eligibleCommission = SafeMath.mult(refGrossFee, policy.rate);
-          referralCommission = {
-            referredByMemberId: referredByMember.id,
-            tradeMemberId: member.id,
-            // voucherId: voucher.id, // ++ after insert voucherId
-            appliedPlanId: plan,
-            appliedPolicyId: policy.id,
-            trend,
-            market: market.code,
-            currency,
+      let result = this.calculateOrder({
+        data,
+        dbOrder,
+        // , orderDetail
+      });
+      updatedOrder = result.updatedOrder;
+      isSuccessCalcalatedOrder = result.isSuccessCalcalatedOrder;
+      updatedOuterTrade = { ...result.updatedOuterTrade };
+      if (isSuccessCalcalatedOrder) {
+        // 1. 根據 data side （BUY，SELL）需要分別計算 fee
+        // 1.1 voucher 及 account version 的手需費
+        // 1.2 voucher 與 account version 裡面的手續費是對應的
+        result = this.calculateFee({
+          memberTag: member.member_tag,
+          market,
+          data,
+        });
+        askFee = result.askFee;
+        bidFee = result.bidFee;
+        refGrossFee = result.refGrossFee;
+        // 2. 生成 AccountVersions
+        result = this.createAccountVersions({
+          updatedOrder,
+          data,
+          memberId: member.id,
+          askCurrency: dbOrder.ask,
+          bidCurrency: dbOrder.bibd,
+          askFee,
+          bidFee,
+        });
+        askAccountVersion = result.askAccountVersion;
+        bidAccountVersion = result.bidAccountVersion;
+        orderFullFilledAccountVersion = result.orderFullFilledAccountVersion;
+        // 3. 生成 Voucher
+        voucher = this.createVoucher({
+          data,
+          memberId: member.id,
+          dbOrderId: dbOrder.id,
+          ask: market.ask.currency,
+          bid: market.bid.currency,
+          askFee,
+          bidFee,
+        });
+        // 4. 生成 Trade
+        trade = this.createTrade({
+          data,
+          currency: market.code,
+          memberId: member.id,
+          dbOrderId: dbOrder.id,
+        });
+        if (member.refer) {
+          // 4. 生成 ReferralCommission
+          referralCommission = await this.createReferralCommission({
+            market,
+            data,
+            member,
+            voucher,
             refGrossFee,
-            refNetFee: SafeMath.minus(refGrossFee, eligibleCommission),
-            amount: eligibleCommission,
-            state: "submitted",
-            depositedAt: null,
-            createdAt: now,
-            updatedAt: now,
-          };
+          });
         }
+      } else {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR isSuccessCalcalatedOrder=false dbOrder`,
+          dbOrder
+        );
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR isSuccessCalcalatedOrder=false data`,
+          data
+        );
+        isDBUpdateNeed = false;
+        updatedOuterTrade = {
+          ...updatedOuterTrade,
+          status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
+        };
       }
-      result = {
-        updatedOrder,
-        voucher,
-        trade,
-        askAccountVersion,
-        bidAccountVersion,
-        orderFullFilledAccountVersion,
-        referralCommission,
-      };
     } catch (error) {
       this.logger.error(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR calculator 出錯`,
-        `market`,
-        market,
-        `member`,
-        member,
-        `dbOrder`,
-        dbOrder,
-        `orderDetail`,
-        orderDetail,
-        `data`,
-        data,
-        `referredByMember`,
-        referredByMember,
-        `memberReferral`,
-        memberReferral,
-        `error`,
+        }]!!!ERROR calculator 出錯 market`,
+        market
+      );
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR calculator 出錯 member`,
+        member
+      );
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR calculator 出錯 error`,
         error
       );
-      throw error;
+      // throw error;
+      isDBUpdateNeed = false;
+      updatedOuterTrade = {
+        ...updatedOuterTrade,
+        status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
+      };
     }
+    result = {
+      isDBUpdateNeed,
+      updatedOrder,
+      voucher,
+      trade,
+      askAccountVersion,
+      bidAccountVersion,
+      orderFullFilledAccountVersion,
+      referralCommission,
+      updatedOuterTrade,
+    };
     return result;
   }
 
-  accountVersionVerifier(accountVersion, dbAccountVersion) {
-    let result = true;
-    if (!SafeMath.eq(accountVersion.currency, dbAccountVersion.currency))
-      result = false;
-    if (accountVersion.modifiable_type !== dbAccountVersion.modifiable_type)
-      result = false;
-    if (!SafeMath.eq(accountVersion.balance, dbAccountVersion.balance))
-      result = false;
-    if (!SafeMath.eq(accountVersion.locked, dbAccountVersion.locked))
-      result = false;
-    if (!SafeMath.eq(accountVersion.fee, dbAccountVersion.fee)) result = false;
-    if (!SafeMath.eq(accountVersion.reason, dbAccountVersion.reason))
-      result = false;
-    if (!SafeMath.eq(accountVersion.fun, dbAccountVersion.fun)) result = false;
-    return result;
-  }
-
-  async updateOuterTrade({
-    member,
-    status,
-    id,
-    currency,
-    trade,
-    dbOrder,
-    voucher,
-    askAccountVersion,
-    bidAccountVersion,
-    orderFullFilledAccountVersion,
-    referralCommission,
-    dbTransaction,
-  }) {
-    let now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+  async updateOuterTrade(updatedOuterTrade) {
+    let dbTransaction = this.database.transaction();
     try {
-      switch (status) {
-        case Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS:
-          await this.database.updateOuterTrade(
-            {
-              id,
-              status,
-              update_at: `"${now}"`,
-            },
-            { dbTransaction }
-          );
-          break;
-        case Database.OUTERTRADE_STATUS.SYSTEM_ERROR:
-        case Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE:
-        case Database.OUTERTRADE_STATUS.ClORDId_ERROR:
-          await this.database.updateOuterTrade(
-            {
-              id,
-              status,
-              currency,
-              update_at: `"${now}"`,
-              order_id: 0,
-            },
-            { dbTransaction }
-          );
-          break;
-        case Database.OUTERTRADE_STATUS.API_ORDER_CANCEL:
-          // 確保 cancel order 的 locked 金額有還給用戶
-          let dbCancelOrderAccountVersions =
-            await this.database.getAccountVersionsByModifiableIds(
-              [dbOrder.id],
-              Database.MODIFIABLE_TYPE.ORDER
-            );
-          let dbCancelOrderAccountVersion = dbCancelOrderAccountVersions.find(
-            (dbAccV) =>
-              dbAccV.reason.toString() ===
-              Database.REASON.ORDER_CANCEL.toString()
-          );
-          if (!dbCancelOrderAccountVersion) {
-            let cancelOrderAccountVersion = {
-              member_id: member.id,
-              currency:
-                dbOrder.type === Database.TYPE.ORDER_ASK
-                  ? dbOrder.ask
-                  : dbOrder.bid,
-              created_at: now,
-              updated_at: now,
-              modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
-              balance: dbOrder.locked,
-              locked: SafeMath.mult(dbOrder.locked, "-1"),
-              fee: 0,
-              reason: Database.REASON.ORDER_CANCEL,
-              fun: Database.FUNC.UNLOCK_FUNDS,
-            };
-            await this._updateAccount(cancelOrderAccountVersion, dbTransaction);
-          }
-          let updatedOrder = {
-            id: dbOrder.id,
-            state: Database.ORDER_STATE_CODE.CANCEL,
-            // locked: 0,
-            updated_at: `"${now}"`,
-          };
-          await this.database.updateOrder(updatedOrder, {
-            dbTransaction,
-          });
-          break;
-        case Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL:
-          await this.database.updateOuterTrade(
-            {
-              id,
-              status,
-              currency,
-              update_at: `"${now}"`,
-              order_id: dbOrder.id,
-              member_id: member.id,
-            },
-            { dbTransaction }
-          );
-          break;
-        case Database.OUTERTRADE_STATUS.DONE:
-          if (
-            !id ||
-            !dbOrder?.id ||
-            !trade?.id ||
-            !voucher?.id ||
-            !member?.id ||
-            !askAccountVersion?.id ||
-            !bidAccountVersion?.id
-          ) {
-            throw Error("missing params");
-          }
-          await this.database.updateOuterTrade(
-            {
-              id,
-              status,
-              update_at: `"${now}"`,
-              order_id: dbOrder.id,
-              order_price: dbOrder.price,
-              order_origin_volume: dbOrder.origin_volume,
-              member_id: member.id,
-              member_tag: member.member_tag,
-              email: member.email,
-              trade_id: trade.id,
-              voucher_id: voucher.id,
-              currency,
-              kind: `"${dbOrder.ord_type}"`,
-              voucher_price: voucher.price,
-              voucher_volume: voucher.volume,
-              voucher_fee: voucher ? voucher[`${voucher.trend}_fee`] : null,
-              voucher_fee_currency:
-                voucher.trend === Database.ORDER_KIND.ASK
-                  ? `"${voucher.bid}"`
-                  : `"${voucher.ask}"`,
-              ask_account_version_id: askAccountVersion.id || null,
-              bid_account_version_id: bidAccountVersion.id || null,
-              order_full_filled_account_version_id:
-                orderFullFilledAccountVersion?.id || null,
-              referral_commission_id: referralCommission?.id || null,
-              referral: referralCommission?.amount || null,
-            },
-            { dbTransaction }
-          );
-          break;
-        default:
-          break;
-      }
+      await this.database.updateOuterTrade(updatedOuterTrade, {
+        dbTransaction,
+      });
+      await dbTransaction.commit();
     } catch (error) {
       this.logger.error(
         `[${new Date().toISOString()}][${
@@ -4762,30 +4687,11 @@ class ExchangeHub extends Bot {
         }]!!!ERROR updateOuterTrade 出錯`,
         `error`,
         error,
-        `member`,
-        member,
-        `status`,
-        status,
-        `id`,
-        id,
-        `currency`,
-        currency,
-        `trade`,
-        trade,
-        `dbOrder`,
-        dbOrder,
-        `voucher`,
-        voucher,
-        `askAccountVersion`,
-        askAccountVersion,
-        `bidAccountVersion`,
-        bidAccountVersion,
-        `orderFullFilledAccountVersion`,
-        orderFullFilledAccountVersion,
-        `referralCommission`,
-        referralCommission
+        `updatedOuterTrade`,
+        updatedOuterTrade
       );
-      throw error;
+      // throw error;
+      await dbTransaction.rollback();
     }
   }
 
@@ -4802,6 +4708,7 @@ class ExchangeHub extends Bot {
     bidAccountVersion,
     orderFullFilledAccountVersion,
     referralCommission,
+    updatedOuterTrade,
     dbTransaction,
   }) {
     /* !!! HIGH RISK (start) !!! */
@@ -4817,105 +4724,46 @@ class ExchangeHub extends Bot {
       // referralCommissionId,
       newAskAccountVersion,
       newBidAccountVersion,
-      newOrderFullFilledAccountVersion,
-      dbTrade,
-      dbVoucher,
-      dbAccountVersions,
-      dbReferrerCommission;
+      newOrderFullFilledAccountVersion;
+    // dbTrade,
+    // dbVoucher,
+    // dbAccountVersions,
+    // dbReferrerCommission
     try {
-      if (dbOrder.state !== Database.ORDER_STATE_CODE.WAIT) {
-        throw Error(`orderState is not wait`);
-      }
-      await this.database.updateOrder(updatedOrder, { dbTransaction });
-      dbTrade = await this.database.getTradeByTradeFk(tradeFk);
-      if (dbTrade) {
-        tradeId = dbTrade.id;
-        dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
-          dbOrder.id,
-          tradeId
+      let dbTrade = await this.database.getTradeByTradeFk(tradeFk);
+      if (!dbTrade) {
+        await this.database.updateOrder(updatedOrder, { dbTransaction });
+        tradeId = await this.database.insertTrades(
+          { ...trade, trade_fk: tradeFk },
+          { dbTransaction }
         );
-        dbAccountVersions =
-          await this.database.getAccountVersionsByModifiableIds(
-            [tradeId],
-            Database.MODIFIABLE_TYPE.TRADE
-          );
-        throw Error(
-          JSON.stringify({
-            message: `dbTrade is exist`,
-            dbTrade: dbTrade,
-            dbVoucher: dbVoucher,
-            dbAccountVersions: dbAccountVersions,
-            code: Codes.DUPLICATE_PROCESS_OUTER_TRADE,
-          })
+        this.informFrontendTradeUpdate({
+          trade: { ...trade, id: tradeId, trade_fk: tradeFk },
+          memberId: member.id,
+          market,
+        });
+        voucherId = await this.database.insertVouchers(
+          {
+            ...voucher,
+            trade_id: tradeId,
+          },
+          { dbTransaction }
         );
-      }
-      //  else {
-      tradeId = await this.database.insertTrades(
-        { ...trade, trade_fk: tradeFk },
-        { dbTransaction }
-      );
-      let time = trade.updated_at.replace(/['"]+/g, "");
-      let newTrade = {
-        id: tradeId, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
-        price: trade.price,
-        volume: trade.volume,
-        market: market.id,
-        at: parseInt(SafeMath.div(new Date(time), "1000")),
-        ts: new Date(time),
-      };
-      this._emitNewTrade({
-        memberId: member.id,
-        instId,
-        market: market.id,
-        trade: newTrade,
-      });
-      voucherId = await this.database.insertVouchers(
-        {
-          ...voucher,
-          trade_id: tradeId,
-        },
-        { dbTransaction }
-      );
-      newAskAccountVersion = await this._updateAccount(
-        { ...askAccountVersion, modifiable_id: tradeId },
-        dbTransaction
-      );
-      newBidAccountVersion = await this._updateAccount(
-        { ...bidAccountVersion, modifiable_id: tradeId },
-        dbTransaction
-      );
-      if (orderFullFilledAccountVersion) {
-        newOrderFullFilledAccountVersion = await this._updateAccount(
-          { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+        newAskAccountVersion = await this._updateAccount(
+          { ...askAccountVersion, modifiable_id: tradeId },
           dbTransaction
         );
-      }
-      if (referralCommission) {
-        let rcs = await this.database.getReferralCommissionsByConditions({
-          conditions: {
-            voucherId,
-            market: market.code,
-            tradeMemberId: member.id,
-          },
-        });
-        dbReferrerCommission = rcs[0];
-        if (dbReferrerCommission) {
-          if (
-            !SafeMath.eq(
-              dbReferrerCommission.referred_by_member_id,
-              referralCommission.referredByMemberId
-            ) ||
-            !SafeMath.eq(
-              dbReferrerCommission.ref_net_fee,
-              referralCommission.refNetFee
-            )
-          ) {
-            throw Error(
-              `db update referralCommission is different from outer data`
-            );
-          }
-          // referralCommissionId = dbReferrerCommission.id;
-        } else {
+        newBidAccountVersion = await this._updateAccount(
+          { ...bidAccountVersion, modifiable_id: tradeId },
+          dbTransaction
+        );
+        if (orderFullFilledAccountVersion) {
+          newOrderFullFilledAccountVersion = await this._updateAccount(
+            { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
+            dbTransaction
+          );
+        }
+        if (referralCommission) {
           /**
            * ++ TODO after verify
            */
@@ -4931,27 +4779,83 @@ class ExchangeHub extends Bot {
           //   referralCommissionId
           // );
         }
+        updatedOuterTrade = {
+          ...updatedOuterTrade,
+          status: Database.OUTERTRADE_STATUS.DONE,
+          trade_id: trade.id,
+          voucher_id: voucherId,
+          voucher_price: voucher.price,
+          voucher_volume: voucher.volume,
+          voucher_fee: voucher ? voucher[`${voucher.trend}_fee`] : null,
+          voucher_fee_currency:
+            voucher.trend === Database.ORDER_KIND.ASK
+              ? `"${voucher.bid}"`
+              : `"${voucher.ask}"`,
+          ask_account_version_id: newAskAccountVersion.id || null,
+          bid_account_version_id: newBidAccountVersion.id || null,
+          order_full_filled_account_version_id:
+            newOrderFullFilledAccountVersion?.id || null,
+          // referral_commission_id: referralCommission?.id || null,
+          // referral: referralCommission?.amount || null,
+        };
+      } else {
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR DUPLICATE_PROCESS dbTrade`,
+          dbTrade
+        );
+        // tradeId = dbTrade.id;
+        // !!! for debugging temporary
+        // dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
+        //   dbOrder.id,
+        //   tradeId
+        // );
+        // this.logger.error(
+        //   `[${new Date().toISOString()}][${
+        //     this.constructor.name
+        //   }]!!!ERROR DUPLICATE_PROCESS dbVoucher`,
+        //   dbVoucher
+        // );
+        // dbAccountVersions =
+        //   await this.database.getAccountVersionsByModifiableIds(
+        //     [tradeId],
+        //     Database.MODIFIABLE_TYPE.TRADE
+        //   );
+        // this.logger.error(
+        //   `[${new Date().toISOString()}][${
+        //     this.constructor.name
+        //   }]!!!ERROR DUPLICATE_PROCESS dbAccountVersions`,
+        //   dbAccountVersions
+        // );
+        // if (dbVoucher) {
+        //   let rcs = await this.database.getReferralCommissionsByConditions({
+        //     conditions: {
+        //       voucherId: dbVoucher.id,
+        //       market: market.code,
+        //       tradeMemberId: member.id,
+        //     },
+        //   });
+        //   dbReferrerCommission = rcs[0];
+        //   this.logger.error(
+        //     `[${new Date().toISOString()}][${
+        //       this.constructor.name
+        //     }]!!!ERROR DUPLICATE_PROCESS dbReferrerCommission`,
+        //     dbReferrerCommission
+        //   );
+        // }
+        updatedOuterTrade = {
+          ...updatedOuterTrade,
+          status: Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS,
+          // trade: { ...trade, id: tradeId },
+          // voucher: { ...voucher, id: dbVoucher.id },
+        };
       }
-      await this.updateOuterTrade({
-        id: tradeFk,
-        status: Database.OUTERTRADE_STATUS.DONE,
-        currency: market.code,
-        member,
-        dbOrder,
-        updatedOrder,
-        trade: { ...trade, id: tradeId },
-        voucher: { ...voucher, id: voucherId },
-        askAccountVersion: newAskAccountVersion,
-        bidAccountVersion: newBidAccountVersion,
-        orderFullFilledAccountVersion: newOrderFullFilledAccountVersion,
-        // referralCommission: { referralCommission, id: referralCommissionId },
-        dbTransaction,
-      });
     } catch (error) {
       this.logger.error(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR updater 出錯`,
+        }]!!!ERROR processor => updater 出錯`,
         `dbOrder`,
         dbOrder,
         `updatedOrder`,
@@ -4979,9 +4883,283 @@ class ExchangeHub extends Bot {
         `error`,
         error
       );
-      throw error;
+      updatedOuterTrade = {
+        ...updatedOuterTrade,
+        status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+      };
+      // throw error;
     }
     /* !!! HIGH RISK (end) !!! */
+    return updatedOuterTrade;
+  }
+
+  async getOrderDetails({ query }) {
+    let { instId, ordId, exchangeCode } = { query };
+    let apiResonse,
+      orderDetail = null,
+      result;
+    try {
+      switch (exchangeCode) {
+        case Database.EXCHANGE.OKEX:
+          apiResonse = await this.okexConnector.router("getOrderDetails", {
+            query: {
+              instId: instId,
+              ordId: ordId,
+            },
+          });
+          break;
+        default:
+          break;
+      }
+      if (apiResonse.success) {
+        orderDetail = apiResonse.payload.shift();
+        result = new ResponseFormat({
+          message: "getOrderDetails",
+          payload: orderDetail,
+        });
+      } else {
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] !!! ERROR getOrderDetail: apiResonse`,
+          apiResonse
+        );
+        result = new ResponseFormat({
+          message: "API error",
+          code: Codes.UNKNOWN_ERROR,
+        });
+      }
+    } catch (error) {
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR getOrderDetail: query`,
+        query,
+        `error`,
+        error
+      );
+      throw error;
+    }
+    return result;
+  }
+
+  async isCalculationNeeded(data, dbTransaction) {
+    let isNeeded = true,
+      result,
+      market = this.tickersSettings[data.instId.toLowerCase().replace("-", "")],
+      updatedOuterTrade = {
+        id: data.tradeId,
+        currency: market.code,
+        // dbTransaction, // ++ !!
+      },
+      _memberId,
+      _orderId,
+      member,
+      // referredByMember,
+      // memberReferral,
+      order,
+      // orderDetail,
+      tmp,
+      now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+    // try {
+    //   // --- start: get orderDetail ---
+    //   tmp = this.getOrderDetails({
+    //     query: {
+    //       instId: data.instId,
+    //       ordId: data.ordId,
+    //       exchangeCode: data.exchangeCode,
+    //     },
+    //   });
+    //   if (tmp.success) {
+    //     orderDetail = tmp.payload;
+    //   } else {
+    //     isNeeded = isNeeded && false;
+    //     updatedOuterTrade.status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+    //   }
+    // } catch (error) {
+    //   this.logger.debug(
+    //     `[${new Date().toLocaleTimeString()}][${
+    //       this.constructor.name
+    //     }] !!! ERROR isCalculationNeeded: error`,
+    //     error
+    //   );
+    //   isNeeded = isNeeded && false;
+    //   updatedOuterTrade.status = Database.OUTERTRADE_STATUS.API_UNKNOWN_ERROR;
+    // }
+    // // --- end: get orderDetail ---
+
+    // 1. 判斷收到的資料是否為此系統的資料
+    // --- start: parse clOrdId to get memberId and  orderId---
+    // 需滿足下列條件，才為此系統的資料：
+    // 1.1.可以從 data 解析出 orderId 及 memberId
+    tmp = Utils.parseClOrdId(data.clOrdId);
+    _memberId = tmp.memberId;
+    _orderId = tmp.orderId;
+    if (!_memberId || !_orderId) {
+      isNeeded = isNeeded && false;
+      updatedOuterTrade = {
+        ...updatedOuterTrade,
+        status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+        order_id: 0,
+      };
+      // --- end: parse clOrdId to get memberId and  orderId---
+    } else {
+      // --- start: get member and  order from DB---
+      // 1.2.可以根據 orderId 從 database 取得 dbOrder
+      try {
+        member = await this.database.getMemberByCondition({ id: _memberId });
+        order = await this.database.getOrder(_orderId, { dbTransaction });
+        updatedOuterTrade = {
+          ...updatedOuterTrade,
+          order_id: order.id,
+          order_price: order.price,
+          order_origin_volume: order.origin_volume,
+          kind: `"${order.ord_type}"`,
+          member_id: member.id,
+          member_tag: member.member_tag,
+          email: member.email,
+          update_at: `"${now}"`,
+          // dbTransaction, // ++ !!
+        };
+      } catch (error) {
+        isNeeded = isNeeded && false;
+        updatedOuterTrade = {
+          ...updatedOuterTrade,
+          status: Database.OUTERTRADE_STATUS.DB_OPERATION_ERROR,
+        };
+      }
+    }
+    // 1.3. dbOrder.member_id 同 data 解析出的 memberId
+    if (
+      !order ||
+      !member ||
+      (!!_memberId && !SafeMath.eq(order?.member_id, _memberId))
+    ) {
+      isNeeded = isNeeded && false;
+      updatedOuterTrade.status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
+    }
+    // --- end: get member and  order from DB---
+    // 2. 判斷收到的資料對應的 order是否需要更新
+    // 2.1. 判斷收到的資料 state 不為 cancel
+    if (data.state === Database.ORDER_STATE.CANCEL) {
+      isNeeded = isNeeded && false;
+      updatedOuterTrade.status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
+    }
+    // 2.2 dbOrder.state 不為 100(canceled or done)
+    if (order?.state !== Database.ORDER_STATE_CODE.WAIT) {
+      isNeeded = isNeeded && false;
+      updatedOuterTrade.status =
+        Database.OUTERTRADE_STATUS.DB_ORDER_STATE_ERROR;
+    }
+    // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
+    // if (orderDetail?.state === Database.ORDER_STATE.CANCEL) {
+    //   isNeeded = isNeeded && false;
+    //   updatedOuterTrade.status = Database.OUTERTRADE_STATUS.API_ORDER_CANCEL;
+    // }
+    result = {
+      market,
+      order: order,
+      member: member,
+      // orderDetail: orderDetail,
+      isNeeded: isNeeded,
+      // referredByMember,
+      // memberReferral,
+      updatedOuterTrade: updatedOuterTrade,
+    };
+    this.logger.debug(
+      `[${new Date().toLocaleTimeString()}][${
+        this.constructor.name
+      }] isisCalculationNeeded result`,
+      result
+    );
+    return result;
+  }
+
+  informFrontendTradeUpdate({ memberId, trade, market }) {
+    try {
+      let time = trade.updated_at.replace(/['"]+/g, "");
+      let newTrade = {
+        id: trade.id, // ++ verified 這裡的 id 是 DB trade id 還是  OKx 的 tradeId
+        price: trade.price,
+        volume: trade.volume,
+        market: market.id,
+        at: parseInt(SafeMath.div(new Date(time), "1000")),
+        ts: new Date(time),
+      };
+      this._emitNewTrade({
+        memberId: memberId,
+        instId: market.instId,
+        market: market.id,
+        trade: newTrade,
+      });
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR informFrontendTradeUpdate 出錯 memberId[${memberId}]`,
+        error,
+        `trade`,
+        trade,
+        `market`,
+        market
+      );
+    }
+  }
+
+  informFrontendOrderUpdate(calculatedOrder, member, order, market, data) {
+    try {
+      let time = calculatedOrder.updated_at.replace(/['"]+/g, "");
+      let updatedOrder = {
+        ...calculatedOrder,
+        ordType: order.ord_type,
+        kind:
+          data.side === Database.ORDER_SIDE.BUY
+            ? Database.ORDER_KIND.BID
+            : Database.ORDER_KIND.ASK,
+        price: order.price,
+        origin_volume: order.origin_volume,
+        instId: data.instId,
+        clOrdId: data.clOrdId,
+        ordId: data.ordId,
+        at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
+        ts: new Date(time).getTime(),
+        market: market.id,
+        filled: calculatedOrder.state === Database.ORDER_STATE_CODE.DONE,
+        state_text:
+          calculatedOrder.state === Database.ORDER_STATE_CODE.DONE
+            ? Database.ORDER_STATE_TEXT.DONE
+            : calculatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+            ? Database.ORDER_STATE_TEXT.CANCEL
+            : Database.ORDER_STATE_TEXT.WAIT,
+        state:
+          calculatedOrder.state === Database.ORDER_STATE_CODE.DONE
+            ? Database.ORDER_STATE.DONE
+            : calculatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+            ? Database.ORDER_STATE.CANCEL
+            : Database.ORDER_STATE.WAIT,
+        state_code:
+          calculatedOrder.state === Database.ORDER_STATE_CODE.DONE
+            ? Database.ORDER_STATE_CODE.DONE
+            : calculatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
+            ? Database.ORDER_STATE_CODE.CANCEL
+            : Database.ORDER_STATE_CODE.WAIT,
+      };
+      this._emitUpdateOrder({
+        memberId: member.id,
+        instId: data.instId,
+        market: market.id,
+        order: updatedOrder,
+      });
+    } catch (error) {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR informFrontendOrderUpdate 出錯`,
+        error,
+        `data`,
+        data
+      );
+    }
   }
 
   /**
@@ -4990,277 +5168,70 @@ class ExchangeHub extends Bot {
    * @param {Object} data trade || order
    */
   async processor(data) {
-    let stop,
-      market,
-      memberId,
-      orderId,
+    let market,
+      isNeeded,
       member,
-      order,
-      orderDetail,
+      dbOrder,
+      // orderDetail,
       result,
-      referredByMember,
-      memberReferral,
+      updatedOuterTrade,
       dbTransaction = await this.database.transaction();
-    if (!stop) {
-      try {
-        // 1. 判斷收到的資料是否為此系統的資料
-        // 需滿足下列條件，才為此系統的資料：
-        // 1.1.可以從 data 解析出 orderId 及 memberId
-        market =
-          this.tickersSettings[data.instId.toLowerCase().replace("-", "")];
-        let tmp = Utils.parseClOrdId(data.clOrdId);
-        memberId = tmp.memberId;
-        orderId = tmp.orderId;
-        if (!memberId || !orderId) {
-          if (data.tradeId) {
-            await this.updateOuterTrade({
-              id: data.tradeId,
-              currency: market.code,
-              status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
-              dbTransaction,
-            });
-            await dbTransaction.commit();
-          } else await dbTransaction.rollback();
-          stop = true;
-        }
-        // 1.2.可以根據 orderId 從 database 取得 dbOrder
-        if (!stop) {
-          member = await this.database.getMemberByCondition({ id: memberId });
-          order = await this.database.getOrder(orderId, { dbTransaction });
-        }
-        // 1.3. dbOrder.member_id 同 data 解析出的 memberId
-        if (
-          !stop &&
-          (!order || order?.member_id.toString() !== member?.id.toString())
-        ) {
-          if (data.tradeId) {
-            await this.updateOuterTrade({
-              id: data.tradeId,
-              currency: market.code,
-              status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
-              dbTransaction,
-            });
-            await dbTransaction.commit();
-          } else await dbTransaction.rollback();
-          stop = true;
-        }
-        // 2. 判斷收到的資料對應的 order是否需要更新
-        // 2.1. 判斷收到的資料 state 不為 cancel
-        if (!stop && data.state === Database.ORDER_STATE.CANCEL) {
-          if (data.tradeId) {
-            await this.updateOuterTrade({
-              id: data.tradeId,
-              currency: market.code,
-              member,
-              status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
-              dbOrder: order,
-              dbTransaction,
-            });
-            await dbTransaction.commit();
-          } else await dbTransaction.rollback();
-          stop = true;
-        }
-        // 2.2 dbOrder.state 不為 0
-        if (
-          !stop &&
-          order &&
-          order.state === Database.ORDER_STATE_CODE.CANCEL
-        ) {
-          if (data.tradeId) {
-            await this.updateOuterTrade({
-              id: data.tradeId,
-              currency: market.code,
-              status: Database.OUTERTRADE_STATUS.DB_ORDER_CANCEL,
-              dbOrder: order,
-              member,
-              dbTransaction,
-            });
-            await dbTransaction.commit();
-          } else await dbTransaction.rollback();
-          stop = true;
-        }
-        // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
-        if (!stop) {
-          let apiResonse;
-          switch (data.exchangeCode) {
-            case Database.EXCHANGE.OKEX:
-              apiResonse = await this.okexConnector.router("getOrderDetails", {
-                query: {
-                  instId: data.instId,
-                  ordId: data.ordId,
-                },
-              });
-              break;
-            default:
-              break;
-          }
-          if (apiResonse.success) {
-            orderDetail = apiResonse.payload.shift();
-            if (orderDetail.state === Database.ORDER_STATE.CANCEL) {
-              if (data.tradeId) {
-                await this.updateOuterTrade({
-                  id: data.tradeId,
-                  currency: market.code,
-                  status: Database.OUTERTRADE_STATUS.API_ORDER_CANCEL,
-                  dbOrder: order,
-                  member,
-                  dbTransaction,
-                });
-                await dbTransaction.commit();
-              } else await dbTransaction.rollback();
-              stop = true;
-            }
-          } else {
-            // await this.updateOuterTrade({
-            //   id: data.tradeId,
-            //   status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
-            //   dbTransaction,
-            // });
-            await dbTransaction.rollback();
-            stop = true;
-          }
-        }
-        // 3. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
-        if (!stop) {
-          if (member.refer) {
-            let tmp = await this.getMemberReferral(member);
-            referredByMember = tmp.referredByMember;
-            memberReferral = tmp.memberReferral;
-          }
-          try {
-            result = await this.calculator({
-              market,
-              member,
-              dbOrder: order,
-              orderDetail,
-              data,
-              referredByMember: referredByMember,
-              memberReferral: memberReferral,
-            });
-          } catch (error) {
-            this.logger.error(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
-              }]!!!ERROR processor => calculator 出錯`,
-              `data`,
-              data,
-              `error`,
-              error
-            );
-            // if (error.code === Codes.ABNORMAL_ORDER) {
-            stop = true;
-            try {
-              await this.updateOuterTrade({
-                id: data.tradeId,
-                currency: market.code,
-                status: Database.OUTERTRADE_STATUS.CALCULATOR_ERROR,
-                dbOrder: order,
-                member,
-                dbTransaction,
-              });
-              await dbTransaction.commit();
-            } catch (error) {
-              throw error;
-            }
-          }
-        }
-        if (!stop && result) {
-          // 3.1 計算完後會直接通知前端更新 order
-          let time = result.updatedOrder.updated_at.replace(/['"]+/g, "");
-          let updatedOrder = {
-            ...result.updatedOrder,
-            ordType: order.ord_type,
-            kind:
-              data.side === Database.ORDER_SIDE.BUY
-                ? Database.ORDER_KIND.BID
-                : Database.ORDER_KIND.ASK,
-            price: order.price,
-            origin_volume: order.origin_volume,
-            instId: data.instId,
-            clOrdId: data.clOrdId,
-            ordId: data.ordId,
-            at: parseInt(SafeMath.div(new Date(time).getTime(), "1000")),
-            ts: new Date(time).getTime(),
-            market: market.id,
-            filled:
-              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE,
-            state_text:
-              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-                ? Database.ORDER_STATE_TEXT.DONE
-                : result.updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-                ? Database.ORDER_STATE_TEXT.CANCEL
-                : Database.ORDER_STATE_TEXT.WAIT,
-            state:
-              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-                ? Database.ORDER_STATE.DONE
-                : result.updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-                ? Database.ORDER_STATE.CANCEL
-                : Database.ORDER_STATE.WAIT,
-            state_code:
-              result.updatedOrder.state === Database.ORDER_STATE_CODE.DONE
-                ? Database.ORDER_STATE_CODE.DONE
-                : result.updatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-                ? Database.ORDER_STATE_CODE.CANCEL
-                : Database.ORDER_STATE_CODE.WAIT,
-          };
-          this._emitUpdateOrder({
-            memberId,
-            instId: data.instId,
-            market: market.id,
-            order: updatedOrder,
-          });
-          // }
-          // 4. 只有由 ExchangeHubService 呼叫的時候， type 為 Database.MODIFIABLE_TYPE.TRADE，才會有 tradeId（來自 OKx 的 tradeId） ，才可以對 DB 進行更新
-          // trade 新增進 DB 後才可以得到我們的 trade id
-          // db 更新的資料為 calculator 得到的 result
-          if (data.tradeId) {
-            try {
-              await this.updater({
-                ...result,
-                member,
-                dbOrder: order,
-                tradeFk: data.tradeId,
-                market,
-                instId: data.instId,
-                dbTransaction,
-              });
-              await dbTransaction.commit();
-            } catch (error) {
-              this.logger.error(
-                `[${new Date().toISOString()}][${
-                  this.constructor.name
-                }]!!!ERROR processor => updater 出錯`,
-                `data`,
-                data,
-                `error`,
-                error
-              );
-              // if (error.code === Codes.DUPLICATE_PROCESS_OUTER_TRADE) {
-              stop = true;
-              await this.updateOuterTrade({
-                id: data.tradeId,
-                status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
-                currency: market.code,
-                dbTransaction,
-              });
-              await dbTransaction.commit();
-              // } else throw error;
-            }
-          } else await dbTransaction.rollback();
-        }
-      } catch (error) {
-        await dbTransaction.rollback();
-        this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
-          }]!!!ERROR processor 出錯`,
-          `data`,
-          data,
-          `error`,
-          error
-        );
+    try {
+      // 1. isCalculationNeeded
+      result = await this.isCalculationNeeded(data, dbTransaction);
+      member = result?.member;
+      dbOrder = result?.order;
+      // orderDetail = result?.orderDetail;
+      market = result?.market;
+      isNeeded = result?.isNeeded;
+      updatedOuterTrade = result?.updatedOuterTrade;
+      // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
+      if (isNeeded) {
+        result = await this.calculator({
+          market: market,
+          member: member,
+          dbOrder: dbOrder,
+          data: data,
+          // orderDetail,
+          // referredByMember,
+          // memberReferral,
+          updatedOuterTrade,
+        });
       }
+      if (result?.isDBUpdateNeed) {
+        // 3.1 計算完後會直接通知前端更新 order
+        this.informFrontendOrderUpdate({
+          calculatedOrder: result.updatedOrder,
+          member,
+          order: dbOrder,
+          market,
+          data,
+        });
+        // 4. db 更新的資料為 calculator 得到的 result
+        updatedOuterTrade = await this.updater({
+          ...result,
+          member,
+          dbOrder: dbOrder,
+          tradeFk: data.tradeId,
+          market,
+          instId: data.instId,
+          dbTransaction,
+        });
+      }
+      await dbTransaction.commit();
+    } catch (error) {
+      await dbTransaction.rollback();
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR processor 出錯`,
+        `data`,
+        data,
+        `error`,
+        error
+      );
     }
+    await this.updateOuterTrade(updatedOuterTrade);
   }
 
   async worker() {
