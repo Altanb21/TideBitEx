@@ -2579,10 +2579,6 @@ class mysql {
 		  LIMIT 1;
       `;
       if (!accountId) throw Error(`accountId is required`);
-      this.logger.debug(
-        `[sql][${new Date().toISOString()}] updateAccountByAccountVersion query`,
-        query
-      );
       let result = await this.db.query(
         {
           query,

@@ -4652,9 +4652,21 @@ class ExchangeHub extends Bot {
           { ...updatedOrder, updated_at: `"${updatedOrder.updated_at}"` },
           { dbTransaction }
         );
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] database order is updated`,
+          { ...updatedOrder, updated_at: `"${updatedOrder.updated_at}"` }
+        );
         tradeId = await this.database.insertTrades(
           { ...trade, trade_fk: tradeFk },
           { dbTransaction }
+        );
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] database trade is inserted`,
+          { ...trade, id: tradeId }
         );
         this.informFrontendTradeUpdate({
           trade: { ...trade, id: tradeId, trade_fk: tradeFk },
@@ -4668,18 +4680,42 @@ class ExchangeHub extends Bot {
           },
           { dbTransaction }
         );
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] database voucher is inserted`,
+          { ...voucher, id: voucherId }
+        );
         newAskAccountVersion = await this._updateAccount(
           { ...askAccountVersion, modifiable_id: tradeId },
           dbTransaction
+        );
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] database askAccountVersion is inserted`,
+          { ...newAskAccountVersion }
         );
         newBidAccountVersion = await this._updateAccount(
           { ...bidAccountVersion, modifiable_id: tradeId },
           dbTransaction
         );
+        this.logger.debug(
+          `[${new Date().toLocaleTimeString()}][${
+            this.constructor.name
+          }] database bidAccountVersion is inserted`,
+          { ...newBidAccountVersion }
+        );
         if (orderFullFilledAccountVersion) {
           newOrderFullFilledAccountVersion = await this._updateAccount(
             { ...orderFullFilledAccountVersion, modifiable_id: tradeId },
             dbTransaction
+          );
+          this.logger.debug(
+            `[${new Date().toLocaleTimeString()}][${
+              this.constructor.name
+            }] database orderFullFilledAccountVersion is inserted`,
+            { ...newOrderFullFilledAccountVersion }
           );
         }
         if (referralCommission) {
@@ -4837,6 +4873,7 @@ class ExchangeHub extends Bot {
         id: data.tradeId,
         currency: market.code,
         update_at: now,
+        status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
       },
       isNeeded = true,
       result,
@@ -4952,10 +4989,10 @@ class ExchangeHub extends Bot {
         trade: newTrade,
       });
     } catch (error) {
-      this.logger.error(
+      this.logger.debug(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR informFrontendTradeUpdate 出錯 memberId[${memberId}]`,
+        }]!!!ERROR [wont stop] informFrontendTradeUpdate 出錯 memberId[${memberId}]`,
         error,
         `trade`,
         trade,
@@ -4965,7 +5002,13 @@ class ExchangeHub extends Bot {
     }
   }
 
-  informFrontendOrderUpdate(calculatedOrder, member, order, market, data) {
+  informFrontendOrderUpdate({
+    calculatedOrder,
+    order,
+    memberId,
+    market,
+    data,
+  }) {
     try {
       let time = calculatedOrder.updated_at.replace(/['"]+/g, "");
       let updatedOrder = {
@@ -5004,19 +5047,21 @@ class ExchangeHub extends Bot {
             : Database.ORDER_STATE_CODE.WAIT,
       };
       this._emitUpdateOrder({
-        memberId: member.id,
+        memberId: memberId,
         instId: data.instId,
-        market: market.id,
+        market: market,
         order: updatedOrder,
       });
     } catch (error) {
-      this.logger.error(
+      this.logger.debug(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR informFrontendOrderUpdate 出錯`,
+        }]!!!ERROR [wont stop] informFrontendOrderUpdate 出錯`,
         error,
         `data`,
-        data,`calculatedOrder`,calculatedOrder
+        data,
+        `calculatedOrder`,
+        calculatedOrder
       );
     }
   }
@@ -5057,9 +5102,9 @@ class ExchangeHub extends Bot {
         // 3. 確認稽核交易紀錄合法後通知前端更新 order
         this.informFrontendOrderUpdate({
           calculatedOrder: result.updatedOrder,
-          member,
+          memberId: member.id,
           order: dbOrder,
-          market,
+          market: market.id,
           data,
         });
         // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
@@ -5072,6 +5117,9 @@ class ExchangeHub extends Bot {
           instId: data.instId,
           dbTransaction,
         });
+        updatedOuterTrade = { ...result.updatedOuterTrade };
+        if (result.success) await dbTransaction.commit();
+        else await dbTransaction.rollback();
         this.logger.debug(
           `[${new Date().toISOString()}][${
             this.constructor.name
@@ -5079,9 +5127,6 @@ class ExchangeHub extends Bot {
           updatedOuterTrade
         );
       }
-      updatedOuterTrade = { ...result.updatedOuterTrade };
-      if (result.success) await dbTransaction.commit();
-      else await dbTransaction.rollback();
     } catch (error) {
       await dbTransaction.rollback();
       this.logger.error(
