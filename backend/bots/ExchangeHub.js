@@ -4737,7 +4737,7 @@ class ExchangeHub extends Bot {
         updatedOuterTrade = {
           ...updatedOuterTrade,
           status: Database.OUTERTRADE_STATUS.DONE,
-          trade_id: trade.id,
+          trade_id: tradeId,
           voucher_id: voucherId,
           voucher_price: voucher.price,
           voucher_volume: voucher.volume,
