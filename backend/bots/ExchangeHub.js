@@ -4147,7 +4147,7 @@ class ExchangeHub extends Bot {
           // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
           // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
           updatedOrder.state = Database.ORDER_STATE_CODE.DONE;
-          updatedOrder.done_at = updatedOrder.updated_at;
+          updatedOrder.done_at = `"${updatedOrder.updated_at}"`;
         } else updatedOrder.state = Database.ORDER_STATE_CODE.WAIT;
       } else {
         isSuccessCalcalatedOrder = false;
@@ -5016,7 +5016,7 @@ class ExchangeHub extends Bot {
         }]!!!ERROR informFrontendOrderUpdate 出錯`,
         error,
         `data`,
-        data
+        data,`calculatedOrder`,calculatedOrder
       );
     }
   }
