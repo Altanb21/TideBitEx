@@ -4151,18 +4151,10 @@ class ExchangeHub extends Bot {
       value = SafeMath.mult(data.fillPx, data.fillSz),
       updatedOrder = {};
     try {
-      updatedOrder.updated_at =
-        data.utime || data.ts
-          ? `${new Date(parseInt(data.utime || data.ts))
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`
-          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+      updatedOrder.updated_at = updatedOuterTrade.update_at;
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
       updatedOrder.volume = SafeMath.minus(dbOrder.volume, data.fillSz);
-      // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
-      // 4.1 更新 order doneAt
-      // 4.2 更新 order state
+
       if (SafeMath.gte(updatedOrder.volume, "0")) {
         // 2. 新的 order tradesCounts 為 db紀錄的該 order tradesCounts + 1
         /** Way to Verify Counts
@@ -4195,6 +4187,9 @@ class ExchangeHub extends Bot {
           // && orderDetail.state === Database.ORDER_STATE.FILLED &&
           // dbOrder.origin_volume === orderDetail.accFillSz
         ) {
+          // 4. 根據更新的 order volume 是否為 0 來判斷此筆 order 是否完全撮合，為 0 即完全撮合
+          // 4.1 更新 order doneAt
+          // 4.2 更新 order state
           // 5. 當更新的 order 已完全撮合，需要將剩餘鎖定的金額全部釋放還給對應的 account，此時會新增一筆 account version 的紀錄，這邊將其命名為 orderFullFilledAccountVersion
           // !!!!!! ALERT 剩餘鎖定金額的紀錄保留在 order裡面 （實際有還給 account 並生成憑證）
           updatedOrder.state = Database.ORDER_STATE_CODE.DONE;
@@ -4274,13 +4269,7 @@ class ExchangeHub extends Bot {
     bidFee,
   }) {
     let value = SafeMath.mult(data.fillPx, data.fillSz),
-      time =
-        data.utime || data.ts
-          ? `${new Date(parseInt(data.utime || data.ts))
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`
-          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
+      time = updatedOrder.updated_at,
       askAccountVersion = {
         member_id: memberId,
         currency: askCurrency,
@@ -4376,16 +4365,9 @@ class ExchangeHub extends Bot {
    * @property {decimal} bid_fee
    * @property {date} created_at
    */
-  createVoucher({ data, ask, bid, memberId, dbOrderId, askFee, bidFee }) {
+  createVoucher({ data, time, ask, bid, memberId, dbOrderId, askFee, bidFee }) {
     let trend,
-      value = SafeMath.mult(data.fillPx, data.fillSz),
-      time =
-        data.utime || data.ts
-          ? `${new Date(parseInt(data.utime || data.ts))
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`
-          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+      value = SafeMath.mult(data.fillPx, data.fillSz);
     if (data.side === Database.ORDER_SIDE.BUY) {
       trend = Database.ORDER_KIND.BID;
     }
@@ -4411,15 +4393,8 @@ class ExchangeHub extends Bot {
     return voucher;
   }
 
-  createTrade({ data, currency, memberId, dbOrderId }) {
-    let value = SafeMath.mult(data.fillPx, data.fillSz),
-      time =
-        data.utime || data.ts
-          ? `${new Date(parseInt(data.utime || data.ts))
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`
-          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+  createTrade({ data, time, currency, memberId, dbOrderId }) {
+    let value = SafeMath.mult(data.fillPx, data.fillSz);
 
     let trade = {
       price: data.fillPx,
@@ -4443,6 +4418,7 @@ class ExchangeHub extends Bot {
   async createReferralCommission({
     market,
     data,
+    time,
     member,
     voucher,
     refGrossFee,
@@ -4452,15 +4428,7 @@ class ExchangeHub extends Bot {
       let tmp = await this.getMemberReferral(member);
       referredByMember = tmp.referredByMember;
       memberReferral = tmp.memberReferral;
-      let trend,
-        currency,
-        time =
-          data.utime || data.ts
-            ? `${new Date(parseInt(data.utime || data.ts))
-                .toISOString()
-                .slice(0, 19)
-                .replace("T", " ")}`
-            : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
+      let trend, currency;
       /**
        * referred_by_member: @referred_by_member => referredByMember.id
        * trade_member: @trade_member => member.id
@@ -4529,17 +4497,8 @@ class ExchangeHub extends Bot {
     return referralCommission;
   }
 
-  // 1. 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
-  async calculator({
-    market,
-    member,
-    dbOrder,
-    data,
-    // orderDetail,
-    // referredByMember,
-    // memberReferral,
-    updatedOuterTrade,
-  }) {
+  // 稽核交易紀錄是否合法並產生對應此筆撮合紀錄的相關資料, 根據 data 計算需要更新的 order、 trade 、 voucher、 accountVersion(s)，裡面的格式是DB直接可用的資料
+  async calculator({ market, member, dbOrder, data, updatedOuterTrade }) {
     let isSuccessCalcalatedOrder,
       updatedOrder,
       askFee,
@@ -4557,10 +4516,10 @@ class ExchangeHub extends Bot {
       let result = this.calculateOrder({
         data,
         dbOrder,
-        // , orderDetail
+        updatedOuterTrade,
       });
-      updatedOrder = result.updatedOrder;
       isSuccessCalcalatedOrder = result.isSuccessCalcalatedOrder;
+      updatedOrder = { ...result.updatedOrder };
       updatedOuterTrade = { ...result.updatedOuterTrade };
       if (isSuccessCalcalatedOrder) {
         // 1. 根據 data side （BUY，SELL）需要分別計算 fee
@@ -4590,6 +4549,7 @@ class ExchangeHub extends Bot {
         // 3. 生成 Voucher
         voucher = this.createVoucher({
           data,
+          time: updatedOrder.updated_at,
           memberId: member.id,
           dbOrderId: dbOrder.id,
           ask: market.ask.currency,
@@ -4600,6 +4560,7 @@ class ExchangeHub extends Bot {
         // 4. 生成 Trade
         trade = this.createTrade({
           data,
+          time: updatedOrder.updated_at,
           currency: market.code,
           memberId: member.id,
           dbOrderId: dbOrder.id,
@@ -4609,6 +4570,7 @@ class ExchangeHub extends Bot {
           referralCommission = await this.createReferralCommission({
             market,
             data,
+            time: updatedOrder.updated_at,
             member,
             voucher,
             refGrossFee,
@@ -4725,10 +4687,6 @@ class ExchangeHub extends Bot {
       newAskAccountVersion,
       newBidAccountVersion,
       newOrderFullFilledAccountVersion;
-    // dbTrade,
-    // dbVoucher,
-    // dbAccountVersions,
-    // dbReferrerCommission
     try {
       let dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (!dbTrade) {
@@ -4805,50 +4763,9 @@ class ExchangeHub extends Bot {
           }]!!!ERROR DUPLICATE_PROCESS dbTrade`,
           dbTrade
         );
-        // tradeId = dbTrade.id;
-        // !!! for debugging temporary
-        // dbVoucher = await this.database.getVoucherByOrderIdAndTradeId(
-        //   dbOrder.id,
-        //   tradeId
-        // );
-        // this.logger.error(
-        //   `[${new Date().toISOString()}][${
-        //     this.constructor.name
-        //   }]!!!ERROR DUPLICATE_PROCESS dbVoucher`,
-        //   dbVoucher
-        // );
-        // dbAccountVersions =
-        //   await this.database.getAccountVersionsByModifiableIds(
-        //     [tradeId],
-        //     Database.MODIFIABLE_TYPE.TRADE
-        //   );
-        // this.logger.error(
-        //   `[${new Date().toISOString()}][${
-        //     this.constructor.name
-        //   }]!!!ERROR DUPLICATE_PROCESS dbAccountVersions`,
-        //   dbAccountVersions
-        // );
-        // if (dbVoucher) {
-        //   let rcs = await this.database.getReferralCommissionsByConditions({
-        //     conditions: {
-        //       voucherId: dbVoucher.id,
-        //       market: market.code,
-        //       tradeMemberId: member.id,
-        //     },
-        //   });
-        //   dbReferrerCommission = rcs[0];
-        //   this.logger.error(
-        //     `[${new Date().toISOString()}][${
-        //       this.constructor.name
-        //     }]!!!ERROR DUPLICATE_PROCESS dbReferrerCommission`,
-        //     dbReferrerCommission
-        //   );
-        // }
         updatedOuterTrade = {
           ...updatedOuterTrade,
           status: Database.OUTERTRADE_STATUS.DUPLICATE_PROCESS,
-          // trade: { ...trade, id: tradeId },
-          // voucher: { ...voucher, id: dbVoucher.id },
         };
       }
     } catch (error) {
@@ -4943,127 +4860,107 @@ class ExchangeHub extends Bot {
     return result;
   }
 
+  // 判斷此筆撮合紀錄需要被處理
   async isCalculationNeeded(data, dbTransaction) {
-    let isNeeded = true,
-      result,
-      market = this.tickersSettings[data.instId.toLowerCase().replace("-", "")],
+    let market =
+        this.tickersSettings[data.instId.toLowerCase().replace("-", "")],
+      now =
+        data.utime || data.ts
+          ? `${new Date(parseInt(data.utime || data.ts))
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`
+          : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOuterTrade = {
         id: data.tradeId,
         currency: market.code,
-        // dbTransaction, // ++ !!
+        update_at: `"${now}"`,
       },
+      isNeeded = true,
+      result,
       _memberId,
       _orderId,
       member,
-      // referredByMember,
-      // memberReferral,
-      order,
-      // orderDetail,
-      tmp,
-      now = `${new Date().toISOString().slice(0, 19).replace("T", " ")}`;
-    // try {
-    //   // --- start: get orderDetail ---
-    //   tmp = this.getOrderDetails({
-    //     query: {
-    //       instId: data.instId,
-    //       ordId: data.ordId,
-    //       exchangeCode: data.exchangeCode,
-    //     },
-    //   });
-    //   if (tmp.success) {
-    //     orderDetail = tmp.payload;
-    //   } else {
-    //     isNeeded = isNeeded && false;
-    //     updatedOuterTrade.status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
-    //   }
-    // } catch (error) {
-    //   this.logger.debug(
-    //     `[${new Date().toLocaleTimeString()}][${
-    //       this.constructor.name
-    //     }] !!! ERROR isCalculationNeeded: error`,
-    //     error
-    //   );
-    //   isNeeded = isNeeded && false;
-    //   updatedOuterTrade.status = Database.OUTERTRADE_STATUS.API_UNKNOWN_ERROR;
-    // }
-    // // --- end: get orderDetail ---
+      order;
 
-    // 1. 判斷收到的資料是否為此系統的資料
-    // --- start: parse clOrdId to get memberId and  orderId---
-    // 需滿足下列條件，才為此系統的資料：
-    // 1.1.可以從 data 解析出 orderId 及 memberId
-    tmp = Utils.parseClOrdId(data.clOrdId);
-    _memberId = tmp.memberId;
-    _orderId = tmp.orderId;
-    if (!_memberId || !_orderId) {
-      isNeeded = isNeeded && false;
-      updatedOuterTrade = {
-        ...updatedOuterTrade,
-        status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
-        order_id: 0,
-      };
+    // 1. 判斷收到的資料對應的 order是否需要更新
+    // 1.1. 判斷收到的資料 state 不為 cancel
+    if (data.state !== Database.ORDER_STATE.CANCEL) {
+      // 2. 判斷收到的資料是否為此系統的資料
+      // --- start: parse clOrdId to get memberId and  orderId---
+      // 需滿足下列條件，才為此系統的資料：
+      // 2.1.可以從 data 解析出 orderId 及 memberId
+      let tmp = Utils.parseClOrdId(data.clOrdId);
+      _memberId = tmp.memberId;
+      _orderId = tmp.orderId;
       // --- end: parse clOrdId to get memberId and  orderId---
-    } else {
-      // --- start: get member and  order from DB---
-      // 1.2.可以根據 orderId 從 database 取得 dbOrder
-      try {
-        member = await this.database.getMemberByCondition({ id: _memberId });
-        order = await this.database.getOrder(_orderId, { dbTransaction });
-        updatedOuterTrade = {
-          ...updatedOuterTrade,
-          order_id: order.id,
-          order_price: order.price,
-          order_origin_volume: order.origin_volume,
-          kind: `"${order.ord_type}"`,
-          member_id: member.id,
-          member_tag: member.member_tag,
-          email: member.email,
-          update_at: `"${now}"`,
-          // dbTransaction, // ++ !!
-        };
-      } catch (error) {
+      if (!!_memberId && !!_orderId) {
+        // 2.2.可以根據 orderId 從 database 取得 dbOrder
+        try {
+          // --- start: get member and  order from DB---
+          member = await this.database.getMemberByCondition({ id: _memberId });
+          order = await this.database.getOrder(_orderId, { dbTransaction });
+          // --- end: get member and  order from DB---
+          if (member)
+            updatedOuterTrade = {
+              ...updatedOuterTrade,
+              member_id: member.id,
+              member_tag: member.member_tag,
+              email: member.email,
+            };
+          if (order)
+            updatedOuterTrade = {
+              ...updatedOuterTrade,
+              order_id: order.id,
+              order_price: order.price,
+              order_origin_volume: order.origin_volume,
+              kind: `"${order.ord_type}"`,
+            };
+          if (order && member && SafeMath.eq(order?.member_id, member.id)) {
+            // 2.2 dbOrder.state 不為 100(canceled or done)
+            if (order?.state === Database.ORDER_STATE_CODE.WAIT) {
+              isNeeded = isNeeded && true;
+            } else {
+              isNeeded = isNeeded && false;
+              updatedOuterTrade = {
+                ...updatedOuterTrade,
+                status: Database.OUTERTRADE_STATUS.DB_ORDER_STATE_ERROR,
+              };
+            }
+          } else {
+            isNeeded = isNeeded && false;
+            updatedOuterTrade = {
+              ...updatedOuterTrade,
+              status: Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE,
+            };
+          }
+        } catch (error) {
+          isNeeded = isNeeded && false;
+          updatedOuterTrade = {
+            ...updatedOuterTrade,
+            status: Database.OUTERTRADE_STATUS.DB_OPERATION_ERROR,
+          };
+        }
+      } else {
         isNeeded = isNeeded && false;
         updatedOuterTrade = {
           ...updatedOuterTrade,
-          status: Database.OUTERTRADE_STATUS.DB_OPERATION_ERROR,
+          status: Database.OUTERTRADE_STATUS.ClORDId_ERROR,
+          order_id: 0,
         };
       }
-    }
-    // 1.3. dbOrder.member_id 同 data 解析出的 memberId
-    if (
-      !order ||
-      !member ||
-      (!!_memberId && !SafeMath.eq(order?.member_id, _memberId))
-    ) {
+    } else {
       isNeeded = isNeeded && false;
-      updatedOuterTrade.status = Database.OUTERTRADE_STATUS.OTHER_SYSTEM_TRADE;
+      updatedOuterTrade = {
+        ...updatedOuterTrade,
+        status: Database.OUTERTRADE_STATUS.SYSTEM_ERROR,
+      };
     }
-    // --- end: get member and  order from DB---
-    // 2. 判斷收到的資料對應的 order是否需要更新
-    // 2.1. 判斷收到的資料 state 不為 cancel
-    if (data.state === Database.ORDER_STATE.CANCEL) {
-      isNeeded = isNeeded && false;
-      updatedOuterTrade.status = Database.OUTERTRADE_STATUS.SYSTEM_ERROR;
-    }
-    // 2.2 dbOrder.state 不為 100(canceled or done)
-    if (order?.state !== Database.ORDER_STATE_CODE.WAIT) {
-      isNeeded = isNeeded && false;
-      updatedOuterTrade.status =
-        Database.OUTERTRADE_STATUS.DB_ORDER_STATE_ERROR;
-    }
-    // 2.3 OKx api 回傳的 orderDetail state 不為 cancel
-    // if (orderDetail?.state === Database.ORDER_STATE.CANCEL) {
-    //   isNeeded = isNeeded && false;
-    //   updatedOuterTrade.status = Database.OUTERTRADE_STATUS.API_ORDER_CANCEL;
-    // }
     result = {
       market,
       order: order,
       member: member,
-      // orderDetail: orderDetail,
       isNeeded: isNeeded,
-      // referredByMember,
-      // memberReferral,
       updatedOuterTrade: updatedOuterTrade,
     };
     this.logger.debug(
@@ -5177,29 +5074,25 @@ class ExchangeHub extends Bot {
       updatedOuterTrade,
       dbTransaction = await this.database.transaction();
     try {
-      // 1. isCalculationNeeded
+      // 1. 判斷此筆撮合紀錄需要被處理
       result = await this.isCalculationNeeded(data, dbTransaction);
       member = result?.member;
       dbOrder = result?.order;
-      // orderDetail = result?.orderDetail;
       market = result?.market;
       isNeeded = result?.isNeeded;
       updatedOuterTrade = result?.updatedOuterTrade;
-      // 2. 此 data 為本系統的 data，根據 data 裡面的資料去就算對應要更新的 order 及需要新增的 trade、voucher、accounts
+      // 2. 稽核交易紀錄是否合法並產生對應此筆撮合紀錄的相關資料
       if (isNeeded) {
         result = await this.calculator({
           market: market,
           member: member,
           dbOrder: dbOrder,
           data: data,
-          // orderDetail,
-          // referredByMember,
-          // memberReferral,
           updatedOuterTrade,
         });
       }
       if (result?.isDBUpdateNeed) {
-        // 3.1 計算完後會直接通知前端更新 order
+        // 3. 確認稽核交易紀錄合法後通知前端更新 order
         this.informFrontendOrderUpdate({
           calculatedOrder: result.updatedOrder,
           member,
@@ -5207,7 +5100,7 @@ class ExchangeHub extends Bot {
           market,
           data,
         });
-        // 4. db 更新的資料為 calculator 得到的 result
+        // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
         updatedOuterTrade = await this.updater({
           ...result,
           member,
