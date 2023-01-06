@@ -3499,7 +3499,7 @@ class ExchangeHub extends Bot {
             this.logger.error(
               `[${new Date().toISOString()}][${
                 this.constructor.name
-              }]!!!ERROR database.updateOrder error`,
+              }]!!!ERROR cancelDBOrderHander _updateAccount error`,
               `error`,
               error,
               `dbOrder`,
@@ -3513,7 +3513,7 @@ class ExchangeHub extends Bot {
           this.logger.error(
             `[${new Date().toISOString()}][${
               this.constructor.name
-            }]!!!ERROR database.updateOrder error`,
+            }]!!!ERROR cancelDBOrderHander database.updateOrder error`,
             `error`,
             error,
             `dbOrder`,
@@ -4592,9 +4592,12 @@ class ExchangeHub extends Bot {
   async updateOuterTrade(updatedOuterTrade) {
     let dbTransaction = this.database.transaction();
     try {
-      await this.database.updateOuterTrade(updatedOuterTrade, {
-        dbTransaction,
-      });
+      await this.database.updateOuterTrade(
+        { ...updatedOuterTrade, update_at: `"${updatedOuterTrade.update_at}"` },
+        {
+          dbTransaction,
+        }
+      );
       await dbTransaction.commit();
     } catch (error) {
       this.logger.error(
@@ -4635,7 +4638,8 @@ class ExchangeHub extends Bot {
      * 4. update Accounts
      * 5. insert referralCommission (++ TODO verify)
      */
-    let tradeId,
+    let success = false,
+      tradeId,
       voucherId,
       // referralCommissionId,
       newAskAccountVersion,
@@ -4644,7 +4648,10 @@ class ExchangeHub extends Bot {
     try {
       let dbTrade = await this.database.getTradeByTradeFk(tradeFk);
       if (!dbTrade) {
-        await this.database.updateOrder(updatedOrder, { dbTransaction });
+        await this.database.updateOrder(
+          { ...updatedOrder, updated_at: `"${updatedOrder.updated_at}"` },
+          { dbTransaction }
+        );
         tradeId = await this.database.insertTrades(
           { ...trade, trade_fk: tradeFk },
           { dbTransaction }
@@ -4710,6 +4717,7 @@ class ExchangeHub extends Bot {
           // referral_commission_id: referralCommission?.id || null,
           // referral: referralCommission?.amount || null,
         };
+        success = true;
       } else {
         this.logger.error(
           `[${new Date().toISOString()}][${
@@ -4761,7 +4769,7 @@ class ExchangeHub extends Bot {
       // throw error;
     }
     /* !!! HIGH RISK (end) !!! */
-    return updatedOuterTrade;
+    return { success, updatedOuterTrade };
   }
 
   async getOrderDetails({ query }) {
@@ -4828,7 +4836,7 @@ class ExchangeHub extends Bot {
       updatedOuterTrade = {
         id: data.tradeId,
         currency: market.code,
-        update_at: `"${now}"`,
+        update_at: now,
       },
       isNeeded = true,
       result,
@@ -5055,7 +5063,7 @@ class ExchangeHub extends Bot {
           data,
         });
         // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
-        updatedOuterTrade = await this.updater({
+        result = await this.updater({
           ...result,
           member,
           dbOrder: dbOrder,
@@ -5064,8 +5072,16 @@ class ExchangeHub extends Bot {
           instId: data.instId,
           dbTransaction,
         });
+        this.logger.debug(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }] processor updater result: updatedOuterTrade`,
+          updatedOuterTrade
+        );
       }
-      await dbTransaction.commit();
+      updatedOuterTrade = { ...result.updatedOuterTrade };
+      if (result.success) await dbTransaction.commit();
+      else await dbTransaction.rollback();
     } catch (error) {
       await dbTransaction.rollback();
       this.logger.error(
@@ -6111,7 +6127,7 @@ class ExchangeHub extends Bot {
         `accountVersion`,
         accountVersion
       );
-      throw error;
+      // throw error;
     }
     return { ...newAccountVersion, id: accountVersionId };
     /* !!! HIGH RISK (end) !!! */
