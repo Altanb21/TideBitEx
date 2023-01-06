@@ -4104,6 +4104,7 @@ class ExchangeHub extends Bot {
       value = SafeMath.mult(data.fillPx, data.fillSz),
       updatedOrder = {};
     try {
+      updatedOrder.id = dbOrder.id;
       updatedOrder.updated_at = updatedOuterTrade.update_at;
       // 1. 新的 order volume 為 db紀錄的該 order volume 減去 data 裡面的 fillSz
       updatedOrder.volume = SafeMath.minus(dbOrder.volume, data.fillSz);
@@ -4492,7 +4493,7 @@ class ExchangeHub extends Bot {
           data,
           memberId: member.id,
           askCurrency: dbOrder.ask,
-          bidCurrency: dbOrder.bibd,
+          bidCurrency: dbOrder.bid,
           askFee,
           bidFee,
         });
@@ -4919,7 +4920,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `[${new Date().toLocaleTimeString()}][${
         this.constructor.name
-      }] isisCalculationNeeded result`,
+      }] isCalculationNeeded result`,
       result
     );
     return result;
