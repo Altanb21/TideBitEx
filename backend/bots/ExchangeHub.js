@@ -151,7 +151,7 @@ class ExchangeHub extends Bot {
     this.logger.debug(
       `[${
         this.constructor.name
-      }][${new Date().toISOString()}] start: call exchangeHubService.sync`,
+      }][${new Date().toISOString()}] start: call exchangeHubService.sync`
     );
     this.exchangeHubService.sync({
       exchange: SupportedExchange.OKEX,
@@ -4600,7 +4600,7 @@ class ExchangeHub extends Bot {
       }] updateOuterTrade updatedOuterTrade`,
       updatedOuterTrade
     );
-    let dbTransaction = this.database.transaction();
+    let dbTransaction = await this.database.transaction();
     try {
       await this.database.updateOuterTrade(
         { ...updatedOuterTrade, update_at: `"${updatedOuterTrade.update_at}"` },
@@ -4619,8 +4619,8 @@ class ExchangeHub extends Bot {
         `updatedOuterTrade`,
         updatedOuterTrade
       );
-      // throw error;
       await dbTransaction.rollback();
+      throw error;
     }
   }
 
@@ -5140,14 +5140,15 @@ class ExchangeHub extends Bot {
           dbTransaction,
         });
         updatedOuterTrade = { ...result.updatedOuterTrade };
-        if (result.success) await dbTransaction.commit();
-        else await dbTransaction.rollback();
         this.logger.debug(
           `[${new Date().toISOString()}][${
             this.constructor.name
-          }] processor updater result: updatedOuterTrade`,
-          updatedOuterTrade
+          }] processor updater result`,
+          result
         );
+        await this.updateOuterTrade(updatedOuterTrade);
+        if (result.success) await dbTransaction.commit();
+        else await dbTransaction.rollback();
       }
     } catch (error) {
       await dbTransaction.rollback();
@@ -5161,7 +5162,6 @@ class ExchangeHub extends Bot {
         error
       );
     }
-    await this.updateOuterTrade(updatedOuterTrade);
   }
 
   async worker() {
