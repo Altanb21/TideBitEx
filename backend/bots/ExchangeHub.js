@@ -3525,9 +3525,9 @@ class ExchangeHub extends Bot {
       this.logger.error(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR cancelDBOrderHander didnot found tickerSetting`,
-        `this.coinsSettingsMap`,
-        this.coinsSettingsMap,
+        }]!!!ERROR cancelDBOrderHander params error`,
+        `SafeMath.eq(dbOrder.member_id(${dbOrder.member_id}), memberId(${memberId})) || force(${force})`,
+        SafeMath.eq(dbOrder.member_id, memberId) || force,
         `dbOrder`,
         dbOrder
       );
