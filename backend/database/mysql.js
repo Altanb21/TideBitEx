@@ -2106,26 +2106,27 @@ class mysql {
     const query =
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    const values = [
+      "DEFAULT",
+      member_id,
+      accountId,
+      reason,
+      balance,
+      locked,
+      fee,
+      amount,
+      modifiable_id,
+      modifiable_type,
+      created_at,
+      updated_at,
+      currency,
+      fun,
+    ];
     try {
       result = await this.db.query(
         {
           query,
-          values: [
-            "DEFAULT",
-            member_id,
-            accountId,
-            reason,
-            balance,
-            locked,
-            fee,
-            amount,
-            modifiable_id,
-            modifiable_type,
-            created_at,
-            updated_at,
-            currency,
-            fun,
-          ],
+          values,
         },
         {
           transaction: dbTransaction,
@@ -2139,7 +2140,9 @@ class mysql {
       );
       this.logger.error(
         `[sql][${new Date().toISOString()}] insertAccountVersion query`,
-        query
+        query,
+        `values`,
+        values
       );
       if (dbTransaction) throw error;
     }
