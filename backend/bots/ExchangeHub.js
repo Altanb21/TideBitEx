@@ -3551,7 +3551,6 @@ class ExchangeHub extends Bot {
           }`
         ],
       dbUpdateR,
-      apiR,
       result,
       clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
     try {
@@ -3584,7 +3583,7 @@ class ExchangeHub extends Bot {
                 market: tickerSetting.market,
                 order: {
                   ...dbUpdateR.updatedOrder,
-                  ordId: apiR.payload[0].ordId,
+                  ordId: result.payload[0].ordId,
                 },
               });
             } else {
