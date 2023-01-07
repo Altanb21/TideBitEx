@@ -3554,14 +3554,6 @@ class ExchangeHub extends Bot {
       apiR,
       result,
       clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
-    this.logger.debug(
-      `[${new Date().toISOString()}][${
-        this.constructor.name
-      }] postCancelOrder tickerSetting[${
-        this.coinsSettingsMap[dbOrder.ask]?.code
-      }${this.coinsSettingsMap[dbOrder.bid]?.code}]`,
-      tickerSetting
-    );
     try {
       switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
@@ -3617,7 +3609,9 @@ class ExchangeHub extends Bot {
               `[${new Date().toISOString()}][${
                 this.constructor.name
               }]!!!ERROR postCancelOrder [memberId(${memberId})] [clOrdId(${clOrdId})] updateOrderStatus出錯 body`,
-              body
+              body,
+              `result`,
+              result
             );
           }
           break;
@@ -3639,7 +3633,8 @@ class ExchangeHub extends Bot {
       this.logger.error(
         `[${new Date().toISOString()}][${
           this.constructor.name
-        }]!!!ERROR postCancelOrder [memberId(${memberId})]取消訂單失敗了`,
+        }]!!!ERROR postCancelOrder [memberId(${memberId})]取消訂單失敗了 error`,
+        error,
         `body`,
         body,
         `dbOrder`,
