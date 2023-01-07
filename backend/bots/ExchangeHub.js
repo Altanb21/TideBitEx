@@ -3539,21 +3539,24 @@ class ExchangeHub extends Bot {
   }
 
   async postCancelOrder({ header, body, memberId }) {
-    let transaction = await this.database.transaction(),
-      orderId = body.orderId,
-      dbOrder = await this.database.getOrder(orderId, {
-        dbTransaction: transaction,
-      }),
-      tickerSetting =
-        this.tickersSettings[
-          `${this.coinsSettingsMap[dbOrder.ask]?.code}${
-            this.coinsSettingsMap[dbOrder.bid]?.code
-          }`
-        ],
-      dbUpdateR,
-      result,
-      clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
+    let result;
     try {
+      let transaction = await this.database.transaction(),
+        orderId = body.orderId,
+        dbOrder = await this.database.getOrder(orderId, {
+          dbTransaction: transaction,
+        }),
+        tickerSetting =
+          this.tickersSettings[
+            `${this.coinsSettingsMap[dbOrder.ask]?.code}${
+              this.coinsSettingsMap[dbOrder.bid]?.code
+            }`
+          ],
+        dbUpdateR,
+        clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(
+          0,
+          32
+        );
       switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
           // 1. updateDB
@@ -3594,8 +3597,10 @@ class ExchangeHub extends Bot {
                 }]!!!ERROR postCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
                   tickerSetting.instId
                 }])`,
-                `clOrdId`,
-                clOrdId
+                `dbOrder`,
+                dbOrder,
+                `dbUpdateR`,
+                dbUpdateR
               );
             }
           } else {
@@ -3635,9 +3640,7 @@ class ExchangeHub extends Bot {
         }]!!!ERROR postCancelOrder [memberId(${memberId})]取消訂單失敗了 error`,
         error,
         `body`,
-        body,
-        `dbOrder`,
-        dbOrder
+        body
       );
       result = new ResponseFormat({
         message: error.message,
