@@ -2791,22 +2791,13 @@ class mysql {
     } catch (error) {
       // ++ HIGH PRIORITY ERROR 沒有接到會導致系統 crash
       this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOuterTrade query`,
+        query
+      );
+      this.logger.error(
         `[sql][${new Date().toISOString()}] updateOuterTrade error`,
         error
       );
-      try {
-        this.logger.error(
-          `[sql][${new Date().toISOString()}] updateOuterTrade query`,
-          query
-        );
-        if (dbTransaction) throw error;
-      } catch (error) {
-        this.logger.error(
-          `[sql][${new Date().toISOString()}] updateOuterTrade error`,
-          error
-        );
-        if (dbTransaction) throw error;
-      }
     }
   }
 

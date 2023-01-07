@@ -4590,6 +4590,12 @@ class ExchangeHub extends Bot {
   }
 
   async updateOuterTrade(updatedOuterTrade) {
+    this.logger.debug(
+      `[${new Date().toISOString()}][${
+        this.constructor.name
+      }] updateOuterTrade updatedOuterTrade`,
+      updatedOuterTrade
+    );
     let dbTransaction = this.database.transaction();
     try {
       await this.database.updateOuterTrade(
@@ -5098,6 +5104,18 @@ class ExchangeHub extends Bot {
           updatedOuterTrade,
         });
       }
+      this.logger.debug(
+        `(${
+          this.constructor.name
+        })[${new Date().toISOString()}] processor After calculator result`,
+        result
+      );
+      this.logger.debug(
+        `(${
+          this.constructor.name
+        })[${new Date().toISOString()}] processor After calculator result?.isDBUpdateNeed`,
+        result?.isDBUpdateNeed
+      );
       if (result?.isDBUpdateNeed) {
         // 3. 確認稽核交易紀錄合法後通知前端更新 order
         this.informFrontendOrderUpdate({
