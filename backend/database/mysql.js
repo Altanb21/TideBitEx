@@ -2791,7 +2791,7 @@ class mysql {
     } catch (error) {
       // ++ HIGH PRIORITY ERROR 沒有接到會導致系統 crash
       this.logger.error(
-        `[sql][${new Date().toISOString()}] updateOuterTrade query`,
+        `[sql][${new Date().toISOString()}] updateOuterTrade ERROR!!! query`,
         query
       );
       this.logger.error(

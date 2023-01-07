@@ -1,5 +1,4 @@
 const path = require("path");
-const axios = require("axios");
 
 const Bot = require(path.resolve(__dirname, "Bot.js"));
 const OkexConnector = require("../libs/Connectors/OkexConnector");
@@ -149,6 +148,11 @@ class ExchangeHub extends Bot {
     await super.start();
     await this.okexConnector.start();
     this._eventListener();
+    this.logger.debug(
+      `[${
+        this.constructor.name
+      }][${new Date().toISOString()}] start: call exchangeHubService.sync`,
+    );
     this.exchangeHubService.sync({
       exchange: SupportedExchange.OKEX,
       force: true,
