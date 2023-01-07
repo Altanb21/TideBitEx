@@ -3448,7 +3448,11 @@ class ExchangeHub extends Bot {
     // 1. 取消 order 的合法性驗證
     // 1.1 系統數據庫有對應 orderId 的 order
     // 1.2 並且數據庫取得的 dbOrder 紀錄的 memberId 與呼叫取消的memberId 一致或是 是強制取消
-    if (dbOrder && (SafeMath.eq(dbOrder.member_id, memberId) || force)) {
+    if (
+      dbOrder &&
+      dbOrder.state === Database.DB_STATE_CODE.WAIT &&
+      (SafeMath.eq(dbOrder.member_id, memberId) || force)
+    ) {
       let createdAt = new Date().toISOString().slice(0, 19).replace("T", " "),
         newOrder = {
           // id: orderId,
@@ -3684,6 +3688,7 @@ class ExchangeHub extends Bot {
               transaction,
               true
             );
+            // ++ !!!TODO 2022/01/10 不管 DB order 的狀態為何都需要 call api 取消 order
             if (dbUpdateR?.success) {
               result = await this.okexConnector.router("postCancelOrder", {
                 body: {
@@ -4607,6 +4612,7 @@ class ExchangeHub extends Bot {
       }] updateOuterTrade updatedOuterTrade`,
       updatedOuterTrade
     );
+    // let dbTransaction = this.database.transaction(); !!! TEST CASE: system crash is solved
     let dbTransaction = await this.database.transaction();
     try {
       await this.database.updateOuterTrade(
