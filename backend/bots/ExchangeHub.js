@@ -3423,6 +3423,7 @@ class ExchangeHub extends Bot {
   async cancelDBOrderHander(
     clOrdId,
     orderId,
+    instId,
     memberId,
     transaction,
     force = false
@@ -3450,98 +3451,87 @@ class ExchangeHub extends Bot {
     // 1.1 系統數據庫有對應 orderId 的 order
     // 1.2 並且數據庫取得的 dbOrder 紀錄的 memberId 與呼叫取消的memberId 一致或是 是強制取消
     if (dbOrder && (SafeMath.eq(dbOrder.member_id, memberId) || force)) {
-      let tickerSetting =
-        this.tickersSettings[
-          `${this.coinsSettingsMap[dbOrder.ask]?.code}${
-            this.coinsSettingsMap[dbOrder.bid]?.code
-          }`
-        ];
-      if (tickerSetting) {
-        let createdAt = new Date().toISOString().slice(0, 19).replace("T", " "),
-          newOrder = {
-            id: orderId,
-            state: Database.ORDER_STATE_CODE.CANCEL,
-            updated_at: `"${createdAt}"`,
-          };
+      let createdAt = new Date().toISOString().slice(0, 19).replace("T", " "),
+        newOrder = {
+          id: orderId,
+          state: Database.ORDER_STATE_CODE.CANCEL,
+          updated_at: `"${createdAt}"`,
+        };
+      try {
+        await this.database.updateOrder(newOrder, {
+          dbTransaction: transaction,
+        });
+        let locked = SafeMath.mult(dbOrder.locked, "-1"),
+          balance = dbOrder.locked,
+          fee = "0",
+          currencyId =
+            dbOrder?.type === Database.TYPE.ORDER_ASK
+              ? dbOrder?.ask
+              : dbOrder?.bid;
+        let accountVersion = {
+          member_id: memberId,
+          currency: currencyId,
+          created_at: createdAt,
+          updated_at: createdAt,
+          modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
+          modifiable_id: orderId,
+          reason: Database.REASON.ORDER_CANCEL,
+          fun: Database.FUNC.UNLOCK_FUNDS,
+          balance,
+          locked,
+          fee,
+        };
         try {
-          await this.database.updateOrder(newOrder, {
-            dbTransaction: transaction,
-          });
-          let locked = SafeMath.mult(dbOrder.locked, "-1"),
-            balance = dbOrder.locked,
-            fee = "0",
-            currencyId =
-              dbOrder?.type === Database.TYPE.ORDER_ASK
-                ? dbOrder?.ask
-                : dbOrder?.bid;
-          let accountVersion = {
-            member_id: memberId,
-            currency: currencyId,
-            created_at: createdAt,
-            updated_at: createdAt,
-            modifiable_type: Database.MODIFIABLE_TYPE.ORDER,
-            modifiable_id: orderId,
-            reason: Database.REASON.ORDER_CANCEL,
-            fun: Database.FUNC.UNLOCK_FUNDS,
-            balance,
-            locked,
-            fee,
+          await this._updateAccount(accountVersion, transaction);
+          updatedOrder = {
+            ...dbOrder,
+            clOrdId: clOrdId,
+            instId: instId,
+            state: Database.ORDER_STATE.CANCEL,
+            state_text: Database.ORDER_STATE_TEXT.CANCEL,
+            at: parseInt(SafeMath.div(Date.now(), "1000")),
+            ts: Date.now(),
           };
-          try {
-            await this._updateAccount(accountVersion, transaction);
-            updatedOrder = {
-              ...dbOrder,
-              clOrdId: clOrdId,
-              instId: tickerSetting?.instId,
-              state: Database.ORDER_STATE.CANCEL,
-              state_text: Database.ORDER_STATE_TEXT.CANCEL,
-              at: parseInt(SafeMath.div(Date.now(), "1000")),
-              ts: Date.now(),
-            };
-            success = true;
-          } catch (error) {
-            this.logger.error(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
-              }]!!!ERROR cancelDBOrderHander _updateAccount error`,
-              `error`,
-              error,
-              `dbOrder`,
-              dbOrder,
-              `accountVersion`,
-              accountVersion
-            );
-            success = false;
-          }
+          success = true;
         } catch (error) {
           this.logger.error(
             `[${new Date().toISOString()}][${
               this.constructor.name
-            }]!!!ERROR cancelDBOrderHander database.updateOrder error`,
+            }]!!!ERROR cancelDBOrderHander _updateAccount error`,
             `error`,
             error,
             `dbOrder`,
             dbOrder,
-            `newOrder`,
-            newOrder
+            `accountVersion`,
+            accountVersion
           );
-          updatedOrder = null;
           success = false;
         }
-      } else {
+      } catch (error) {
         this.logger.error(
           `[${new Date().toISOString()}][${
             this.constructor.name
-          }]!!!ERROR cancelDBOrderHander didnot found tickerSetting`,
-          `this.coinsSettingsMap`,
-          this.coinsSettingsMap,
+          }]!!!ERROR cancelDBOrderHander database.updateOrder error`,
+          `error`,
+          error,
           `dbOrder`,
-          dbOrder
+          dbOrder,
+          `newOrder`,
+          newOrder
         );
         updatedOrder = null;
         success = false;
       }
     } else {
+      this.logger.error(
+        `[${new Date().toISOString()}][${
+          this.constructor.name
+        }]!!!ERROR cancelDBOrderHander didnot found tickerSetting`,
+        `this.coinsSettingsMap`,
+        this.coinsSettingsMap,
+        `dbOrder`,
+        dbOrder
+      );
       updatedOrder = null;
       success = false;
     }
@@ -3552,12 +3542,25 @@ class ExchangeHub extends Bot {
   async postCancelOrder({ header, params, query, body, memberId }) {
     let transaction = await this.database.transaction(),
       dbOrder,
-      tickerSetting,
+      tickerSetting =
+        this.tickersSettings[
+          `${this.coinsSettingsMap[dbOrder.ask]?.code}${
+            this.coinsSettingsMap[dbOrder.bid]?.code
+          }`
+        ],
       result,
       dbUpdateR,
       apiR,
       orderId = body.orderId,
       clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(0, 32);
+    this.logger.debug(
+      `[${new Date().toISOString()}][${
+        this.constructor.name
+      }] postCancelOrder tickerSetting[${
+        this.coinsSettingsMap[dbOrder.ask]?.code
+      }${this.coinsSettingsMap[dbOrder.bid]?.code}]`,
+      tickerSetting
+    );
     try {
       switch (tickerSetting?.source) {
         case SupportedExchange.OKEX:
@@ -3566,6 +3569,7 @@ class ExchangeHub extends Bot {
           dbUpdateR = await this.cancelDBOrderHander(
             clOrdId,
             orderId,
+            tickerSetting?.instId,
             memberId,
             transaction,
             false
@@ -3657,7 +3661,12 @@ class ExchangeHub extends Bot {
       dbOrder,
       dbUpdateR,
       apiR,
-      tickerSetting,
+      tickerSetting =
+        this.tickersSettings[
+          `${this.coinsSettingsMap[dbOrder.ask]?.code}${
+            this.coinsSettingsMap[dbOrder.bid]?.code
+          }`
+        ],
       currentUser = this.adminUsers.find((user) => user.email === email),
       dbTransaction;
     if (currentUser.roles?.includes("root")) {
@@ -3673,6 +3682,7 @@ class ExchangeHub extends Bot {
             dbUpdateR = await this.cancelDBOrderHander(
               clOrdId,
               orderId,
+              tickerSetting.instId,
               memberId,
               dbTransaction,
               true
@@ -3796,6 +3806,7 @@ class ExchangeHub extends Bot {
             let result = await this.cancelDBOrderHander(
               clOrdId,
               order.id,
+              tickerSetting.instId,
               memberId,
               transaction,
               false
@@ -6353,6 +6364,7 @@ class ExchangeHub extends Bot {
               result = await this.cancelDBOrderHander(
                 formatOrder.clOrdId,
                 orderId,
+                formatOrder.instId,
                 memberId,
                 transaction,
                 false
