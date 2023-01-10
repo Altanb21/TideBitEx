@@ -3750,21 +3750,25 @@ class ExchangeHub extends Bot {
                     exchangeCode: Database.EXCHANGE.OKEX,
                   },
                 });
-                this.logger.debug(
-                  `[${new Date().toISOString()}][${
-                    this.constructor.name
-                  }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
-                    tickerSetting.instId
-                  }]) orderDetail`,
-                  orderDetail
-                );
                 if (
                   !orderDetail ||
                   orderDetail?.state === Database.OKX_ORDER_STATE.canceled
                 ) {
                   await transaction.commit();
+                  result = new ResponseFormat({
+                    message: `forceCancelOrder`,
+                    payload: {orderDetail},
+                  });
                 } else {
                   await transaction.rollback();
+                  this.logger.debug(
+                    `[${new Date().toISOString()}][${
+                      this.constructor.name
+                    }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
+                      tickerSetting.instId
+                    }]) orderDetail`,
+                    orderDetail
+                  );
                 }
               }
             } else {
