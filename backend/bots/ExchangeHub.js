@@ -3739,6 +3739,14 @@ class ExchangeHub extends Bot {
                   clOrdId,
                 },
               });
+              this.logger.debug(
+                `[${new Date().toISOString()}][${
+                  this.constructor.name
+                }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
+                  tickerSetting.instId
+                }]) result`,
+                result
+              );
               if (result.success) {
                 await transaction.commit();
               } else {
@@ -3755,9 +3763,7 @@ class ExchangeHub extends Bot {
                     this.constructor.name
                   }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
                     tickerSetting.instId
-                  }]) result`,
-                  result,
-                  `orderDetail`,
+                  }]) orderDetail`,
                   orderDetail
                 );
                 if (
@@ -4912,15 +4918,15 @@ class ExchangeHub extends Bot {
         default:
           break;
       }
+      this.logger.debug(
+        `[${new Date().toLocaleTimeString()}][${
+          this.constructor.name
+        }] !!! ERROR getOrderDetail: apiResonse`,
+        apiResonse
+      );
       if (apiResonse.success) {
         orderDetail = apiResonse.payload.shift();
       } else {
-        this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
-          }] !!! ERROR getOrderDetail: apiResonse`,
-          apiResonse
-        );
         orderDetail = null;
       }
     } catch (error) {
