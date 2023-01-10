@@ -4885,15 +4885,15 @@ class ExchangeHub extends Bot {
   }
 
   async getOrderDetails({ query }) {
-    let { instId, clOrdId, exchangeCode } = { query };
+    let { instId, clOrdId, exchangeCode } = query;
     let apiResonse,
       orderDetail = null;
-      this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
-        }]getOrderDetails exchangeCode`,
-        exchangeCode
-      );
+    this.logger.debug(
+      `[${new Date().toLocaleTimeString()}][${
+        this.constructor.name
+      }]getOrderDetails exchangeCode`,
+      exchangeCode
+    );
     try {
       switch (exchangeCode) {
         case Database.EXCHANGE.OKEX:
