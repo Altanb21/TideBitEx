@@ -3594,7 +3594,7 @@ class ExchangeHub extends Bot {
       if (SafeMath.eq(dbOrder.member_id, memberId)) {
         switch (tickerSetting?.source) {
           case SupportedExchange.OKEX:
-            let unprocessTrade = this.hasUnprocessTrade(
+            let unprocessTrade = await this.hasUnprocessTrade(
               SupportedExchange.OKEX,
               orderId
             );
@@ -3663,7 +3663,6 @@ class ExchangeHub extends Bot {
                 code: Codes.ORDER_UNDER_PROCESS,
               });
             }
-
             break;
           case SupportedExchange.TIDEBIT:
             await transaction.commit();
