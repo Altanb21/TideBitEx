@@ -1248,7 +1248,7 @@ class OkexConnector extends ConnectorBase {
             this.constructor.name
           }] !!! ERROR _request name:${name} _request Failed instId:${instId}`,
           `options`,
-          options,`res`,res,`result`,result
+          options,
         );
       }
     } catch (error) {
