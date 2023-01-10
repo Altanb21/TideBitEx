@@ -3739,14 +3739,6 @@ class ExchangeHub extends Bot {
                   clOrdId,
                 },
               });
-              this.logger.debug(
-                `[${new Date().toISOString()}][${
-                  this.constructor.name
-                }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
-                  tickerSetting.instId
-                }]) result`,
-                result
-              );
               if (result.success) {
                 await transaction.commit();
               } else {
@@ -3773,15 +3765,6 @@ class ExchangeHub extends Bot {
                   await transaction.commit();
                 } else {
                   await transaction.rollback();
-                  this.logger.error(
-                    `[${new Date().toISOString()}][${
-                      this.constructor.name
-                    }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
-                      tickerSetting.instId
-                    }])`,
-                    `orderDetail`,
-                    orderDetail
-                  );
                 }
               }
             } else {

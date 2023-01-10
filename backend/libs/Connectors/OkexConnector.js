@@ -444,6 +444,11 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
+    this.logger.debug(
+      `[${new Date().toLocaleTimeString()}][${
+        this.constructor.name
+      }] getOrderDetail is called`
+    );
     const res = await this._request(
       "trade_order",
       {
@@ -1248,7 +1253,7 @@ class OkexConnector extends ConnectorBase {
             this.constructor.name
           }] !!! ERROR _request name:${name} _request Failed instId:${instId}`,
           `options`,
-          options,
+          options
         );
       }
     } catch (error) {
@@ -1257,7 +1262,9 @@ class OkexConnector extends ConnectorBase {
           this.constructor.name
         }] !!! ERROR _request name:${name} _request catch Error instId:${instId}`,
         `options`,
-        options,`error`,error
+        options,
+        `error`,
+        error
       );
       let message = error.message;
       if (error.response && error.response.data)
