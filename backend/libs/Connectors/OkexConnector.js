@@ -444,11 +444,6 @@ class OkexConnector extends ConnectorBase {
       method,
       path: `${path}${qs}`,
     });
-    this.logger.debug(
-      `[${new Date().toLocaleTimeString()}][${
-        this.constructor.name
-      }] getOrderDetail is called`
-    );
     const res = await this._request(
       "trade_order",
       {
@@ -457,12 +452,6 @@ class OkexConnector extends ConnectorBase {
         headers: this.getHeaders(true, { timeString, okAccessSign }),
       },
       instId
-    );
-    this.logger.debug(
-      `[${new Date().toLocaleTimeString()}][${
-        this.constructor.name
-      }] getOrderDetail: res`,
-      res
     );
     return res;
   }

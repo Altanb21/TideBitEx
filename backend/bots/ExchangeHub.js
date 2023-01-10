@@ -3759,7 +3759,7 @@ class ExchangeHub extends Bot {
                   orderDetail
                 );
                 if (
-                  orderDetail ||
+                  !orderDetail ||
                   orderDetail?.state === Database.OKX_ORDER_STATE.canceled
                 ) {
                   await transaction.commit();
@@ -4888,12 +4888,6 @@ class ExchangeHub extends Bot {
     let { instId, clOrdId, exchangeCode } = query;
     let apiResonse,
       orderDetail = null;
-    this.logger.debug(
-      `[${new Date().toLocaleTimeString()}][${
-        this.constructor.name
-      }]getOrderDetails exchangeCode`,
-      exchangeCode
-    );
     try {
       switch (exchangeCode) {
         case Database.EXCHANGE.OKEX:
@@ -4903,12 +4897,6 @@ class ExchangeHub extends Bot {
               clOrdId: clOrdId,
             },
           });
-          this.logger.debug(
-            `[${new Date().toLocaleTimeString()}][${
-              this.constructor.name
-            }] !!! ERROR getOrderDetail: apiResonse`,
-            apiResonse
-          );
           break;
         default:
           break;
