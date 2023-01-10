@@ -2913,10 +2913,10 @@ class ExchangeHub extends Bot {
               price: innerOrder.price,
               volume: innerOrder.volume,
               exchange: SupportedExchange.OKEX,
-              feeCurrency:
-                dbOrder.kind === Database.ORDER_KIND.ASK
-                  ? tickerSetting.quoteUnit
-                  : tickerSetting.baseUnit,
+              feeCurrency: (dbOrder.kind === Database.ORDER_KIND.ASK
+                ? tickerSetting.quoteUnit
+                : tickerSetting.baseUnit
+              )?.toUpperCase(),
               ts: new Date(
                 dbOrder.created_at.toString().replace(/[-]/g, "/")
               ).getTime(),
@@ -3155,12 +3155,11 @@ class ExchangeHub extends Bot {
             //    * 6.2.2 根據 order locked amount 減少 account locked amount 並增加 balance amount
             //    * 6.2.3 新增 account_versions 記錄
             //    * 6.2.4 更新 order 為 cancel 狀態
-            result = await this.cancelDBOrderHander(
+            result = await this.cancelDBOrderHandler(
               { ...orderData, id: orderId },
               tickerSetting.instId,
               memberId,
-              t,
-              false
+              t
             );
             if (result?.success) {
               //   * 6.2.5 commit transaction
@@ -3416,14 +3415,13 @@ class ExchangeHub extends Bot {
   //   }
   // }
 
-  async cancelDBOrderHander(
+  async cancelDBOrderHandler(
     // clOrdId,
     // orderId,
     dbOrder,
     instId,
     memberId,
-    transaction,
-    force = false
+    transaction
   ) {
     /* !!! HIGH RISK (start) !!! */
     // 1. get order data from table
@@ -3448,11 +3446,7 @@ class ExchangeHub extends Bot {
     // 1. 取消 order 的合法性驗證
     // 1.1 系統數據庫有對應 orderId 的 order
     // 1.2 並且數據庫取得的 dbOrder 紀錄的 memberId 與呼叫取消的memberId 一致或是 是強制取消
-    if (
-      dbOrder &&
-      dbOrder.state === Database.DB_STATE_CODE.WAIT &&
-      (SafeMath.eq(dbOrder.member_id, memberId) || force)
-    ) {
+    if (dbOrder && dbOrder.state === Database.DB_STATE_CODE.WAIT) {
       let createdAt = new Date().toISOString().slice(0, 19).replace("T", " "),
         newOrder = {
           // id: orderId,
@@ -3500,7 +3494,7 @@ class ExchangeHub extends Bot {
           this.logger.error(
             `[${new Date().toISOString()}][${
               this.constructor.name
-            }]!!!ERROR cancelDBOrderHander _updateAccount error`,
+            }]!!!ERROR cancelDBOrderHandler _updateAccount error`,
             `error`,
             error,
             `dbOrder`,
@@ -3514,7 +3508,7 @@ class ExchangeHub extends Bot {
         this.logger.error(
           `[${new Date().toISOString()}][${
             this.constructor.name
-          }]!!!ERROR cancelDBOrderHander database.updateOrder error`,
+          }]!!!ERROR cancelDBOrderHandler database.updateOrder error`,
           `error`,
           error,
           `dbOrder`,
@@ -3526,20 +3520,56 @@ class ExchangeHub extends Bot {
         success = false;
       }
     } else {
-      this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-        }]!!!ERROR cancelDBOrderHander params error`,
-        `SafeMath.eq(dbOrder.member_id(${dbOrder.member_id}), memberId(${memberId})) || force(${force})`,
-        SafeMath.eq(dbOrder.member_id, memberId) || force,
-        `dbOrder`,
-        dbOrder
-      );
-      updatedOrder = null;
-      success = false;
+      if (dbOrder && dbOrder.state === Database.DB_STATE_CODE.CANCEL) {
+        updatedOrder = { ...dbOrder };
+        success = true;
+      } else {
+        updatedOrder = null;
+        success = false;
+        this.logger.error(
+          `[${new Date().toISOString()}][${
+            this.constructor.name
+          }]!!!ERROR cancelDBOrderHandler  error memberId: ${memberId} `,
+          `dbOrder: `,
+          dbOrder
+        );
+      }
     }
     /* !!! HIGH RISK (end) !!! */
     return { success, updatedOrder };
+  }
+
+  async hasUnprocessTrade(exchange, orderId) {
+    let result = false,
+      exchangeCode = Database.EXCHANGE[exchange.toUpperCase()];
+    const outerTrades = await this.database.getOuterTradesByStatus({
+      exchangeCode: exchangeCode,
+      status: Database.OUTERTRADE_STATUS.UNPROCESS,
+    });
+    this.logger.debug(
+      `[${new Date().toISOString()}][${
+        this.constructor.name
+      }]hasUnprocessTrade: ${orderId} `,
+      `outerTrades[${outerTrades.length}]: `,
+      outerTrades
+    );
+    for (let outerTrade of outerTrades) {
+      let _outerTrade = {
+        ...JSON.parse(outerTrade.data),
+        exchangeCode: exchangeCode,
+      };
+      let tmp = Utils.parsedClOrdId(_outerTrade.clOrdId);
+      if (tmp.orderId === orderId) result = true;
+    }
+    this.logger.debug(
+      `[${new Date().toISOString()}][${
+        this.constructor.name
+      }]hasUnprocessTrade: ${orderId} `,
+      `result`,
+      result
+    );
+
+    return result;
   }
 
   async postCancelOrder({ header, body, memberId }) {
@@ -3561,81 +3591,99 @@ class ExchangeHub extends Bot {
           0,
           32
         );
-      switch (tickerSetting?.source) {
-        case SupportedExchange.OKEX:
-          // 1. updateDB
-          /* !!! HIGH RISK (start) !!! */
-          dbUpdateR = await this.cancelDBOrderHander(
-            dbOrder,
-            tickerSetting?.instId,
-            memberId,
-            transaction,
-            false
-          );
-          /* !!! HIGH RISK (end) !!! */
-          if (dbUpdateR?.success) {
-            // 2. performTask (Task: cancel)
-            result = await this.okexConnector.router("postCancelOrder", {
-              body: {
-                instId: tickerSetting.instId,
-                clOrdId,
-              },
-            });
-            if (result?.success) {
-              await transaction.commit();
-              // 3. informFrontEnd
-              this._emitUpdateOrder({
-                memberId,
-                instId: tickerSetting.instId,
-                market: tickerSetting.market,
-                order: {
-                  ...dbUpdateR.updatedOrder,
-                  ordId: result.payload[0].ordId,
-                },
-              });
-            } else {
-              await transaction.rollback();
-              this.logger.error(
-                `[${new Date().toISOString()}][${
-                  this.constructor.name
-                }]!!!ERROR postCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
-                  tickerSetting.instId
-                }])`,
-                `dbOrder`,
-                dbOrder,
-                `dbUpdateR`,
-                dbUpdateR
-              );
-            }
-          } else {
-            await transaction.rollback();
-            result = new ResponseFormat({
-              message: "DB ERROR",
-              code: Codes.CANCEL_ORDER_FAIL,
-            });
-            this.logger.error(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
-              }]!!!ERROR postCancelOrder [memberId(${memberId})] [clOrdId(${clOrdId})] updateOrderStatus出錯 body`,
-              body,
-              `result`,
-              result
+      if (SafeMath.eq(dbOrder.member_id, memberId)) {
+        switch (tickerSetting?.source) {
+          case SupportedExchange.OKEX:
+            let unprocessTrade = this.hasUnprocessTrade(
+              SupportedExchange.OKEX,
+              orderId
             );
-          }
-          break;
-        case SupportedExchange.TIDEBIT:
-          await transaction.commit();
-          result = this.tideBitConnector.router(`postCancelOrder`, {
-            header,
-            body: { ...body, orderId, market: tickerSetting },
-          });
-          break;
-        default:
-          result = new ResponseFormat({
-            message: "instId not Support now",
-            code: Codes.INVALID_INPUT,
-          });
-          break;
+            if (!unprocessTrade) {
+              // 1. updateDB
+              /* !!! HIGH RISK (start) !!! */
+              dbUpdateR = await this.cancelDBOrderHandler(
+                dbOrder,
+                tickerSetting?.instId,
+                memberId,
+                transaction
+              );
+              /* !!! HIGH RISK (end) !!! */
+              if (dbUpdateR?.success) {
+                // 2. performTask (Task: cancel)
+                result = await this.okexConnector.router("postCancelOrder", {
+                  body: {
+                    instId: tickerSetting.instId,
+                    clOrdId,
+                  },
+                });
+                if (result?.success) {
+                  await transaction.commit();
+                  // 3. informFrontEnd
+                  this._emitUpdateOrder({
+                    memberId,
+                    instId: tickerSetting.instId,
+                    market: tickerSetting.market,
+                    order: {
+                      ...dbUpdateR.updatedOrder,
+                      ordId: result.payload[0].ordId,
+                    },
+                  });
+                } else {
+                  await transaction.rollback();
+                  this.logger.error(
+                    `[${new Date().toISOString()}][${
+                      this.constructor.name
+                    }]!!!ERROR postCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
+                      tickerSetting.instId
+                    }])`,
+                    `dbOrder`,
+                    dbOrder,
+                    `dbUpdateR`,
+                    dbUpdateR
+                  );
+                }
+              } else {
+                await transaction.rollback();
+                result = new ResponseFormat({
+                  message: "DB ERROR",
+                  code: Codes.CANCEL_ORDER_FAIL,
+                });
+                this.logger.error(
+                  `[${new Date().toISOString()}][${
+                    this.constructor.name
+                  }]!!!ERROR postCancelOrder [memberId(${memberId})] [clOrdId(${clOrdId})] updateOrderStatus出錯 body`,
+                  body,
+                  `result`,
+                  result
+                );
+              }
+            } else {
+              result = new ResponseFormat({
+                message: "order has been processing...",
+                code: Codes.ORDER_UNDER_PROCESS,
+              });
+            }
+
+            break;
+          case SupportedExchange.TIDEBIT:
+            await transaction.commit();
+            result = this.tideBitConnector.router(`postCancelOrder`, {
+              header,
+              body: { ...body, orderId, market: tickerSetting },
+            });
+            break;
+          default:
+            result = new ResponseFormat({
+              message: "instId not Support now",
+              code: Codes.INVALID_INPUT,
+            });
+            break;
+        }
+      } else {
+        result = new ResponseFormat({
+          message: "call cancel order member is not the order owner",
+          code: Codes.INVALID_INPUT,
+        });
       }
     } catch (error) {
       this.logger.error(
@@ -3666,7 +3714,6 @@ class ExchangeHub extends Bot {
           dbTransaction: transaction,
         }),
         dbUpdateR,
-        apiR,
         tickerSetting =
           this.tickersSettings[
             `${this.coinsSettingsMap[dbOrder.ask]?.code}${
@@ -3681,40 +3728,58 @@ class ExchangeHub extends Bot {
                 0,
                 32
               );
-            dbUpdateR = await this.cancelDBOrderHander(
+            dbUpdateR = await this.cancelDBOrderHandler(
               dbOrder,
               tickerSetting.instId,
               memberId,
               transaction,
               true
             );
-            // ++ !!!TODO 2022/01/10 不管 DB order 的狀態為何都需要 call api 取消 order
-            if (dbUpdateR?.success) {
+            if (dbUpdateR.success) {
               result = await this.okexConnector.router("postCancelOrder", {
                 body: {
                   instId: tickerSetting.instId,
                   clOrdId,
                 },
               });
-              if (apiR?.success) {
+              if (result.success) {
                 await transaction.commit();
               } else {
                 // !!!TODO 2022/01/10 透過 getOrderDetails 可以知道 okx 是不是已經 canceled
-                let orderDetail;
-                if (orderDetail?.state === Database.OKX_ORDER_STATE.canceled) {
-                  // 若為是 await transaction.commit();
-                } else {
-                  await transaction.rollback();
-                }
-                this.logger.error(
+                let orderDetail = await this.getOrderDetails({
+                  query: {
+                    instId: tickerSetting.instId,
+                    clOrdId: clOrdId,
+                    exchangeCode: Database.EXCHANGE.OKEX,
+                  },
+                });
+                this.logger.debug(
                   `[${new Date().toISOString()}][${
                     this.constructor.name
                   }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
                     tickerSetting.instId
-                  }])`,
+                  }]) result`,
+                  result,
                   `orderDetail`,
                   orderDetail
                 );
+                if (
+                  orderDetail ||
+                  orderDetail?.state === Database.OKX_ORDER_STATE.canceled
+                ) {
+                  await transaction.commit();
+                } else {
+                  await transaction.rollback();
+                  this.logger.error(
+                    `[${new Date().toISOString()}][${
+                      this.constructor.name
+                    }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
+                      tickerSetting.instId
+                    }])`,
+                    `orderDetail`,
+                    orderDetail
+                  );
+                }
               }
             } else {
               await transaction.rollback();
@@ -3805,7 +3870,7 @@ class ExchangeHub extends Bot {
               0,
               32
             );
-            let result = await this.cancelDBOrderHander(
+            let result = await this.cancelDBOrderHandler(
               order,
               tickerSetting.instId,
               memberId,
@@ -4832,17 +4897,16 @@ class ExchangeHub extends Bot {
   }
 
   async getOrderDetails({ query }) {
-    let { instId, ordId, exchangeCode } = { query };
+    let { instId, clOrdId, exchangeCode } = { query };
     let apiResonse,
-      orderDetail = null,
-      result;
+      orderDetail = null;
     try {
       switch (exchangeCode) {
         case Database.EXCHANGE.OKEX:
           apiResonse = await this.okexConnector.router("getOrderDetails", {
             query: {
               instId: instId,
-              ordId: ordId,
+              clOrdId: clOrdId,
             },
           });
           break;
@@ -4851,10 +4915,6 @@ class ExchangeHub extends Bot {
       }
       if (apiResonse.success) {
         orderDetail = apiResonse.payload.shift();
-        result = new ResponseFormat({
-          message: "getOrderDetails",
-          payload: orderDetail,
-        });
       } else {
         this.logger.debug(
           `[${new Date().toLocaleTimeString()}][${
@@ -4862,10 +4922,7 @@ class ExchangeHub extends Bot {
           }] !!! ERROR getOrderDetail: apiResonse`,
           apiResonse
         );
-        result = new ResponseFormat({
-          message: "API error",
-          code: Codes.UNKNOWN_ERROR,
-        });
+        orderDetail = null;
       }
     } catch (error) {
       this.logger.debug(
@@ -4876,9 +4933,10 @@ class ExchangeHub extends Bot {
         `error`,
         error
       );
+      // orderDetail = null;
       throw error;
     }
-    return result;
+    return orderDetail;
   }
 
   // 判斷此筆撮合紀錄需要被處理
@@ -6367,7 +6425,7 @@ class ExchangeHub extends Bot {
               dbOrder = await this.database.getOrder(orderId, {
                 dbTransaction: transaction,
               });
-              result = await this.cancelDBOrderHander(
+              result = await this.cancelDBOrderHandler(
                 dbOrder,
                 formatOrder.instId,
                 memberId,
