@@ -3446,7 +3446,7 @@ class ExchangeHub extends Bot {
     // 1. 取消 order 的合法性驗證
     // 1.1 系統數據庫有對應 orderId 的 order
     // 1.2 並且數據庫取得的 dbOrder 紀錄的 memberId 與呼叫取消的memberId 一致或是 是強制取消
-    if (dbOrder && dbOrder.state === Database.DB_STATE_CODE.WAIT) {
+    if (dbOrder && dbOrder.state === Database.ORDER_STATE_CODE.WAIT) {
       let createdAt = new Date().toISOString().slice(0, 19).replace("T", " "),
         newOrder = {
           // id: orderId,
@@ -3520,7 +3520,7 @@ class ExchangeHub extends Bot {
         success = false;
       }
     } else {
-      if (dbOrder && dbOrder.state === Database.DB_STATE_CODE.CANCEL) {
+      if (dbOrder && dbOrder.state === Database.ORDER_STATE_CODE.CANCEL) {
         updatedOrder = { ...dbOrder };
         success = true;
       } else {
@@ -3651,10 +3651,8 @@ class ExchangeHub extends Bot {
                 this.logger.error(
                   `[${new Date().toISOString()}][${
                     this.constructor.name
-                  }]!!!ERROR postCancelOrder [memberId(${memberId})] [clOrdId(${clOrdId})] updateOrderStatus出錯 body`,
-                  body,
-                  `result`,
-                  result
+                  }]!!!ERROR postCancelOrder [memberId(${memberId})] [clOrdId(${clOrdId})] dbUpdateR`,
+                  dbUpdateR
                 );
               }
             } else {
