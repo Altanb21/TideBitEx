@@ -3810,7 +3810,9 @@ class ExchangeHub extends Bot {
           `body`,
           body,
           `dbOrder`,
-          dbOrder
+          dbOrder,
+          `error`,
+          error
         );
         result = new ResponseFormat({
           message: error.message,

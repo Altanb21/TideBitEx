@@ -453,6 +453,12 @@ class OkexConnector extends ConnectorBase {
       },
       instId
     );
+    this.logger.debug(
+      `[${new Date().toLocaleTimeString()}][${
+        this.constructor.name
+      }] getOrderDetail: res`,
+      res
+    );
     return res;
   }
 
@@ -1242,7 +1248,7 @@ class OkexConnector extends ConnectorBase {
             this.constructor.name
           }] !!! ERROR _request name:${name} _request Failed instId:${instId}`,
           `options`,
-          options
+          options,`res`,res
         );
       }
     } catch (error) {
@@ -1251,7 +1257,7 @@ class OkexConnector extends ConnectorBase {
           this.constructor.name
         }] !!! ERROR _request name:${name} _request catch Error instId:${instId}`,
         `options`,
-        options
+        options,`error`,error
       );
       let message = error.message;
       if (error.response && error.response.data)
