@@ -244,6 +244,8 @@ class DepthBook extends BookBase {
    * @param {Difference} difference
    */
   updateByDifference(instId, lotSz, data) {
+    if (!this._markets[instId]) this._markets[instId] = {};
+    if (!this._difference[instId]) this._difference[instId] = {};
     if (!this._markets[instId]["lotSz"]) this._markets[instId]["lotSz"] = lotSz;
     try {
       const result = this._getDifference(instId, data);
@@ -261,6 +263,8 @@ class DepthBook extends BookBase {
    */
   updateAll(instId, lotSz, data) {
     try {
+      if (!this._markets[instId]) this._markets[instId] = {};
+      if (!this._difference[instId]) this._difference[instId] = {};
       if (!this._markets[instId]["lotSz"])
         this._markets[instId]["lotSz"] = lotSz;
       this._difference[instId]["asks"] = this._calculateDifference(
