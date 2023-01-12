@@ -185,7 +185,8 @@ const Vouchers = () => {
           start: start.toISOString().substring(0, 10),
           end: end.toISOString().substring(0, 10),
         });
-        setChartData(result.chartData);
+        if (result.chartData) setChartData(result.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(result.profits);
       }
       const trades = await getVouchers({
@@ -197,7 +198,8 @@ const Vouchers = () => {
         offset: 0,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(trades.chartData);
+        if (trades.chartData) setChartData(trades.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(trades.profits);
       }
       filter(trades, {});
@@ -231,7 +233,8 @@ const Vouchers = () => {
           start,
           end,
         });
-        setChartData(result.chartData);
+        if (result.chartData) setChartData(result.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(result.profits);
       }
       const trades = await getVouchers({
@@ -243,7 +246,8 @@ const Vouchers = () => {
         limit: limit,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(trades.chartData);
+        if (trades.chartData) setChartData(trades.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(trades.profits);
       }
       filter(trades, {});
@@ -277,7 +281,8 @@ const Vouchers = () => {
           start,
           end,
         });
-        setChartData(result.chartData);
+        if (result.chartData) setChartData(result.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(result.profits);
       }
       const trades = await getVouchers({
@@ -289,7 +294,8 @@ const Vouchers = () => {
         limit: limit,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(trades.chartData);
+        if (trades.chartData) setChartData(trades.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(trades.profits);
       }
       filter(trades, {});
@@ -324,7 +330,8 @@ const Vouchers = () => {
           start: startDate,
           end: endDate,
         });
-        setChartData(result.chartData);
+        if (result.chartData) setChartData(result.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(result.profits);
       }
       newTrades = await getVouchers({
@@ -334,7 +341,8 @@ const Vouchers = () => {
         limit: limit,
       });
       if (exchange === SupportedExchange.TIDEBIT) {
-        setChartData(newTrades.chartData);
+        if (newTrades.chartData) setChartData(newTrades.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(newTrades.profits);
       }
       filter(newTrades, { exchange });
@@ -358,7 +366,8 @@ const Vouchers = () => {
           start: startDate,
           end: endDate,
         });
-        setChartData(result.chartData);
+        if (result.chartData) setChartData(result.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(result.profits);
       }
       newTrades = await getVouchers({
@@ -368,7 +377,8 @@ const Vouchers = () => {
         limit: limit,
       });
       if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-        setChartData(newTrades.chartData);
+        if (newTrades.chartData) setChartData(newTrades.chartData);
+        else setChartData({ data: {}, xaxisType: "string" });
         setProfits(newTrades.profits);
       }
       filter(newTrades, { ticker });
@@ -409,7 +419,8 @@ const Vouchers = () => {
           limit: limit,
         });
         if (tickerSetting.source === SupportedExchange.TIDEBIT) {
-          setChartData(newTrades.chartData);
+          if (newTrades.chartData) setChartData(newTrades.chartData);
+          else setChartData({ data: {}, xaxisType: "string" });
           setProfits(newTrades.profits);
         }
         // console.log(`newTrades`, newTrades);
@@ -511,7 +522,8 @@ const Vouchers = () => {
             start: start.toISOString().substring(0, 10),
             end: end.toISOString().substring(0, 10),
           });
-          setChartData(result.chartData);
+          if (result.chartData) setChartData(result.chartData);
+          else setChartData({ data: {}, xaxisType: "string" });
           setProfits(result.profits);
         }
         const trades = await getVouchers({
@@ -523,7 +535,8 @@ const Vouchers = () => {
           limit,
         });
         if (exchange === SupportedExchange.TIDEBIT) {
-          setChartData(trades.chartData);
+          if (trades.chartData) setChartData(trades.chartData);
+          else setChartData({ data: {}, xaxisType: "string" });
           setProfits(trades.profits);
         }
         filter(trades, { exchange });
