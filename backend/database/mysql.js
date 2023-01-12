@@ -18,14 +18,15 @@ const countdown = (id, name) => {
     const timeslot = slots[timeslotIndex];
     clearTimeout(timeslot.timer);
     const elapsed = (now - timeslot.start) / 1000;
-    console.log("\x1b[36m%s\x1b[0m", `name: ${name} elapsed: ${elapsed}s`);
+    console.log("\x1b[36m%s\x1b[0m", `name: ${timeslot.name} elapsed: ${elapsed}s`);
     // delete timeslot
     slots.splice(timeslotIndex, 1);
   } else {
     // set timer
     const newTimeslot = { id: slotId, start: now, name: name };
+    console.log("\x1b[33m%s\x1b[0m", newTimeslot);
     newTimeslot.timer = setTimeout(() => {
-      countdown(slotId, newTimeslot.name);
+      countdown(slotId, name);
     }, TIMEOUT);
     slots.push(newTimeslot);
   }
