@@ -2,7 +2,7 @@ const { Sequelize } = require("sequelize");
 const Database = require("../constants/Database");
 
 const slots = [];
-const TIMEOUT = 10 * 1000;
+const TIMEOUT = 20 * 1000;
 
 const countdown = (id, name) => {
   // console.log(`slots`, slots);

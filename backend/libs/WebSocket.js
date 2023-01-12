@@ -51,7 +51,11 @@ class WebSocket {
       this.logger.debug(
         `[${new Date().toLocaleString()}][Websocket] called init`
       );
-      await this.init();
+      await this.init({
+        url: this.url,
+        options: this.options,
+        listener: this.listener,
+      });
     }, 1000);
     // }
   }
