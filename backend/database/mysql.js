@@ -64,7 +64,9 @@ class mysql {
         `[sql][${new Date().toISOString()} ${name} query`,
         query,
         `values`,
-        values
+        values,
+        `error`,
+        error
       );
     }
     // ---- TEST time ----
@@ -1213,14 +1215,17 @@ class mysql {
         outer_trades.exchange_code = ?
         AND outer_trades.status = ?
      ;`;
-
-    const result = await this.query({
-      name: `getOuterTradesByStatus`,
-      query,
-      values: [exchangeCode, status],
-    });
-    const outerTrades = result?.shift() || [];
-    return outerTrades;
+    try {
+      const result = await this.query({
+        name: `getOuterTradesByStatus`,
+        query,
+        values: [exchangeCode, status],
+      });
+      const outerTrades = result?.shift() || [];
+      return outerTrades;
+    } catch (error) {
+      this.logger.debug(`[sql][${new Date().toISOString()}error`, error);
+    }
   }
 
   /**
