@@ -51,6 +51,36 @@ class mysql {
     return this.db.transaction();
   }
 
+  async query({ name, query, values, options }) {
+    let timeStart = Date.now();
+    // ---- TEST time ----
+    let result = null;
+    // ---- TEST time ----
+    try {
+      if (options) result = await this.db.query({ query, values }, options);
+      else result = await this.db.query({ query, values });
+    } catch (error) {
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} ${name} query`,
+        query,
+        `values`,
+        values
+      );
+    }
+    // ---- TEST time ----
+    let timeEnd = Date.now();
+    if (timeEnd - timeStart > 10 * 1000) {
+      this.logger.error(
+        `[${new Date().toISOString()}][sql] query timeout`,
+        query,
+        values,
+        options
+      );
+    }
+    // ---- TEST time ----
+    return result;
+  }
+
   /**
    * [deprecated] 2022/10/14
    * 原本是用在舊的管理設計(CurrenciesView)中用來顯示子帳號情況
@@ -164,7 +194,7 @@ class mysql {
       return accounts;
     } catch (error) {
       this.logger.debug(
-        `[sql][${new Date().toISOString()} getAccountsByMemberId`,
+        `[sql][${new Date().toISOString()}] getAccountsByMemberId`,
         query
       );
       return [];
@@ -1184,20 +1214,13 @@ class mysql {
         AND outer_trades.status = ?
      ;`;
 
-    try {
-      const [outerTrades] = await this.db.query({
-        query,
-        values: [exchangeCode, status],
-      });
-      return outerTrades;
-    } catch (error) {
-      this.logger.debug(
-        `[sql][${new Date().toISOString()} getOuterTradesByStatus`,
-        query,
-        `exchangeCode:${exchangeCode}, status:${status},`
-      );
-      return [];
-    }
+    const result = await this.query({
+      name: `getOuterTradesByStatus`,
+      query,
+      values: [exchangeCode, status],
+    });
+    const outerTrades = result?.shift() || [];
+    return outerTrades;
   }
 
   /**
