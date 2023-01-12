@@ -5,21 +5,21 @@ const slots = [];
 const TIMEOUT = 10 * 1000;
 
 const countdown = (id, name) => {
-  console.log(`slots`, slots);
-  console.log(`countdown is called id:${id} name:${name}`);
+  // console.log(`slots`, slots);
+  // console.log(`countdown is called id:${id} name:${name}`);
 
   const slotId = id > 0 ? id : parseInt(Math.random() * 10000000);
   const now = new Date().getTime();
   const timeslotIndex = slots.findIndex((v) => {
     return v.id === slotId;
   });
-  console.log(`timeslotIndex`, timeslotIndex);
+  // console.log(`timeslotIndex`, timeslotIndex);
   if (timeslotIndex !== -1) {
     // stop timer and return elapsed time
     const timeslot = slots[timeslotIndex];
     clearTimeout(timeslot.timer);
     const elapsed = (now - timeslot.start) / 1000;
-    this.logger.log(`name${name} elapsed ${elapsed}s`);
+    console.log(`name${name} elapsed ${elapsed}s`);
     // delete timeslot
     slots.splice(timeslotIndex, 1);
   } else {
