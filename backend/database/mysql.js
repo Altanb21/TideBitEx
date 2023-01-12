@@ -7,7 +7,6 @@ const TIMEOUT = 10 * 1000;
 const countdown = (id, name) => {
   // console.log(`slots`, slots);
   // console.log(`countdown is called id:${id} name:${name}`);
-
   const slotId = id > 0 ? id : parseInt(Math.random() * 10000000);
   const now = new Date().getTime();
   const timeslotIndex = slots.findIndex((v) => {
@@ -24,9 +23,9 @@ const countdown = (id, name) => {
     slots.splice(timeslotIndex, 1);
   } else {
     // set timer
-    const newTimeslot = { id: slotId, start: now };
+    const newTimeslot = { id: slotId, start: now, name: name };
     newTimeslot.timer = setTimeout(() => {
-      countdown(slotId, name);
+      countdown(slotId, newTimeslot.name);
     }, TIMEOUT);
     slots.push(newTimeslot);
   }
@@ -2747,8 +2746,8 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateAccountByAccountVersion query`,
         query
       );
-      countdown(slotId, `updateAccountByAccountVersion`);
       if (dbTransaction) throw error;
+      countdown(slotId, `updateAccountByAccountVersion`);
     }
   }
 
@@ -2779,7 +2778,6 @@ class mysql {
           transaction: dbTransaction,
         }
       );
-      countdown(slotId, `updateAccount`);
     } catch (error) {
       this.logger.error(
         `[sql][${new Date().toISOString()}] updateAccount error`,
@@ -2789,9 +2787,9 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateAccount query`,
         query
       );
-      countdown(slotId, `updateAccount`);
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `updateAccount`);
   }
 
   /**
@@ -2903,7 +2901,6 @@ class mysql {
           lock: dbTransaction.LOCK.UPDATE,
         }
       );
-      countdown(slotId, `updateOrder`);
     } catch (error) {
       this.logger.error(
         `[sql][${new Date().toISOString()}] updateOrder error`,
@@ -2913,9 +2910,9 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateOrder query`,
         query
       );
-      countdown(slotId, `updateOrder`);
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `updateOrder`);
   }
 
   async updateOuterTrade(datas, { dbTransaction }) {
@@ -2946,7 +2943,6 @@ class mysql {
           lock: dbTransaction.LOCK.UPDATE,
         }
       );
-      countdown(slotId, `updateOuterTrade`);
     } catch (error) {
       // ++ HIGH PRIORITY ERROR 沒有接到會導致系統 crash
       this.logger.error(
@@ -2957,8 +2953,8 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateOuterTrade error`,
         error
       );
-      countdown(slotId, `updateOuterTrade`);
     }
+    countdown(slotId, `updateOuterTrade`);
   }
 
   /**
