@@ -1,5 +1,32 @@
 const { Sequelize } = require("sequelize");
 const Database = require("../constants/Database");
+
+const slots = [];
+const TIMEOUT = 10 * 1000;
+
+const countdown = (id, name) => {
+  const slotId = id > 0 ? id : parseInt(Math.random() * 10000000);
+  const now = new Date().getTime();
+  const timeslot = slots.find((v) => {
+    return v.id === slotId;
+  });
+  if (timeslot) {
+    // stop timer and return elapsed time
+    clearTimeout(timeslot.timer);
+    const elapsed = (now - timeslot.start) / 1000;
+    this.logger.log(`name${name} elapsed ${elapsed}s`);
+    // delete timeslot
+  } else {
+    // set timer
+    const newTimeslot = { id: slotId, start: now };
+    newTimeslot.timer = setTimeout(() => {
+      countdown(slotId);
+    }, TIMEOUT);
+  }
+
+  return slotId;
+};
+
 class mysql {
   constructor() {
     return this;
@@ -51,38 +78,6 @@ class mysql {
     return this.db.transaction();
   }
 
-  async query({ name, query, values, options }) {
-    let timeStart = Date.now();
-    // ---- TEST time ----
-    let result = null;
-    // ---- TEST time ----
-    try {
-      if (options) result = await this.db.query({ query, values }, options);
-      else result = await this.db.query({ query, values });
-    } catch (error) {
-      this.logger.debug(
-        `[sql][${new Date().toISOString()} ${name} query`,
-        query,
-        `values`,
-        values,
-        `error`,
-        error
-      );
-    }
-    // ---- TEST time ----
-    let timeEnd = Date.now();
-    if (timeEnd - timeStart > 10 * 1000) {
-      this.logger.error(
-        `[${new Date().toISOString()}][sql] query timeout`,
-        query,
-        values,
-        options
-      );
-    }
-    // ---- TEST time ----
-    return result;
-  }
-
   /**
    * [deprecated] 2022/10/14
    * 原本是用在舊的管理設計(CurrenciesView)中用來顯示子帳號情況
@@ -102,6 +97,7 @@ class mysql {
   }
 
   async auditAccountBalance({ memberId, currency, startId, start, end }) {
+    const slotId = countdown();
     if (!memberId) throw Error(`memberId is required`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
@@ -133,17 +129,20 @@ class mysql {
       const [accountVersions] = await this.db.query({
         query,
       });
+      countdown(slotId, `auditAccountBalance`);
       return accountVersions;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} auditAccountBalance`,
         query
       );
+      countdown(slotId, `auditAccountBalance`);
       return [];
     }
   }
 
   async getAccountsByMemberId(memberId, { options, limit, dbTransaction }) {
+    const slotId = countdown();
     let placeholder = ``,
       limitCondition = limit ? `LIMIT ${limit}` : ``;
 
@@ -192,13 +191,14 @@ class mysql {
           values,
         });
       }
-
+      countdown(slotId, `getAccountsByMemberId`);
       return accounts;
     } catch (error) {
       this.logger.debug(
-        `[sql][${new Date().toISOString()}] getAccountsByMemberId`,
+        `[sql][${new Date().toISOString()} getAccountsByMemberId`,
         query
       );
+      countdown(slotId, `getAccountsByMemberId`);
       return [];
     }
   }
@@ -251,6 +251,7 @@ class mysql {
   }
 
   async getAssetBalances() {
+    const slotId = countdown();
     const query = `
     SELECT
       id,
@@ -268,17 +269,20 @@ class mysql {
       const [assetBalances] = await this.db.query({
         query,
       });
+      countdown(slotId, `getAssetBalances`);
       return assetBalances;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getAssetBalances`,
         query
       );
+      countdown(slotId, `getAssetBalances`);
       return [];
     }
   }
 
   async getTotalAccountsAssets() {
+    const slotId = countdown();
     const query = `
     SELECT
 	    accounts.currency,
@@ -293,12 +297,14 @@ class mysql {
       const [currencies] = await this.db.query({
         query,
       });
+      countdown(slotId, `getTotalAccountsAssets`);
       return currencies;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getTotalAccountsAssets`,
         query
       );
+      countdown(slotId, `getTotalAccountsAssets`);
       return [];
     }
   }
@@ -399,6 +405,7 @@ class mysql {
   }
 
   async countMembers(conditions) {
+    const slotId = countdown();
     let placeholder = [];
     if (conditions?.before)
       placeholder = [...placeholder, `id < ${conditions.before}`];
@@ -417,17 +424,20 @@ class mysql {
       const [[result]] = await this.db.query({
         query,
       });
+      countdown(slotId, `countMembers`);
       return result.counts;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} countMembers`,
         query
       );
+      countdown(slotId, `countMembers`);
       return [];
     }
   }
 
   async getMembers({ limit, offset }) {
+    const slotId = countdown();
     const query = `
     SELECT
         id,
@@ -447,14 +457,17 @@ class mysql {
       const [members] = await this.db.query({
         query,
       });
+      countdown(slotId, `getMembers`);
       return members;
     } catch (error) {
       this.logger.debug(`[sql][${new Date().toISOString()} getMembers`, query);
+      countdown(slotId, `getMembers`);
       return [];
     }
   }
 
   async getMembersLatestAuditRecordIds(ids, groupByAccountId) {
+    const slotId = countdown();
     let placeholder = ids.join(`,`);
     let groupBy = `member_id${groupByAccountId ? ", account_id" : ""}`;
     const query = `
@@ -474,17 +487,20 @@ class mysql {
       const [auditRecordIds] = await this.db.query({
         query,
       });
+      countdown(slotId, `getMembersLatestAuditRecordIds`);
       return auditRecordIds.map((o) => o.id);
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getMembersLatestAuditRecordIds`,
         query
       );
+      countdown(slotId, `getMembersLatestAuditRecordIds`);
       return [];
     }
   }
 
   async getAccountLatestAuditRecord(accountId) {
+    const slotId = countdown();
     const query = `
     SELECT
       id,
@@ -514,6 +530,7 @@ class mysql {
         query,
         values: [accountId],
       });
+      countdown(slotId, `getAccountLatestAuditRecord`);
       return auditRecord;
     } catch (error) {
       this.logger.debug(
@@ -521,11 +538,13 @@ class mysql {
         query,
         `accountId: ${accountId}`
       );
+      countdown(slotId, `getAccountLatestAuditRecord`);
       return [];
     }
   }
 
   async getMembersAuditRecordByIds(ids) {
+    const slotId = countdown();
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     const query = `
@@ -553,17 +572,20 @@ class mysql {
       const [auditRecords] = await this.db.query({
         query,
       });
+      countdown(slotId, `getMembersAuditRecordByIds`);
       return auditRecords;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getMembersAuditRecordByIds`,
         query
       );
+      countdown(slotId, `getMembersAuditRecordByIds`);
       return [];
     }
   }
 
   async getMembersLatestAccountVersionIds(ids, groupByAccountId) {
+    const slotId = countdown();
     let placeholder = ids.join(`,`);
     let groupBy = `member_id${groupByAccountId ? ", account_id" : ""}`;
     const query = `
@@ -581,17 +603,20 @@ class mysql {
       const [accountVersionIds] = await this.db.query({
         query,
       });
+      countdown(slotId, `getMembersLatestAccountVersionIds`);
       return accountVersionIds.map((o) => o.id);
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getMembersLatestAccountVersionIds`,
         query
       );
+      countdown(slotId, `getMembersLatestAccountVersionIds`);
       return [];
     }
   }
 
   async getMembersAccountVersionByIds(ids) {
+    const slotId = countdown();
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     const query = `
@@ -620,17 +645,20 @@ class mysql {
       const [accountVersions] = await this.db.query({
         query,
       });
+      countdown(slotId, `getMembersAccountVersionByIds`);
       return accountVersions;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getMembersAccountVersionByIds`,
         query
       );
+      countdown(slotId, `getMembersAccountVersionByIds`);
       return null;
     }
   }
 
   async getMemberReferral({ referrerId, refereeId }) {
+    const slotId = countdown();
     const query = `
     SELECT
       member_referrals.id,
@@ -649,17 +677,20 @@ class mysql {
         query,
         values: [referrerId, refereeId],
       });
+      countdown(slotId, `getMemberReferral`);
       return memberReferral;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getMemberReferral`,
         query
       );
+      countdown(slotId, `getMemberReferral`);
       return [];
     }
   }
 
   async getDefaultCommissionPlan() {
+    const slotId = countdown();
     const query = `
     SELECT
       commission_plans.id,
@@ -677,17 +708,20 @@ class mysql {
       const [[defaultCommissionPlan]] = await this.db.query({
         query,
       });
+      countdown(slotId, `getDefaultCommissionPlan`);
       return defaultCommissionPlan;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getDefaultCommissionPlan`,
         query
       );
+      countdown(slotId, `getDefaultCommissionPlan`);
       return [];
     }
   }
 
   async getCommissionPolicies(planId) {
+    const slotId = countdown();
     const query = `
     SELECT
       commission_policies.id,
@@ -705,6 +739,7 @@ class mysql {
         query,
         values: [planId],
       });
+      countdown(slotId, `getCommissionPolicies`);
       return commissionPolicies;
     } catch (error) {
       this.logger.debug(
@@ -712,11 +747,13 @@ class mysql {
         query,
         `planId: ${planId}`
       );
+      countdown(slotId, `getCommissionPolicies`);
       return [];
     }
   }
 
   async getMemberByCondition(conditions) {
+    const slotId = countdown();
     let placeholder = [],
       values = [];
     if (conditions.id) {
@@ -752,6 +789,7 @@ class mysql {
         query,
         values,
       });
+      countdown(slotId, `getMemberByCondition`);
       return member;
     } catch (error) {
       this.logger.debug(
@@ -759,11 +797,13 @@ class mysql {
         query,
         values
       );
+      countdown(slotId, `getMemberByCondition`);
       return [];
     }
   }
 
   async getReferralCommissionsByConditions({ conditions, limit, offset, asc }) {
+    const slotId = countdown();
     let tableName = `referral_commissions`,
       placeholder = ``,
       arr = [],
@@ -825,12 +865,14 @@ class mysql {
         query,
         values,
       });
+      countdown(slotId, `getReferralCommissionsByConditions`);
       return referralCommissions;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getReferralCommissionsByConditions`,
         query
       );
+      countdown(slotId, `getReferralCommissionsByConditions`);
       return [];
     }
   }
@@ -918,6 +960,7 @@ class mysql {
       this.logger.debug("missing params");
       return [];
     }
+    const slotId = countdown();
     let whereCondition = orderId
       ? ` orders.id = ?`
       : ` orders.member_id = ?
@@ -969,6 +1012,7 @@ class mysql {
           ? [orderId]
           : [memberId, quoteCcy, baseCcy, state, type],
       });
+      countdown(slotId, `getDoneOrders`);
       return orders;
     } catch (error) {
       this.logger.debug(
@@ -976,12 +1020,14 @@ class mysql {
         query,
         `orderId:${orderId}, memberId:${memberId}, quoteCcy:${quoteCcy}, baseCcy:${baseCcy}, state:${state}, type:${type},`
       );
+      countdown(slotId, `getDoneOrders`);
       return [];
     }
   }
 
   async getOrderList({ quoteCcy, baseCcy, memberId, orderType, state, asc }) {
     if (!quoteCcy || !baseCcy) throw Error(`missing params`);
+    const slotId = countdown();
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
     if (quoteCcy) placeholder = [...placeholder, `bid = ${quoteCcy}`];
@@ -1021,12 +1067,14 @@ class mysql {
       const [orders] = await this.db.query({
         query,
       });
+      countdown(slotId, `getOrderList`);
       return orders;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getOrderList`,
         query
       );
+      countdown(slotId, `getOrderList`);
       return [];
     }
   }
@@ -1111,6 +1159,7 @@ class mysql {
   }
 
   async getEmailsByMemberIds(memberIds) {
+    const slotId = countdown();
     if (!memberIds.length > 0) return [];
     let placeholder = memberIds.join(`,`);
     let query = `
@@ -1127,6 +1176,7 @@ class mysql {
         query,
         values: memberIds,
       });
+      countdown(slotId, `getEmailsByMemberIds`);
       return emails;
     } catch (error) {
       this.logger.debug(
@@ -1135,6 +1185,8 @@ class mysql {
         `memberIds`,
         memberIds
       );
+      countdown(slotId, `getEmailsByMemberIds`);
+      return [];
     }
   }
 
@@ -1204,6 +1256,7 @@ class mysql {
   }
 
   async getOuterTradesByStatus({ exchangeCode, status, asc, limit, offset }) {
+    const slotId = countdown();
     const query = `
       SELECT
         outer_trades.id,
@@ -1216,15 +1269,20 @@ class mysql {
         AND outer_trades.status = ?
      ;`;
     try {
-      const result = await this.query({
-        name: `getOuterTradesByStatus`,
+      const [outerTrades] = await this.db.query({
         query,
         values: [exchangeCode, status],
       });
-      const outerTrades = result?.shift() || [];
+      countdown(slotId, `getOuterTradesByStatus`);
       return outerTrades;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()}error`, error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOuterTradesByStatus`,
+        query,
+        `exchangeCode:${exchangeCode}, status:${status},`
+      );
+      countdown(slotId, `getOuterTradesByStatus`);
+      return [];
     }
   }
 
@@ -1319,6 +1377,7 @@ class mysql {
     offset,
     asc,
   }) {
+    const slotId = countdown();
     if (
       !exchangeCode ||
       (type === Database.TIME_RANGE_TYPE.DAY_AFTER && !days) ||
@@ -1382,17 +1441,20 @@ class mysql {
       const [outerTrades] = await this.db.query({
         query,
       });
+      countdown(slotId, `getOuterTrades`);
       return outerTrades;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getOuterTrades`,
         query
       );
+      countdown(slotId, `getOuterTrades`);
       return [];
     }
   }
 
   async getDepositRecords({ memberId, currency, start, end, asc }) {
+    const slotId = countdown();
     if (!memberId || !currency || !start || !end) throw Error(`missing params`);
     let placeholder = [`aasm_state = 'accepted'`];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
@@ -1428,17 +1490,20 @@ class mysql {
       const [deposits] = await this.db.query({
         query,
       });
+      countdown(slotId, `getDepositRecords`);
       return deposits;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getDepositRecords`,
         query
       );
+      countdown(slotId, `getDepositRecords`);
       return [];
     }
   }
 
   async getWithdrawRecords({ memberId, currency, start, end, asc }) {
+    const slotId = countdown();
     if (!memberId || !currency || !start || !end) throw Error(`missing params`);
     let placeholder = [`aasm_state = 'done'`];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
@@ -1474,17 +1539,20 @@ class mysql {
       const [withdraws] = await this.db.query({
         query,
       });
+      countdown(slotId, `getWithdrawRecords`);
       return withdraws;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getWithdrawRecords`,
         query
       );
+      countdown(slotId, `getWithdrawRecords`);
       return [];
     }
   }
 
   async getOrderRecords({ memberId, currency, start, end, asc }) {
+    const slotId = countdown();
     if (!memberId || !start || !end) throw Error(`missing params`);
     let placeholder = [];
     if (memberId) placeholder = [...placeholder, `member_id = ${memberId}`];
@@ -1530,15 +1598,17 @@ class mysql {
         created_at ${orderCodition}
     ;`;
     try {
-      let [withdraws] = await this.db.query({
+      let [orders] = await this.db.query({
         query,
       });
-      return withdraws;
+      countdown(slotId, `getOrderRecords`);
+      return orders;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getOrderRecords`,
         query
       );
+      countdown(slotId, `getOrderRecords`);
       return [];
     }
   }
@@ -1554,6 +1624,7 @@ class mysql {
     start,
     end,
   }) {
+    const slotId = countdown();
     if (
       !exchangeCode ||
       (type === Database.TIME_RANGE_TYPE.DAY_AFTER && !days) ||
@@ -1592,18 +1663,20 @@ class mysql {
       const [[counts]] = await this.db.query({
         query,
       });
-
+      countdown(slotId, `countOuterTrades`);
       return counts;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} countOuterTrades`,
         query
       );
+      countdown(slotId, `countOuterTrades`);
       return [];
     }
   }
 
   async countOrders({ currency, state }) {
+    const slotId = countdown();
     const query = `
     SELECT 
         count(*) as counts
@@ -1618,7 +1691,7 @@ class mysql {
         query,
         values: [currency, state],
       });
-
+      countdown(slotId, `countOrders`);
       return counts;
     } catch (error) {
       this.logger.debug(
@@ -1626,11 +1699,13 @@ class mysql {
         query,
         `currency:${currency}, state:${state},`
       );
+      countdown(slotId, `countOrders`);
       return [];
     }
   }
 
   async getOrder(orderId, { dbTransaction }) {
+    const slotId = countdown();
     const query = `
       SELECT
 	        orders.id,
@@ -1671,17 +1746,20 @@ class mysql {
       );
       return order;
     } catch (error) {
+      countdown(slotId, `getOrder`);
       this.logger.debug(
         `[sql][${new Date().toISOString()} getOrder`,
         query,
         `orderId: ${orderId}`
       );
       if (dbTransaction) throw error;
+      countdown(slotId, `getOrder`);
       return [];
     }
   }
 
   async getVouchersByOrderId(orderId) {
+    const slotId = countdown();
     const query = `
     SELECT
       vouchers.id,
@@ -1707,6 +1785,7 @@ class mysql {
         query,
         values: [orderId],
       });
+      countdown(slotId, `getVouchersByOrderIds`);
       return vouchers;
     } catch (error) {
       this.logger.debug(
@@ -1714,11 +1793,13 @@ class mysql {
         query,
         `orderId: ${orderId}`
       );
+      countdown(slotId, `getVouchersByOrderIds`);
       return [];
     }
   }
 
   async getAccountVersionsByModifiableIds(ids, type) {
+    const slotId = countdown();
     if (!ids.length > 0) return [];
     let placeholder = ids.join(`,`);
     const query = `
@@ -1747,6 +1828,7 @@ class mysql {
         query,
         values: [type],
       });
+      countdown(slotId, `getAccountVersionsByModifiableIds`);
       return accountVersions;
     } catch (error) {
       this.logger.debug(
@@ -1754,6 +1836,7 @@ class mysql {
         query,
         `type: ${type}`
       );
+      countdown(slotId, `getAccountVersionsByModifiableIds`);
       return null;
     }
   }
@@ -1762,6 +1845,7 @@ class mysql {
    * 待優化，可以同 getVoucherBy ? 整合
    */
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
+    const slotId = countdown();
     const query = `
     SELECT
       vouchers.id,
@@ -1788,6 +1872,7 @@ class mysql {
         query,
         values: [orderId, tradeId],
       });
+      countdown(slotId, `getVoucherByOrderIdAndTradeId`);
       return voucher;
     } catch (error) {
       this.logger.debug(
@@ -1795,11 +1880,13 @@ class mysql {
         query,
         `orderId:${orderId}, tradeId:${tradeId},`
       );
+      countdown(slotId, `getVoucherByOrderIdAndTradeId`);
       return null;
     }
   }
 
   async getTradeByTradeFk(tradeFk) {
+    const slotId = countdown();
     const query = `
     SELECT
       trades.id,
@@ -1824,7 +1911,7 @@ class mysql {
         query,
         values: [tradeFk],
       });
-
+      countdown(slotId, `getTradeByTradeFk`);
       return trade;
     } catch (error) {
       this.logger.debug(
@@ -1832,12 +1919,14 @@ class mysql {
         query,
         `tradeFk: ${tradeFk}`
       );
+      countdown(slotId, `getTradeByTradeFk`);
       return null;
     }
   }
 
   async getOrdersByIds(ids) {
     if (!ids.length > 0) return [];
+    const slotId = countdown();
     let placeholder = ids.join(`,`);
     let query = `
     SELECT
@@ -1861,6 +1950,7 @@ class mysql {
         query,
         values: ids,
       });
+      countdown(slotId, `getOrdersByIds`);
       return orders;
     } catch (error) {
       this.logger.debug(
@@ -1869,11 +1959,13 @@ class mysql {
         `ids`,
         ids
       );
+      countdown(slotId, `getOrdersByIds`);
     }
   }
 
   async getTradesByIds(ids) {
     if (!ids.length > 0) return [];
+    const slotId = countdown();
     let placeholder = ids.join(`,`);
     let query = `
     SELECT
@@ -1895,20 +1987,23 @@ class mysql {
       trades.id in(${placeholder});
     `;
     try {
-      const [orders] = await this.db.query({
+      const [trades] = await this.db.query({
         query,
       });
-      return orders;
+      countdown(slotId, `getTradesByIds`);
+      return trades;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getTradesByIds`,
         query
       );
+      countdown(slotId, `getTradesByIds`);
     }
   }
 
   async getVouchersByIds(ids) {
     if (!ids.length > 0) return [];
+    const slotId = countdown();
     let placeholder = ids.join(`,`);
     let query = `
     SELECT
@@ -1930,6 +2025,7 @@ class mysql {
         query,
         values: ids,
       });
+      countdown(slotId, `getVouchersByIds`);
       return vouchers;
     } catch (error) {
       this.logger.debug(
@@ -1938,10 +2034,13 @@ class mysql {
         `ids`,
         ids
       );
+      countdown(slotId, `getVouchersByIds`);
     }
   }
 
   async getOuterTradesByTradeIds(tradeIds) {
+    if (!tradeIds.length > 0) return [];
+    const slotId = countdown();
     let placeholder = tradeIds.join(`,`);
     let query = `
     SELECT
@@ -1956,16 +2055,20 @@ class mysql {
       const [vouchers] = await this.db.query({
         query,
       });
+      countdown(slotId, `getOuterTradesByTradeIds`);
       return vouchers;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getOuterTradesByTradeIds`,
         query
       );
+      countdown(slotId, `getOuterTradesByTradeIds`);
     }
   }
 
   async getReferralCommissionsByMarkets({ markets, start, end, asc }) {
+    if (!markets.length > 0) return [];
+    const slotId = countdown();
     let placeholder = markets.join(`,`);
     let orderCodition = asc ? "ASC" : "DESC";
     const query = `
@@ -1995,12 +2098,14 @@ class mysql {
         query,
         values: markets,
       });
+      countdown(slotId, `getReferralCommissionsByMarkets`);
       return referralCommissions;
     } catch (error) {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getReferralCommissionsByMarkets`,
         query
       );
+      countdown(slotId, `getReferralCommissionsByMarkets`);
       return [];
     }
   }
@@ -2063,13 +2168,13 @@ class mysql {
     trades_count,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     const query =
       "INSERT INTO `orders` (" +
       "`id`, `bid`, `ask`, `currency`, `price`, `volume`, `origin_volume`, `state`," +
       " `done_at`, `type`, `member_id`, `created_at`, `updated_at`, `sn`, `source`," +
       " `ord_type`, `locked`, `origin_locked`, `funds_received`, `trades_count`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
-
     try {
       return this.db.query(
         {
@@ -2112,6 +2217,7 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertOrder`);
   }
 
   async insertAccountVersion(
@@ -2130,6 +2236,7 @@ class mysql {
     fun,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     let result, accountVersionId;
     const query =
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
@@ -2174,10 +2281,12 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertAccountVersion`);
     return accountVersionId;
   }
 
   async insertOuterOrders(orders, { dbTransaction }) {
+    const slotId = countdown();
     let query,
       placeholder,
       values = [];
@@ -2225,10 +2334,12 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertOuterOrders`);
   }
 
   // ++ TODO 2022/11/25 需要優化 query 不在同一句可以看到
   async insertOuterTrades(trades, { dbTransaction }) {
+    const slotId = countdown();
     let query =
         "INSERT IGNORE INTO `outer_trades` (`id`,`exchange_code`,`create_at`,`status`,`data`) VALUES",
       values = [],
@@ -2265,6 +2376,7 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertOuterTrades`);
   }
 
   async insertTrades(
@@ -2282,6 +2394,7 @@ class mysql {
     trade_fk,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     let result, tradeId;
     const query =
       "INSERT INTO `trades` (`id`,`price`,`volume`,`ask_id`,`bid_id`,`trend`,`currency`,`created_at`,`updated_at`,`ask_member_id`,`bid_member_id`,`funds`,`trade_fk`)" +
@@ -2324,6 +2437,7 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertTrades`);
     return tradeId;
   }
 
@@ -2343,6 +2457,7 @@ class mysql {
     created_at,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     let result, voucherId;
     const query =
       "INSERT INTO `vouchers` (`id`,`member_id`,`order_id`,`trade_id`,`designated_trading_fee_asset_history_id`,`ask`,`bid`,`price`,`volume`,`value`,`trend`,`ask_fee`,`bid_fee`,`created_at`)" +
@@ -2380,11 +2495,12 @@ class mysql {
         error
       );
       this.logger.error(
-        `[sql][${new Date().toISOString()}] updateOrder query`,
+        `[sql][${new Date().toISOString()}] insertVouchers query`,
         query
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertVouchers`);
     return voucherId;
   }
 
@@ -2406,6 +2522,7 @@ class mysql {
     updatedAt,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     let result, referralCommissionId;
     const query =
       "INSERT INTO `referral_commissions` (`id`,`referred_by_member_id`,`trade_member_id`,`voucher_id`,`applied_plan_id`, `applied_policy_id`, `trend`, `market`, `currency`, `ref_gross_fee`, `ref_net_fee`, `amount`, `state`, `deposited_at`, `created_at`, `updated_at`)" +
@@ -2451,6 +2568,7 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertReferralCommission`);
     return referralCommissionId;
   }
 
@@ -2470,6 +2588,7 @@ class mysql {
     issued_by,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     let result, accountVersionId;
     const query = `
     INSERT INTO audit_account_records (id, account_id, member_id, currency, account_version_id_start, account_version_id_end, balance, expect_balance, locked, expect_locked, created_at, updated_at, fixed_at, issued_by) 
@@ -2515,6 +2634,7 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertAuditAccountRecord`);
     return accountVersionId;
   }
 
@@ -2532,22 +2652,12 @@ class mysql {
     issued_by,
     { dbTransaction }
   ) {
+    const slotId = countdown();
     let result, accountVersionId;
     const query = `
     INSERT INTO fixed_account_records (id, account_id, member_id, currency, audit_account_records_id, origin_balance, balance, origin_locked, locked, created_at, updated_at, issued_by) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
     try {
-      // account_id,
-      // member_id,
-      // currency,
-      // audit_account_records_id,
-      // origin_balance,
-      // balance,
-      // origin_locked,
-      // locked,
-      // created_at,
-      // updated_at,
-      // issued_by,
       result = await this.db.query(
         {
           query,
@@ -2582,10 +2692,12 @@ class mysql {
       );
       if (dbTransaction) throw error;
     }
+    countdown(slotId, `insertFixedAccountRecord`);
     return accountVersionId;
   }
 
   async updateAccountByAccountVersion(accountId, now, { dbTransaction }) {
+    const slotId = countdown();
     let query;
     try {
       query = `
@@ -2618,6 +2730,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      countdown(slotId, `updateAccountByAccountVersion`);
       return result;
     } catch (error) {
       this.logger.error(
@@ -2628,11 +2741,13 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateAccountByAccountVersion query`,
         query
       );
+      countdown(slotId, `updateAccountByAccountVersion`);
       if (dbTransaction) throw error;
     }
   }
 
   async updateAccount(datas, { dbTransaction }) {
+    const slotId = countdown();
     let query;
     try {
       const id = datas.id;
@@ -2658,6 +2773,7 @@ class mysql {
           transaction: dbTransaction,
         }
       );
+      countdown(slotId, `updateAccount`);
     } catch (error) {
       this.logger.error(
         `[sql][${new Date().toISOString()}] updateAccount error`,
@@ -2667,6 +2783,7 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateAccount query`,
         query
       );
+      countdown(slotId, `updateAccount`);
       if (dbTransaction) throw error;
     }
   }
@@ -2754,6 +2871,7 @@ class mysql {
   }
 
   async updateOrder(datas, { dbTransaction }) {
+    const slotId = countdown();
     let query;
     try {
       const id = datas.id;
@@ -2779,6 +2897,7 @@ class mysql {
           lock: dbTransaction.LOCK.UPDATE,
         }
       );
+      countdown(slotId, `updateOrder`);
     } catch (error) {
       this.logger.error(
         `[sql][${new Date().toISOString()}] updateOrder error`,
@@ -2788,11 +2907,13 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateOrder query`,
         query
       );
+      countdown(slotId, `updateOrder`);
       if (dbTransaction) throw error;
     }
   }
 
   async updateOuterTrade(datas, { dbTransaction }) {
+    const slotId = countdown();
     let query;
     try {
       const id = datas.id;
@@ -2819,6 +2940,7 @@ class mysql {
           lock: dbTransaction.LOCK.UPDATE,
         }
       );
+      countdown(slotId, `updateOuterTrade`);
     } catch (error) {
       // ++ HIGH PRIORITY ERROR 沒有接到會導致系統 crash
       this.logger.error(
@@ -2829,6 +2951,7 @@ class mysql {
         `[sql][${new Date().toISOString()}] updateOuterTrade error`,
         error
       );
+      countdown(slotId, `updateOuterTrade`);
     }
   }
 
