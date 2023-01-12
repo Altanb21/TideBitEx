@@ -804,7 +804,10 @@ class OkexConnector extends ConnectorBase {
         result = response;
       }
     }
-    result = { ...response, payload: this.tradeBook.getSnapshot(instId) };
+    result = new ResponseFormat({
+      message: "getTrades",
+      payload: this.tradeBook.getSnapshot(instId),
+    });
     return result;
   }
 

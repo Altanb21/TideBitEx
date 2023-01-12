@@ -100,7 +100,11 @@ class mysql {
       });
       return accounts;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getAccounts`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getAccounts`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -469,7 +473,11 @@ class mysql {
       countdown({ id: slotId, name: `getMembers` });
       return members;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getMembers`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getMembers`,
+        query,
+        error
+      );
       countdown({ id: slotId, name: `getMembers` });
       return [];
     }
@@ -1126,7 +1134,11 @@ class mysql {
       });
       return trades;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getVouchers`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getVouchers`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -1143,7 +1155,11 @@ class mysql {
       });
       return orders;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getOrders`, query);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOrders`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -1152,20 +1168,20 @@ class mysql {
    * [deprecated] 2022/10/14
    * 沒有地方呼叫
    */
-  async getTrades(quoteCcy, baseCcy) {
-    const query =
-      "SELECT `trades`.* FROM `trades`, `orders` WHERE `orders`.`id` = `trades`.`ask_id` AND `trades`.`currency` = ? AND `orders`.`ask` = ?;";
-    try {
-      const [trades] = await this.db.query({
-        query,
-        values: [quoteCcy, baseCcy],
-      });
-      return trades;
-    } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()} getTrades`, query);
-      return [];
-    }
-  }
+  // async getTrades(quoteCcy, baseCcy) {
+  //   const query =
+  //     "SELECT `trades`.* FROM `trades`, `orders` WHERE `orders`.`id` = `trades`.`ask_id` AND `trades`.`currency` = ? AND `orders`.`ask` = ?;";
+  //   try {
+  //     const [trades] = await this.db.query({
+  //       query,
+  //       values: [quoteCcy, baseCcy],
+  //     });
+  //     return trades;
+  //   } catch (error) {
+  //     this.logger.debug(`[sql][${new Date().toISOString()} getTrades`, query);
+  //     return [];
+  //   }
+  // }
 
   async getEmailsByMemberIds(memberIds) {
     const slotId = countdown({ name: `getEmailsByMemberIds` });
@@ -1368,6 +1384,69 @@ class mysql {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getReferralCommissions`,
         query
+      );
+      return [];
+    }
+  }
+
+  async getTrades({ type, currency, days, start, end, limit, offset, asc }) {
+    if (
+      (type === Database.TIME_RANGE_TYPE.DAY_AFTER && !days) ||
+      (type === Database.TIME_RANGE_TYPE.BETWEEN && (!start || !end))
+    )
+      throw Error(`missing params`);
+    let placeholder = [];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (type === Database.TIME_RANGE_TYPE.DAY_AFTER && days)
+      placeholder = [
+        ...placeholder,
+        `created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)`,
+      ];
+    if (type === Database.TIME_RANGE_TYPE.BETWEEN && start && end)
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+    if (!whereCondition) throw Error(`missing where condition`);
+    let orderCodition = asc ? "ASC" : "DESC";
+    let limitCondition = limit
+      ? `LIMIT ${limit} ${offset ? `OFFSET ${offset}` : ``}`
+      : ``;
+    const query = `
+    SELECT 
+        id,
+        ask_id,
+        bid_id,
+        ask_member_id,
+        bid_member_id,
+        price,
+        volume,
+        currency,
+        funds,
+        trade_fk,
+        created_at,
+        updated_at
+    FROM 
+        trades
+    ${whereCondition}
+    ORDER BY
+        created_at ${orderCodition}
+    ${limitCondition}
+    ;`;
+    try {
+      this.logger.debug(`[sql][${new Date().toISOString()} getTrades`, query);
+      const [outerTrades] = await this.db.query({
+        query,
+      });
+      return outerTrades;
+    } catch (error) {
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getTrades`,
+        query,
+        error
       );
       return [];
     }
@@ -1618,6 +1697,55 @@ class mysql {
         query
       );
       countdown({ id: slotId, name: `getOrderRecords` });
+      return [];
+    }
+  }
+
+  async countTrades({ currency, type, days, start, end }) {
+    if (
+      (type === Database.TIME_RANGE_TYPE.DAY_AFTER && !days) ||
+      (type === Database.TIME_RANGE_TYPE.BETWEEN && (!start || !end))
+    )
+      throw Error(`missing params`);
+    let placeholder = [];
+    if (currency) placeholder = [...placeholder, `currency = ${currency}`];
+    if (type === Database.TIME_RANGE_TYPE.DAY_AFTER && days)
+      placeholder = [
+        ...placeholder,
+        `created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL ${days} DAY)`,
+      ];
+    if (type === Database.TIME_RANGE_TYPE.BETWEEN && start && end)
+      placeholder = [
+        ...placeholder,
+        `created_at BETWEEN "${start}"
+        AND "${end}"`,
+      ];
+    let whereCondition =
+      placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
+    if (!whereCondition) throw Error(`missing where condition`);
+    const query = `
+    SELECT 
+        count(*) as counts
+    FROM 
+        trades
+    ${whereCondition}
+    ;`;
+    try {
+      const [[counts]] = await this.db.query({
+        query,
+      });
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countTrades`,
+        query,
+        counts
+      );
+      return counts;
+    } catch (error) {
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} countTrades`,
+        query,
+        error
+      );
       return [];
     }
   }
@@ -2027,8 +2155,8 @@ class mysql {
     FROM
       vouchers
     WHERE
-      vouchers.id in(${placeholder});
-    `;
+      vouchers.id in(${placeholder})
+    ;`;
     try {
       const [vouchers] = await this.db.query({
         query,
