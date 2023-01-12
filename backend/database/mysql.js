@@ -1215,16 +1215,20 @@ class mysql {
         outer_trades.exchange_code = ?
         AND outer_trades.status = ?
      ;`;
+
     try {
-      const result = await this.query({
-        name: `getOuterTradesByStatus`,
+      const [outerTrades] = await this.db.query({
         query,
         values: [exchangeCode, status],
       });
-      const outerTrades = result?.shift() || [];
       return outerTrades;
     } catch (error) {
-      this.logger.debug(`[sql][${new Date().toISOString()}error`, error);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()} getOuterTradesByStatus`,
+        query,
+        `exchangeCode:${exchangeCode}, status:${status},`
+      );
+      return [];
     }
   }
 
