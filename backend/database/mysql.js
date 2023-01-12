@@ -2,7 +2,7 @@ const { Sequelize } = require("sequelize");
 const Database = require("../constants/Database");
 
 const slots = [];
-const TIMEOUT = 20 * 1000;
+const TIMEOUT = 10 * 1000;
 
 const countdown = ({ id, name }) => {
   // console.log(`slots`, slots);
@@ -29,7 +29,7 @@ const countdown = ({ id, name }) => {
     const newTimeslot = { id: slotId, start: now, name };
     console.log("\x1b[33m%s\x1b[0m", newTimeslot);
     newTimeslot.timer = setTimeout(() => {
-      countdown({ id: slotId });
+      countdown({ id: slotId, name });
     }, TIMEOUT);
     slots.push(newTimeslot);
   }
