@@ -3882,7 +3882,7 @@ class ExchangeHub extends Bot {
         ...JSON.parse(outerTrade.data),
         exchangeCode: exchangeCode,
       };
-      let tmp = Utils.parsedClOrdId(_outerTrade.clOrdId);
+      let tmp = Utils.parseClOrdId(_outerTrade.clOrdId);
       if (tmp.orderId === orderId) result = true;
     }
     this.logger.debug(
