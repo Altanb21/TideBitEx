@@ -2313,7 +2313,7 @@ class mysql {
       " `ord_type`, `locked`, `origin_locked`, `funds_received`, `trades_count`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      return this.db.query(
+      await this.db.query(
         {
           query,
           values: [
