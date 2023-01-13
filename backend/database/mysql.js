@@ -2306,6 +2306,7 @@ class mysql {
     { dbTransaction }
   ) {
     const slotId = countdown({ name: `insertOrder` });
+    let result;
     const query =
       "INSERT INTO `orders` (" +
       "`id`, `bid`, `ask`, `currency`, `price`, `volume`, `origin_volume`, `state`," +
@@ -2313,7 +2314,7 @@ class mysql {
       " `ord_type`, `locked`, `origin_locked`, `funds_received`, `trades_count`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
     try {
-      await this.db.query(
+      result = await this.db.query(
         {
           query,
           values: [
@@ -2355,6 +2356,7 @@ class mysql {
       if (dbTransaction) throw error;
     }
     countdown({ id: slotId, name: `insertOrder` });
+    return result;
   }
 
   async insertAccountVersion(
