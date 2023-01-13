@@ -208,9 +208,9 @@ class DBOperator {
    * [deprecated] 2022/10/14
    * 沒有地方呼叫
    */
-  async getTrades(quoteCcy, baseCcy) {
-    return this.database.getTrades(quoteCcy, baseCcy);
-  }
+  // async getTrades(quoteCcy, baseCcy) {
+  //   return this.database.getTrades(quoteCcy, baseCcy);
+  // }
 
   async getVouchers({
     memberId,
@@ -232,8 +232,8 @@ class DBOperator {
     });
   }
 
-  async getVouchersByOrderId(orderId) {
-    return this.database.getVouchersByOrderId(orderId);
+  async getVouchersByOrderIds(orderIds) {
+    return this.database.getVouchersByOrderIds(orderIds);
   }
 
   async getVoucherByOrderIdAndTradeId(orderId, tradeId) {
@@ -391,6 +391,38 @@ class DBOperator {
       currency,
       start,
       end,
+      asc,
+    });
+  }
+
+  async countTrades({ currency, type, days, start, end }) {
+    return this.database.countTrades({
+      currency,
+      type,
+      days,
+      start,
+      end,
+    });
+  }
+
+  async getTrades({
+    currency,
+    type,
+    days,
+    start,
+    end,
+    limit = 100,
+    offset = 0,
+    asc = false,
+  }) {
+    return this.database.getTrades({
+      currency,
+      type,
+      days,
+      start,
+      end,
+      limit,
+      offset,
       asc,
     });
   }
