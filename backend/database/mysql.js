@@ -2106,26 +2106,27 @@ class mysql {
     const query =
       "INSERT INTO `account_versions` (`id`, `member_id`, `account_id`, `reason`, `balance`, `locked`, `fee`, `amount`, `modifiable_id`, `modifiable_type`, `created_at`, `updated_at`, `currency`, `fun`)" +
       " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);";
+    const values = [
+      "DEFAULT",
+      member_id,
+      accountId,
+      reason,
+      balance,
+      locked,
+      fee,
+      amount,
+      modifiable_id,
+      modifiable_type,
+      created_at,
+      updated_at,
+      currency,
+      fun,
+    ];
     try {
       result = await this.db.query(
         {
           query,
-          values: [
-            "DEFAULT",
-            member_id,
-            accountId,
-            reason,
-            balance,
-            locked,
-            fee,
-            amount,
-            modifiable_id,
-            modifiable_type,
-            created_at,
-            updated_at,
-            currency,
-            fun,
-          ],
+          values,
         },
         {
           transaction: dbTransaction,
@@ -2139,7 +2140,9 @@ class mysql {
       );
       this.logger.error(
         `[sql][${new Date().toISOString()}] insertAccountVersion query`,
-        query
+        query,
+        `values`,
+        values
       );
       if (dbTransaction) throw error;
     }
@@ -2579,10 +2582,6 @@ class mysql {
 		  LIMIT 1;
       `;
       if (!accountId) throw Error(`accountId is required`);
-      this.logger.debug(
-        `[sql][${new Date().toISOString()}] updateAccountByAccountVersion query`,
-        query
-      );
       let result = await this.db.query(
         {
           query,
@@ -2783,7 +2782,6 @@ class mysql {
         " WHERE " +
         where +
         " LIMIT 1;";
-
       await this.db.query(
         {
           query,
@@ -2794,15 +2792,15 @@ class mysql {
         }
       );
     } catch (error) {
+      // ++ HIGH PRIORITY ERROR 沒有接到會導致系統 crash
+      this.logger.error(
+        `[sql][${new Date().toISOString()}] updateOuterTrade ERROR!!! query`,
+        query
+      );
       this.logger.error(
         `[sql][${new Date().toISOString()}] updateOuterTrade error`,
         error
       );
-      this.logger.error(
-        `[sql][${new Date().toISOString()}] updateOuterTrade query`,
-        query
-      );
-      if (dbTransaction) throw error;
     }
   }
 

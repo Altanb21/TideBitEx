@@ -57,7 +57,7 @@ const CurrentOrdersTile = (props) => {
       </td>
       <td className="screen__box screen__table-item screen__expand">
         <CurrentOrdersText
-          display={!!order.outerOrder}
+          display={!!order.innerOrder}
           side={order.side}
           value={order.innerOrder?.price}
           expectValue={order.innerOrder?.avgFillPrice}

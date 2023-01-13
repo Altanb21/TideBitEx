@@ -427,8 +427,8 @@ class Communicator {
         url: `/trade/force-cancel-order`,
         data: {
           memberId: order.memberId,
-          orderId: order.innerOrder?.orderId,
-          orderExchange: order.outerOrder.exchange,
+          orderId: order.innerOrder?.orderId || order.outerOrder?.orderId,
+          orderExchange: order.exchange,
         },
       });
       if (res.success) {

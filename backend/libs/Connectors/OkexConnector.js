@@ -430,11 +430,12 @@ class OkexConnector extends ConnectorBase {
   }
 
   async getOrderDetails({ query }) {
-    const { instId, ordId } = query;
+    const { instId, ordId, clOrdId } = query;
     let arr = [];
     const method = "GET";
     if (instId) arr.push(`instId=${instId}`);
     if (ordId) arr.push(`ordId=${ordId}`);
+    if (clOrdId) arr.push(`clOrdId=${clOrdId}`);
     const path = "/api/v5/trade/order";
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
     const timeString = new Date().toISOString();
@@ -1241,7 +1242,9 @@ class OkexConnector extends ConnectorBase {
             this.constructor.name
           }] !!! ERROR _request name:${name} _request Failed instId:${instId}`,
           `options`,
-          options
+          options,
+          `res`,
+          res
         );
       }
     } catch (error) {
@@ -1250,7 +1253,9 @@ class OkexConnector extends ConnectorBase {
           this.constructor.name
         }] !!! ERROR _request name:${name} _request catch Error instId:${instId}`,
         `options`,
-        options
+        options,
+        `error`,
+        error
       );
       let message = error.message;
       if (error.response && error.response.data)

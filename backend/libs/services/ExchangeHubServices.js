@@ -76,6 +76,10 @@ class ExchangeHubService {
     //   this.garbageCollection(outerTrades);
     // }
     // 2. _processOuterTrade
+    this.logger.debug(
+      `[sql][${new Date().toISOString()}][START] _processOuterTrades options`,
+      options
+    );
     for (let trade of outerTrades) {
       if (options.needParse)
         this.processor({
@@ -83,6 +87,9 @@ class ExchangeHubService {
           exchangeCode: trade.exchange_code,
         });
       else this.processor(trade);
+      this.logger.debug(
+        `[sql][${new Date().toISOString()}][END] _processOuterTrades`
+      );
       // tmp = await this._processOuterTrade({
       //   ...JSON.parse(trade.data),
       //   exchangeCode: trade.exchange_code,
@@ -434,7 +441,13 @@ class ExchangeHubService {
       interval,
       data?.clOrdId
     );
-
+    this.logger.debug(
+      `[${
+        this.constructor.name
+      }][${new Date().toISOString()}] syncAPIOuterTrades outerTrades[${
+        outerTrades.length
+      }]`
+    );
     if (outerTrades.length <= 0) return; // 沒有待處理任務
     // 2. 將 outerTrades寫入 DB => 工讀生
     await this.insertOuterTrades(outerTrades);
@@ -524,6 +537,11 @@ class ExchangeHubService {
         await this.syncOuterOrders(exchange);
         await this.syncAPIOuterTrades(exchange, data, interval);
         await this.syncUnProcessedOuterTrades(exchange);
+        this.logger.debug(
+          `[${
+            this.constructor.name
+          }][${new Date().toISOString()}] syncOuterOrders, syncAPIOuterTrades, syncUnProcessedOuterTrades is called`
+        );
       } catch (error) {
         this.logger.debug(
           `[${new Date().toLocaleTimeString()}][${
