@@ -2041,7 +2041,7 @@ class mysql {
     FROM
       trades
     WHERE
-      trades.trade_fk = ?
+      created_at > DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 30 DAY) AND trade_fk = ?
     LIMIT 1;`;
     try {
       const [[trade]] = await this.db.query({
