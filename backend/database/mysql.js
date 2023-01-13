@@ -1881,9 +1881,9 @@ class mysql {
           lock: dbTransaction.LOCK.UPDATE,
         }
       );
+      countdown({ id: slotId, name: `getOrder` });
       return order;
     } catch (error) {
-      countdown({ id: slotId, name: `getOrder` });
       this.logger.debug(
         `[sql][${new Date().toISOString()} getOrder`,
         query,

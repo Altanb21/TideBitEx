@@ -3883,7 +3883,7 @@ class ExchangeHub extends Bot {
         exchangeCode: exchangeCode,
       };
       let tmp = Utils.parseClOrdId(_outerTrade.clOrdId);
-      if (tmp.orderId === orderId) result = true;
+      if (SafeMath.eq(tmp.orderId, orderId)) result = true;
     }
     this.logger.debug(
       `[${new Date().toISOString()}][${
@@ -4081,7 +4081,7 @@ class ExchangeHub extends Bot {
                   await transaction.commit();
                   result = new ResponseFormat({
                     message: `forceCancelOrder`,
-                    payload: {orderDetail},
+                    payload: orderDetail,
                   });
                 } else {
                   await transaction.rollback();
