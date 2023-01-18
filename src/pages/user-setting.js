@@ -539,12 +539,12 @@ const UserSetting = (props) => {
                   props.currentUser.roles.includes("root") ? "" : " disabled"
                 }`}
                 onClick={() => {
-                  console.log(`selectedUser`, selectedUser);
-                  console.log(
-                    `props.currentUser`,
-                    props.currentUser,
-                    props.currentUser.roles.includes("root")
-                  );
+                  // console.log(`selectedUser`, selectedUser);
+                  // console.log(
+                  //   `props.currentUser`,
+                  //   props.currentUser,
+                  //   props.currentUser.roles.includes("root")
+                  // );
                   if (
                     selectedUser &&
                     props.currentUser.roles.includes("root")
@@ -560,11 +560,11 @@ const UserSetting = (props) => {
                   props.currentUser.roles.includes("root") ? "" : " disabled"
                 }`}
                 onClick={() => {
-                  console.log(
-                    `props.currentUser`,
-                    props.currentUser,
-                    props.currentUser.roles.includes("root")
-                  );
+                  // console.log(
+                  //   `props.currentUser`,
+                  //   props.currentUser,
+                  //   props.currentUser.roles.includes("root")
+                  // );
                   if (props.currentUser.roles.includes("root"))
                     setOpenAddUserDialog(true);
                 }}
