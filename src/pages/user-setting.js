@@ -47,6 +47,7 @@ const AddUserDialog = (props) => {
   };
   return (
     <Dialog
+      open={props.open}
       className="user-setting__dialog-add"
       title="Add Administrator"
       onClose={props.onClose}
@@ -139,6 +140,7 @@ const DeleteUserDialog = (props) => {
   const { t } = useTranslation();
   return (
     <Dialog
+      open={props.open}
       className="user-setting__dialog-delete"
       title="Confirm"
       onClose={props.onClose}
@@ -151,11 +153,11 @@ const DeleteUserDialog = (props) => {
         </div>
         <div className="user-setting__dialog--content">
           <div className="user-setting__user-info">
-            <div>{props.user.id}</div>
-            <div>{props.user.email}</div>
+            <div>{props.user?.id}</div>
+            <div>{props.user?.email}</div>
           </div>
           <div className="user-setting__user-roles">
-            {props.user.roles.map((role) => {
+            {props.user?.roles?.map((role) => {
               return (
                 <RoleTag roleKey={role} isSelected={true} onClick={() => {}} />
               );
@@ -449,25 +451,23 @@ const UserSetting = (props) => {
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
-      {openAddUserDialog && (
-        <AddUserDialog
-          onClose={() => setOpenAddUserDialog(false)}
-          onCancel={() => {
-            setOpenAddUserDialog(false);
-          }}
-          onConfirm={addUser}
-        />
-      )}
-      {openDeleteUserDialog && (
-        <DeleteUserDialog
-          user={selectedUser}
-          onClose={() => setOpenDeleteUserDialog(false)}
-          onCancel={() => {
-            setOpenDeleteUserDialog(false);
-          }}
-          onConfirm={deleteUser}
-        />
-      )}
+      <AddUserDialog
+        open={openAddUserDialog}
+        onClose={() => setOpenAddUserDialog(false)}
+        onCancel={() => {
+          setOpenAddUserDialog(false);
+        }}
+        onConfirm={addUser}
+      />
+      <DeleteUserDialog
+        open={openDeleteUserDialog}
+        user={selectedUser}
+        onClose={() => setOpenDeleteUserDialog(false)}
+        onCancel={() => {
+          setOpenDeleteUserDialog(false);
+        }}
+        onConfirm={deleteUser}
+      />
       <section className="screen__section user-setting">
         <div className="screen__header">管理人員設定</div>
         {/* <ScreenTags
@@ -540,6 +540,11 @@ const UserSetting = (props) => {
                 }`}
                 onClick={() => {
                   // console.log(`selectedUser`, selectedUser);
+                  // console.log(
+                  //   `props.currentUser`,
+                  //   props.currentUser,
+                  //   props.currentUser.roles.includes("root")
+                  // );
                   if (
                     selectedUser &&
                     props.currentUser.roles.includes("root")
@@ -555,6 +560,11 @@ const UserSetting = (props) => {
                   props.currentUser.roles.includes("root") ? "" : " disabled"
                 }`}
                 onClick={() => {
+                  // console.log(
+                  //   `props.currentUser`,
+                  //   props.currentUser,
+                  //   props.currentUser.roles.includes("root")
+                  // );
                   if (props.currentUser.roles.includes("root"))
                     setOpenAddUserDialog(true);
                 }}
