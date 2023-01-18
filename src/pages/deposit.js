@@ -35,7 +35,7 @@ const FeeControlDialog = (props) => {
     >
       <div className="screen__dialog-content">
         <div className="screen__dialog-content--title">
-          {props.currency.code.toUpperCase()}
+          {props.currency?.code?.toUpperCase()}
         </div>
         <div className="screen__dialog-content--body">
           <div className="screen__dialog-inputs">
@@ -73,8 +73,8 @@ const FeeControlDialog = (props) => {
                   )}: ${SafeMath.mult(
                     // props.currency.depositFee?.current,
                     props.type === COIN_SETTING_TYPE.DEPOSIT
-                      ? props.currency.depositFee
-                      : props.currency.withdrawFee,
+                      ? props.currency?.depositFee
+                      : props.currency?.withdrawFee,
                     100
                   )}%`}</div>
                 </div>

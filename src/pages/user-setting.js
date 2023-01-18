@@ -153,11 +153,11 @@ const DeleteUserDialog = (props) => {
         </div>
         <div className="user-setting__dialog--content">
           <div className="user-setting__user-info">
-            <div>{props.user.id}</div>
-            <div>{props.user.email}</div>
+            <div>{props.user?.id}</div>
+            <div>{props.user?.email}</div>
           </div>
           <div className="user-setting__user-roles">
-            {props.user.roles.map((role) => {
+            {props.user?.roles?.map((role) => {
               return (
                 <RoleTag roleKey={role} isSelected={true} onClick={() => {}} />
               );
