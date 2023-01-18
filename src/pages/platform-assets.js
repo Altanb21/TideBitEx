@@ -88,6 +88,7 @@ const AssetSettingDialog = (props) => {
 
   return (
     <Dialog
+      open={props.open}
       className="platform-assets__dialog screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
@@ -424,16 +425,15 @@ const PlatformAssets = () => {
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
-      {openSettingDialog && selectedAsset && (
-        <AssetSettingDialog
-          asset={selectedAsset}
-          onClose={() => setOpenSettingDialog(false)}
-          onCancel={() => {
-            setOpenSettingDialog(false);
-          }}
-          onConfirm={(data) => updatePlatformAsset(selectedAsset.id, data)}
-        />
-      )}
+      <AssetSettingDialog
+        open={openSettingDialog && selectedAsset}
+        asset={selectedAsset}
+        onClose={() => setOpenSettingDialog(false)}
+        onCancel={() => {
+          setOpenSettingDialog(false);
+        }}
+        onConfirm={(data) => updatePlatformAsset(selectedAsset.id, data)}
+      />
       <section className="screen__section platform-assets">
         <div className="screen__header">平台資產總覽</div>
         {/* <ScreenTags

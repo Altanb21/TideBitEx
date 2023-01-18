@@ -26,6 +26,7 @@ const FeeControlDialog = (props) => {
 
   return (
     <Dialog
+      open={props.open}
       className="screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
@@ -356,28 +357,26 @@ const Deposit = () => {
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
-      {openDepositControlDialog && selectedCoinSetting && (
-        <FeeControlDialog
-          type={COIN_SETTING_TYPE.DEPOSIT}
-          currency={selectedCoinSetting}
-          onClose={() => setOpenDepositControlDialog(false)}
-          onCancel={() => {
-            setOpenDepositControlDialog(false);
-          }}
-          onConfirm={updateDepositSetting}
-        />
-      )}
-      {openWithdrawControlDialog && selectedCoinSetting && (
-        <FeeControlDialog
-          type={COIN_SETTING_TYPE.WITHDRAW}
-          currency={selectedCoinSetting}
-          onClose={() => setOpenWithdrawControlDialog(false)}
-          onCancel={() => {
-            setOpenWithdrawControlDialog(false);
-          }}
-          onConfirm={updateWithdrawSetting}
-        />
-      )}
+      <FeeControlDialog
+        open={openDepositControlDialog && selectedCoinSetting}
+        type={COIN_SETTING_TYPE.DEPOSIT}
+        currency={selectedCoinSetting}
+        onClose={() => setOpenDepositControlDialog(false)}
+        onCancel={() => {
+          setOpenDepositControlDialog(false);
+        }}
+        onConfirm={updateDepositSetting}
+      />
+      <FeeControlDialog
+        open={openWithdrawControlDialog && selectedCoinSetting}
+        type={COIN_SETTING_TYPE.WITHDRAW}
+        currency={selectedCoinSetting}
+        onClose={() => setOpenWithdrawControlDialog(false)}
+        onCancel={() => {
+          setOpenWithdrawControlDialog(false);
+        }}
+        onConfirm={updateWithdrawSetting}
+      />
       <section className="screen__section deposit">
         <div className="screen__header">入金管理</div>
         {/* <ScreenTags

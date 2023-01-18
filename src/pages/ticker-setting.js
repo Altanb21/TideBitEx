@@ -51,6 +51,7 @@ const FeeControlDialog = (props) => {
 
   return (
     <Dialog
+      open={props.open}
       className="screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
@@ -288,23 +289,22 @@ const TickerSetting = () => {
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
-      {openFeeControlDialog && selectedTickerSetting && side && (
-        <FeeControlDialog
-          side={side}
-          ticker={selectedTickerSetting}
-          onClose={() => setOpenFeeControlDialog(false)}
-          onCancel={() => {
-            setOpenFeeControlDialog(false);
-          }}
-          onConfirm={(data) =>
-            updateTickerSetting(
-              selectedTickerSetting.id,
-              TICKER_SETTING_TYPE.FEE,
-              data
-            )
-          }
-        />
-      )}
+      <FeeControlDialog
+        open={openFeeControlDialog && selectedTickerSetting && side}
+        side={side}
+        ticker={selectedTickerSetting}
+        onClose={() => setOpenFeeControlDialog(false)}
+        onCancel={() => {
+          setOpenFeeControlDialog(false);
+        }}
+        onConfirm={(data) =>
+          updateTickerSetting(
+            selectedTickerSetting.id,
+            TICKER_SETTING_TYPE.FEE,
+            data
+          )
+        }
+      />
       <section className="screen__section admin-ticker">
         <div className="screen__header">交易對設定</div>
         <div className="screen__search-bar">
