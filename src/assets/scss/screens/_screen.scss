@@ -286,7 +286,7 @@
     width: 100%;
     &--box{
       display: flex;
-      gap: 20px;
+      justify-content: space-between;
     }
   }
   &__table-text {

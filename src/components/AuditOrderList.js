@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import Reason from "../constant/Reason";
 import { exportCSVFile } from "../utils/Utils";
 import AuditOrder from "./AuditOrder";
 import DownloadOptions from "./DownloadOptions";
@@ -29,33 +30,126 @@ const AuditOrderList = (props) => {
 
   const downloadHandler = useCallback(
     (option) => {
-      console.log(`option`, option);
-      console.log(`props.orders`, props.orders);
-      exportCSVFile(
-        {
-          created_at: "created at",
-          id: "id",
-          price: "price",
-          volume: "volume",
-          origin_volume: "origin volume",
-          locked: "locked",
-          origin_locked: "origin locked",
-        },
-        [
-          {
-            created_at: "2023-01-31",
-            id: "20230131",
-            price: "1000",
-            volume: "0",
-            origin_volume: "1",
-            locked: "0",
-            origin_locked: "1",
-          },
-        ],
-        option
-      );
+      console.log(`orders`, orders);
+      let headers,
+        items = [];
+      switch (option) {
+        case "orders":
+          headers = {
+            market: "market",
+            created_at: "created at",
+            id: "id",
+            type: "type",
+            side: "side",
+            state: "state",
+            price: "price",
+            volume: "volume",
+            origin_volume: "origin volume",
+            locked: "locked",
+            origin_locked: "origin locked",
+            trades_count: "trades count",
+            funds_received: "funds received",
+          };
+          items = orders.map((o) => {
+            let order = {
+              market: `${o.order.baseUnit}-${o.order.quoteUnit}`,
+              created_at: o.order.created_at,
+              id: o.order.id,
+              type: o.order.ord_type,
+              side: o.order.type,
+              state: o.order.state,
+              price: o.order.price,
+              volume: o.order.volume,
+              origin_volume: o.order.origin_volume,
+              locked: o.order.locked,
+              origin_locked: o.order.origin_locked,
+              trades_count: o.order.trades_count.real,
+              funds_received: o.order.funds_received.real,
+            };
+            return order;
+          });
+          break;
+        case "vouchers":
+          headers = {
+            created_at: "created at",
+            id: "id",
+            trade_id: "trade id",
+            member_id: "member id",
+            order_id: "order id",
+            price: "price",
+            volume: "volume",
+            value: "value",
+            locked: "locked",
+            ask: "ask",
+            ask_fee: "ask_fee",
+            bid: "bid",
+            bid_fee: "bid_fee",
+          };
+          items = orders
+            .reduce((acc, curr) => {
+              acc = acc.concat(curr.vouchers);
+              return acc;
+            }, [])
+            .map((v) => ({
+              created_at: v.created_at,
+              id: v.id,
+              trade_id: v.trade_id,
+              member_id: v.member_id,
+              order_id: v.order_id,
+              price: v.price,
+              volume: v.volume.real,
+              value: v.value.real,
+              ask: v.ask,
+              ask_fee: v.ask_fee,
+              bid: v.bid,
+              bid_fee: v.bid_fee,
+            }));
+          break;
+        case "account_versions":
+          headers = {
+            created_at: "created at",
+            id: "id",
+            account_id: "account id",
+            member_id: "member id",
+            currency: "currency",
+            reason: "reason",
+            balance: "balance",
+            locked: "locked",
+            amount: "amount",
+            fee: "fee",
+            modifiable_type: "modifiable type",
+            modifiable_id: "modifiable id",
+          };
+          items = orders
+            .reduce((acc, curr) => {
+              acc = acc.concat(curr.order.accountVersions);
+              let tmp = curr.vouchers.reduce((acc, curr) => {
+                acc = acc.concat(curr.accountVersions);
+                return acc;
+              }, []);
+              acc = acc.concat(tmp);
+              return acc;
+            }, [])
+            .map((a) => ({
+              created_at: a.created_at,
+              id: a.id,
+              account_id: a.account_id,
+              member_id: a.member_id,
+              currency: a.currency,
+              reason: Reason[a.reason],
+              balance: a.balance,
+              locked: a.locked,
+              amount: a.amount,
+              fee: a.fee,
+              modifiable_type: a.modifiable_type,
+              modifiable_id: a.modifiable_id,
+            }));
+          break;
+        default:
+      }
+      exportCSVFile(headers, items, option);
     },
-    [props.orders]
+    [orders]
   );
 
   const displaySideHandler = useCallback(
