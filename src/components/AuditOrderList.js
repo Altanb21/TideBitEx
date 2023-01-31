@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Utils } from "sequelize/types";
 import { exportCSVFile } from "../utils/Utils";
 import AuditOrder from "./AuditOrder";
 import DownloadOptions from "./DownloadOptions";
