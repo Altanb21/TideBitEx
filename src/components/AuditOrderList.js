@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Utils } from "sequelize/types";
+import { exportCSVFile } from "../utils/Utils";
 import AuditOrder from "./AuditOrder";
+import DownloadOptions from "./DownloadOptions";
 import ScreenDisplayOptions from "./ScreenDisplayOptions";
 
 const AuditOrderList = (props) => {
@@ -21,6 +24,37 @@ const AuditOrderList = (props) => {
         });
         setOrders(orders);
       }
+    },
+    [props.orders]
+  );
+
+  const downloadHandler = useCallback(
+    (option) => {
+      console.log(`option`, option);
+      console.log(`props.orders`, props.orders);
+      exportCSVFile(
+        {
+          created_at: "created at",
+          id: "id",
+          price: "price",
+          volume: "volume",
+          origin_volume: "origin volume",
+          locked: "locked",
+          origin_locked: "origin locked",
+        },
+        [
+          {
+            created_at: "2023-01-31",
+            id: "20230131",
+            price: "1000",
+            volume: "0",
+            origin_volume: "1",
+            locked: "0",
+            origin_locked: "1",
+          },
+        ],
+        option
+      );
     },
     [props.orders]
   );
@@ -51,7 +85,14 @@ const AuditOrderList = (props) => {
   return (
     <table className="screen__table">
       <thead className="screen__table-head">
-        <div className="screen__table-header">Audited Orders</div>
+        <div className="screen__table--box">
+          <div className="screen__table-header">Audited Orders</div>
+          <DownloadOptions
+            title={t("download")}
+            options={["orders", "vouchers", "account_versions"]}
+            downloadHandler={downloadHandler}
+          />
+        </div>
         <div className="screen__tool-bar">
           <ScreenDisplayOptions
             title={t("side")}
