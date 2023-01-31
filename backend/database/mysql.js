@@ -1895,8 +1895,9 @@ class mysql {
     }
   }
 
-  async getVouchersByOrderId(orderId) {
+  async getVouchersByOrderIds(orderIds) {
     const slotId = countdown({ name: `getVouchersByOrderId` });
+    let placeholder = orderIds.join(`,`);
     const query = `
     SELECT
       vouchers.id,
@@ -1915,12 +1916,11 @@ class mysql {
     FROM
       vouchers
     WHERE
-      vouchers.order_id = ?
+      vouchers.order_id in(${placeholder})
     ;`;
     try {
       const [vouchers] = await this.db.query({
         query,
-        values: [orderId],
       });
       countdown({ id: slotId, name: `getVouchersByOrderIds` });
       return vouchers;
@@ -1928,7 +1928,7 @@ class mysql {
       this.logger.debug(
         `[sql][${new Date().toISOString()} getVouchersByOrderIds`,
         query,
-        `orderId: ${orderId}`
+        `orderIds: ${orderIds}`
       );
       countdown({ id: slotId, name: `getVouchersByOrderIds` });
       return [];

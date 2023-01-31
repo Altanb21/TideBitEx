@@ -5948,7 +5948,7 @@ class ExchangeHub extends Bot {
         // accountVersions: accountVersionsByOrder,
       };
     // 1. getVouchers
-    vouchers = await this.database.getVouchersByOrderIds(order.id);
+    vouchers = await this.database.getVouchersByOrderIds([order.id]);
     // 2. getTrades
     let ids = vouchers.map((v) => v.trade_id);
     trades = await this.database.getTradesByIds(ids);
