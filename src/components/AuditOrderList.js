@@ -79,7 +79,6 @@ const AuditOrderList = (props) => {
             price: "price",
             volume: "volume",
             value: "value",
-            locked: "locked",
             ask: "ask",
             ask_fee: "ask_fee",
             bid: "bid",

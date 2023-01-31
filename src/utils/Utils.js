@@ -450,7 +450,6 @@ export const toggleSidebar = (toggle = true) => {
 export const addPushableContainer = () => {};
 
 export const convertToCSV = (objArray) => {
-  console.log(`convertToCSV objArray`, objArray);
   let array = typeof objArray != "object" ? JSON.parse(objArray) : objArray;
   let str = "";
   for (let i = 0; i < array.length; i++) {
@@ -462,7 +461,6 @@ export const convertToCSV = (objArray) => {
     }
     str += line + "\r\n";
   }
-  console.log(`convertToCSV str`, str);
   return str;
 };
 
