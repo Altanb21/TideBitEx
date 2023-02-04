@@ -959,6 +959,12 @@ class OkexConnector extends ConnectorBase {
       path: path,
       body: body,
     });
+    // this.logger.debug(
+    //   `[${
+    //     this.constructor.name
+    //   }][${new Date().toISOString()}] postPlaceOrder body`,
+    //   body
+    // );
     const res = await this._request(
       "post_trade_order",
       {

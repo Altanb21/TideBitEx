@@ -3415,7 +3415,7 @@ class ExchangeHub extends Bot {
             tdMode: body.tdMode,
             // ccy: body.ccy,
             clOrdId,
-            tag: this.brokerId,
+            tag: this.okexBrokerId,
             side:
               body.kind === Database.ORDER_KIND.BID
                 ? Database.ORDER_SIDE.BUY
