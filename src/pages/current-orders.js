@@ -256,7 +256,7 @@ const CurrentOrders = () => {
               exchange: exchanges[0],
               ticker: filterTicker,
             });
-            filterHandler({ updateOrders: orders, newPage: 1 });
+            await filterHandler({ updateOrders: orders, newPage: 1 });
           } catch (error) {
             enqueueSnackbar(`${t("error-happen")}`, {
               variant: "error",
@@ -266,8 +266,8 @@ const CurrentOrders = () => {
               },
             });
           }
-          setIsLoading(false);
         }
+        setIsLoading(false);
       }
     },
     [

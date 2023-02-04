@@ -29,6 +29,9 @@ const FeeControlDialog = (props) => {
   const [defaultFee, setDefaultFee] = useState(null);
   const [vipFee, setVIPFee] = useState(null);
   const [heroFee, setHeroFee] = useState(null);
+  const [currentDefaultFee, setCurrentDefaultFee] = useState(null);
+  const [currentVIPFee, setCurrentVIPFee] = useState(null);
+  const [currentHeroFee, setCurrentHeroFee] = useState(null);
 
   const onConfirm = useCallback(() => {
     if (defaultFee || vipFee || heroFee) {
@@ -49,8 +52,27 @@ const FeeControlDialog = (props) => {
     }
   }, [defaultFee, heroFee, props, vipFee]);
 
+  useEffect(() => {
+    if (
+      props.ticker &&
+      props.side &&
+      (!currentDefaultFee || !currentVIPFee || !currentHeroFee)
+    ) {
+      setCurrentDefaultFee(SafeMath.mult(props.ticker[props.side].fee, 100));
+      setCurrentVIPFee(SafeMath.mult(props.ticker[props.side].vipFee, 100));
+      setCurrentHeroFee(SafeMath.mult(props.ticker[props.side].heroFee, 100));
+    }
+  }, [
+    currentDefaultFee,
+    currentHeroFee,
+    currentVIPFee,
+    props.side,
+    props.ticker,
+  ]);
+
   return (
     <Dialog
+      open={props.open}
       className="screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
@@ -58,7 +80,9 @@ const FeeControlDialog = (props) => {
       onConfirm={onConfirm}
     >
       <div className="screen__dialog-content">
-        <div className="screen__dialog-content--title">{props.ticker.name}</div>
+        <div className="screen__dialog-content--title">
+          {props.ticker?.name}
+        </div>
         <div className="screen__dialog-content--body">
           <div className="screen__dialog-inputs">
             <div className="screen__dialog-input-group">
@@ -88,10 +112,7 @@ const FeeControlDialog = (props) => {
                   />
                   <div className="screen__dialog-input-caption">{`${t(
                     `current-${props.side}-default-fee`
-                  )}: ${SafeMath.mult(
-                    props.ticker[props.side].fee,
-                    100
-                  )}%`}</div>
+                  )}: ${currentDefaultFee}%`}</div>
                 </div>
                 <div className="screen__dialog-input-suffix">%</div>
               </div>
@@ -123,10 +144,7 @@ const FeeControlDialog = (props) => {
                   />
                   <div className="screen__dialog-input-caption">{`${t(
                     `current-${props.side}-vip-fee`
-                  )}: ${SafeMath.mult(
-                    props.ticker[props.side].vipFee,
-                    100
-                  )}%`}</div>
+                  )}: ${currentVIPFee}%`}</div>
                 </div>
                 <div className="screen__dialog-input-suffix">%</div>
               </div>
@@ -158,10 +176,7 @@ const FeeControlDialog = (props) => {
                   />
                   <div className="screen__dialog-input-caption">{`${t(
                     `current-${props.side}-hero-fee`
-                  )}: ${SafeMath.mult(
-                    props.ticker[props.side].heroFee,
-                    100
-                  )}%`}</div>
+                  )}: ${currentHeroFee}%`}</div>
                 </div>
                 <div className="screen__dialog-input-suffix">%</div>
               </div>
@@ -288,23 +303,22 @@ const TickerSetting = () => {
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
-      {openFeeControlDialog && selectedTickerSetting && side && (
-        <FeeControlDialog
-          side={side}
-          ticker={selectedTickerSetting}
-          onClose={() => setOpenFeeControlDialog(false)}
-          onCancel={() => {
-            setOpenFeeControlDialog(false);
-          }}
-          onConfirm={(data) =>
-            updateTickerSetting(
-              selectedTickerSetting.id,
-              TICKER_SETTING_TYPE.FEE,
-              data
-            )
-          }
-        />
-      )}
+      <FeeControlDialog
+        open={openFeeControlDialog && selectedTickerSetting && side}
+        side={side}
+        ticker={selectedTickerSetting}
+        onClose={() => setOpenFeeControlDialog(false)}
+        onCancel={() => {
+          setOpenFeeControlDialog(false);
+        }}
+        onConfirm={(data) =>
+          updateTickerSetting(
+            selectedTickerSetting.id,
+            TICKER_SETTING_TYPE.FEE,
+            data
+          )
+        }
+      />
       <section className="screen__section admin-ticker">
         <div className="screen__header">交易對設定</div>
         <div className="screen__search-bar">

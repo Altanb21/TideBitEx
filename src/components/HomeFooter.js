@@ -83,6 +83,7 @@ const HomeFooter = () => {
               +852 6735 6499
             </a>
           </div>
+          {/*
           <div className="home-footer__item">
             <div className="home-footer__header">{t("our_address")}</div>
             <div className="home-footer__text">{t("hongkong")}</div>
@@ -96,6 +97,7 @@ const HomeFooter = () => {
             </a>
             <div className="home-footer__text">{t("bussiness_hour")}</div>
           </div>
+          */}
           {/* </div> */}
         </div>
         <div className="home-footer__box home-footer__social-medias">

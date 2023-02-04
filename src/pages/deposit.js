@@ -26,6 +26,7 @@ const FeeControlDialog = (props) => {
 
   return (
     <Dialog
+      open={props.open}
       className="screen__dialog"
       title={t("setting")}
       onClose={props.onClose}
@@ -34,7 +35,7 @@ const FeeControlDialog = (props) => {
     >
       <div className="screen__dialog-content">
         <div className="screen__dialog-content--title">
-          {props.currency.code.toUpperCase()}
+          {props.currency?.code?.toUpperCase()}
         </div>
         <div className="screen__dialog-content--body">
           <div className="screen__dialog-inputs">
@@ -72,8 +73,8 @@ const FeeControlDialog = (props) => {
                   )}: ${SafeMath.mult(
                     // props.currency.depositFee?.current,
                     props.type === COIN_SETTING_TYPE.DEPOSIT
-                      ? props.currency.depositFee
-                      : props.currency.withdrawFee,
+                      ? props.currency?.depositFee
+                      : props.currency?.withdrawFee,
                     100
                   )}%`}</div>
                 </div>
@@ -356,28 +357,26 @@ const Deposit = () => {
   return (
     <>
       <LoadingDialog isLoading={isLoading} />
-      {openDepositControlDialog && selectedCoinSetting && (
-        <FeeControlDialog
-          type={COIN_SETTING_TYPE.DEPOSIT}
-          currency={selectedCoinSetting}
-          onClose={() => setOpenDepositControlDialog(false)}
-          onCancel={() => {
-            setOpenDepositControlDialog(false);
-          }}
-          onConfirm={updateDepositSetting}
-        />
-      )}
-      {openWithdrawControlDialog && selectedCoinSetting && (
-        <FeeControlDialog
-          type={COIN_SETTING_TYPE.WITHDRAW}
-          currency={selectedCoinSetting}
-          onClose={() => setOpenWithdrawControlDialog(false)}
-          onCancel={() => {
-            setOpenWithdrawControlDialog(false);
-          }}
-          onConfirm={updateWithdrawSetting}
-        />
-      )}
+      <FeeControlDialog
+        open={openDepositControlDialog && selectedCoinSetting}
+        type={COIN_SETTING_TYPE.DEPOSIT}
+        currency={selectedCoinSetting}
+        onClose={() => setOpenDepositControlDialog(false)}
+        onCancel={() => {
+          setOpenDepositControlDialog(false);
+        }}
+        onConfirm={updateDepositSetting}
+      />
+      <FeeControlDialog
+        open={openWithdrawControlDialog && selectedCoinSetting}
+        type={COIN_SETTING_TYPE.WITHDRAW}
+        currency={selectedCoinSetting}
+        onClose={() => setOpenWithdrawControlDialog(false)}
+        onCancel={() => {
+          setOpenWithdrawControlDialog(false);
+        }}
+        onConfirm={updateWithdrawSetting}
+      />
       <section className="screen__section deposit">
         <div className="screen__header">入金管理</div>
         {/* <ScreenTags

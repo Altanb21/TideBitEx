@@ -2,16 +2,13 @@ const os = require("os");
 const fs = require("fs");
 const { Console } = require("console");
 const path = require("path");
-const url = require("url");
 const toml = require("toml");
 const i18n = require("i18n");
 const dvalue = require("dvalue");
-const colors = require("colors");
 const yaml = require("js-yaml");
 const redis = require("redis");
 
 const DBOperator = require(path.resolve(__dirname, "../database/dbOperator"));
-const Codes = require("../constants/Codes");
 const { default: BigNumber } = require("bignumber.js");
 
 let _logger;
@@ -510,13 +507,13 @@ class Utils {
     const errorOutput = fs.createWriteStream(homeFolder + "/audit.log", {
       flags: "a",
     });
-    _logger = new Console({ stdout: output, stderr: errorOutput });
-    // _logger = {
-    //   log: console.log,
-    //   debug: base.debug ? console.log : () => {},
-    //   trace: console.trace,
-    //   error: console.error,
-    // };
+    // _logger = new Console({ stdout: output, stderr: errorOutput });
+    _logger = {
+      log: console.log,
+      debug: base.debug ? console.log : () => {},
+      trace: console.trace,
+      error: console.error,
+    };
     return Promise.resolve(_logger);
   }
 
