@@ -33,22 +33,24 @@ const MemberAsset = (props) => {
   const { t } = useTranslation();
   const storeCtx = useContext(StoreContext);
   const [asset, setAsset] = useState(props.asset);
-  const disabled = `${
-    asset.balance.alert || asset.locked.alert ? " " : " disabled"
-  }`;
+  const disabled = `${asset.balance.alert || asset.locked.alert ? " " : " disabled"
+    }`;
 
   const fixAccountHandler = useCallback(async () => {
     props.fixAccountHandler(
       t("fix_abnormal_account_confirm", { accountId: asset.accountId }),
       async () => {
+        let success = false;
         try {
           // console.log(`fixAccountHandler asset.accountId`, asset.accountId);
           const updateAsset = await storeCtx.fixAccountHandler(asset.accountId);
           // console.log(`fixAccountHandler updateAsset`, updateAsset);
           setAsset(updateAsset);
+          success = true;
         } catch (e) {
           console.error(e);
         }
+        return success;
       }
     );
   }, [asset.accountId, props, storeCtx, t]);
@@ -382,24 +384,23 @@ const Members = (props) => {
           .then((result) => {
             console.log(`result`, result);
             setIsLoading(false);
-            enqueueSnackbar(`${t("success-update")}`, {
-              variant: "success",
-              anchorOrigin: {
-                vertical: "top",
-                horizontal: "center",
-              },
-            });
+            if (result)
+              enqueueSnackbar(`${t("success-update")}`, {
+                variant: "success",
+                anchorOrigin: {
+                  vertical: "top",
+                  horizontal: "center",
+                },
+              });
+            else
+              enqueueSnackbar(`${t("error-happen")}`, {
+                variant: "error",
+                anchorOrigin: {
+                  vertical: "top",
+                  horizontal: "center",
+                },
+              });
           })
-          .catch((error) => {
-            setIsLoading(false);
-            enqueueSnackbar(`${t("error-happen")}`, {
-              variant: "error",
-              anchorOrigin: {
-                vertical: "top",
-                horizontal: "center",
-              },
-            });
-          });
       }
     },
     [enqueueSnackbar, t]
@@ -470,7 +471,7 @@ const Members = (props) => {
             <ul className="screen__display-options">
               <li
                 className={`screen__display-option${filterOptionAll}`}
-                // onClick={filterOptionAllHandler}
+              // onClick={filterOptionAllHandler}
               >
                 全部
               </li>
