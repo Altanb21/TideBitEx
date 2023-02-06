@@ -115,7 +115,7 @@ const AssetSettingDialog = (props) => {
             />
           </div>
           <div className="screen__dialog-content--value">
-            {props.asset.code.toUpperCase()}
+            {props.asset?.code?.toUpperCase()}
           </div>
         </div>
         <div className="screen__dialog-content--body">
@@ -227,16 +227,16 @@ const AssetSettingTile = (props) => {
         <div className="platform-assets__leading">
           <div className="platform-assets__leading--icon">
             <img
-              src={`/icons/${props.asset.code}.png`}
+              src={`/icons/${props.asset?.code}.png`}
               alt={props.asset.code}
             />
           </div>
           <div className="platform-assets__leading--value">
-            {props.asset.code.toUpperCase()}
+            {props.asset?.code?.toUpperCase()}
           </div>
         </div>
         <div className="platform-assets__sources">
-          {Object.keys(props.asset.sources).map((source) => {
+          {props.asset ? Object.keys(props.asset.sources).map((source) => {
             let totalBalance = SafeMath.plus(
               props.asset.sources[source].balance,
               props.asset.sources[source].locked
@@ -321,7 +321,7 @@ const AssetSettingTile = (props) => {
                   .toUpperCase()}${source.substring(1)}`}</div>
               </div>
             );
-          })}
+          }) : <></>}
         </div>
       </div>
     </div>
