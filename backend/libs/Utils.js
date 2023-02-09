@@ -843,10 +843,12 @@ class Utils {
       }
       if (split2.length > 0) orderId = split2[0];
     } catch (error) {
-      this.logger.debug(
-        `[${new Date().toLocaleString()}] parseClOrdId error clOrdId return undefined`,
-        clOrdId
-      );
+      // this.logger.debug(
+      //   `[${new Date().toLocaleString()}] parseClOrdId error clOrdId return undefined`,
+      //   clOrdId
+      // );
+      memberId = null;
+      orderId = null;
     }
     return {
       memberId,

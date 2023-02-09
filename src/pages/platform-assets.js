@@ -11,8 +11,8 @@ const InputRange = (props) => {
   const [init, setInit] = useState(false);
   const onInput = (e) => {
     const newValue = Number(
-        ((e.target.value - props.min) * 100) / (props.max - props.min)
-      ),
+      ((e.target.value - props.min) * 100) / (props.max - props.min)
+    ),
       newPosition = 16 - newValue * 0.32;
     document.documentElement.style.setProperty(
       `--range-progress-${props.type}`,
@@ -23,8 +23,8 @@ const InputRange = (props) => {
   useEffect(() => {
     if (!init) {
       const newValue = Number(
-          ((props.value - props.min) * 100) / (props.max - props.min)
-        ),
+        ((props.value - props.min) * 100) / (props.max - props.min)
+      ),
         newPosition = 16 - newValue * 0.32;
       document.documentElement.style.setProperty(
         `--range-progress-${props.type}`,
@@ -58,33 +58,44 @@ const AssetSettingDialog = (props) => {
   // const [minimun, setMinimun] = useState(null);
   const [MPARatio, setMPARatio] = useState(
     // SafeMath.mult(SafeMath.div(props.asset.MPA, props.asset.sum), 100)
-    SafeMath.mult(props.asset.MPARatio, 100)
+    // SafeMath.mult(props.asset.MPARatio, 100)
+    null
   );
   const [RRRRatio, setRRRRatio] = useState(
     // SafeMath.mult(SafeMath.div(props.asset.RRR, props.asset.sum), 100)
-    SafeMath.mult(props.asset.RRRRatio, 100)
+    // SafeMath.mult(props.asset.RRRRatio, 100)
+    null
   );
 
   const onConfirm = useCallback(() => {
     if (
       // maximun || minimun ||
-      MPARatio ||
-      RRRRatio
+      !!props.asset && (MPARatio ||
+        RRRRatio)
     ) {
       props.onConfirm({
         // maximun: maximun ? maximun : props.asset.maximun,
         // minimun: minimun ? minimun : props.asset.minimun,
         MPARatio: MPARatio
           ? // ? SafeMath.mult(SafeMath.div(MPARatio, 100), props.asset.sum)
-            SafeMath.div(MPARatio, 100)
+          SafeMath.div(MPARatio, 100)
           : props.asset.MPARatio,
         RRRRatio: RRRRatio
           ? // ? SafeMath.mult(SafeMath.div(RRRRatio, 100), props.asset.sum)
-            SafeMath.div(RRRRatio, 100)
+          SafeMath.div(RRRRatio, 100)
           : props.asset.RRRRatio,
       });
     }
   }, [MPARatio, RRRRatio, props]);
+
+  useEffect(() => {
+    if (!!props.asset) {
+      if (props.asset?.MPARatio !== MPARatio)
+        setMPARatio(SafeMath.mult(props.asset.MPARatio, 100))
+      if (props.asset?.RRRRatio !== RRRRatio)
+        setRRRRatio(SafeMath.mult(props.asset.RRRRatio, 100))
+    }
+  }, [MPARatio, RRRRatio, props.asset])
 
   return (
     <Dialog
@@ -99,12 +110,12 @@ const AssetSettingDialog = (props) => {
         <div className="screen__dialog-content--title">
           <div className="screen__dialog-content--icon">
             <img
-              src={`/icons/${props.asset.code}.png`}
-              alt={props.asset.code}
+              src={`/icons/${props.asset?.code}.png`}
+              alt={props.asset?.code}
             />
           </div>
           <div className="screen__dialog-content--value">
-            {props.asset.code.toUpperCase()}
+            {props.asset?.code?.toUpperCase()}
           </div>
         </div>
         <div className="screen__dialog-content--body">
@@ -199,13 +210,12 @@ const AssetSettingDialog = (props) => {
 const AssetSettingTile = (props) => {
   return (
     <div
-      className={`platform-assets__tile${
-        Object.values(props.asset.sources).some(
-          (source) => source.alertLevel > 0
-        )
-          ? " alert"
-          : ""
-      }`}
+      className={`platform-assets__tile${Object.values(props.asset.sources).some(
+        (source) => source.alertLevel > 0
+      )
+        ? " alert"
+        : ""
+        }`}
       key={props.asset.key + props.asset.code}
     >
       <div className="platform-assets__icon platform-assets__icon--alert"></div>
@@ -217,16 +227,16 @@ const AssetSettingTile = (props) => {
         <div className="platform-assets__leading">
           <div className="platform-assets__leading--icon">
             <img
-              src={`/icons/${props.asset.code}.png`}
+              src={`/icons/${props.asset?.code}.png`}
               alt={props.asset.code}
             />
           </div>
           <div className="platform-assets__leading--value">
-            {props.asset.code.toUpperCase()}
+            {props.asset?.code?.toUpperCase()}
           </div>
         </div>
         <div className="platform-assets__sources">
-          {Object.keys(props.asset.sources).map((source) => {
+          {props.asset ? Object.keys(props.asset.sources).map((source) => {
             let totalBalance = SafeMath.plus(
               props.asset.sources[source].balance,
               props.asset.sources[source].locked
@@ -260,28 +270,26 @@ const AssetSettingTile = (props) => {
                   <div
                     className="platform-assets__inner-bar"
                     style={{
-                      width: `${
-                        alertTag !== "unset"
-                          ? SafeMath.mult(
-                              SafeMath.div(totalBalance, props.asset.sum),
-                              100
-                            )
-                          : "0"
-                      }%`,
+                      width: `${alertTag !== "unset"
+                        ? SafeMath.mult(
+                          SafeMath.div(totalBalance, props.asset.sum),
+                          100
+                        )
+                        : "0"
+                        }%`,
                     }}
                   ></div>
                   <div
                     className="platform-assets__warning-bar"
                     style={{
-                      left: `${
-                        alertTag !== "unset"
-                          ? SafeMath.mult(
-                              // SafeMath.div(props.asset.RRR, props.asset.sum),
-                              props.asset.RRRRatio,
-                              100
-                            )
-                          : "0"
-                      }%`,
+                      left: `${alertTag !== "unset"
+                        ? SafeMath.mult(
+                          // SafeMath.div(props.asset.RRR, props.asset.sum),
+                          props.asset.RRRRatio,
+                          100
+                        )
+                        : "0"
+                        }%`,
                     }}
                   >
                     <div className="platform-assets__warning-bar--line"></div>
@@ -292,15 +300,14 @@ const AssetSettingTile = (props) => {
                   <div
                     className="platform-assets__warning-bar"
                     style={{
-                      left: `${
-                        alertTag !== "unset"
-                          ? SafeMath.mult(
-                              // SafeMath.div(props.asset.MPA, props.asset.sum),
-                              props.asset.MPARatio,
-                              100
-                            )
-                          : "0"
-                      }%`,
+                      left: `${alertTag !== "unset"
+                        ? SafeMath.mult(
+                          // SafeMath.div(props.asset.MPA, props.asset.sum),
+                          props.asset.MPARatio,
+                          100
+                        )
+                        : "0"
+                        }%`,
                     }}
                   >
                     <div className="platform-assets__warning-bar--line"></div>
@@ -314,7 +321,7 @@ const AssetSettingTile = (props) => {
                   .toUpperCase()}${source.substring(1)}`}</div>
               </div>
             );
-          })}
+          }) : <></>}
         </div>
       </div>
     </div>
@@ -464,17 +471,15 @@ const PlatformAssets = () => {
             <div className="screen__display-title">顯示：</div>
             <ul className="screen__display-options">
               <li
-                className={`screen__display-option${
-                  alertFilter === false ? " active" : ""
-                }`}
+                className={`screen__display-option${alertFilter === false ? " active" : ""
+                  }`}
                 onClick={() => filter({ alert: false })}
               >
                 全部
               </li>
               <li
-                className={`screen__display-option${
-                  alertFilter === true ? " active" : ""
-                }`}
+                className={`screen__display-option${alertFilter === true ? " active" : ""
+                  }`}
                 onClick={() => filter({ alert: true })}
               >
                 警示
