@@ -91,7 +91,7 @@ const PendingOrders = (_) => {
         </div>
       )}
       <a className="order-list__action" href="/history/orders" target="_blank">
-        {t("show_more")}
+        {t("show-more")}
       </a>
     </div>
   );
