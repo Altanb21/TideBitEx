@@ -351,7 +351,7 @@ class Middleman {
         limit: 1000,
       });
       const orderHistories = await this.communicator.getOrders({
-        state: ORDER_STATE.OPEN,
+        state: ORDER_STATE.CLOSED,
         market,
         limit: 1000,
       });
