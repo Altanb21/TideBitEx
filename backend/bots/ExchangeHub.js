@@ -3457,6 +3457,7 @@ class ExchangeHub extends Bot {
                 market: tickerSetting.market,
                 order: {
                   ...result.updatedOrder,
+                  kind: body.kind,
                 },
               });
             } else {

@@ -2,10 +2,11 @@ import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
-import { OrderTile } from "./ClosedOrders";
+import OrderTile from "./OrderTile";
 
 const PendingOrders = (_) => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
 
   const cancelOrder = (order) => {
     const text =
@@ -49,8 +50,6 @@ const PendingOrders = (_) => {
     }
   };
 
-  const { t } = useTranslation();
-
   return (
     <div className="pending-orders">
       <ul className="d-flex justify-content-between market-order-item market-order__title table__header">
@@ -60,12 +59,6 @@ const PendingOrders = (_) => {
         <li>{t("amount")}</li>
         <li>{t("cancel")}</li>
       </ul>
-      {/* {!storeCtx.pendingOrders.length && (
-                <span className="no-data">
-                  <i className="icon ion-md-document"></i>
-                  No data
-                </span>
-              )} */}
       <ul className="order-list scrollbar-custom">
         {!!storeCtx.pendingOrders?.length &&
           storeCtx.pendingOrders
