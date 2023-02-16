@@ -149,7 +149,7 @@ class DBOperator {
     orderType,
     state,
     asc = false,
-    limit
+    limit = 1000,
   }) {
     return this.database.getOrderList({
       quoteCcy,
@@ -158,7 +158,7 @@ class DBOperator {
       orderType,
       state,
       asc,
-      limit
+      limit,
     });
   }
 
