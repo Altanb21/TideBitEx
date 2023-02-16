@@ -1,4 +1,5 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
+import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
@@ -6,6 +7,8 @@ import { OrderTile } from "./ClosedOrders";
 
 const PendingOrders = (_) => {
   const storeCtx = useContext(StoreContext);
+  const history = useHistory();
+
   const cancelOrder = (order) => {
     const text =
       order.kind === "bid"
@@ -30,6 +33,7 @@ const PendingOrders = (_) => {
       storeCtx.cancelOrder(order);
     }
   };
+  
   const cancelOrders = (id, type) => {
     const text =
       type !== "all"
@@ -46,6 +50,13 @@ const PendingOrders = (_) => {
       storeCtx.cancelOrders(id, type);
     }
   };
+
+  const moreOrdersHandler = useMemo(() => {
+    history.push({
+      pathname: `/history/orders`,
+    });
+  }, []);
+
   const { t } = useTranslation();
 
   return (
@@ -69,6 +80,7 @@ const PendingOrders = (_) => {
             .filter((order) => !(order.price === "NaN" || !order.price)) // ++ WORKAROUND
             .map((order) => (
               <OrderTile
+                id={order.id}
                 price={order.price}
                 volume={order.volume}
                 kind={order.kind}
@@ -76,7 +88,7 @@ const PendingOrders = (_) => {
                 filled={order.filled}
                 tickSz={storeCtx.tickSz}
                 lotSz={storeCtx.lotSz}
-                cancelOrderHandler={()=>cancelOrder(order)}
+                cancelOrderHandler={() => cancelOrder(order)}
               />
             ))}
       </ul>
@@ -93,6 +105,9 @@ const PendingOrders = (_) => {
           </div>
         </div>
       )}
+      <div className="order-list__action" onClick={moreOrdersHandler}>
+        {t("show_more")}
+      </div>
     </div>
   );
 };

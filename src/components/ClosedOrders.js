@@ -1,14 +1,16 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
+import { useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 import { FaTrashAlt } from "react-icons/fa";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
 
-export const OrderTile = React.memo((props) => {
+export const OrderTile = (props) => {
   const { t } = useTranslation();
   return (
     <ul
+      id={`order-${props.id}`}
       className="d-flex justify-content-between market-order-item"
       onClick={props.cancelOrderHandler}
     >
@@ -60,12 +62,19 @@ export const OrderTile = React.memo((props) => {
       )}
     </ul>
   );
-});
+};
 
 const ClosedOrders = (_) => {
   const storeCtx = useContext(StoreContext);
-
+  const history = useHistory();
   const { t } = useTranslation();
+  
+  const moreOrdersHandler = useMemo(() => {
+    history.push({
+      pathname: `/history/orders`,
+    });
+  }, []);
+
   return (
     <div className="closed-orders">
       <ul className="d-flex justify-content-between market-order-item market-order__title">
@@ -81,6 +90,7 @@ const ClosedOrders = (_) => {
             .filter((order) => !(order.price === "NaN" || !order.price)) // ++ WORKAROUND
             .map((order) => (
               <OrderTile
+                id={order.id}
                 price={order.price}
                 volume={order.origin_volume}
                 kind={order.kind}
@@ -92,6 +102,9 @@ const ClosedOrders = (_) => {
               />
             ))}
       </ul>
+      <div className="order-list__action" onClick={moreOrdersHandler}>
+        {t("show_more")}
+      </div>
     </div>
   );
 };

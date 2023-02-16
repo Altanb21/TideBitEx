@@ -437,7 +437,8 @@ const StoreProvider = (props) => {
           );
           const orders = middleman.getMyOrdersSnapshot();
           setPendingOrders(orders.pendingOrders);
-          setCloseOrders(orders.closedOrders);
+          // console.log(`Events.order closedOrders`, orders.closedOrders)
+          setCloseOrders([orders.closedOrders]);
           break;
         case Events.tickers:
           middleman.tickerBook.updateByDifference(metaData.data);
