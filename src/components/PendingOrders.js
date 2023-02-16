@@ -1,5 +1,5 @@
 import React, { useContext, useMemo } from "react";
-import { useHistory } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
@@ -7,7 +7,7 @@ import { OrderTile } from "./ClosedOrders";
 
 const PendingOrders = (_) => {
   const storeCtx = useContext(StoreContext);
-  const history = useHistory();
+  const location = useLocation();
 
   const cancelOrder = (order) => {
     const text =
@@ -52,7 +52,7 @@ const PendingOrders = (_) => {
   };
 
   const moreOrdersHandler = () => {
-    history.push({
+    location.push({
       pathname: `/history/orders`,
     });
   };

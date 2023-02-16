@@ -1,5 +1,5 @@
 import React, { useContext, useMemo } from "react";
-import { useHistory } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 import { FaTrashAlt } from "react-icons/fa";
@@ -66,11 +66,11 @@ export const OrderTile = (props) => {
 
 const ClosedOrders = (_) => {
   const storeCtx = useContext(StoreContext);
-  const history = useHistory();
+  const location = useLocation();
   const { t } = useTranslation();
   
   const moreOrdersHandler = () => {
-    history.push({
+    location.push({
       pathname: `/history/orders`,
     });
   };
