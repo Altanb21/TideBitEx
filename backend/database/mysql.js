@@ -1049,7 +1049,7 @@ class mysql {
     orderType,
     state,
     asc,
-    limit,
+    limit = 1000,
   }) {
     if (!quoteCcy || !baseCcy) throw Error(`missing params`);
     const slotId = countdown({ name: `getOrderList` });
