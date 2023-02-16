@@ -24,6 +24,7 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+const { ORDER_STATE } = require("../constants/OrderState");
 
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
@@ -150,8 +151,7 @@ class ExchangeHub extends Bot {
     await this.okexConnector.start();
     this._eventListener();
     this.logger.debug(
-      `[${
-        this.constructor.name
+      `[${this.constructor.name
       }][${new Date().toISOString()}] start: call exchangeHubService.sync`
     );
     this.exchangeHubService.sync({
@@ -517,36 +517,36 @@ class ExchangeHub extends Bot {
                 switch (SupportedExchange[exchange]) {
                   case SupportedExchange.OKEX:
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
-                      {
-                        balance:
-                          sources[exchange][coinSetting.code]?.balance || "0",
-                        locked:
-                          sources[exchange][coinSetting.code]?.locked || "0",
-                        sum: sources[exchange][coinSetting.code]?.sum || "0",
-                        alertLevel: this.estimateAlertLevel({
-                          account: sources[exchange][coinSetting.code],
-                          amount: sources[exchange][coinSetting.code]?.amount,
-                          sum,
-                          MPA,
-                          RRR,
-                        }),
-                      };
+                    {
+                      balance:
+                        sources[exchange][coinSetting.code]?.balance || "0",
+                      locked:
+                        sources[exchange][coinSetting.code]?.locked || "0",
+                      sum: sources[exchange][coinSetting.code]?.sum || "0",
+                      alertLevel: this.estimateAlertLevel({
+                        account: sources[exchange][coinSetting.code],
+                        amount: sources[exchange][coinSetting.code]?.amount,
+                        sum,
+                        MPA,
+                        RRR,
+                      }),
+                    };
                     break;
                   case SupportedExchange.TIDEBIT:
                     coins[coinSetting.code]["sources"][exchange.toLowerCase()] =
-                      {
-                        balance:
-                          _assetBalances[coinSetting.code]?.amount || "0",
-                        locked: "0",
-                        sum: _assetBalances[coinSetting.code]?.amount || "0",
-                        alertLevel: this.estimateAlertLevel({
-                          account: _assetBalances[coinSetting.code],
-                          amount: _assetBalances[coinSetting.code]?.amount,
-                          sum,
-                          MPA,
-                          RRR,
-                        }),
-                      };
+                    {
+                      balance:
+                        _assetBalances[coinSetting.code]?.amount || "0",
+                      locked: "0",
+                      sum: _assetBalances[coinSetting.code]?.amount || "0",
+                      alertLevel: this.estimateAlertLevel({
+                        account: _assetBalances[coinSetting.code],
+                        amount: _assetBalances[coinSetting.code]?.amount,
+                        sum,
+                        MPA,
+                        RRR,
+                      }),
+                    };
                     break;
                   default:
                 }
@@ -601,8 +601,7 @@ class ExchangeHub extends Bot {
             result = await this.getPlatformAssets({ query: {} });
           } catch (e) {
             this.logger.debug(
-              `[${new Date().toLocaleTimeString()}][${
-                this.constructor.name
+              `[${new Date().toLocaleTimeString()}][${this.constructor.name
               }] updatePlatformAsset yamlUpdate ERROR!`,
               `params`,
               params,
@@ -633,8 +632,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updatePlatformAsset ERROR!`,
         `params`,
         params,
@@ -825,8 +823,7 @@ class ExchangeHub extends Bot {
             });
           } catch (e) {
             this.logger.debug(
-              `[${new Date().toLocaleTimeString()}][${
-                this.constructor.name
+              `[${new Date().toLocaleTimeString()}][${this.constructor.name
               }] updateTickerSetting yamlUpdate ERROR!`,
               `params`,
               params,
@@ -857,8 +854,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updateTickerSetting ERROR!`,
         `params`,
         params,
@@ -908,8 +904,7 @@ class ExchangeHub extends Bot {
             });
           } catch (e) {
             this.logger.debug(
-              `[${new Date().toLocaleTimeString()}][${
-                this.constructor.name
+              `[${new Date().toLocaleTimeString()}][${this.constructor.name
               }] updateCoinSetting yamlUpdate ERROR!`,
               `params`,
               params,
@@ -940,8 +935,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updateCoinSetting ERROR!`,
         `params`,
         params,
@@ -984,8 +978,7 @@ class ExchangeHub extends Bot {
           });
         } catch (e) {
           this.logger.debug(
-            `[${new Date().toLocaleTimeString()}][${
-              this.constructor.name
+            `[${new Date().toLocaleTimeString()}][${this.constructor.name
             }] updateCoinsSettings yamlUpdate ERROR!`,
             `email:${email}`,
             `body`,
@@ -1008,8 +1001,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updateCoinsSettings ERROR!`,
         `email:${email}`,
         `body`,
@@ -1072,8 +1064,7 @@ class ExchangeHub extends Bot {
             });
           } catch (e) {
             this.logger.debug(
-              `[${new Date().toLocaleTimeString()}][${
-                this.constructor.name
+              `[${new Date().toLocaleTimeString()}][${this.constructor.name
               }] updateDepositSetting yamlUpdate ERROR!`,
               `email:${email}`,
               `body`,
@@ -1102,8 +1093,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updateDepositSetting ERROR!`,
         `email:${email}`,
         `body`,
@@ -1166,8 +1156,7 @@ class ExchangeHub extends Bot {
             });
           } catch (e) {
             this.logger.debug(
-              `[${new Date().toLocaleTimeString()}][${
-                this.constructor.name
+              `[${new Date().toLocaleTimeString()}][${this.constructor.name
               }] updateWithdrawSetting yamlUpdate ERROR!`,
               `params`,
               params,
@@ -1198,8 +1187,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updateWithdrawSetting ERROR!`,
         `params`,
         params,
@@ -1230,10 +1218,8 @@ class ExchangeHub extends Bot {
         });
       } else {
         this.logger.error(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
-          }] !!! ERROR getMemberReferral did not get referredByMember with refer_code[${
-            member.refer
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
+          }] !!! ERROR getMemberReferral did not get referredByMember with refer_code[${member.refer
           }]`,
           `member`,
           member
@@ -1244,8 +1230,7 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       this.logger.error(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] !!! ERROR getMemberReferral 出錯`,
         `member`,
         member,
@@ -1285,7 +1270,7 @@ class ExchangeHub extends Bot {
       let days = Math.ceil(
         (new Date(`${voucher.created_at}`).getTime() -
           new Date(`${referral.created_at}`).getTime()) /
-          this.oneDayinMillionSeconds
+        this.oneDayinMillionSeconds
       );
       if (days <= 365) {
         let index = 1;
@@ -1357,8 +1342,7 @@ class ExchangeHub extends Bot {
                 );
               } catch (e) {
                 this.logger.debug(
-                  `[${new Date().toLocaleTimeString()}][${
-                    this.constructor.name
+                  `[${new Date().toLocaleTimeString()}][${this.constructor.name
                   }] addAdminUser yamlUpdate ERROR!`,
                   `email:${email}`,
                   `body`,
@@ -1394,8 +1378,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] addAdminUser ERROR!`,
         `email:${email}`,
         `body`,
@@ -1449,8 +1432,7 @@ class ExchangeHub extends Bot {
               });
             } catch (e) {
               this.logger.debug(
-                `[${new Date().toLocaleTimeString()}][${
-                  this.constructor.name
+                `[${new Date().toLocaleTimeString()}][${this.constructor.name
                 }] updateAdminUser yamlUpdate ERROR!`,
                 `email:${email}`,
                 `body`,
@@ -1480,8 +1462,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] updateAdminUser ERROR!`,
         `email:${email}`,
         `body`,
@@ -1528,8 +1509,7 @@ class ExchangeHub extends Bot {
             });
           } catch (e) {
             this.logger.debug(
-              `[${new Date().toLocaleTimeString()}][${
-                this.constructor.name
+              `[${new Date().toLocaleTimeString()}][${this.constructor.name
               }] deleteAdminUser yamlUpdate ERROR!`,
               `email:${email}`,
               `params`,
@@ -1558,8 +1538,7 @@ class ExchangeHub extends Bot {
       }
     } catch (e) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] deleteAdminUser yamlUpdate ERROR!`,
         `email:${email}`,
         `params`,
@@ -1735,8 +1714,7 @@ class ExchangeHub extends Bot {
       return formatMarket;
     } catch (error) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] getTidebitMarkets from "config/markets/markets.yml" ERROR!`,
         error
       );
@@ -1762,11 +1740,16 @@ class ExchangeHub extends Bot {
     }
     let dbOrders,
       orders = [];
+    let state =
+      query.state === ORDER_STATE.OPEN
+        ? [Database.ORDER_STATE_CODE.WAIT]
+        : [Database.ORDER_STATE_CODE.CANCEL, Database.ORDER_STATE_CODE.DONE];
     dbOrders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
-      state: query.state,
+      state: state,
+      limit: query.limit,
     });
     for (let dbOrder of dbOrders) {
       let order,
@@ -1779,17 +1762,17 @@ class ExchangeHub extends Bot {
             0
           )
             ? SafeMath.div(
-                dbOrder.funds_received,
-                SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
-              )
+              dbOrder.funds_received,
+              SafeMath.minus(dbOrder.origin_volume, dbOrder.volume)
+            )
             : null;
         }
         if (dbOrder.type === Database.TYPE.ORDER_BID) {
           avgFillPrice = SafeMath.gt(dbOrder.funds_received, 0)
             ? SafeMath.div(
-                SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
-                dbOrder.funds_received
-              )
+              SafeMath.minus(dbOrder.origin_locked, dbOrder.locked),
+              dbOrder.funds_received
+            )
             : null;
         }
       }
@@ -1817,10 +1800,10 @@ class ExchangeHub extends Bot {
         state_text: SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.CANCEL)
           ? Database.ORDER_STATE_TEXT.CANCEL
           : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.WAIT)
-          ? Database.ORDER_STATE_TEXT.WAIT
-          : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.DONE)
-          ? Database.ORDER_STATE_TEXT.DONE
-          : Database.ORDER_STATE_TEXT.UNKNOWN,
+            ? Database.ORDER_STATE_TEXT.WAIT
+            : SafeMath.eq(dbOrder.state, Database.ORDER_STATE_CODE.DONE)
+              ? Database.ORDER_STATE_TEXT.DONE
+              : Database.ORDER_STATE_TEXT.UNKNOWN,
         clOrdId: dbOrder.id,
         instId: query.tickerSetting?.instId,
         ordType: dbOrder.ord_type,
@@ -2159,8 +2142,8 @@ class ExchangeHub extends Bot {
       profits = {},
       lastDailyBar = trades[0]
         ? new Date(
-            `${trades[0].create_at.toISOString().substring(0, 10)} 00:00:00`
-          )
+          `${trades[0].create_at.toISOString().substring(0, 10)} 00:00:00`
+        )
         : null,
       nextDailyBarTime = lastDailyBar
         ? Utils.getNextDailyBarTime(lastDailyBar.getTime())
@@ -2187,9 +2170,8 @@ class ExchangeHub extends Bot {
               profits[dbOuterTrade.voucher_fee_currency].sum,
               profit
             );
-            let key = `${lastDailyBar.getFullYear()}-${
-              lastDailyBar.getMonth() + 1
-            }-${lastDailyBar.getDate()}`;
+            let key = `${lastDailyBar.getFullYear()}-${lastDailyBar.getMonth() + 1
+              }-${lastDailyBar.getDate()}`;
             if (!data[key])
               data[key] = {
                 y: "0",
@@ -2202,9 +2184,8 @@ class ExchangeHub extends Bot {
               nextDailyBarTime = Utils.getNextDailyBarTime(
                 lastDailyBar.getTime()
               );
-              key = `${lastDailyBar.getFullYear()}-${
-                lastDailyBar.getMonth() + 1
-              }-${lastDailyBar.getDate()}`;
+              key = `${lastDailyBar.getFullYear()}-${lastDailyBar.getMonth() + 1
+                }-${lastDailyBar.getDate()}`;
               if (!data[key])
                 data[key] = {
                   y: "0",
@@ -2212,9 +2193,8 @@ class ExchangeHub extends Bot {
                   date: lastDailyBar,
                 };
             }
-            key = `${lastDailyBar.getFullYear()}-${
-              lastDailyBar.getMonth() + 1
-            }-${lastDailyBar.getDate()}`;
+            key = `${lastDailyBar.getFullYear()}-${lastDailyBar.getMonth() + 1
+              }-${lastDailyBar.getDate()}`;
             let price = this.tickerBook.getPrice(
               dbOuterTrade.voucher_fee_currency
             );
@@ -2245,9 +2225,8 @@ class ExchangeHub extends Bot {
               profits[processedTrade.feeCurrency].sum,
               processedTrade.profit
             );
-            let key = `${lastDailyBar.getFullYear()}-${
-              lastDailyBar.getMonth() + 1
-            }-${lastDailyBar.getDate()}`;
+            let key = `${lastDailyBar.getFullYear()}-${lastDailyBar.getMonth() + 1
+              }-${lastDailyBar.getDate()}`;
             if (!data[key])
               data[key] = {
                 y: "0",
@@ -2260,9 +2239,8 @@ class ExchangeHub extends Bot {
               nextDailyBarTime = Utils.getNextDailyBarTime(
                 lastDailyBar.getTime()
               );
-              key = `${lastDailyBar.getFullYear()}-${
-                lastDailyBar.getMonth() + 1
-              }-${lastDailyBar.getDate()}`;
+              key = `${lastDailyBar.getFullYear()}-${lastDailyBar.getMonth() + 1
+                }-${lastDailyBar.getDate()}`;
               if (!data[key])
                 data[key] = {
                   y: "0",
@@ -2270,9 +2248,8 @@ class ExchangeHub extends Bot {
                   date: lastDailyBar,
                 };
             }
-            key = `${lastDailyBar.getFullYear()}-${
-              lastDailyBar.getMonth() + 1
-            }-${lastDailyBar.getDate()}`;
+            key = `${lastDailyBar.getFullYear()}-${lastDailyBar.getMonth() + 1
+              }-${lastDailyBar.getDate()}`;
             let price = this.tickerBook.getPrice(processedTrade.feeCurrency);
             if (!data[key])
               data[key] = {
@@ -2319,10 +2296,10 @@ class ExchangeHub extends Bot {
       profits = {},
       lastMonthlyBar = dbOuterTrades[0]
         ? new Date(
-            `${dbOuterTrades[0].create_at
-              .toISOString()
-              .substring(0, 7)}-01 00:00:00`
-          )
+          `${dbOuterTrades[0].create_at
+            .toISOString()
+            .substring(0, 7)}-01 00:00:00`
+        )
         : null,
       nextMonthlyBarTime = lastMonthlyBar
         ? Utils.getNextMonthlyBarTime(lastMonthlyBar.getTime())
@@ -2347,15 +2324,13 @@ class ExchangeHub extends Bot {
           profits[dbOuterTrade.voucher_fee_currency].sum,
           profit
         );
-        let key = `${lastMonthlyBar.getFullYear()}-${
-          lastMonthlyBar.getMonth() + 1
-        }`;
+        let key = `${lastMonthlyBar.getFullYear()}-${lastMonthlyBar.getMonth() + 1
+          }`;
         if (!data[key])
           data[key] = {
             y: "0",
-            x: `${
-              months[lastMonthlyBar.getMonth()]
-            } ${lastMonthlyBar.getFullYear()}`,
+            x: `${months[lastMonthlyBar.getMonth()]
+              } ${lastMonthlyBar.getFullYear()}`,
             date: lastMonthlyBar,
           };
         let time = outerTradeData.ts || outerTradeData.cTime;
@@ -2364,28 +2339,24 @@ class ExchangeHub extends Bot {
           nextMonthlyBarTime = Utils.getNextMonthlyBarTime(
             lastMonthlyBar.getTime()
           );
-          key = `${lastMonthlyBar.getFullYear()}-${
-            lastMonthlyBar.getMonth() + 1
-          }`;
+          key = `${lastMonthlyBar.getFullYear()}-${lastMonthlyBar.getMonth() + 1
+            }`;
           if (!data[key])
             data[key] = {
               y: "0",
-              x: `${
-                months[lastMonthlyBar.getMonth()]
-              } ${lastMonthlyBar.getFullYear()}`,
+              x: `${months[lastMonthlyBar.getMonth()]
+                } ${lastMonthlyBar.getFullYear()}`,
               date: lastMonthlyBar,
             };
         }
-        key = `${lastMonthlyBar.getFullYear()}-${
-          lastMonthlyBar.getMonth() + 1
-        }`;
+        key = `${lastMonthlyBar.getFullYear()}-${lastMonthlyBar.getMonth() + 1
+          }`;
         let price = this.tickerBook.getPrice(dbOuterTrade.voucher_fee_currency);
         if (!data[key])
           data[key] = {
             y: SafeMath.mult(profit, price),
-            x: `${
-              months[lastMonthlyBar.getMonth()]
-            } ${lastMonthlyBar.getFullYear()}`,
+            x: `${months[lastMonthlyBar.getMonth()]
+              } ${lastMonthlyBar.getFullYear()}`,
             date: lastMonthlyBar,
           };
         else
@@ -2479,11 +2450,10 @@ class ExchangeHub extends Bot {
           currency: tickerSetting.code,
           start: `${new Date(
             this.dbOuterTradesData[instId].endTime
-          ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
-          }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
-          )} 23:59:59`,
+          ).getFullYear()}-${new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
+            }-${Utils.pad(
+              new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
+            )} 23:59:59`,
           end: endDate,
           asc: true,
         });
@@ -2517,11 +2487,10 @@ class ExchangeHub extends Bot {
           start: startDate,
           end: `${new Date(
             this.dbOuterTradesData[instId].startTime
-          ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
-          }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
-          )} 23:59:59`,
+          ).getFullYear()}-${new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
+            }-${Utils.pad(
+              new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
+            )} 23:59:59`,
           asc: true,
         });
         dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
@@ -2553,11 +2522,10 @@ class ExchangeHub extends Bot {
           currency: tickerSetting.code,
           start: `${new Date(
             this.dbOuterTradesData[instId].endTime
-          ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
-          }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
-          )} 23:59:59`,
+          ).getFullYear()}-${new Date(this.dbOuterTradesData[instId].endTime).getMonth() + 1
+            }-${Utils.pad(
+              new Date(this.dbOuterTradesData[instId].endTime).getDate() + 1
+            )} 23:59:59`,
           end: endDate,
           asc: true,
         });
@@ -2571,11 +2539,10 @@ class ExchangeHub extends Bot {
           start: startDate,
           end: `${new Date(
             this.dbOuterTradesData[instId].startTime
-          ).getFullYear()}-${
-            new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
-          }-${Utils.pad(
-            new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
-          )} 23:59:59`,
+          ).getFullYear()}-${new Date(this.dbOuterTradesData[instId].startTime).getMonth() + 1
+            }-${Utils.pad(
+              new Date(this.dbOuterTradesData[instId].startTime).getDate() - 1
+            )} 23:59:59`,
           asc: true,
         });
         dbOuterTrades = mDBOTrades.map((t) => ({ ...t })).concat(dbOuterTrades);
@@ -2619,7 +2586,7 @@ class ExchangeHub extends Bot {
       },
       tickerSetting =
         this.tickersSettings[
-          outerTradeData.instId.toLowerCase().replace("-", "")
+        outerTradeData.instId.toLowerCase().replace("-", "")
         ],
       innerTrade = {
         orderId: dbOuterTrade.order_id,
@@ -2816,16 +2783,16 @@ class ExchangeHub extends Bot {
                 trade.status === Database.OUTERTRADE_STATUS.DONE
                   ? referral
                     ? SafeMath.minus(
-                        SafeMath.minus(
-                          trade.innerTrade.fee,
-                          Math.abs(trade.outerTrade.fee)
-                        ),
-                        Math.abs(referral)
-                      )
-                    : SafeMath.minus(
+                      SafeMath.minus(
                         trade.innerTrade.fee,
                         Math.abs(trade.outerTrade.fee)
-                      )
+                      ),
+                      Math.abs(referral)
+                    )
+                    : SafeMath.minus(
+                      trade.innerTrade.fee,
+                      Math.abs(trade.outerTrade.fee)
+                    )
                   : null;
               if (
                 // (trade.outerTrade.price &&
@@ -2848,11 +2815,11 @@ class ExchangeHub extends Bot {
                 ) ||
                 (trade.outerTrade.state &&
                   trade.outerTrade.state !==
-                    Database.OKX_ORDER_STATE.partially_filled &&
+                  Database.OKX_ORDER_STATE.partially_filled &&
                   trade.outerTrade.state !== trade.innerTrade.state) ||
                 (trade.outerTrade.state &&
                   trade.outerTrade.state ===
-                    Database.OKX_ORDER_STATE.partially_filled &&
+                  Database.OKX_ORDER_STATE.partially_filled &&
                   trade.innerTrade.state === Database.ORDER_STATE.CANCEL)
               )
                 alert = true;
@@ -3111,21 +3078,21 @@ class ExchangeHub extends Bot {
   formatInnerOrder(dbOrder) {
     let innerOrder = dbOrder
       ? {
-          orderId: dbOrder.id,
-          exchange: SupportedExchange.TIDEBIT,
-          price: dbOrder.price,
-          avgFillPrice: dbOrder.avgFillPrice,
-          volume: dbOrder.volume,
-          accFillVolume: SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
-          state: dbOrder.state,
-          expect:
-            dbOrder.kind === Database.ORDER_KIND.BID
-              ? dbOrder.origin_volume
-              : dbOrder.price
+        orderId: dbOrder.id,
+        exchange: SupportedExchange.TIDEBIT,
+        price: dbOrder.price,
+        avgFillPrice: dbOrder.avgFillPrice,
+        volume: dbOrder.volume,
+        accFillVolume: SafeMath.minus(dbOrder.origin_volume, dbOrder.volume),
+        state: dbOrder.state,
+        expect:
+          dbOrder.kind === Database.ORDER_KIND.BID
+            ? dbOrder.origin_volume
+            : dbOrder.price
               ? SafeMath.mult(dbOrder.price, dbOrder.origin_volume)
               : null,
-          received: dbOrder.funds_received,
-        }
+        received: dbOrder.funds_received,
+      }
       : null;
     return innerOrder;
   }
@@ -3353,8 +3320,7 @@ class ExchangeHub extends Bot {
             });
           } catch (error) {
             this.logger.error(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
+              `[${new Date().toISOString()}][${this.constructor.name
               }]!!!ERROR postPlaceOrder OKEX ticker insertOrder 出錯, memberId:[${memberId}] body`,
               body,
               `orderData`,
@@ -3389,8 +3355,7 @@ class ExchangeHub extends Bot {
           };
           try {
             this.logger.debug(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
+              `[${new Date().toISOString()}][${this.constructor.name
               }]_updateAccount`,
               accountVersion,
               `accountVersion`
@@ -3398,8 +3363,7 @@ class ExchangeHub extends Bot {
             await this._updateAccount(accountVersion, t);
           } catch (error) {
             this.logger.error(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
+              `[${new Date().toISOString()}][${this.constructor.name
               }]!!!ERROR postPlaceOrder OKEX ticker _updateAccount 出錯, memberId:[${memberId}] body`,
               body,
               `orderData`,
@@ -3467,8 +3431,7 @@ class ExchangeHub extends Bot {
             }
           } else {
             this.logger.error(
-              `[${new Date().toISOString()}][${
-                this.constructor.name
+              `[${new Date().toISOString()}][${this.constructor.name
               }]!!!ERROR postPlaceOrder this.okexConnector.router("postPlaceOrder") 出錯 (memberId[${memberId}]`,
               `formatedBody`,
               formatedBody
@@ -3494,13 +3457,13 @@ class ExchangeHub extends Bot {
                 market: tickerSetting.market,
                 order: {
                   ...result.updatedOrder,
+                  kind: body.kind,
                 },
               });
             } else {
               await t.rollback();
               this.logger.error(
-                `[${new Date().toISOString()}][${
-                  this.constructor.name
+                `[${new Date().toISOString()}][${this.constructor.name
                 }]!!!ERROR postPlaceOrder this.okexConnector.router("postPlaceOrder") 出錯後更新 order 狀態為 "canceled" 失敗 (memberId[${memberId}]`,
                 `updateOrder`,
                 updateOrder
@@ -3514,8 +3477,7 @@ class ExchangeHub extends Bot {
         } catch (error) {
           await t.rollback();
           this.logger.error(
-            `[${new Date().toISOString()}][${
-              this.constructor.name
+            `[${new Date().toISOString()}][${this.constructor.name
             }]!!!ERROR postPlaceOrder SupportedExchange.OKEX 出錯 (memberId[${memberId}]`,
             `body`,
             body,
@@ -3816,8 +3778,7 @@ class ExchangeHub extends Bot {
           success = true;
         } catch (error) {
           this.logger.error(
-            `[${new Date().toISOString()}][${
-              this.constructor.name
+            `[${new Date().toISOString()}][${this.constructor.name
             }]!!!ERROR cancelDBOrderHandler _updateAccount error`,
             `error`,
             error,
@@ -3830,8 +3791,7 @@ class ExchangeHub extends Bot {
         }
       } catch (error) {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR cancelDBOrderHandler database.updateOrder error`,
           `error`,
           error,
@@ -3851,8 +3811,7 @@ class ExchangeHub extends Bot {
         updatedOrder = null;
         success = false;
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR cancelDBOrderHandler  error memberId: ${memberId} `,
           `dbOrder: `,
           dbOrder
@@ -3871,8 +3830,7 @@ class ExchangeHub extends Bot {
       status: Database.OUTERTRADE_STATUS.UNPROCESS,
     });
     this.logger.debug(
-      `[${new Date().toISOString()}][${
-        this.constructor.name
+      `[${new Date().toISOString()}][${this.constructor.name
       }]hasUnprocessTrade: ${orderId} `,
       `outerTrades[${outerTrades.length}]: `,
       outerTrades
@@ -3886,8 +3844,7 @@ class ExchangeHub extends Bot {
       if (SafeMath.eq(tmp.orderId, orderId)) result = true;
     }
     this.logger.debug(
-      `[${new Date().toISOString()}][${
-        this.constructor.name
+      `[${new Date().toISOString()}][${this.constructor.name
       }]hasUnprocessTrade: ${orderId} `,
       `result`,
       result
@@ -3906,9 +3863,8 @@ class ExchangeHub extends Bot {
         }),
         tickerSetting =
           this.tickersSettings[
-            `${this.coinsSettingsMap[dbOrder.ask]?.code}${
-              this.coinsSettingsMap[dbOrder.bid]?.code
-            }`
+          `${this.coinsSettingsMap[dbOrder.ask]?.code}${this.coinsSettingsMap[dbOrder.bid]?.code
+          }`
           ],
         dbUpdateR,
         clOrdId = `${this.okexBrokerId}${memberId}m${body.orderId}o`.slice(
@@ -3955,10 +3911,8 @@ class ExchangeHub extends Bot {
                 } else {
                   await transaction.rollback();
                   this.logger.error(
-                    `[${new Date().toISOString()}][${
-                      this.constructor.name
-                    }]!!!ERROR postCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
-                      tickerSetting.instId
+                    `[${new Date().toISOString()}][${this.constructor.name
+                    }]!!!ERROR postCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${tickerSetting.instId
                     }])`,
                     `dbOrder`,
                     dbOrder,
@@ -3973,8 +3927,7 @@ class ExchangeHub extends Bot {
                   code: Codes.CANCEL_ORDER_FAIL,
                 });
                 this.logger.error(
-                  `[${new Date().toISOString()}][${
-                    this.constructor.name
+                  `[${new Date().toISOString()}][${this.constructor.name
                   }]!!!ERROR postCancelOrder [memberId(${memberId})] [clOrdId(${clOrdId})] dbUpdateR`,
                   dbUpdateR
                 );
@@ -4008,8 +3961,7 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR postCancelOrder [memberId(${memberId})]取消訂單失敗了 error`,
         error,
         `body`,
@@ -4037,9 +3989,8 @@ class ExchangeHub extends Bot {
         dbUpdateR,
         tickerSetting =
           this.tickersSettings[
-            `${this.coinsSettingsMap[dbOrder.ask]?.code}${
-              this.coinsSettingsMap[dbOrder.bid]?.code
-            }`
+          `${this.coinsSettingsMap[dbOrder.ask]?.code}${this.coinsSettingsMap[dbOrder.bid]?.code
+          }`
           ];
       try {
         switch (orderExchange) {
@@ -4086,10 +4037,8 @@ class ExchangeHub extends Bot {
                 } else {
                   await transaction.rollback();
                   this.logger.debug(
-                    `[${new Date().toISOString()}][${
-                      this.constructor.name
-                    }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${
-                      tickerSetting.instId
+                    `[${new Date().toISOString()}][${this.constructor.name
+                    }]!!!ERROR forceCancelOrder this.okexConnector.router("postCancelOrder") 出錯 (memberId[${memberId}], instId[${tickerSetting.instId
                     }]) orderDetail`,
                     orderDetail
                   );
@@ -4102,8 +4051,7 @@ class ExchangeHub extends Bot {
                 code: Codes.CANCEL_ORDER_FAIL,
               });
               this.logger.error(
-                `[${new Date().toISOString()}][${
-                  this.constructor.name
+                `[${new Date().toISOString()}][${this.constructor.name
                 }]!!!ERROR forceCancelOrder [memberId(${memberId})] updateOrderStatus出錯`,
                 `body`,
                 body,
@@ -4121,8 +4069,7 @@ class ExchangeHub extends Bot {
         }
       } catch (error) {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR forceCancelOrder [memberId(${memberId})]取消訂單失敗了`,
           `body`,
           body,
@@ -4230,10 +4177,10 @@ class ExchangeHub extends Bot {
             body.type === Database.ORDER_KIND.ASK
               ? "cancelAllAsks"
               : body.type === Database.ORDER_KIND.BID
-              ? "cancelAllBids"
-              : body.type === Database.ORDER_KIND.ALL
-              ? "cancelAllOrders"
-              : undefined;
+                ? "cancelAllBids"
+                : body.type === Database.ORDER_KIND.ALL
+                  ? "cancelAllOrders"
+                  : undefined;
           if (functionName) {
             return this.tideBitConnector.router(`${functionName}`, {
               header,
@@ -4346,11 +4293,11 @@ class ExchangeHub extends Bot {
         message: "getAdminUser",
         payload: email
           ? {
-              memberId: memberId,
-              email: email,
-              roles: roles,
-              name: name,
-            }
+            memberId: memberId,
+            email: email,
+            roles: roles,
+            name: name,
+          }
           : null,
       })
     );
@@ -4833,14 +4780,12 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR calculator 出錯 referredByMember`,
         referredByMember
       );
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR calculator 出錯 memberReferral`,
         memberReferral
       );
@@ -4929,14 +4874,12 @@ class ExchangeHub extends Bot {
         }
       } else {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR isSuccessCalcalatedOrder=false dbOrder`,
           dbOrder
         );
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR isSuccessCalcalatedOrder=false data`,
           data
         );
@@ -4948,20 +4891,17 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR calculator 出錯 market`,
         market
       );
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR calculator 出錯 member`,
         member
       );
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR calculator 出錯 error`,
         error
       );
@@ -4988,8 +4928,7 @@ class ExchangeHub extends Bot {
 
   async updateOuterTrade(updatedOuterTrade) {
     this.logger.debug(
-      `[${new Date().toISOString()}][${
-        this.constructor.name
+      `[${new Date().toISOString()}][${this.constructor.name
       }] updateOuterTrade updatedOuterTrade`,
       updatedOuterTrade
     );
@@ -5005,8 +4944,7 @@ class ExchangeHub extends Bot {
       await dbTransaction.commit();
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR updateOuterTrade 出錯`,
         `error`,
         error,
@@ -5057,8 +4995,7 @@ class ExchangeHub extends Bot {
           { dbTransaction }
         );
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] database order is updated`,
           { ...updatedOrder, updated_at: `"${updatedOrder.updated_at}"` }
         );
@@ -5067,8 +5004,7 @@ class ExchangeHub extends Bot {
           { dbTransaction }
         );
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] database trade is inserted`,
           { ...trade, id: tradeId }
         );
@@ -5085,8 +5021,7 @@ class ExchangeHub extends Bot {
           { dbTransaction }
         );
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] database voucher is inserted`,
           { ...voucher, id: voucherId }
         );
@@ -5095,8 +5030,7 @@ class ExchangeHub extends Bot {
           dbTransaction
         );
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] database askAccountVersion is inserted`,
           { ...newAskAccountVersion }
         );
@@ -5105,8 +5039,7 @@ class ExchangeHub extends Bot {
           dbTransaction
         );
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] database bidAccountVersion is inserted`,
           { ...newBidAccountVersion }
         );
@@ -5116,8 +5049,7 @@ class ExchangeHub extends Bot {
             dbTransaction
           );
           this.logger.debug(
-            `[${new Date().toLocaleTimeString()}][${
-              this.constructor.name
+            `[${new Date().toLocaleTimeString()}][${this.constructor.name
             }] database orderFullFilledAccountVersion is inserted`,
             { ...newOrderFullFilledAccountVersion }
           );
@@ -5160,8 +5092,7 @@ class ExchangeHub extends Bot {
         success = true;
       } else {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR DUPLICATE_PROCESS dbTrade`,
           dbTrade
         );
@@ -5172,8 +5103,7 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR processor => updater 出錯`,
         `dbOrder`,
         dbOrder,
@@ -5236,8 +5166,7 @@ class ExchangeHub extends Bot {
       }
     } catch (error) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] !!! ERROR getOrderDetail: query`,
         query,
         `error`,
@@ -5252,13 +5181,13 @@ class ExchangeHub extends Bot {
   // 判斷此筆撮合紀錄需要被處理
   async isCalculationNeeded(data, dbTransaction) {
     let market =
-        this.tickersSettings[data.instId.toLowerCase().replace("-", "")],
+      this.tickersSettings[data.instId.toLowerCase().replace("-", "")],
       now =
         data.utime || data.ts
           ? `${new Date(parseInt(data.utime || data.ts))
-              .toISOString()
-              .slice(0, 19)
-              .replace("T", " ")}`
+            .toISOString()
+            .slice(0, 19)
+            .replace("T", " ")}`
           : `${new Date().toISOString().slice(0, 19).replace("T", " ")}`,
       updatedOuterTrade = {
         id: data.tradeId,
@@ -5354,8 +5283,7 @@ class ExchangeHub extends Bot {
       updatedOuterTrade: updatedOuterTrade,
     };
     this.logger.debug(
-      `[${new Date().toLocaleTimeString()}][${
-        this.constructor.name
+      `[${new Date().toLocaleTimeString()}][${this.constructor.name
       }] isCalculationNeeded result`,
       result
     );
@@ -5381,8 +5309,7 @@ class ExchangeHub extends Bot {
       });
     } catch (error) {
       this.logger.debug(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR [wont stop] informFrontendTradeUpdate 出錯 memberId[${memberId}]`,
         error,
         `trade`,
@@ -5422,20 +5349,20 @@ class ExchangeHub extends Bot {
           calculatedOrder.state === Database.ORDER_STATE_CODE.DONE
             ? Database.ORDER_STATE_TEXT.DONE
             : calculatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-            ? Database.ORDER_STATE_TEXT.CANCEL
-            : Database.ORDER_STATE_TEXT.WAIT,
+              ? Database.ORDER_STATE_TEXT.CANCEL
+              : Database.ORDER_STATE_TEXT.WAIT,
         state:
           calculatedOrder.state === Database.ORDER_STATE_CODE.DONE
             ? Database.ORDER_STATE.DONE
             : calculatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-            ? Database.ORDER_STATE.CANCEL
-            : Database.ORDER_STATE.WAIT,
+              ? Database.ORDER_STATE.CANCEL
+              : Database.ORDER_STATE.WAIT,
         state_code:
           calculatedOrder.state === Database.ORDER_STATE_CODE.DONE
             ? Database.ORDER_STATE_CODE.DONE
             : calculatedOrder.state === Database.ORDER_STATE_CODE.CANCEL
-            ? Database.ORDER_STATE_CODE.CANCEL
-            : Database.ORDER_STATE_CODE.WAIT,
+              ? Database.ORDER_STATE_CODE.CANCEL
+              : Database.ORDER_STATE_CODE.WAIT,
       };
       this._emitUpdateOrder({
         memberId: memberId,
@@ -5445,8 +5372,7 @@ class ExchangeHub extends Bot {
       });
     } catch (error) {
       this.logger.debug(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR [wont stop] informFrontendOrderUpdate 出錯`,
         error,
         `data`,
@@ -5490,14 +5416,12 @@ class ExchangeHub extends Bot {
         });
       }
       this.logger.debug(
-        `(${
-          this.constructor.name
+        `(${this.constructor.name
         })[${new Date().toISOString()}] processor After calculator result`,
         result
       );
       this.logger.debug(
-        `(${
-          this.constructor.name
+        `(${this.constructor.name
         })[${new Date().toISOString()}] processor After calculator result?.isDBUpdateNeed`,
         result?.isDBUpdateNeed
       );
@@ -5522,8 +5446,7 @@ class ExchangeHub extends Bot {
         });
         updatedOuterTrade = { ...result.updatedOuterTrade };
         this.logger.debug(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }] processor updater result`,
           result
         );
@@ -5534,8 +5457,7 @@ class ExchangeHub extends Bot {
     } catch (error) {
       await dbTransaction.rollback();
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR processor 出錯`,
         `data`,
         data,
@@ -5579,9 +5501,9 @@ class ExchangeHub extends Bot {
     accountVersions =
       accountVersionIds.length > 0
         ? accountVersions.reduce((prev, curr) => {
-            prev[curr.member_id] = curr;
-            return prev;
-          }, {})
+          prev[curr.member_id] = curr;
+          return prev;
+        }, {})
         : [];
     return accountVersions;
   }
@@ -5598,10 +5520,10 @@ class ExchangeHub extends Bot {
     let auditRecord =
       auditRecords?.length > 0
         ? {
-            ...auditRecords.sort(
-              (a, b) => b.account_version_id_end - a.account_version_id_end
-            )[0],
-          }
+          ...auditRecords.sort(
+            (a, b) => b.account_version_id_end - a.account_version_id_end
+          )[0],
+        }
         : null;
     let lastestAuditAccountVersionId = auditRecord?.account_version_id_end;
     auditRecords = auditRecords.reduce((prev, curr) => {
@@ -5691,9 +5613,9 @@ class ExchangeHub extends Bot {
             // && lastestAccountVersion.id > auditRecord.account_version_id_end
           ) {
             let now = `${new Date()
-                .toISOString()
-                .slice(0, 19)
-                .replace("T", " ")}`,
+              .toISOString()
+              .slice(0, 19)
+              .replace("T", " ")}`,
               dbTransaction = await this.database.transaction();
             try {
               await this.database.insertAuditAccountRecord(
@@ -5777,8 +5699,8 @@ class ExchangeHub extends Bot {
         accountVersions = await this.getMembersLatestAccountVersions(memberIds);
         members = members.map((m) => {
           let lastestAccountAuditTime = auditRecords[m.id]
-              ? new Date(auditRecords[m.id].updated_at).getTime()
-              : null,
+            ? new Date(auditRecords[m.id].updated_at).getTime()
+            : null,
             lastestActivityTime = accountVersions[m.id]
               ? new Date(accountVersions[m.id].created_at).getTime()
               : null,
@@ -5816,25 +5738,22 @@ class ExchangeHub extends Bot {
   }
 
   async fixAbnormalAccount({ params, email }) {
-    let result,
-      account,
-      auditRecord,
-      currentUser = this.adminUsers.find((user) => user.email === email),
-      dbTransaction;
-    if (!currentUser.roles?.includes("root"))
-      result = new ResponseFormat({
-        message: `Permission denied`,
-        code: Codes.INVALID_INPUT,
-      });
-    if (!params.id) {
-      result = new ResponseFormat({
-        message: "Account id is required",
-        code: Codes.INVALID_INPUT,
-      });
-    }
-    if (!result) {
-      dbTransaction = await this.database.transaction();
-      try {
+    let result, account, auditRecord, currentUser, dbTransaction;
+    try {
+      currentUser = this.adminUsers.find((user) => user?.email === email);
+      if (!currentUser.roles?.includes("root"))
+        result = new ResponseFormat({
+          message: `Permission denied`,
+          code: Codes.INVALID_INPUT,
+        });
+      if (!params.id) {
+        result = new ResponseFormat({
+          message: "Account id is required",
+          code: Codes.INVALID_INPUT,
+        });
+      }
+      if (!result) {
+        dbTransaction = await this.database.transaction();
         /******************************
          * 1. get latest audit account records
          *   1.1  檢查是否需要更新
@@ -5860,7 +5779,6 @@ class ExchangeHub extends Bot {
             dbTransaction,
           }
         );
-
         if (auditRecord) {
           let now = new Date().toISOString().slice(0, 19).replace("T", " ");
           // 2. update account
@@ -5887,7 +5805,6 @@ class ExchangeHub extends Bot {
           await this.database.insertFixedAccountRecord(fixedAuditRecord, {
             dbTransaction,
           });
-
           await this.database.updateAccount(updateAccount, { dbTransaction });
           await dbTransaction.commit();
           /* !!! HIGH RISK (end) !!! */
@@ -5911,14 +5828,14 @@ class ExchangeHub extends Bot {
             },
           });
         }
-      } catch (error) {
-        this.logger.error(`fixAbnormalAccount error`, error);
-        await dbTransaction.rollback();
-        result = new ResponseFormat({
-          message: `fixAbnormalAccount ${JSON.stringify(error)}`,
-          code: Codes.UNKNOWN_ERROR,
-        });
       }
+    } catch (error) {
+      this.logger.error(`fixAbnormalAccount error`, error);
+      await dbTransaction.rollback();
+      result = new ResponseFormat({
+        message: `fixAbnormalAccount ${JSON.stringify(error)}`,
+        code: Codes.UNKNOWN_ERROR,
+      });
     }
     return result;
   }
@@ -6185,18 +6102,18 @@ class ExchangeHub extends Bot {
         state_text: filled
           ? Database.ORDER_STATE_TEXT.DONE
           : formatOrder.state === Database.ORDER_STATE_TEXT.CANCEL
-          ? Database.ORDER_STATE_TEXT.CANCEL
-          : Database.ORDER_STATE_TEXT.WAIT,
+            ? Database.ORDER_STATE_TEXT.CANCEL
+            : Database.ORDER_STATE_TEXT.WAIT,
         state: filled
           ? Database.ORDER_STATE.DONE
           : formatOrder.state === Database.ORDER_STATE.CANCEL
-          ? Database.ORDER_STATE.CANCEL
-          : Database.ORDER_STATE.WAIT,
+            ? Database.ORDER_STATE.CANCEL
+            : Database.ORDER_STATE.WAIT,
         state_code: filled
           ? Database.ORDER_STATE_CODE.DONE
           : formatOrder.state === Database.ORDER_STATE.CANCEL
-          ? Database.ORDER_STATE_CODE.CANCEL
-          : Database.ORDER_STATE_CODE.WAIT,
+            ? Database.ORDER_STATE_CODE.CANCEL
+            : Database.ORDER_STATE_CODE.WAIT,
       };
 
       this._emitUpdateOrder({
@@ -6311,8 +6228,7 @@ class ExchangeHub extends Bot {
     try {
       if (!tickerSetting) {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) tickersetting not found memberId:[${memberId}] body`,
           body
         );
@@ -6326,10 +6242,8 @@ class ExchangeHub extends Bot {
       );
       if (!bid) {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
-          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) bid[tickerSetting.quoteUnit:${
-            tickerSetting.quoteUnit
+          `[${new Date().toISOString()}][${this.constructor.name
+          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) bid[tickerSetting.quoteUnit:${tickerSetting.quoteUnit
           }] not found memberId:[${memberId}] body`,
           body,
           `tickerSetting`,
@@ -6339,10 +6253,8 @@ class ExchangeHub extends Bot {
       }
       if (!ask) {
         this.logger.error(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
-          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) ask[tickerSetting.baseUnit:${
-            tickerSetting.baseUnit
+          `[${new Date().toISOString()}][${this.constructor.name
+          }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) ask[tickerSetting.baseUnit:${tickerSetting.baseUnit
           }] not found memberId:[${memberId}] body`,
           body,
           `tickerSetting`,
@@ -6364,12 +6276,12 @@ class ExchangeHub extends Bot {
           ? type === Database.TYPE.ORDER_BID
             ? body.price
               ? // ? (parseFloat(body.price) * 1.05).toString()
-                body.price
+              body.price
               : null
             : body.price
-            ? // ? (parseFloat(body.price) * 0.95).toString()
+              ? // ? (parseFloat(body.price) * 0.95).toString()
               body.price
-            : null
+              : null
           : body.price || null;
       const locked =
         type === Database.TYPE.ORDER_BID
@@ -6401,8 +6313,7 @@ class ExchangeHub extends Bot {
       };
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR 將 postPlaceOrder API收到 body 轉成 DB 要用的格式出錯(_getPlaceOrderData) memberId:[${memberId}] body`,
         body,
         `tickerSetting`,
@@ -6425,8 +6336,7 @@ class ExchangeHub extends Bot {
     );
     if (!account) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR 更新餘額出錯(_updateAccount) Account not found`,
         `accountVersion`,
         accountVersion
@@ -6435,10 +6345,8 @@ class ExchangeHub extends Bot {
     }
     if (SafeMath.lt(account.balance, accountVersion.locked)) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-        }]!!!ERROR 更新餘額出錯(_updateAccount) => account.balance[:${
-          account.balance
+        `[${new Date().toISOString()}][${this.constructor.name
+        }]!!!ERROR 更新餘額出錯(_updateAccount) => account.balance[:${account.balance
         }] < accountVersion.locked[:${accountVersion.locked}] `,
         `account`,
         account,
@@ -6452,10 +6360,8 @@ class ExchangeHub extends Bot {
     const newAccBal = SafeMath.plus(oriAccBal, accountVersion.balance);
     if (SafeMath.lt(newAccBal, "0")) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-        }]!!!ERROR 更新餘額出錯(_updateAccount) => SafeMath.plus(oriAccBal[:${oriAccBal}], accountVersion.balance[:${
-          accountVersion.balance
+        `[${new Date().toISOString()}][${this.constructor.name
+        }]!!!ERROR 更新餘額出錯(_updateAccount) => SafeMath.plus(oriAccBal[:${oriAccBal}], accountVersion.balance[:${accountVersion.balance
         }]) = newAccBal[:${newAccBal}] < "0"`,
         `account`,
         account,
@@ -6468,8 +6374,7 @@ class ExchangeHub extends Bot {
     const amount = SafeMath.plus(newAccBal, newAccLoc);
     if (SafeMath.lt(amount, "0")) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR 更新餘額出錯(_updateAccount) => SafeMath.plus(newAccBal[:${newAccBal}], newAccLoc[:${newAccLoc}]) = amount[:${amount}] < "0"`,
         `account`,
         account,
@@ -6503,8 +6408,7 @@ class ExchangeHub extends Bot {
       );
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
+        `[${new Date().toISOString()}][${this.constructor.name
         }]!!!ERROR insertAccountVersion 出錯(_updateAccount)`,
         `accountVersion`,
         accountVersion
@@ -6526,9 +6430,8 @@ class ExchangeHub extends Bot {
       );
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        `[${new Date().toISOString()}][${this.constructor.name
+        // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
         }]!!!ERROR updateAccountByAccountVersion 出錯(_updateAccount)`,
         `accountVersion`,
         accountVersion
@@ -6546,11 +6449,9 @@ class ExchangeHub extends Bot {
       );
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-          // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
-        }]!!!ERROR getAccountsByMemberId 出錯(_updateAccount) memberId[${
-          accountVersion.member_id
+        `[${new Date().toISOString()}][${this.constructor.name
+        // }]!!!ERROR updateAccount 出錯(_updateAccount)`,
+        }]!!!ERROR getAccountsByMemberId 出錯(_updateAccount) memberId[${accountVersion.member_id
         }] currency[${accountVersion.currency}]`
       );
       throw error;
@@ -6567,10 +6468,8 @@ class ExchangeHub extends Bot {
       });
     } catch (error) {
       this.logger.error(
-        `[${new Date().toISOString()}][${
-          this.constructor.name
-        }]!!!ERROR 前端通知出錯(_updateAccount) => _emitUpdateAccount (memberId[${
-          accountVersion.member_id
+        `[${new Date().toISOString()}][${this.constructor.name
+        }]!!!ERROR 前端通知出錯(_updateAccount) => _emitUpdateAccount (memberId[${accountVersion.member_id
         }], currency[${currency}], newAccBal[${newAccBal}], newAccLoc[${newAccLoc}], amount[${amount}])`,
         `accountVersion`,
         accountVersion
@@ -6710,7 +6609,7 @@ class ExchangeHub extends Bot {
         for (const formatOrder of formatOrders) {
           if (
             formatOrder.state !==
-              Database.ORDER_STATE.CANCEL /* cancel order */ &&
+            Database.ORDER_STATE.CANCEL /* cancel order */ &&
             formatOrder.accFillSz !== "0" /* create order */
           ) {
             // 1. 工讀生將已被整理成 outerTrade 格式的需要更新的委託單寫到我們的系統

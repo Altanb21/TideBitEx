@@ -87,6 +87,15 @@
 .order-list {
   overflow: auto;
   flex: auto;
+  &__action {
+    text-align: center;
+    color: #2b90de;
+    cursor: pointer;
+    padding: 10px 0;
+    &:hover{
+      color: #2b90de;
+    }
+  }
 }
 .pending-orders {
   flex: auto;
@@ -103,7 +112,7 @@
   }
 }
 
-.nav-tabs .nav-link{
+.nav-tabs .nav-link {
   color: #4a4a4a;
 }
 

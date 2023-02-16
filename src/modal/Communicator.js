@@ -241,6 +241,7 @@ class Communicator {
   // Trade
 
   async getOrders(options) {
+    // console.log(`getOrders options`, options);
     try {
       const url = `/trade/orders?${
         options?.market ? `&market=${options.market}` : ""

@@ -1,4 +1,5 @@
 import Events from "../constant/Events";
+import { ORDER_STATE } from "../constant/OrderState";
 import AccountBook from "../libs/books/AccountBook";
 import DepthBook from "../libs/books/DepthBook";
 import OrderBook from "../libs/books/OrderBook";
@@ -344,10 +345,17 @@ class Middleman {
 
   async _getOrders(market, options = {}) {
     try {
-      const orders = await this.communicator.getOrders({
-        ...options,
+      const openOrders = await this.communicator.getOrders({
+        state: ORDER_STATE.OPEN,
         market,
+        limit: 1000,
       });
+      const orderHistories = await this.communicator.getOrders({
+        state: ORDER_STATE.CLOSED,
+        market,
+        limit: 1000,
+      });
+      const orders = openOrders.concat(orderHistories);
       // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
       if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {

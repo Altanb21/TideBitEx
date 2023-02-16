@@ -1042,7 +1042,15 @@ class mysql {
     }
   }
 
-  async getOrderList({ quoteCcy, baseCcy, memberId, orderType, state, asc }) {
+  async getOrderList({
+    quoteCcy,
+    baseCcy,
+    memberId,
+    orderType,
+    state,
+    asc,
+    limit = 1000,
+  }) {
     if (!quoteCcy || !baseCcy) throw Error(`missing params`);
     const slotId = countdown({ name: `getOrderList` });
     let placeholder = [];
@@ -1050,7 +1058,10 @@ class mysql {
     if (quoteCcy) placeholder = [...placeholder, `bid = ${quoteCcy}`];
     if (baseCcy) placeholder = [...placeholder, `ask = ${baseCcy}`];
     if (orderType) placeholder = [...placeholder, `ord_type = ${orderType}`];
-    if (state) placeholder = [...placeholder, `state = ${state}`];
+    if (state) {
+      const _state = state.join(`,`);
+      placeholder = [...placeholder, `state in (${_state})`];
+    }
     let whereCondition =
       placeholder.length > 0 ? ` WHERE ${placeholder.join(` AND `)}` : ``;
     if (!whereCondition) throw Error(`missing where condition`);
@@ -1078,7 +1089,9 @@ class mysql {
       orders
     ${whereCondition}
     ORDER BY
-      orders.updated_at ${orderCodition};`;
+      orders.updated_at ${orderCodition}
+    LIMIT ${limit}
+    ;`;
 
     try {
       const [orders] = await this.db.query({

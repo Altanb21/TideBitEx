@@ -2,10 +2,12 @@ import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
-import { OrderTile } from "./ClosedOrders";
+import OrderTile from "./OrderTile";
 
 const PendingOrders = (_) => {
   const storeCtx = useContext(StoreContext);
+  const { t } = useTranslation();
+
   const cancelOrder = (order) => {
     const text =
       order.kind === "bid"
@@ -30,6 +32,7 @@ const PendingOrders = (_) => {
       storeCtx.cancelOrder(order);
     }
   };
+
   const cancelOrders = (id, type) => {
     const text =
       type !== "all"
@@ -46,7 +49,6 @@ const PendingOrders = (_) => {
       storeCtx.cancelOrders(id, type);
     }
   };
-  const { t } = useTranslation();
 
   return (
     <div className="pending-orders">
@@ -57,18 +59,13 @@ const PendingOrders = (_) => {
         <li>{t("amount")}</li>
         <li>{t("cancel")}</li>
       </ul>
-      {/* {!storeCtx.pendingOrders.length && (
-                <span className="no-data">
-                  <i className="icon ion-md-document"></i>
-                  No data
-                </span>
-              )} */}
       <ul className="order-list scrollbar-custom">
         {!!storeCtx.pendingOrders?.length &&
           storeCtx.pendingOrders
             .filter((order) => !(order.price === "NaN" || !order.price)) // ++ WORKAROUND
             .map((order) => (
               <OrderTile
+                id={order.id}
                 price={order.price}
                 volume={order.volume}
                 kind={order.kind}
@@ -76,7 +73,7 @@ const PendingOrders = (_) => {
                 filled={order.filled}
                 tickSz={storeCtx.tickSz}
                 lotSz={storeCtx.lotSz}
-                cancelOrderHandler={()=>cancelOrder(order)}
+                cancelOrderHandler={() => cancelOrder(order)}
               />
             ))}
       </ul>
@@ -93,6 +90,9 @@ const PendingOrders = (_) => {
           </div>
         </div>
       )}
+      <a className="order-list__action" href="/history/orders" target="_blank">
+        {t("show-more")}
+      </a>
     </div>
   );
 };

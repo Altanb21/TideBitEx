@@ -431,12 +431,15 @@ const StoreProvider = (props) => {
           }
           break;
         case Events.order:
+          // console.log(`Events.order: data`, metaData.data);
           middleman.orderBook.updateByDifference(
             metaData.data.market,
             metaData.data.difference
           );
           const orders = middleman.getMyOrdersSnapshot();
+          // console.log(`Events.order pendingOrders`, orders.pendingOrders);
           setPendingOrders(orders.pendingOrders);
+          // console.log(`Events.order closedOrders`, orders.closedOrders);
           setCloseOrders(orders.closedOrders);
           break;
         case Events.tickers:
