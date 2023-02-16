@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { STATE } from "../constant/OrderState";
 import Reason from "../constant/Reason";
 import { exportCSVFile } from "../utils/Utils";
 import AuditOrder from "./AuditOrder";
@@ -194,7 +195,7 @@ const AuditOrderList = (props) => {
           />
           <ScreenDisplayOptions
             title={t("state")}
-            options={["all", "wait", "done", "canceled"]}
+            options={[STATE.ALL, STATE.WAIT, STATE.DONE, STATE.CANCELED]}
             selectedOption={state}
             selectHandler={displayStateHandler}
           />

@@ -1,4 +1,5 @@
 // import SafeMath from "../../utils/SafeMath";
+import { ORDER_STATE, STATE } from "../../constant/OrderState";
 import BookBase from "../BookBase";
 
 class OrderBook extends BookBase {
@@ -12,18 +13,16 @@ class OrderBook extends BookBase {
   _trim(data) {
     const pendingOrders = [];
     const closedOrders = [];
-    data
-      .sort((a, b) => +b.at - +a.at)
-      .forEach((d) => {
-        if (pendingOrders.length >= 100 && closedOrders.length >= 100) return;
-        if (d.state === "wait" && pendingOrders.length < 100)
-          pendingOrders.push(d);
-        if (
-          (d.state === "canceled" || d.state === "done") &&
-          closedOrders.length < 100
-        )
-          closedOrders.push(d);
-      });
+    data.forEach((d) => {
+      if (pendingOrders.length >= 1000 && closedOrders.length >= 1000) return;
+      if (d.state === STATE.WAIT && pendingOrders.length < 1000)
+        pendingOrders.push(d);
+      if (
+        (d.state === STATE.CANCELED || d.state === STATE.DONE) &&
+        closedOrders.length < 1000
+      )
+        closedOrders.push(d);
+    });
     return pendingOrders.concat(closedOrders);
   }
 
@@ -31,10 +30,12 @@ class OrderBook extends BookBase {
     const pendingOrders = [];
     const closedOrders = [];
     this._snapshot[market]?.forEach((order) => {
-      if (order.state === "wait") pendingOrders.push(order);
-      if (order.state === "canceled" || order.state === "done")
+      if (order.state === STATE.WAIT) pendingOrders.push(order);
+      if (order.state === STATE.CANCELED || order.state === STATE.DONE)
         closedOrders.push(order);
     });
+    pendingOrders.sort((a, b) => b.id - a.id);
+    closedOrders.sort((a, b) => b.id - a.id);
     return {
       // market,
       pendingOrders,
