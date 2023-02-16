@@ -1,5 +1,4 @@
-import React, { useContext, useMemo } from "react";
-import { useLocation } from "react-router-dom";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
@@ -7,7 +6,6 @@ import { OrderTile } from "./ClosedOrders";
 
 const PendingOrders = (_) => {
   const storeCtx = useContext(StoreContext);
-  const location = useLocation();
 
   const cancelOrder = (order) => {
     const text =
@@ -105,9 +103,9 @@ const PendingOrders = (_) => {
           </div>
         </div>
       )}
-      <div className="order-list__action" onClick={moreOrdersHandler}>
+      <a className="order-list__action" href="/history/orders" target="_blank">
         {t("show_more")}
-      </div>
+      </a>
     </div>
   );
 };

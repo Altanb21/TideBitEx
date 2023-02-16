@@ -1,12 +1,11 @@
 import React, { useContext, useMemo } from "react";
-import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 import { FaTrashAlt } from "react-icons/fa";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
 
-export const OrderTile = (props) => {
+export const OrderTile = useMemo((props) => {
   const { t } = useTranslation();
   return (
     <ul
@@ -62,18 +61,11 @@ export const OrderTile = (props) => {
       )}
     </ul>
   );
-};
+}, props);
 
 const ClosedOrders = (_) => {
   const storeCtx = useContext(StoreContext);
-  const location = useLocation();
   const { t } = useTranslation();
-  
-  const moreOrdersHandler = () => {
-    location.push({
-      pathname: `/history/orders`,
-    });
-  };
 
   return (
     <div className="closed-orders">
@@ -102,9 +94,9 @@ const ClosedOrders = (_) => {
               />
             ))}
       </ul>
-      <div className="order-list__action" onClick={moreOrdersHandler}>
+      <a className="order-list__action" href="/history/orders" target="_blank">
         {t("show_more")}
-      </div>
+      </a>
     </div>
   );
 };
