@@ -9,7 +9,7 @@ const ClosedOrders = (_) => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    console.log(`ClosedOrders storeCtx.closeOrders`, storeCtx.closeOrders)
+    // console.log(`ClosedOrders storeCtx.closeOrders`, storeCtx.closeOrders)
     setCloseOrders([...storeCtx.closeOrders]);
   }, [storeCtx.closeOrders]);
 
