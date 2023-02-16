@@ -1,4 +1,5 @@
 // import SafeMath from "../../utils/SafeMath";
+import { ORDER_STATE, STATE } from "../../constant/OrderState";
 import BookBase from "../BookBase";
 
 class OrderBook extends BookBase {
@@ -15,12 +16,12 @@ class OrderBook extends BookBase {
     data
       .sort((a, b) => +b.at - +a.at)
       .forEach((d) => {
-        if (pendingOrders.length >= 100 && closedOrders.length >= 100) return;
-        if (d.state === "wait" && pendingOrders.length < 100)
+        if (pendingOrders.length >= 1000 && closedOrders.length >= 1000) return;
+        if (d.state === STATE.WAIT && pendingOrders.length < 1000)
           pendingOrders.push(d);
         if (
-          (d.state === "canceled" || d.state === "done") &&
-          closedOrders.length < 100
+          (d.state === STATE.CANCELED || d.state === STATE.DONE) &&
+          closedOrders.length < 1000
         )
           closedOrders.push(d);
       });

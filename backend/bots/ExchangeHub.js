@@ -24,6 +24,7 @@ const {
   TICKER_SETTING_FEE_SIDE,
 } = require("../constants/TickerSetting");
 const { PLATFORM_ASSET } = require("../constants/PlatformAsset");
+const { ORDER_STATE } = require("../constants/OrderState");
 
 class ExchangeHub extends Bot {
   dbOuterTradesData = {};
@@ -1739,11 +1740,16 @@ class ExchangeHub extends Bot {
     }
     let dbOrders,
       orders = [];
+    let state =
+      query.state === ORDER_STATE.OPEN
+        ? [Database.ORDER_STATE_CODE.WAIT]
+        : [Database.ORDER_STATE_CODE.CANCEL, Database.ORDER_STATE_CODE.DONE];
     dbOrders = await this.database.getOrderList({
       quoteCcy: bid,
       baseCcy: ask,
       memberId: query.memberId,
-      state: query.state,
+      state: state,
+      limit: query.limit,
     });
     for (let dbOrder of dbOrders) {
       let order,
@@ -5731,13 +5737,9 @@ class ExchangeHub extends Bot {
   }
 
   async fixAbnormalAccount({ params, email }) {
-    let result,
-      account,
-      auditRecord,
-      currentUser,
-      dbTransaction;
+    let result, account, auditRecord, currentUser, dbTransaction;
     try {
-      currentUser = this.adminUsers.find((user) => user?.email === email)
+      currentUser = this.adminUsers.find((user) => user?.email === email);
       if (!currentUser.roles?.includes("root"))
         result = new ResponseFormat({
           message: `Permission denied`,
