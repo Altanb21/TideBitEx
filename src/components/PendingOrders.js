@@ -33,7 +33,7 @@ const PendingOrders = (_) => {
       storeCtx.cancelOrder(order);
     }
   };
-  
+
   const cancelOrders = (id, type) => {
     const text =
       type !== "all"
@@ -51,11 +51,11 @@ const PendingOrders = (_) => {
     }
   };
 
-  const moreOrdersHandler = useMemo(() => {
+  const moreOrdersHandler = () => {
     history.push({
       pathname: `/history/orders`,
     });
-  }, []);
+  };
 
   const { t } = useTranslation();
 

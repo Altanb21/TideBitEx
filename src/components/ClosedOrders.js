@@ -69,11 +69,11 @@ const ClosedOrders = (_) => {
   const history = useHistory();
   const { t } = useTranslation();
   
-  const moreOrdersHandler = useMemo(() => {
+  const moreOrdersHandler = () => {
     history.push({
       pathname: `/history/orders`,
     });
-  }, []);
+  };
 
   return (
     <div className="closed-orders">
