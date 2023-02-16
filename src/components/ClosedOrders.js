@@ -1,12 +1,17 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import StoreContext from "../store/store-context";
 import OrderTile from "./OrderTile";
 
-
 const ClosedOrders = (_) => {
   const storeCtx = useContext(StoreContext);
+  const [closeOrders, setCloseOrders] = useState(null);
   const { t } = useTranslation();
+
+  useEffect(() => {
+    console.log(`ClosedOrders storeCtx.closeOrders`, storeCtx.closeOrders)
+    setCloseOrders([...storeCtx.closeOrders]);
+  }, [storeCtx.closeOrders]);
 
   return (
     <div className="closed-orders">
@@ -18,8 +23,8 @@ const ClosedOrders = (_) => {
         <li>{t("status")}</li>
       </ul>
       <ul className="order-list scrollbar-custom">
-        {!!storeCtx.closeOrders?.length &&
-          storeCtx.closeOrders
+        {!!closeOrders?.length &&
+          closeOrders
             .filter((order) => !(order.price === "NaN" || !order.price)) // ++ WORKAROUND
             .map((order) => (
               <OrderTile
