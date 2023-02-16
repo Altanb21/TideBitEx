@@ -1,11 +1,11 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { formateDecimal } from "../utils/Utils";
 import { FaTrashAlt } from "react-icons/fa";
 import SafeMath from "../utils/SafeMath";
 import StoreContext from "../store/store-context";
 
-export const OrderTile = useMemo((props) => {
+export const OrderTile = (props) => {
   const { t } = useTranslation();
   return (
     <ul
@@ -61,7 +61,7 @@ export const OrderTile = useMemo((props) => {
       )}
     </ul>
   );
-}, props);
+};
 
 const ClosedOrders = (_) => {
   const storeCtx = useContext(StoreContext);

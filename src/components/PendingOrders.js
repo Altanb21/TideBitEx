@@ -49,12 +49,6 @@ const PendingOrders = (_) => {
     }
   };
 
-  const moreOrdersHandler = () => {
-    location.push({
-      pathname: `/history/orders`,
-    });
-  };
-
   const { t } = useTranslation();
 
   return (
