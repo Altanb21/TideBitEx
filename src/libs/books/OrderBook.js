@@ -34,8 +34,14 @@ class OrderBook extends BookBase {
       if (order.state === STATE.CANCELED || order.state === STATE.DONE)
         closedOrders.push(order);
     });
-    pendingOrders.sort((a, b) => +b.at - +a.at);
-    closedOrders.sort((a, b) => +b.at - +a.at);
+    pendingOrders.sort(
+      (a, b) =>
+        new Date(b.update_at).getTime() - new Date(a.update_at).getTime()
+    );
+    closedOrders.sort(
+      (a, b) =>
+        new Date(b.update_at).getTime() - new Date(a.update_at).getTime()
+    );
     return {
       // market,
       pendingOrders,
