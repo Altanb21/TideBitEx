@@ -4809,28 +4809,28 @@ class ExchangeHub extends Bot {
       isDBUpdateNeed = true,
       result;
     try {
-      let result = this.calculateOrder({
+      let calculateOrderResult = this.calculateOrder({
         data,
         dbOrder,
         updatedOuterTrade,
       });
-      isSuccessCalcalatedOrder = result.isSuccessCalcalatedOrder;
-      updatedOrder = { ...result.updatedOrder };
-      updatedOuterTrade = { ...result.updatedOuterTrade };
+      isSuccessCalcalatedOrder = calculateOrderResult.isSuccessCalcalatedOrder;
+      updatedOrder = { ...calculateOrderResult.updatedOrder };
+      updatedOuterTrade = { ...calculateOrderResult.updatedOuterTrade };
       if (isSuccessCalcalatedOrder) {
         // 1. 根據 data side （BUY，SELL）需要分別計算 fee
         // 1.1 voucher 及 account version 的手需費
         // 1.2 voucher 與 account version 裡面的手續費是對應的
-        result = this.calculateFee({
+        let calculateFeeResult = this.calculateFee({
           memberTag: member.member_tag,
           market,
           data,
         });
-        askFee = result.askFee;
-        bidFee = result.bidFee;
-        refGrossFee = result.refGrossFee;
+        askFee = calculateFeeResult.askFee;
+        bidFee = calculateFeeResult.bidFee;
+        refGrossFee = calculateFeeResult.refGrossFee;
         // 2. 生成 AccountVersions
-        result = this.createAccountVersions({
+        let createAccountVersionsResult = this.createAccountVersions({
           updatedOrder,
           data,
           memberId: member.id,
@@ -4839,9 +4839,9 @@ class ExchangeHub extends Bot {
           askFee,
           bidFee,
         });
-        askAccountVersion = result.askAccountVersion;
-        bidAccountVersion = result.bidAccountVersion;
-        orderFullFilledAccountVersion = result.orderFullFilledAccountVersion;
+        askAccountVersion = createAccountVersionsResult.askAccountVersion;
+        bidAccountVersion = createAccountVersionsResult.bidAccountVersion;
+        orderFullFilledAccountVersion = createAccountVersionsResult.orderFullFilledAccountVersion;
         // 3. 生成 Voucher
         voucher = this.createVoucher({
           data,
@@ -5405,6 +5405,11 @@ class ExchangeHub extends Bot {
       market = result?.market;
       isNeeded = result?.isNeeded;
       updatedOuterTrade = result?.updatedOuterTrade;
+      this.logger.debug(
+        `(${this.constructor.name
+        })[${new Date().toISOString()}] processor isCalculationNeeded result`,
+        result
+      );
       result = null;
       // 2. 稽核交易紀錄是否合法並產生對應此筆撮合紀錄的相關資料
       if (isNeeded) {
@@ -5415,52 +5420,49 @@ class ExchangeHub extends Bot {
           data: data,
           updatedOuterTrade,
         });
-      }else{
+      } else {
         // ++TODO !!!!
         await dbTransaction.commit();
       }
       this.logger.debug(
         `(${this.constructor.name
-        })[${new Date().toISOString()}] processor After calculator result`,
+        })[${new Date().toISOString()}] processor calculator result`,
         result
       );
-      this.logger.debug(
-        `(${this.constructor.name
-        })[${new Date().toISOString()}] processor After calculator result?.isDBUpdateNeed`,
-        result?.isDBUpdateNeed
-      );
-      if (result?.isDBUpdateNeed) {
-        // 3. 確認稽核交易紀錄合法後通知前端更新 order
-        this.informFrontendOrderUpdate({
-          calculatedOrder: result.updatedOrder,
-          memberId: member.id,
-          order: dbOrder,
-          market: market.id,
-          data,
-        });
-        // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
-        result = await this.updater({
-          ...result,
-          member,
-          dbOrder: dbOrder,
-          tradeFk: data.tradeId,
-          market,
-          instId: data.instId,
-          dbTransaction,
-        });
-        updatedOuterTrade = { ...result.updatedOuterTrade };
-        this.logger.debug(
-          `[${new Date().toISOString()}][${this.constructor.name
-          }] processor updater result`,
-          result
-        );
-        await this.updateOuterTrade(updatedOuterTrade);
-        if (result.success) await dbTransaction.commit();
-        else await dbTransaction.rollback();
-      }else{
-        // ++TODO !!!!
-        await dbTransaction.commit();
+      if (!!result) {
+        if (result.isDBUpdateNeed) {
+          // 3. 確認稽核交易紀錄合法後通知前端更新 order
+          this.informFrontendOrderUpdate({
+            calculatedOrder: result.updatedOrder,
+            memberId: member.id,
+            order: dbOrder,
+            market: market.id,
+            data,
+          });
+          // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
+          result = await this.updater({
+            ...result,
+            member,
+            dbOrder: dbOrder,
+            tradeFk: data.tradeId,
+            market,
+            instId: data.instId,
+            dbTransaction,
+          });
+          updatedOuterTrade = { ...result.updatedOuterTrade };
+          this.logger.debug(
+            `[${new Date().toISOString()}][${this.constructor.name
+            }] processor updater result`,
+            result
+          );
+          if (result.success) await dbTransaction.commit();
+          else await dbTransaction.rollback();
+        } else {
+          // ++TODO !!!!
+          await dbTransaction.commit();
+        }
       }
+      await this.updateOuterTrade(updatedOuterTrade);
     } catch (error) {
       await dbTransaction.rollback();
       this.logger.error(
