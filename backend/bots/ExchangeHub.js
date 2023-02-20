@@ -5405,6 +5405,11 @@ class ExchangeHub extends Bot {
       market = result?.market;
       isNeeded = result?.isNeeded;
       updatedOuterTrade = result?.updatedOuterTrade;
+      this.logger.debug(
+        `(${this.constructor.name
+        })[${new Date().toISOString()}] processor isCalculationNeeded result`,
+        result
+      );
       result = null;
       // 2. 稽核交易紀錄是否合法並產生對應此筆撮合紀錄的相關資料
       if (isNeeded) {
@@ -5415,51 +5420,48 @@ class ExchangeHub extends Bot {
           data: data,
           updatedOuterTrade,
         });
-      }else{
+      } else {
         // ++TODO !!!!
         await dbTransaction.commit();
       }
       this.logger.debug(
         `(${this.constructor.name
-        })[${new Date().toISOString()}] processor After calculator result`,
+        })[${new Date().toISOString()}] processor calculator result`,
         result
       );
-      this.logger.debug(
-        `(${this.constructor.name
-        })[${new Date().toISOString()}] processor After calculator result?.isDBUpdateNeed`,
-        result?.isDBUpdateNeed
-      );
-      if (result?.isDBUpdateNeed) {
-        // 3. 確認稽核交易紀錄合法後通知前端更新 order
-        this.informFrontendOrderUpdate({
-          calculatedOrder: result.updatedOrder,
-          memberId: member.id,
-          order: dbOrder,
-          market: market.id,
-          data,
-        });
-        // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
-        result = await this.updater({
-          ...result,
-          member,
-          dbOrder: dbOrder,
-          tradeFk: data.tradeId,
-          market,
-          instId: data.instId,
-          dbTransaction,
-        });
-        updatedOuterTrade = { ...result.updatedOuterTrade };
-        this.logger.debug(
-          `[${new Date().toISOString()}][${this.constructor.name
-          }] processor updater result`,
-          result
-        );
-        await this.updateOuterTrade(updatedOuterTrade);
-        if (result.success) await dbTransaction.commit();
-        else await dbTransaction.rollback();
-      }else{
-        // ++TODO !!!!
-        await dbTransaction.commit();
+      if (!!result) {
+        if (result.isDBUpdateNeed) {
+          // 3. 確認稽核交易紀錄合法後通知前端更新 order
+          this.informFrontendOrderUpdate({
+            calculatedOrder: result.updatedOrder,
+            memberId: member.id,
+            order: dbOrder,
+            market: market.id,
+            data,
+          });
+          // 4. 確認稽核交易紀錄合法後處理此筆撮合紀錄，在 db 更新 calculator 得到的 result
+          result = await this.updater({
+            ...result,
+            member,
+            dbOrder: dbOrder,
+            tradeFk: data.tradeId,
+            market,
+            instId: data.instId,
+            dbTransaction,
+          });
+          updatedOuterTrade = { ...result.updatedOuterTrade };
+          this.logger.debug(
+            `[${new Date().toISOString()}][${this.constructor.name
+            }] processor updater result`,
+            result
+          );
+          await this.updateOuterTrade(updatedOuterTrade);
+          if (result.success) await dbTransaction.commit();
+          else await dbTransaction.rollback();
+        } else {
+          // ++TODO !!!!
+          await dbTransaction.commit();
+        }
       }
     } catch (error) {
       await dbTransaction.rollback();
