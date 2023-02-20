@@ -5455,7 +5455,6 @@ class ExchangeHub extends Bot {
             }] processor updater result`,
             result
           );
-          await this.updateOuterTrade(updatedOuterTrade);
           if (result.success) await dbTransaction.commit();
           else await dbTransaction.rollback();
         } else {
@@ -5463,6 +5462,7 @@ class ExchangeHub extends Bot {
           await dbTransaction.commit();
         }
       }
+      await this.updateOuterTrade(updatedOuterTrade);
     } catch (error) {
       await dbTransaction.rollback();
       this.logger.error(
