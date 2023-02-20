@@ -5405,6 +5405,7 @@ class ExchangeHub extends Bot {
       market = result?.market;
       isNeeded = result?.isNeeded;
       updatedOuterTrade = result?.updatedOuterTrade;
+      result = null;
       // 2. 稽核交易紀錄是否合法並產生對應此筆撮合紀錄的相關資料
       if (isNeeded) {
         result = await this.calculator({
@@ -5414,6 +5415,9 @@ class ExchangeHub extends Bot {
           data: data,
           updatedOuterTrade,
         });
+      }else{
+        // ++TODO !!!!
+        await dbTransaction.commit();
       }
       this.logger.debug(
         `(${this.constructor.name
@@ -5453,6 +5457,9 @@ class ExchangeHub extends Bot {
         await this.updateOuterTrade(updatedOuterTrade);
         if (result.success) await dbTransaction.commit();
         else await dbTransaction.rollback();
+      }else{
+        // ++TODO !!!!
+        await dbTransaction.commit();
       }
     } catch (error) {
       await dbTransaction.rollback();
