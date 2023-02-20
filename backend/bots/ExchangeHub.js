@@ -4809,28 +4809,28 @@ class ExchangeHub extends Bot {
       isDBUpdateNeed = true,
       result;
     try {
-      let result = this.calculateOrder({
+      let calculateOrderResult = this.calculateOrder({
         data,
         dbOrder,
         updatedOuterTrade,
       });
-      isSuccessCalcalatedOrder = result.isSuccessCalcalatedOrder;
-      updatedOrder = { ...result.updatedOrder };
-      updatedOuterTrade = { ...result.updatedOuterTrade };
+      isSuccessCalcalatedOrder = calculateOrderResult.isSuccessCalcalatedOrder;
+      updatedOrder = { ...calculateOrderResult.updatedOrder };
+      updatedOuterTrade = { ...calculateOrderResult.updatedOuterTrade };
       if (isSuccessCalcalatedOrder) {
         // 1. 根據 data side （BUY，SELL）需要分別計算 fee
         // 1.1 voucher 及 account version 的手需費
         // 1.2 voucher 與 account version 裡面的手續費是對應的
-        result = this.calculateFee({
+        let calculateFeeResult = this.calculateFee({
           memberTag: member.member_tag,
           market,
           data,
         });
-        askFee = result.askFee;
-        bidFee = result.bidFee;
-        refGrossFee = result.refGrossFee;
+        askFee = calculateFeeResult.askFee;
+        bidFee = calculateFeeResult.bidFee;
+        refGrossFee = calculateFeeResult.refGrossFee;
         // 2. 生成 AccountVersions
-        result = this.createAccountVersions({
+        let createAccountVersionsResult = this.createAccountVersions({
           updatedOrder,
           data,
           memberId: member.id,
@@ -4839,9 +4839,9 @@ class ExchangeHub extends Bot {
           askFee,
           bidFee,
         });
-        askAccountVersion = result.askAccountVersion;
-        bidAccountVersion = result.bidAccountVersion;
-        orderFullFilledAccountVersion = result.orderFullFilledAccountVersion;
+        askAccountVersion = createAccountVersionsResult.askAccountVersion;
+        bidAccountVersion = createAccountVersionsResult.bidAccountVersion;
+        orderFullFilledAccountVersion = createAccountVersionsResult.orderFullFilledAccountVersion;
         // 3. 生成 Voucher
         voucher = this.createVoucher({
           data,
