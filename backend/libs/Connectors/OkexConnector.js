@@ -1022,10 +1022,10 @@ class OkexConnector extends ConnectorBase {
     if (uly) arr.push(`uly=${uly}`);
     if (instId) arr.push(`instId=${instId}`);
     if (ordType) arr.push(`ordType=${ordType}`);
-    if (state) arr.push(`state=${state}`);
+    if (state === 'live' || state === 'partially_filled') arr.push(`state=${state}`); // live, partially_filled
     if (after) arr.push(`after=${after}`);
     if (before) arr.push(`before=${before}`);
-    if (limit) arr.push(`limit=${limit}`);
+    if (limit) arr.push(`limit=${limit > 100 ? 100 : limit}`); //  The maximum is 100; The default is 100
 
     const qs = !!arr.length ? `?${arr.join("&")}` : "";
 
@@ -1065,14 +1065,14 @@ class OkexConnector extends ConnectorBase {
               data.state === Database.ORDER_STATE.CANCEL
                 ? Database.ORDER_STATE.CANCEL
                 : state === Database.ORDER_STATE.FILLED
-                ? Database.ORDER_STATE.DONE
-                : Database.ORDER_STATE.WAIT,
+                  ? Database.ORDER_STATE.DONE
+                  : Database.ORDER_STATE.WAIT,
             state_text:
               data.state === Database.ORDER_STATE.CANCEL
                 ? Database.ORDER_STATE_TEXT.CANCEL
                 : state === Database.ORDER_STATE.FILLED
-                ? Database.ORDER_STATE_TEXT.DONE
-                : Database.ORDER_STATE_TEXT.WAIT,
+                  ? Database.ORDER_STATE_TEXT.DONE
+                  : Database.ORDER_STATE_TEXT.WAIT,
             at: parseInt(SafeMath.div(data.uTime, "1000")),
             ts: parseInt(data.uTime),
           };
@@ -1176,8 +1176,7 @@ class OkexConnector extends ConnectorBase {
     if (rateLimit.differByInstId) {
       if (!instId) {
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] !!! ERROR checkRequestRate name:${name} _request error missing instId:${instId}`,
           `rateLimit`,
           rateLimit
@@ -1247,8 +1246,7 @@ class OkexConnector extends ConnectorBase {
           code: Codes.THIRD_PARTY_API_ERROR,
         });
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] !!! ERROR _request name:${name} _request Failed instId:${instId}`,
           `options`,
           options,
@@ -1258,8 +1256,7 @@ class OkexConnector extends ConnectorBase {
       }
     } catch (error) {
       this.logger.debug(
-        `[${new Date().toLocaleTimeString()}][${
-          this.constructor.name
+        `[${new Date().toLocaleTimeString()}][${this.constructor.name
         }] !!! ERROR _request name:${name} _request catch Error instId:${instId}`,
         `options`,
         options,
@@ -1299,8 +1296,7 @@ class OkexConnector extends ConnectorBase {
         }
       } else if (data.event === Events.error) {
         this.logger.debug(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }] okxPublicListenr data.event === Events.error`,
           `data`,
           data
@@ -1351,8 +1347,7 @@ class OkexConnector extends ConnectorBase {
         // temp do nothing
       } else if (data.event === Events.error) {
         this.logger.debug(
-          `[${new Date().toISOString()}][${
-            this.constructor.name
+          `[${new Date().toISOString()}][${this.constructor.name
           }] okxPrivateListenr data.event === Events.error`,
           `data`,
           data
@@ -1459,7 +1454,7 @@ class OkexConnector extends ConnectorBase {
       // ++ workaround, to be optimized: broadcast to slanger
       trade_data[market] = trade_data[market] || [];
       trade_data[market] = trade_data[market].concat(trades);
-    } catch (error) {}
+    } catch (error) { }
   }
 
   // ++ workaround, to be optimized
@@ -1468,7 +1463,7 @@ class OkexConnector extends ConnectorBase {
     const ticker_data_string = JSON.stringify(this.ticker_data);
     this.slanger
       .trigger("market-global", "tickers", ticker_data_string)
-      .catch(() => {});
+      .catch(() => { });
 
     // broadcast trades
     Object.keys(this.trade_data).map((k) => {
@@ -1476,7 +1471,7 @@ class OkexConnector extends ConnectorBase {
       if (d !== undefined) {
         const trade_data_string = JSON.stringify(d);
         const channel = `market-${k}-global`;
-        pusher.trigger(channel, "trades", trade_data_string).catch(() => {});
+        pusher.trigger(channel, "trades", trade_data_string).catch(() => { });
       }
     });
   }
@@ -1501,8 +1496,7 @@ class OkexConnector extends ConnectorBase {
         this.depthBook.updateAll(instId, tickerSetting?.lotSz, updateBooks);
       } catch (error) {
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] !!! ERROR _updateBooks depthBook.updateAll error`,
           error
         );
@@ -1517,8 +1511,7 @@ class OkexConnector extends ConnectorBase {
         );
       } catch (error) {
         this.logger.debug(
-          `[${new Date().toLocaleTimeString()}][${
-            this.constructor.name
+          `[${new Date().toLocaleTimeString()}][${this.constructor.name
           }] !!! ERROR _updateBooks depthBook.updateByDifference error`,
           error
         );
@@ -1807,8 +1800,8 @@ class OkexConnector extends ConnectorBase {
     this._unregisterMarket(market);
   }
 
-  _subscribeUser() {}
+  _subscribeUser() { }
 
-  _unsubscribeUser() {}
+  _unsubscribeUser() { }
 }
 module.exports = OkexConnector;

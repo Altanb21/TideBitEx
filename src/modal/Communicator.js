@@ -248,10 +248,10 @@ class Communicator {
       }${options?.instId ? `&instId=${options.instId}` : ""}${
         options?.instType ? `&instType=${options.instType}` : ""
       }${options?.ordType ? `&ordType=${options.ordType}` : ""}${
-        options?.state ? `&state=${options.state}` : ""
-      }${options?.after ? `&after=${options.after}` : ""}${
-        options?.before ? `&before=${options.before}` : ""
-      }${options?.limit ? `&limit=${options.limit}` : ""}`;
+        options?.after ? `&after=${options.after}` : ""
+      }${options?.before ? `&before=${options.before}` : ""}${
+        options?.limit ? `&limit=${options.limit}` : ""
+      }`;
       // const res = await this._get(url);
       const res = await this._request({
         method: "GET",
