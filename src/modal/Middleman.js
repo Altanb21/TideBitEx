@@ -345,17 +345,10 @@ class Middleman {
 
   async _getOrders(market, options = {}) {
     try {
-      const openOrders = await this.communicator.getOrders({
-        state: ORDER_STATE.OPEN,
+      const orders = await this.communicator.getOrders({
         market,
         limit: 1000,
       });
-      const orderHistories = await this.communicator.getOrders({
-        state: ORDER_STATE.CLOSED,
-        market,
-        limit: 1000,
-      });
-      const orders = openOrders.concat(orderHistories);
       // if (!!orders) this.orderBook.updateByDifference(market, { add: orders });
       if (!!orders) this.orderBook.updateAll(market, orders);
     } catch (error) {
