@@ -2096,8 +2096,6 @@ class ExchangeHub extends Bot {
 
   async getTrades({ query }) {
     const tickerSetting = this.tickersSettings[query.market];
-    this.logger.debug(`getTrades this.tickersSettings[${query.market}]`, tickerSetting)
-    this.logger.debug(`getTrades query`, query)
     switch (tickerSetting?.source) {
       case SupportedExchange.OKEX:
         return this.okexConnector.router("getTrades", {

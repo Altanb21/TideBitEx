@@ -805,6 +805,7 @@ class OkexConnector extends ConnectorBase {
         result = response;
       }
     }
+    this.logger.debug(`[${this.constructor.name}] trades getSnapshot: [${this.tradeBook.getSnapshot(instId).length}]`)
     result = new ResponseFormat({
       message: "getTrades",
       payload: this.tradeBook.getSnapshot(instId),
