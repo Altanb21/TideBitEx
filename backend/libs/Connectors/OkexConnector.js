@@ -789,7 +789,7 @@ class OkexConnector extends ConnectorBase {
       if (instId) arr.push(`instId=${instId}`);
       if (limit) arr.push(`limit=${limit}`);
       const qs = !!arr.length ? `?${arr.join("&")}` : "";
-      this.logger.debug(`[${this.constructor.name}] getTrades url: ${this.domain}${path}${qs}`,)
+      // this.logger.debug(`[${this.constructor.name}] getTrades url: ${this.domain}${path}${qs}`,)
       response = await this._request("market_trades", {
         method: method.toLocaleLowerCase(),
         url: `${this.domain}${path}${qs}`,
@@ -798,14 +798,14 @@ class OkexConnector extends ConnectorBase {
       if (response.success) {
         const market = instId.replace("-", "").toLowerCase();
         const trades = this._formateTrades(market, response.payload);
-        this.logger.debug(`[${this.constructor.name}] trades: [${trades.length}]`)
+        // this.logger.debug(`[${this.constructor.name}] trades: [${trades.length}]`)
         this.tradeBook.updateAll(instId, lotSz, trades);
         this.fetchedTrades[instId] = true;
       } else {
         result = response;
       }
     }
-    this.logger.debug(`[${this.constructor.name}] trades getSnapshot: [${this.tradeBook.getSnapshot(instId).length}]`)
+    // this.logger.debug(`[${this.constructor.name}] trades getSnapshot: [${this.tradeBook.getSnapshot(instId).length}]`)
     result = new ResponseFormat({
       message: "getTrades",
       payload: this.tradeBook.getSnapshot(instId),
