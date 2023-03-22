@@ -724,7 +724,7 @@ class OkexConnector extends ConnectorBase {
   async getTradingViewHistory({ query, results = [] }) {
     const method = "GET";
     const path = "/api/v5/market/candles";
-    let { instId, resolution, from, to } = query;
+    let { instId, resolution, from, to, limit } = query;
     let arr = [],
       qs,
       bars = [],
@@ -732,7 +732,7 @@ class OkexConnector extends ConnectorBase {
     if (instId) arr.push(`instId=${instId}`);
     if (resolution) arr.push(`bar=${getBar(resolution)}`);
     if (to) arr.push(`after=${parseInt(to) * 1000}`); //6/2
-    arr.push(`limit=${300}`);
+    if (limit) arr.push(`limit=${limit}`);
     qs = !!arr.length ? `?${arr.join("&")}` : "";
 
     const res = await this._request("market_candles", {
@@ -743,7 +743,7 @@ class OkexConnector extends ConnectorBase {
     if (res.success) {
       let resData = res.payload;
       results = results.concat(resData);
-      if (resData[resData.length - 1][0] / 1000 > from) {
+      if (from && to && resData[resData.length - 1][0] / 1000 > from) {
         return this.getTradingViewHistory({
           query: {
             ...query,
@@ -755,7 +755,7 @@ class OkexConnector extends ConnectorBase {
       results
         .sort((a, b) => a[0] - b[0])
         .forEach((d) => {
-          if (d[0] / 1000 >= from && d[0] / 1000 < to) {
+          if ((from && d[0] / 1000 >= from || !from) && (to && d[0] / 1000 < to || !to)) {
             bars = [
               ...bars,
               {
@@ -789,7 +789,7 @@ class OkexConnector extends ConnectorBase {
       if (instId) arr.push(`instId=${instId}`);
       if (limit) arr.push(`limit=${limit}`);
       const qs = !!arr.length ? `?${arr.join("&")}` : "";
-
+      // this.logger.debug(`[${this.constructor.name}] getTrades url: ${this.domain}${path}${qs}`,)
       response = await this._request("market_trades", {
         method: method.toLocaleLowerCase(),
         url: `${this.domain}${path}${qs}`,
@@ -798,12 +798,14 @@ class OkexConnector extends ConnectorBase {
       if (response.success) {
         const market = instId.replace("-", "").toLowerCase();
         const trades = this._formateTrades(market, response.payload);
+        // this.logger.debug(`[${this.constructor.name}] trades: [${trades.length}]`)
         this.tradeBook.updateAll(instId, lotSz, trades);
         this.fetchedTrades[instId] = true;
       } else {
         result = response;
       }
     }
+    // this.logger.debug(`[${this.constructor.name}] trades getSnapshot: [${this.tradeBook.getSnapshot(instId).length}]`)
     result = new ResponseFormat({
       message: "getTrades",
       payload: this.tradeBook.getSnapshot(instId),

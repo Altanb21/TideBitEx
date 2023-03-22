@@ -929,18 +929,27 @@ class Utils {
     let bar;
     switch (resolution) {
       case "1":
+      case "1m":
         bar = "1m";
         break;
+      case "3":
+      case "3m":
+        bar = "3m";
+        break;
       case "5":
+      case "5m":
         bar = "5m";
         break;
       case "15":
+      case "15m":
         bar = "15m";
         break;
       case "30":
+      case "30m":
         bar = "30m";
         break;
       case "60":
+      case "1h":
         bar = "1H";
         break;
       case "1W":

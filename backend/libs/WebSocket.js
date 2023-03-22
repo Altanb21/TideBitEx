@@ -26,7 +26,7 @@ class WebSocket {
     this.ws.on(
       "close",
       async (code, reason) =>
-        await this.reInitWs({ type: "close", code, reason })
+        await this.reInitWs({ type: "close", code, reason: reason.toString() })
     );
     this.ws.on(
       "error",
@@ -44,12 +44,12 @@ class WebSocket {
       );
     else if (type === "error")
       this.logger.debug(
-        `[${new Date().toLocaleString()}][Websocket] this.ws.on("close")`,
+        `[${new Date().toLocaleString()}][Websocket] this.ws.on("error")`,
         error
       );
     this.wsReConnectTimeout = setTimeout(async () => {
       this.logger.debug(
-        `[${new Date().toLocaleString()}][Websocket] called init`
+        `[${new Date().toLocaleString()}][Websocket] reInitWs called init`
       );
       await this.init({
         url: this.url,
